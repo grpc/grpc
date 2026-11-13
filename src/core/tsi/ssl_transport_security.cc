@@ -24,6 +24,7 @@
 #include <limits.h>
 #include <string.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -109,7 +110,9 @@ const char kDefaultBoringSSLKeyExchangeGroups[] =
     "X25519MLKEM768:X25519:P-256:P-384:P-521";
 // Matches the BoringSSL default verify signature algorithms list:
 // https://github.com/google/boringssl/blob/fbb876dcee91c83a78d930dc9fab79db0c12053e/ssl/extensions.cc#L286-L302
-[[maybe_unused]] const char kDefaultBoringSSLSignatureAlgorithms[] =
+// Uses standard TLS 1.3 IANA signature scheme names accepted by
+// SSL_CTX_set1_sigalgs_list in both BoringSSL and OpenSSL >= 1.1.1.
+[[maybe_unused]] const char kDefaultSignatureAlgorithms[] =
     "ecdsa_secp256r1_sha256:rsa_pss_rsae_sha256:rsa_pkcs1_sha256:"
     "ecdsa_secp384r1_sha384:rsa_pss_rsae_sha384:rsa_pkcs1_sha384:"
     "rsa_pss_rsae_sha512:rsa_pkcs1_sha512:"
@@ -588,11 +591,17 @@ tsi_result SetSignatureAlgorithms(
   if (!signature_algorithms.empty()) {
     std::vector<absl::string_view> algorithm_names;
     algorithm_names.reserve(signature_algorithms.size());
-    for (const auto& algorithm : signature_algorithms) {
-      auto algorithm_name = tsi::ConvertSignatureAlgorithmToString(algorithm);
+    for (const grpc_tls_signature_algorithm algorithm : signature_algorithms) {
+      absl::StatusOr<absl::string_view> algorithm_name =
+          tsi::ConvertSignatureAlgorithmToString(algorithm);
       if (!algorithm_name.ok()) {
         LOG(ERROR) << "Could not convert signature algorithm to string: "
                    << algorithm;
+        return TSI_INVALID_ARGUMENT;
+      }
+      if (std::find(algorithm_names.begin(), algorithm_names.end(),
+                    *algorithm_name) != algorithm_names.end()) {
+        LOG(ERROR) << "Duplicate signature algorithm: " << *algorithm_name;
         return TSI_INVALID_ARGUMENT;
       }
       algorithm_names.push_back(*algorithm_name);
@@ -601,7 +610,7 @@ tsi_result SetSignatureAlgorithms(
     std::string sigalg_list_str = absl::StrJoin(algorithm_names, ":");
     if (!SSL_CTX_set1_sigalgs_list(context, sigalg_list_str.c_str())) {
       LOG(ERROR) << "Could not set signature algorithms: " << sigalg_list_str;
-      return TSI_INTERNAL_ERROR;
+      return TSI_INVALID_ARGUMENT;
     }
 #else
     LOG(ERROR) << "Setting TLS signature algorithms is not supported when "
@@ -611,8 +620,7 @@ tsi_result SetSignatureAlgorithms(
   } else {
 // Use defaults
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
-    if (!SSL_CTX_set1_sigalgs_list(context,
-                                   kDefaultBoringSSLSignatureAlgorithms)) {
+    if (!SSL_CTX_set1_sigalgs_list(context, kDefaultSignatureAlgorithms)) {
       LOG(ERROR) << "Could not set default signature algorithms.";
       return TSI_INTERNAL_ERROR;
     }

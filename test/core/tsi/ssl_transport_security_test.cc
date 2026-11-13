@@ -2068,6 +2068,42 @@ TEST_P(SslTransportSecurityTest, TestExportedKeyingMaterialMatchingLabels) {
   // server EKMs are equal, because the labels and lengths match.
 }
 
+TEST(SslTransportSecurityTest,
+     TestDuplicateSignatureAlgorithmFailsClientFactoryCreation) {
+  tsi_ssl_client_handshaker_factory* client_handshaker_factory = nullptr;
+  tsi_ssl_client_handshaker_options options;
+  options.skip_server_certificate_verification = true;
+  options.signature_algorithms = {
+      GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256,
+      GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256};
+
+  ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
+                &options, &client_handshaker_factory),
+            TSI_INVALID_ARGUMENT);
+  ASSERT_EQ(client_handshaker_factory, nullptr);
+}
+
+TEST(SslTransportSecurityTest,
+     TestDuplicateSignatureAlgorithmFailsServerFactoryCreation) {
+  tsi_ssl_server_handshaker_factory* server_handshaker_factory = nullptr;
+  std::string cert_chain = testing::GetFileContents(
+      absl::StrCat(kSslTsiTestCredentialsDir, "server0.pem"));
+  PemKeyCertPair cert_pair(testing::GetFileContents(absl::StrCat(
+                               kSslTsiTestCredentialsDir, "server0.key")),
+                           cert_chain);
+  tsi_ssl_server_handshaker_options options;
+  options.key_cert_pairs_or_selector = PemKeyCertPairList{cert_pair};
+  options.root_cert_info = std::make_shared<tsi::RootCertInfo>(cert_chain);
+  options.signature_algorithms = {
+      GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA256,
+      GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA256};
+
+  ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
+                &options, &server_handshaker_factory),
+            TSI_INVALID_ARGUMENT);
+  ASSERT_EQ(server_handshaker_factory, nullptr);
+}
+
 TEST_P(SslTransportSecurityTest, TestExportedKeyingMaterialDifferentLabels) {
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));

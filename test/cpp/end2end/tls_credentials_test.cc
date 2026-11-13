@@ -135,18 +135,19 @@ class TlsCredentialsTest : public ::testing::Test {
       const std::vector<grpc_tls_key_exchange_group>* key_exchange_groups =
           nullptr,
       const std::string* ekm_label = nullptr, size_t ekm_length = 0,
-      const char* ca_cert_path = kCaCertPath,
-      const char* server_cert_path = kServerCertPath,
-      const char* server_key_path = kServerKeyPath,
+      absl::string_view ca_cert_path = kCaCertPath,
+      absl::string_view server_cert_path = kServerCertPath,
+      absl::string_view server_key_path = kServerKeyPath,
       grpc_ssl_client_certificate_request_type cert_request_type =
           GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
       const std::vector<grpc_tls_signature_algorithm>* signature_algorithms =
           nullptr) {
-    std::string root_cert = grpc_core::testing::GetFileContents(ca_cert_path);
+    std::string root_cert =
+        grpc_core::testing::GetFileContents(std::string(ca_cert_path));
     std::string server_key =
-        grpc_core::testing::GetFileContents(server_key_path);
+        grpc_core::testing::GetFileContents(std::string(server_key_path));
     std::string server_cert =
-        grpc_core::testing::GetFileContents(server_cert_path);
+        grpc_core::testing::GetFileContents(std::string(server_cert_path));
     grpc::experimental::IdentityKeyCertPair key_cert_pair = {server_key,
                                                              server_cert};
     std::vector<grpc::experimental::IdentityKeyCertPair>
@@ -443,45 +444,45 @@ TEST_F(TlsCredentialsTest, ExportedKeyingMaterialDerivationFailureFailsRpc) {
 #endif  // OPENSSL_VERSION_NUMBER >= 0x1100000
 
 #if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
-constexpr char kCaMldsa44CertPath[] =
+constexpr absl::string_view kCaMldsa44CertPath =
     "test/core/tsi/test_creds/mldsa/ca_mldsa44.pem";
-constexpr char kServerMldsa44CertPath[] =
+constexpr absl::string_view kServerMldsa44CertPath =
     "test/core/tsi/test_creds/mldsa/server_mldsa44.pem";
-constexpr char kServerMldsa44KeyPath[] =
+constexpr absl::string_view kServerMldsa44KeyPath =
     "test/core/tsi/test_creds/mldsa/server_mldsa44.key";
-constexpr char kClientMldsa44CertPath[] =
+constexpr absl::string_view kClientMldsa44CertPath =
     "test/core/tsi/test_creds/mldsa/client_mldsa44.pem";
-constexpr char kClientMldsa44KeyPath[] =
+constexpr absl::string_view kClientMldsa44KeyPath =
     "test/core/tsi/test_creds/mldsa/client_mldsa44.key";
 
-constexpr char kCaMldsa65CertPath[] =
+constexpr absl::string_view kCaMldsa65CertPath =
     "test/core/tsi/test_creds/mldsa/ca_mldsa65.pem";
-constexpr char kServerMldsa65CertPath[] =
+constexpr absl::string_view kServerMldsa65CertPath =
     "test/core/tsi/test_creds/mldsa/server_mldsa65.pem";
-constexpr char kServerMldsa65KeyPath[] =
+constexpr absl::string_view kServerMldsa65KeyPath =
     "test/core/tsi/test_creds/mldsa/server_mldsa65.key";
-constexpr char kClientMldsa65CertPath[] =
+constexpr absl::string_view kClientMldsa65CertPath =
     "test/core/tsi/test_creds/mldsa/client_mldsa65.pem";
-constexpr char kClientMldsa65KeyPath[] =
+constexpr absl::string_view kClientMldsa65KeyPath =
     "test/core/tsi/test_creds/mldsa/client_mldsa65.key";
 
-constexpr char kCaMldsa87CertPath[] =
+constexpr absl::string_view kCaMldsa87CertPath =
     "test/core/tsi/test_creds/mldsa/ca_mldsa87.pem";
-constexpr char kServerMldsa87CertPath[] =
+constexpr absl::string_view kServerMldsa87CertPath =
     "test/core/tsi/test_creds/mldsa/server_mldsa87.pem";
-constexpr char kServerMldsa87KeyPath[] =
+constexpr absl::string_view kServerMldsa87KeyPath =
     "test/core/tsi/test_creds/mldsa/server_mldsa87.key";
-constexpr char kClientMldsa87CertPath[] =
+constexpr absl::string_view kClientMldsa87CertPath =
     "test/core/tsi/test_creds/mldsa/client_mldsa87.pem";
-constexpr char kClientMldsa87KeyPath[] =
+constexpr absl::string_view kClientMldsa87KeyPath =
     "test/core/tsi/test_creds/mldsa/client_mldsa87.key";
-constexpr char kServerChainMldsa87CertPath[] =
+constexpr absl::string_view kServerChainMldsa87CertPath =
     "test/core/tsi/test_creds/mldsa/server_chain_mldsa87.pem";
-constexpr char kServerChainMldsa87KeyPath[] =
+constexpr absl::string_view kServerChainMldsa87KeyPath =
     "test/core/tsi/test_creds/mldsa/server_chain_mldsa87.key";
-constexpr char kClientChainMldsa87CertPath[] =
+constexpr absl::string_view kClientChainMldsa87CertPath =
     "test/core/tsi/test_creds/mldsa/client_chain_mldsa87.pem";
-constexpr char kClientChainMldsa87KeyPath[] =
+constexpr absl::string_view kClientChainMldsa87KeyPath =
     "test/core/tsi/test_creds/mldsa/client_chain_mldsa87.key";
 
 TEST_F(TlsCredentialsTest, KeyExchangeGroupMlkem) {
@@ -536,11 +537,11 @@ TEST_F(TlsCredentialsTest, KeyExchangeGroupMlkem1024) {
 
 struct MldsaTestParam {
   std::string test_name;
-  std::vector<const char*> ca_cert_paths;
-  const char* server_cert_path;
-  const char* server_key_path;
-  const char* client_cert_path;
-  const char* client_key_path;
+  std::vector<absl::string_view> ca_cert_paths;
+  absl::string_view server_cert_path;
+  absl::string_view server_key_path;
+  absl::string_view client_cert_path;
+  absl::string_view client_key_path;
   std::vector<grpc_tls_signature_algorithm> server_signature_algorithms;
   std::vector<grpc_tls_signature_algorithm> client_signature_algorithms;
 };
@@ -565,15 +566,16 @@ TEST_P(TlsMldsaCredentialsTest, HandshakeAndRpc) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   std::string root_cert;
-  for (const char* path : param.ca_cert_paths) {
-    absl::StrAppend(&root_cert, grpc_core::testing::GetFileContents(path));
+  for (absl::string_view path : param.ca_cert_paths) {
+    absl::StrAppend(&root_cert,
+                    grpc_core::testing::GetFileContents(std::string(path)));
   }
   absl::Notification notification;
   server_thread_ = new std::thread([&]() {
     std::string server_key =
-        grpc_core::testing::GetFileContents(param.server_key_path);
-    std::string server_cert =
-        grpc_core::testing::GetFileContents(param.server_cert_path);
+        grpc_core::testing::GetFileContents(std::string(param.server_key_path));
+    std::string server_cert = grpc_core::testing::GetFileContents(
+        std::string(param.server_cert_path));
     auto server_certificate_provider =
         std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
     ASSERT_EQ(server_certificate_provider->UpdateRoot(root_cert),
@@ -610,9 +612,9 @@ TEST_P(TlsMldsaCredentialsTest, HandshakeAndRpc) {
             absl::OkStatus());
   if (mutual_tls) {
     std::string client_key =
-        grpc_core::testing::GetFileContents(param.client_key_path);
-    std::string client_cert =
-        grpc_core::testing::GetFileContents(param.client_cert_path);
+        grpc_core::testing::GetFileContents(std::string(param.client_key_path));
+    std::string client_cert = grpc_core::testing::GetFileContents(
+        std::string(param.client_cert_path));
     ASSERT_EQ(client_certificate_provider->UpdateIdentityKeyCertPair(
                   std::vector<grpc::experimental::IdentityKeyOrSignerCertPair>{
                       {client_key, client_cert}}),
@@ -715,7 +717,7 @@ TEST_F(TlsCredentialsTest, Mldsa65SignatureAlgorithmMismatchFails) {
   notification.WaitForNotification();
 
   std::string root_cert =
-      grpc_core::testing::GetFileContents(kCaMldsa65CertPath);
+      grpc_core::testing::GetFileContents(std::string(kCaMldsa65CertPath));
   auto client_certificate_provider =
       std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
   ASSERT_EQ(client_certificate_provider->UpdateRoot(root_cert),
@@ -753,11 +755,11 @@ TEST_F(TlsCredentialsTest,
   notification.WaitForNotification();
 
   std::string root_cert =
-      grpc_core::testing::GetFileContents(kCaMldsa87CertPath);
+      grpc_core::testing::GetFileContents(std::string(kCaMldsa87CertPath));
   std::string client_key =
-      grpc_core::testing::GetFileContents(kClientMldsa44KeyPath);
+      grpc_core::testing::GetFileContents(std::string(kClientMldsa44KeyPath));
   std::string client_cert =
-      grpc_core::testing::GetFileContents(kClientMldsa44CertPath);
+      grpc_core::testing::GetFileContents(std::string(kClientMldsa44CertPath));
   auto client_certificate_provider =
       std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
   ASSERT_EQ(client_certificate_provider->UpdateRoot(root_cert),
