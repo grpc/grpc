@@ -3537,29 +3537,32 @@ def delete_health_check(gcp):
 
 def delete_instance_groups(gcp):
     for instance_group in gcp.instance_groups:
-        try:
-            logger.debug(
-                "Deleting instance group %s %s",
-                instance_group.name,
-                instance_group.zone,
-            )
-            result = (
-                gcp.compute.instanceGroupManagers()
-                .delete(
-                    project=gcp.project,
-                    zone=instance_group.zone,
-                    instanceGroupManager=instance_group.name,
+        if instance_group.url is not None:
+            try:
+                logger.debug(
+                    "Deleting instance group %s %s",
+                    instance_group.name,
+                    instance_group.zone,
                 )
-                .execute(num_retries=_GCP_API_RETRIES)
-            )
-            wait_for_zone_operation(
-                gcp,
-                instance_group.zone,
-                result["name"],
-                timeout_sec=_WAIT_FOR_BACKEND_SEC,
-            )
-        except googleapiclient.errors.HttpError as http_error:
-            logger.info("Delete failed: %s", http_error)
+                result = (
+                    gcp.compute.instanceGroupManagers()
+                    .delete(
+                        project=gcp.project,
+                        zone=instance_group.zone,
+                        instanceGroupManager=instance_group.name,
+                    )
+                    .execute(num_retries=_GCP_API_RETRIES)
+                )
+                wait_for_zone_operation(
+                    gcp,
+                    instance_group.zone,
+                    result["name"],
+                    timeout_sec=_WAIT_FOR_BACKEND_SEC,
+                )
+            except KeyError as key_error:
+                logger.info("Caught KeyError while deleting instance group: %s", key_error)
+            except googleapiclient.errors.HttpError as http_error:
+                logger.info("Delete failed: %s", http_error)
 
 
 def delete_instance_template(gcp):
