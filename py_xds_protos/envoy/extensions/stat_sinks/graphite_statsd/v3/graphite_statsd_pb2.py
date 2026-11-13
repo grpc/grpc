@@ -28,7 +28,7 @@ from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nDenvoy/extensions/stat_sinks/graphite_statsd/v3/graphite_statsd.proto\x12.envoy.extensions.stat_sinks.graphite_statsd.v3\x1a\"envoy/config/core/v3/address.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xb6\x01\n\x12GraphiteStatsdSink\x12\x30\n\x07\x61\x64\x64ress\x18\x01 \x01(\x0b\x32\x1d.envoy.config.core.v3.AddressH\x00\x12\x0e\n\x06prefix\x18\x03 \x01(\t\x12\x45\n\x16max_bytes_per_datagram\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.UInt64ValueB\x07\xfa\x42\x04\x32\x02 \x00\x42\x17\n\x10statsd_specifier\x12\x03\xf8\x42\x01\x42\xc6\x01\n<io.envoyproxy.envoy.extensions.stat_sinks.graphite_statsd.v3B\x13GraphiteStatsdProtoP\x01Zggithub.com/envoyproxy/go-control-plane/envoy/extensions/stat_sinks/graphite_statsd/v3;graphite_statsdv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nDenvoy/extensions/stat_sinks/graphite_statsd/v3/graphite_statsd.proto\x12.envoy.extensions.stat_sinks.graphite_statsd.v3\x1a\"envoy/config/core/v3/address.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xe5\x01\n\x12GraphiteStatsdSink\x12\x30\n\x07\x61\x64\x64ress\x18\x01 \x01(\x0b\x32\x1d.envoy.config.core.v3.AddressH\x00\x12\x0e\n\x06prefix\x18\x03 \x01(\t\x12\x45\n\x16max_bytes_per_datagram\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.UInt64ValueB\x07\xfa\x42\x04\x32\x02 \x00\x12-\n%scale_histogram_units_to_milliseconds\x18\x05 \x01(\x08\x42\x17\n\x10statsd_specifier\x12\x03\xf8\x42\x01\x42\xc6\x01\n<io.envoyproxy.envoy.extensions.stat_sinks.graphite_statsd.v3B\x13GraphiteStatsdProtoP\x01Zggithub.com/envoyproxy/go-control-plane/envoy/extensions/stat_sinks/graphite_statsd/v3;graphite_statsdv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -41,5 +41,5 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_GRAPHITESTATSDSINK'].fields_by_name['max_bytes_per_datagram']._loaded_options = None
   _globals['_GRAPHITESTATSDSINK'].fields_by_name['max_bytes_per_datagram']._serialized_options = b'\372B\0042\002 \000'
   _globals['_GRAPHITESTATSDSINK']._serialized_start=245
-  _globals['_GRAPHITESTATSDSINK']._serialized_end=427
+  _globals['_GRAPHITESTATSDSINK']._serialized_end=474
 # @@protoc_insertion_point(module_scope)

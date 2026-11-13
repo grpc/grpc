@@ -26,7 +26,7 @@ from google.protobuf import duration_pb2 as google_dot_protobuf_dot_duration__pb
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nDenvoy/extensions/watchdog/backtrace_action/v3/backtrace_action.proto\x12-envoy.extensions.watchdog.backtrace_action.v3\x1a\x1egoogle/protobuf/duration.proto\x1a\x1dudpa/annotations/status.proto\"M\n\x15\x42\x61\x63ktraceActionConfig\x12\x34\n\x11\x63ooldown_duration\x18\x01 \x01(\x0b\x32\x19.google.protobuf.DurationB\xc6\x01\n;io.envoyproxy.envoy.extensions.watchdog.backtrace_action.v3B\x14\x42\x61\x63ktraceActionProtoP\x01Zggithub.com/envoyproxy/go-control-plane/envoy/extensions/watchdog/backtrace_action/v3;backtrace_actionv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nDenvoy/extensions/watchdog/backtrace_action/v3/backtrace_action.proto\x12-envoy.extensions.watchdog.backtrace_action.v3\x1a\x1egoogle/protobuf/duration.proto\x1a\x1dudpa/annotations/status.proto\"\xfe\x01\n\x15\x42\x61\x63ktraceActionConfig\x12\x34\n\x11\x63ooldown_duration\x18\x01 \x01(\x0b\x32\x19.google.protobuf.Duration\x12`\n\tlog_level\x18\x02 \x01(\x0e\x32M.envoy.extensions.watchdog.backtrace_action.v3.BacktraceActionConfig.LogLevel\"M\n\x08LogLevel\x12\x0c\n\x08\x43RITICAL\x10\x00\x12\t\n\x05TRACE\x10\x01\x12\t\n\x05\x44\x45\x42UG\x10\x02\x12\x08\n\x04INFO\x10\x03\x12\x08\n\x04WARN\x10\x04\x12\t\n\x05\x45RROR\x10\x05\x42\xc6\x01\n;io.envoyproxy.envoy.extensions.watchdog.backtrace_action.v3B\x14\x42\x61\x63ktraceActionProtoP\x01Zggithub.com/envoyproxy/go-control-plane/envoy/extensions/watchdog/backtrace_action/v3;backtrace_actionv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -34,6 +34,8 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'envoy.extensions.watchdog.b
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n;io.envoyproxy.envoy.extensions.watchdog.backtrace_action.v3B\024BacktraceActionProtoP\001Zggithub.com/envoyproxy/go-control-plane/envoy/extensions/watchdog/backtrace_action/v3;backtrace_actionv3\272\200\310\321\006\002\020\002'
-  _globals['_BACKTRACEACTIONCONFIG']._serialized_start=182
-  _globals['_BACKTRACEACTIONCONFIG']._serialized_end=259
+  _globals['_BACKTRACEACTIONCONFIG']._serialized_start=183
+  _globals['_BACKTRACEACTIONCONFIG']._serialized_end=437
+  _globals['_BACKTRACEACTIONCONFIG_LOGLEVEL']._serialized_start=360
+  _globals['_BACKTRACEACTIONCONFIG_LOGLEVEL']._serialized_end=437
 # @@protoc_insertion_point(module_scope)

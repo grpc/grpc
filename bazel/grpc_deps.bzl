@@ -228,11 +228,22 @@ def grpc_deps():
                 "@com_github_grpc_grpc//third_party:envoy-api.patch",
             ],
             patch_args = ["-p1"],
-            sha256 = "40ba505a3c8e0d56f10ad5b95c05d54138228ff521cff22393276bb67188dfc3",
-            strip_prefix = "data-plane-api-005c18a923f166a793a1c227171398dab883cc5d",
+            sha256 = "6cd4f3ed0f12b4f18780f0a29e38f7f914a73c45d8b70960c7d5ba62b817239b",
+            strip_prefix = "data-plane-api-0a161d3b6cc400ed14fe35c3e5f95b77fa36376c",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/005c18a923f166a793a1c227171398dab883cc5d.tar.gz",
-                "https://github.com/envoyproxy/data-plane-api/archive/005c18a923f166a793a1c227171398dab883cc5d.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/0a161d3b6cc400ed14fe35c3e5f95b77fa36376c.tar.gz",
+                "https://github.com/envoyproxy/data-plane-api/archive/0a161d3b6cc400ed14fe35c3e5f95b77fa36376c.tar.gz",
+            ],
+        )
+
+    if "envoy_toolshed" not in native.existing_rules():
+        http_archive(
+            name = "envoy_toolshed",
+            integrity = "sha256-7iTKEcrYcNTqN/B6Y5JrGVsbGTZrczov+NkOxaZkrbo=",
+            strip_prefix = "toolshed-bazel-v0.5.18",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/toolshed/releases/download/bazel-v0.5.18/toolshed-bazel-v0.5.18.tar.gz",
+                "https://github.com/envoyproxy/toolshed/releases/download/bazel-v0.5.18/toolshed-bazel-v0.5.18.tar.gz",
             ],
         )
 

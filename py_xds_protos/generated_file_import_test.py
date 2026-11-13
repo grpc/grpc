@@ -20,6 +20,7 @@ from contrib.envoy.extensions.filters.common.workload_discovery.v3 import discov
 from contrib.envoy.extensions.filters.common.workload_discovery.v3 import extension_pb2
 from contrib.envoy.extensions.filters.http.alpn.v3 import alpn_pb2
 from contrib.envoy.extensions.filters.http.checksum.v3alpha import checksum_pb2
+from contrib.envoy.extensions.filters.http.client_cert.v3alpha import client_cert_pb2
 from contrib.envoy.extensions.filters.http.dynamo.v3 import dynamo_pb2
 from contrib.envoy.extensions.filters.http.golang.v3alpha import golang_pb2
 from contrib.envoy.extensions.filters.http.istio_stats.v3 import istio_stats_pb2
@@ -31,6 +32,7 @@ from contrib.envoy.extensions.filters.listener.postgres_inspector.v3alpha import
 from contrib.envoy.extensions.filters.network.client_ssl_auth.v3 import client_ssl_auth_pb2
 from contrib.envoy.extensions.filters.network.generic_proxy.codecs.kafka.v3 import kafka_pb2
 from contrib.envoy.extensions.filters.network.golang.v3alpha import golang_pb2
+from contrib.envoy.extensions.filters.network.istio_hbone.v3alpha import istio_hbone_pb2
 from contrib.envoy.extensions.filters.network.kafka_broker.v3 import kafka_broker_pb2
 from contrib.envoy.extensions.filters.network.kafka_mesh.v3alpha import kafka_mesh_pb2
 from contrib.envoy.extensions.filters.network.metadata_exchange.v3 import metadata_exchange_pb2
@@ -44,6 +46,7 @@ from contrib.envoy.extensions.filters.network.sip_proxy.tra.v3alpha import tra_p
 from contrib.envoy.extensions.filters.network.sip_proxy.v3alpha import route_pb2
 from contrib.envoy.extensions.filters.network.sip_proxy.v3alpha import sip_proxy_pb2
 from contrib.envoy.extensions.load_balancing_policies.peak_ewma.v3alpha import peak_ewma_pb2
+from contrib.envoy.extensions.load_balancing_policies.per_worker_subset.v3alpha import per_worker_subset_pb2
 from contrib.envoy.extensions.matching.input_matchers.hyperscan.v3alpha import hyperscan_pb2
 from contrib.envoy.extensions.private_key_providers.cryptomb.v3alpha import cryptomb_pb2
 from contrib.envoy.extensions.private_key_providers.kae.v3alpha import kae_pb2
@@ -272,6 +275,7 @@ from envoy.config.transport_socket.tap.v2alpha import tap_pb2
 from envoy.config.upstream.local_address_selector.v3 import default_local_address_selector_pb2
 from envoy.data.accesslog.v2 import accesslog_pb2
 from envoy.data.accesslog.v3 import accesslog_pb2
+from envoy.data.ai.v3 import request_info_pb2
 from envoy.data.ai.v3 import token_usage_pb2
 from envoy.data.cluster.v2alpha import outlier_detection_event_pb2
 from envoy.data.cluster.v3 import outlier_detection_event_pb2
@@ -298,6 +302,7 @@ from envoy.extensions.access_loggers.open_telemetry.v3 import logs_service_pb2
 from envoy.extensions.access_loggers.stats.v3 import stats_pb2
 from envoy.extensions.access_loggers.stream.v3 import stream_pb2
 from envoy.extensions.access_loggers.wasm.v3 import wasm_pb2
+from envoy.extensions.ai_protocol_manager.external_buffer.in_memory.v3 import in_memory_pb2
 from envoy.extensions.bootstrap.dynamic_modules.v3 import dynamic_modules_pb2
 from envoy.extensions.bootstrap.internal_listener.v3 import internal_listener_pb2
 from envoy.extensions.bootstrap.reverse_tunnel.downstream_socket_interface.v3 import downstream_reverse_connection_socket_interface_pb2
@@ -324,6 +329,7 @@ from envoy.extensions.compression.gzip.compressor.v3 import gzip_pb2
 from envoy.extensions.compression.gzip.decompressor.v3 import gzip_pb2
 from envoy.extensions.compression.zstd.compressor.v3 import zstd_pb2
 from envoy.extensions.compression.zstd.decompressor.v3 import zstd_pb2
+from envoy.extensions.config.validators.dynamic_modules.v3 import dynamic_modules_pb2
 from envoy.extensions.config.validators.minimum_clusters.v3 import minimum_clusters_pb2
 from envoy.extensions.content_parsers.json.v3 import json_content_parser_pb2
 from envoy.extensions.dynamic_modules.v3 import dynamic_modules_pb2
@@ -393,6 +399,7 @@ from envoy.extensions.filters.http.mcp_router.v3 import mcp_router_pb2
 from envoy.extensions.filters.http.oauth2.v3 import oauth_pb2
 from envoy.extensions.filters.http.on_demand.v3 import on_demand_pb2
 from envoy.extensions.filters.http.original_src.v3 import original_src_pb2
+from envoy.extensions.filters.http.priority_load_shed.v3 import priority_load_shed_pb2
 from envoy.extensions.filters.http.proto_api_scrubber.v3 import config_pb2
 from envoy.extensions.filters.http.proto_api_scrubber.v3 import matcher_actions_pb2
 from envoy.extensions.filters.http.proto_message_extraction.v3 import config_pb2
@@ -487,15 +494,22 @@ from envoy.extensions.health_checkers.dynamic_modules.v3 import dynamic_modules_
 from envoy.extensions.health_checkers.redis.v3 import redis_pb2
 from envoy.extensions.health_checkers.thrift.v3 import thrift_pb2
 from envoy.extensions.health_checkers.udp.v3 import udp_pb2
+from envoy.extensions.http.ai_filters.model_router.v3 import model_router_pb2
+from envoy.extensions.http.ai_filters.request_info.v3 import request_info_pb2
+from envoy.extensions.http.ai_filters.route_selector.v3 import route_selector_pb2
+from envoy.extensions.http.ai_filters.schema_validation.v3 import schema_validation_pb2
+from envoy.extensions.http.ai_filters.transcoder.v3 import transcoder_pb2
 from envoy.extensions.http.cache.file_system_http_cache.v3 import file_system_http_cache_pb2
 from envoy.extensions.http.cache.simple_http_cache.v3 import config_pb2
 from envoy.extensions.http.cache_v2.file_system_http_cache.v3 import file_system_http_cache_pb2
 from envoy.extensions.http.cache_v2.simple_http_cache.v3 import config_pb2
 from envoy.extensions.http.custom_response.local_response_policy.v3 import local_response_policy_pb2
 from envoy.extensions.http.custom_response.redirect_policy.v3 import redirect_policy_pb2
+from envoy.extensions.http.early_header_mutation.dynamic_modules.v3 import dynamic_modules_pb2
 from envoy.extensions.http.early_header_mutation.header_mutation.v3 import header_mutation_pb2
 from envoy.extensions.http.ext_proc.processing_request_modifiers.mapped_attribute_builder.v3 import mapped_attribute_builder_pb2
 from envoy.extensions.http.ext_proc.response_processors.save_processing_response.v3 import save_processing_response_pb2
+from envoy.extensions.http.header_formatters.dynamic_modules.v3 import dynamic_modules_pb2
 from envoy.extensions.http.header_formatters.preserve_case.v3 import preserve_case_pb2
 from envoy.extensions.http.header_validators.envoy_default.v3 import header_validator_pb2
 from envoy.extensions.http.injected_credentials.generic.v3 import generic_pb2
@@ -510,10 +524,12 @@ from envoy.extensions.internal_redirect.filter_state.v3 import filter_state_conf
 from envoy.extensions.internal_redirect.previous_routes.v3 import previous_routes_config_pb2
 from envoy.extensions.internal_redirect.safe_cross_scheme.v3 import safe_cross_scheme_config_pb2
 from envoy.extensions.key_value.file_based.v3 import config_pb2
+from envoy.extensions.load_balancing_policies.autosharding.v3 import autosharding_pb2
 from envoy.extensions.load_balancing_policies.client_side_weighted_round_robin.v3 import client_side_weighted_round_robin_pb2
 from envoy.extensions.load_balancing_policies.cluster_provided.v3 import cluster_provided_pb2
 from envoy.extensions.load_balancing_policies.common.v3 import common_pb2
 from envoy.extensions.load_balancing_policies.dynamic_modules.v3 import dynamic_modules_pb2
+from envoy.extensions.load_balancing_policies.host_allowlist.v3 import host_allowlist_pb2
 from envoy.extensions.load_balancing_policies.least_request.v3 import least_request_pb2
 from envoy.extensions.load_balancing_policies.load_aware_locality.v3 import load_aware_locality_pb2
 from envoy.extensions.load_balancing_policies.maglev.v3 import maglev_pb2
@@ -538,6 +554,7 @@ from envoy.extensions.matching.input_matchers.dynamic_modules.v3 import dynamic_
 from envoy.extensions.matching.input_matchers.ip.v3 import ip_pb2
 from envoy.extensions.matching.input_matchers.metadata.v3 import metadata_pb2
 from envoy.extensions.matching.input_matchers.runtime_fraction.v3 import runtime_fraction_pb2
+from envoy.extensions.matching.input_matchers.uri_template.v3 import uri_template_pb2
 from envoy.extensions.network.dns_resolver.apple.v3 import apple_dns_resolver_pb2
 from envoy.extensions.network.dns_resolver.cares.v3 import cares_dns_resolver_pb2
 from envoy.extensions.network.dns_resolver.getaddrinfo.v3 import getaddrinfo_dns_resolver_pb2
@@ -548,6 +565,7 @@ from envoy.extensions.outlier_detection_monitors.common.v3 import error_types_pb
 from envoy.extensions.outlier_detection_monitors.consecutive_errors.v3 import consecutive_errors_pb2
 from envoy.extensions.path.match.uri_template.v3 import uri_template_match_pb2
 from envoy.extensions.path.rewrite.uri_template.v3 import uri_template_rewrite_pb2
+from envoy.extensions.queue_policy.adaptive_lifo.v3 import adaptive_lifo_pb2
 from envoy.extensions.queue_policy.fifo.v3 import fifo_pb2
 from envoy.extensions.quic.client_writer_factory.v3 import default_client_writer_pb2
 from envoy.extensions.quic.connection_debug_visitor.quic_stats.v3 import quic_stats_pb2
@@ -577,6 +595,8 @@ from envoy.extensions.retry.priority.previous_priorities.v3 import previous_prio
 from envoy.extensions.router.cluster_specifiers.dynamic_modules.v3 import dynamic_modules_pb2
 from envoy.extensions.router.cluster_specifiers.lua.v3 import lua_pb2
 from envoy.extensions.router.cluster_specifiers.matcher.v3 import matcher_pb2
+from envoy.extensions.router.cluster_specifiers.priority_group.v3 import priority_group_pb2
+from envoy.extensions.router.route_specifiers.dynamic_modules.v3 import dynamic_modules_pb2
 from envoy.extensions.stat_sinks.dynamic_modules.v3 import dynamic_modules_pb2
 from envoy.extensions.stat_sinks.graphite_statsd.v3 import graphite_statsd_pb2
 from envoy.extensions.stat_sinks.open_telemetry.v3 import open_telemetry_pb2
@@ -606,8 +626,10 @@ from envoy.extensions.transport_sockets.tcp_stats.v3 import tcp_stats_pb2
 from envoy.extensions.transport_sockets.tls.cert_mappers.filter_state_override.v3 import config_pb2
 from envoy.extensions.transport_sockets.tls.cert_mappers.sni.v3 import config_pb2
 from envoy.extensions.transport_sockets.tls.cert_mappers.static_name.v3 import config_pb2
+from envoy.extensions.transport_sockets.tls.cert_selectors.dynamic_modules.v3 import dynamic_modules_pb2
 from envoy.extensions.transport_sockets.tls.cert_selectors.on_demand_secret.v3 import config_pb2
 from envoy.extensions.transport_sockets.tls.cert_validator.dynamic_modules.v3 import dynamic_modules_pb2
+from envoy.extensions.transport_sockets.tls.handshakers.dynamic_modules.v3 import dynamic_modules_pb2
 from envoy.extensions.transport_sockets.tls.v3 import cert_pb2
 from envoy.extensions.transport_sockets.tls.v3 import common_pb2
 from envoy.extensions.transport_sockets.tls.v3 import secret_pb2
@@ -710,7 +732,8 @@ from envoy.type import percent_pb2
 from envoy.type import range_pb2
 from envoy.type import semantic_version_pb2
 from envoy.type import token_bucket_pb2
-from envoy.type.ai.v3 import api_protocol_pb2
+from envoy.type.ai.v3 import llm_binding_pb2
+from envoy.type.ai.v3 import llm_protocol_pb2
 from envoy.type.http.v3 import cookie_pb2
 from envoy.type.http.v3 import path_transformation_pb2
 from envoy.type.matcher import metadata_pb2

@@ -22,13 +22,14 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
+from google.protobuf import duration_pb2 as google_dot_protobuf_dot_duration__pb2
 from google.protobuf import wrappers_pb2 as google_dot_protobuf_dot_wrappers__pb2
 from xds.annotations.v3 import status_pb2 as xds_dot_annotations_dot_v3_dot_status__pb2
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nPenvoy/extensions/filters/http/mcp_json_rest_bridge/v3/mcp_json_rest_bridge.proto\x12\x35\x65nvoy.extensions.filters.http.mcp_json_rest_bridge.v3\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xbf\x05\n\x11McpJsonRestBridge\x12V\n\x0bserver_info\x18\x01 \x01(\x0b\x32\x41.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.ServerInfo\x12\\\n\x0btool_config\x18\x02 \x01(\x0b\x32G.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.ServerToolConfig\x12;\n\x15max_request_body_size\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.UInt32Value\x12<\n\x16max_response_body_size\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.UInt32Value\x12\x83\x01\n\x14request_storage_mode\x18\x05 \x01(\x0e\x32[.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.McpJsonRestBridge.RequestStorageModeB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\x12v\n\x18trace_context_extraction\x18\x06 \x01(\x0b\x32T.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.TraceContextExtractionOptions\x12!\n\x19\x64isable_clear_route_cache\x18\x07 \x01(\x08\x12\x16\n\x0eper_route_only\x18\x08 \x01(\x08\"@\n\x12RequestStorageMode\x12\x14\n\x10MODE_UNSPECIFIED\x10\x00\x12\x14\n\x10\x44YNAMIC_METADATA\x10\x01\"\x1f\n\x1dTraceContextExtractionOptions\"\x87\x01\n\nServerInfo\x12#\n\x1bsupported_protocol_versions\x18\x01 \x03(\t\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12?\n\x19\x66\x61llback_protocol_version\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\"\x10\n\x0eToolsListLocal\"\xb3\x03\n\x10ServerToolConfig\x12P\n\x05tools\x18\x01 \x03(\x0b\x32\x41.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.ToolConfig\x12\x14\n\x0clist_changed\x18\x02 \x01(\x08\x12^\n\x13tool_list_http_rule\x18\x03 \x01(\x0b\x32?.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.HttpRuleH\x00\x12`\n\x0ftool_list_local\x18\x04 \x01(\x0b\x32\x45.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.ToolsListLocalH\x00\x12\x61\n\x13\x64\x65\x66\x61ult_server_info\x18\x05 \x01(\x0b\x32\x44.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.McpServerInfoB\x12\n\x10tool_list_config\"S\n\x17ToolsListSpecificConfig\x12\r\n\x05title\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\x14\n\x0cinput_schema\x18\x03 \x01(\t\"+\n\rMcpServerInfo\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x0c\n\x04host\x18\x02 \x01(\t\"\xe4\x02\n\nToolConfig\x12\x15\n\x04name\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12R\n\thttp_rule\x18\x02 \x01(\x0b\x32?.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.HttpRule\x12h\n\x10tool_list_config\x18\x03 \x01(\x0b\x32N.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.ToolsListSpecificConfig\x12&\n\x1etext_content_streaming_enabled\x18\x04 \x01(\x08\x12Y\n\x0bserver_info\x18\x05 \x03(\x0b\x32\x44.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.McpServerInfo\"_\n\x08HttpRule\x12\x0b\n\x03get\x18\x01 \x01(\t\x12\x0b\n\x03put\x18\x02 \x01(\t\x12\x0c\n\x04post\x18\x03 \x01(\t\x12\x0e\n\x06\x64\x65lete\x18\x04 \x01(\t\x12\r\n\x05patch\x18\x05 \x01(\t\x12\x0c\n\x04\x62ody\x18\x06 \x01(\t\"y\n\x19McpJsonRestBridgePerRoute\x12\\\n\x0btool_config\x18\x01 \x03(\x0b\x32G.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.ServerToolConfigB\xe4\x01\nCio.envoyproxy.envoy.extensions.filters.http.mcp_json_rest_bridge.v3B\x16McpJsonRestBridgeProtoP\x01Zsgithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/mcp_json_rest_bridge/v3;mcp_json_rest_bridgev3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nPenvoy/extensions/filters/http/mcp_json_rest_bridge/v3/mcp_json_rest_bridge.proto\x12\x35\x65nvoy.extensions.filters.http.mcp_json_rest_bridge.v3\x1a\x1egoogle/protobuf/duration.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xbf\x05\n\x11McpJsonRestBridge\x12V\n\x0bserver_info\x18\x01 \x01(\x0b\x32\x41.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.ServerInfo\x12\\\n\x0btool_config\x18\x02 \x01(\x0b\x32G.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.ServerToolConfig\x12;\n\x15max_request_body_size\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.UInt32Value\x12<\n\x16max_response_body_size\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.UInt32Value\x12\x83\x01\n\x14request_storage_mode\x18\x05 \x01(\x0e\x32[.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.McpJsonRestBridge.RequestStorageModeB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\x12v\n\x18trace_context_extraction\x18\x06 \x01(\x0b\x32T.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.TraceContextExtractionOptions\x12!\n\x19\x64isable_clear_route_cache\x18\x07 \x01(\x08\x12\x16\n\x0eper_route_only\x18\x08 \x01(\x08\"@\n\x12RequestStorageMode\x12\x14\n\x10MODE_UNSPECIFIED\x10\x00\x12\x14\n\x10\x44YNAMIC_METADATA\x10\x01\"\x1f\n\x1dTraceContextExtractionOptions\"\xa1\x01\n\x0b\x43\x61\x63heConfig\x12\x30\n\x03ttl\x18\x01 \x01(\x0b\x32\x19.google.protobuf.DurationB\x08\xfa\x42\x05\xaa\x01\x02\x32\x00\x12`\n\x0b\x63\x61\x63he_scope\x18\x02 \x01(\x0e\x32\x41.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.CacheScopeB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\"\xb2\x02\n\nServerInfo\x12\x63\n\x1emax_supported_protocol_version\x18\x01 \x01(\x0b\x32\x1c.google.protobuf.StringValueB\x1d\xfa\x42\x1ar\x18R\n2025-11-25R\n2026-07-28\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12?\n\x19\x66\x61llback_protocol_version\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12i\n\x1dserver_discovery_cache_config\x18\x04 \x01(\x0b\x32\x42.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.CacheConfig\"j\n\x0eToolsListLocal\x12X\n\x0c\x63\x61\x63he_config\x18\x01 \x01(\x0b\x32\x42.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.CacheConfig\"\xb3\x03\n\x10ServerToolConfig\x12P\n\x05tools\x18\x01 \x03(\x0b\x32\x41.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.ToolConfig\x12\x14\n\x0clist_changed\x18\x02 \x01(\x08\x12^\n\x13tool_list_http_rule\x18\x03 \x01(\x0b\x32?.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.HttpRuleH\x00\x12`\n\x0ftool_list_local\x18\x04 \x01(\x0b\x32\x45.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.ToolsListLocalH\x00\x12\x61\n\x13\x64\x65\x66\x61ult_server_info\x18\x05 \x01(\x0b\x32\x44.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.McpServerInfoB\x12\n\x10tool_list_config\"S\n\x17ToolsListSpecificConfig\x12\r\n\x05title\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\x14\n\x0cinput_schema\x18\x03 \x01(\t\"+\n\rMcpServerInfo\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x0c\n\x04host\x18\x02 \x01(\t\"\xc6\x03\n\nToolConfig\x12\x15\n\x04name\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12R\n\thttp_rule\x18\x02 \x01(\x0b\x32?.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.HttpRule\x12h\n\x10tool_list_config\x18\x03 \x01(\x0b\x32N.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.ToolsListSpecificConfig\x12&\n\x1etext_content_streaming_enabled\x18\x04 \x01(\x08\x12Y\n\x0bserver_info\x18\x05 \x03(\x0b\x32\x44.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.McpServerInfo\x12`\n\x11mcp_param_headers\x18\x06 \x03(\x0b\x32\x45.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.McpParamHeader\"\xf5\x01\n\x0eMcpParamHeader\x12\x18\n\x04name\x18\x01 \x01(\tB\n\xfa\x42\x07r\x05\x10\x01\xc0\x01\x01\x12\x1f\n\rproperty_path\x18\x02 \x03(\tB\x08\xfa\x42\x05\x92\x01\x02\x08\x01\x12\x64\n\x04type\x18\x03 \x01(\x0e\x32J.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.McpParamHeader.TypeB\n\xfa\x42\x07\x82\x01\x04\x10\x01 \x00\"B\n\x04Type\x12\x14\n\x10TYPE_UNSPECIFIED\x10\x00\x12\n\n\x06STRING\x10\x01\x12\x0b\n\x07INTEGER\x10\x02\x12\x0b\n\x07\x42OOLEAN\x10\x03\"\xb4\x03\n\x08HttpRule\x12\x0b\n\x03get\x18\x01 \x01(\t\x12\x0b\n\x03put\x18\x02 \x01(\t\x12\x0c\n\x04post\x18\x03 \x01(\t\x12\x0e\n\x06\x64\x65lete\x18\x04 \x01(\t\x12\r\n\x05patch\x18\x05 \x01(\t\x12\x0c\n\x04\x62ody\x18\x06 \x01(\t\x12\x62\n\x08\x62indings\x18\x07 \x03(\x0b\x32P.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.HttpRule.ParameterBinding\x1a\xee\x01\n\x10ParameterBinding\x12\x63\n\x04type\x18\x01 \x01(\x0e\x32U.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.HttpRule.ParameterBinding.Type\x12\x1f\n\x04name\x18\x02 \x01(\tB\x11\xfa\x42\x0er\x0c\x10\x01(\x80\x80\x01\xc0\x01\x01\xc8\x01\x00\x12\x1e\n\rargument_path\x18\x03 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\"4\n\x04Type\x12\x14\n\x10TYPE_UNSPECIFIED\x10\x00\x12\n\n\x06HEADER\x10\x01\x12\n\n\x06\x43OOKIE\x10\x02\"y\n\x19McpJsonRestBridgePerRoute\x12\\\n\x0btool_config\x18\x01 \x03(\x0b\x32G.envoy.extensions.filters.http.mcp_json_rest_bridge.v3.ServerToolConfig*Z\n\nCacheScope\x12\x1b\n\x17\x43\x41\x43HE_SCOPE_UNSPECIFIED\x10\x00\x12\x16\n\x12\x43\x41\x43HE_SCOPE_PUBLIC\x10\x01\x12\x17\n\x13\x43\x41\x43HE_SCOPE_PRIVATE\x10\x02\x42\xe4\x01\nCio.envoyproxy.envoy.extensions.filters.http.mcp_json_rest_bridge.v3B\x16McpJsonRestBridgeProtoP\x01Zsgithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/mcp_json_rest_bridge/v3;mcp_json_rest_bridgev3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -38,28 +39,56 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._serialized_options = b'\nCio.envoyproxy.envoy.extensions.filters.http.mcp_json_rest_bridge.v3B\026McpJsonRestBridgeProtoP\001Zsgithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/mcp_json_rest_bridge/v3;mcp_json_rest_bridgev3\272\200\310\321\006\002\020\002\322\306\244\341\006\002\010\001'
   _globals['_MCPJSONRESTBRIDGE'].fields_by_name['request_storage_mode']._loaded_options = None
   _globals['_MCPJSONRESTBRIDGE'].fields_by_name['request_storage_mode']._serialized_options = b'\372B\005\202\001\002\020\001'
+  _globals['_CACHECONFIG'].fields_by_name['ttl']._loaded_options = None
+  _globals['_CACHECONFIG'].fields_by_name['ttl']._serialized_options = b'\372B\005\252\001\0022\000'
+  _globals['_CACHECONFIG'].fields_by_name['cache_scope']._loaded_options = None
+  _globals['_CACHECONFIG'].fields_by_name['cache_scope']._serialized_options = b'\372B\005\202\001\002\020\001'
+  _globals['_SERVERINFO'].fields_by_name['max_supported_protocol_version']._loaded_options = None
+  _globals['_SERVERINFO'].fields_by_name['max_supported_protocol_version']._serialized_options = b'\372B\032r\030R\n2025-11-25R\n2026-07-28'
   _globals['_TOOLCONFIG'].fields_by_name['name']._loaded_options = None
   _globals['_TOOLCONFIG'].fields_by_name['name']._serialized_options = b'\372B\004r\002\020\001'
-  _globals['_MCPJSONRESTBRIDGE']._serialized_start=261
-  _globals['_MCPJSONRESTBRIDGE']._serialized_end=964
-  _globals['_MCPJSONRESTBRIDGE_REQUESTSTORAGEMODE']._serialized_start=900
-  _globals['_MCPJSONRESTBRIDGE_REQUESTSTORAGEMODE']._serialized_end=964
-  _globals['_TRACECONTEXTEXTRACTIONOPTIONS']._serialized_start=966
-  _globals['_TRACECONTEXTEXTRACTIONOPTIONS']._serialized_end=997
-  _globals['_SERVERINFO']._serialized_start=1000
-  _globals['_SERVERINFO']._serialized_end=1135
-  _globals['_TOOLSLISTLOCAL']._serialized_start=1137
-  _globals['_TOOLSLISTLOCAL']._serialized_end=1153
-  _globals['_SERVERTOOLCONFIG']._serialized_start=1156
-  _globals['_SERVERTOOLCONFIG']._serialized_end=1591
-  _globals['_TOOLSLISTSPECIFICCONFIG']._serialized_start=1593
-  _globals['_TOOLSLISTSPECIFICCONFIG']._serialized_end=1676
-  _globals['_MCPSERVERINFO']._serialized_start=1678
-  _globals['_MCPSERVERINFO']._serialized_end=1721
-  _globals['_TOOLCONFIG']._serialized_start=1724
-  _globals['_TOOLCONFIG']._serialized_end=2080
-  _globals['_HTTPRULE']._serialized_start=2082
-  _globals['_HTTPRULE']._serialized_end=2177
-  _globals['_MCPJSONRESTBRIDGEPERROUTE']._serialized_start=2179
-  _globals['_MCPJSONRESTBRIDGEPERROUTE']._serialized_end=2300
+  _globals['_MCPPARAMHEADER'].fields_by_name['name']._loaded_options = None
+  _globals['_MCPPARAMHEADER'].fields_by_name['name']._serialized_options = b'\372B\007r\005\020\001\300\001\001'
+  _globals['_MCPPARAMHEADER'].fields_by_name['property_path']._loaded_options = None
+  _globals['_MCPPARAMHEADER'].fields_by_name['property_path']._serialized_options = b'\372B\005\222\001\002\010\001'
+  _globals['_MCPPARAMHEADER'].fields_by_name['type']._loaded_options = None
+  _globals['_MCPPARAMHEADER'].fields_by_name['type']._serialized_options = b'\372B\007\202\001\004\020\001 \000'
+  _globals['_HTTPRULE_PARAMETERBINDING'].fields_by_name['name']._loaded_options = None
+  _globals['_HTTPRULE_PARAMETERBINDING'].fields_by_name['name']._serialized_options = b'\372B\016r\014\020\001(\200\200\001\300\001\001\310\001\000'
+  _globals['_HTTPRULE_PARAMETERBINDING'].fields_by_name['argument_path']._loaded_options = None
+  _globals['_HTTPRULE_PARAMETERBINDING'].fields_by_name['argument_path']._serialized_options = b'\372B\004r\002\020\001'
+  _globals['_CACHESCOPE']._serialized_start=3447
+  _globals['_CACHESCOPE']._serialized_end=3537
+  _globals['_MCPJSONRESTBRIDGE']._serialized_start=293
+  _globals['_MCPJSONRESTBRIDGE']._serialized_end=996
+  _globals['_MCPJSONRESTBRIDGE_REQUESTSTORAGEMODE']._serialized_start=932
+  _globals['_MCPJSONRESTBRIDGE_REQUESTSTORAGEMODE']._serialized_end=996
+  _globals['_TRACECONTEXTEXTRACTIONOPTIONS']._serialized_start=998
+  _globals['_TRACECONTEXTEXTRACTIONOPTIONS']._serialized_end=1029
+  _globals['_CACHECONFIG']._serialized_start=1032
+  _globals['_CACHECONFIG']._serialized_end=1193
+  _globals['_SERVERINFO']._serialized_start=1196
+  _globals['_SERVERINFO']._serialized_end=1502
+  _globals['_TOOLSLISTLOCAL']._serialized_start=1504
+  _globals['_TOOLSLISTLOCAL']._serialized_end=1610
+  _globals['_SERVERTOOLCONFIG']._serialized_start=1613
+  _globals['_SERVERTOOLCONFIG']._serialized_end=2048
+  _globals['_TOOLSLISTSPECIFICCONFIG']._serialized_start=2050
+  _globals['_TOOLSLISTSPECIFICCONFIG']._serialized_end=2133
+  _globals['_MCPSERVERINFO']._serialized_start=2135
+  _globals['_MCPSERVERINFO']._serialized_end=2178
+  _globals['_TOOLCONFIG']._serialized_start=2181
+  _globals['_TOOLCONFIG']._serialized_end=2635
+  _globals['_MCPPARAMHEADER']._serialized_start=2638
+  _globals['_MCPPARAMHEADER']._serialized_end=2883
+  _globals['_MCPPARAMHEADER_TYPE']._serialized_start=2817
+  _globals['_MCPPARAMHEADER_TYPE']._serialized_end=2883
+  _globals['_HTTPRULE']._serialized_start=2886
+  _globals['_HTTPRULE']._serialized_end=3322
+  _globals['_HTTPRULE_PARAMETERBINDING']._serialized_start=3084
+  _globals['_HTTPRULE_PARAMETERBINDING']._serialized_end=3322
+  _globals['_HTTPRULE_PARAMETERBINDING_TYPE']._serialized_start=3270
+  _globals['_HTTPRULE_PARAMETERBINDING_TYPE']._serialized_end=3322
+  _globals['_MCPJSONRESTBRIDGEPERROUTE']._serialized_start=3324
+  _globals['_MCPJSONRESTBRIDGEPERROUTE']._serialized_end=3445
 # @@protoc_insertion_point(module_scope)

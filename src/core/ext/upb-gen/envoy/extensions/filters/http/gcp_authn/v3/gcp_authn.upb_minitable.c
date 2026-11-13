@@ -22,17 +22,19 @@
 
 extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
 typedef struct {
-  upb_MiniTableField fields[6];
-  upb_MiniTableSubInternal subs[5];
+  upb_MiniTableField fields[8];
+  upb_MiniTableSubInternal subs[6];
 } envoy__extensions__filters__http__gcp_0authn__v3__GcpAuthnFilterConfig_msg_init_Fields;
 
 static const envoy__extensions__filters__http__gcp_0authn__v3__GcpAuthnFilterConfig_msg_init_Fields envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig__fields = {{
-  {1, UPB_SIZE(12, 32), 64, 18, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(16, 40), 65, UPB_SIZE(16, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(20, 48), 66, UPB_SIZE(14, 16), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(24, 56), 67, UPB_SIZE(12, 15), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {5, UPB_SIZE(32, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {6, UPB_SIZE(28, 64), 68, UPB_SIZE(7, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, UPB_SIZE(12, 48), 64, 24, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 56), 65, UPB_SIZE(22, 23), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(20, 64), 66, UPB_SIZE(20, 22), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(24, 72), 67, UPB_SIZE(18, 21), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(36, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(28, 80), 68, UPB_SIZE(13, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(44, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {8, UPB_SIZE(32, 88), 69, UPB_SIZE(8, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
  },
   {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HttpUri_msg_init},
@@ -40,11 +42,12 @@ static const envoy__extensions__filters__http__gcp_0authn__v3__GcpAuthnFilterCon
   {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__gcp_0authn__v3__TokenCacheConfig_msg_init},
   {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader_msg_init},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__gcp_0authn__v3__Audience_msg_init},
 }};
 
 const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__GcpAuthnFilterConfig_msg_init = {
   &envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig__fields.fields[0],
-  UPB_SIZE(40, 72), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(56, 96), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig",
 #endif
@@ -56,30 +59,32 @@ const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__GcpAuthnFi
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00002a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x002000003f00003a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
 
 typedef struct {
-  upb_MiniTableField fields[4];
-  upb_MiniTableSubInternal subs[3];
+  upb_MiniTableField fields[5];
+  upb_MiniTableSubInternal subs[4];
 } envoy__extensions__filters__http__gcp_0authn__v3__Audience_msg_init_Fields;
 
 static const envoy__extensions__filters__http__gcp_0authn__v3__Audience_msg_init_Fields envoy_extensions_filters_http_gcp_authn_v3_Audience__fields = {{
-  {1, UPB_SIZE(24, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(12, 32), 64, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(16, 40), 65, UPB_SIZE(7, 8), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(20, 48), 66, UPB_SIZE(5, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, UPB_SIZE(28, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 32), 64, UPB_SIZE(12, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(16, 40), 65, UPB_SIZE(10, 12), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(20, 48), 66, UPB_SIZE(8, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(24, 56), 67, UPB_SIZE(6, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
  },
   {
   {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__gcp_0authn__v3__Audience__AccessToken_msg_init},
   {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundJwt_msg_init},
   {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundAccessToken_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__gcp_0authn__v3__Audience__IAMAccessToken_msg_init},
 }};
 
 const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__Audience_msg_init = {
   &envoy_extensions_filters_http_gcp_authn_v3_Audience__fields.fields[0],
-  UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(40, 64), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.gcp_authn.v3.Audience",
 #endif
@@ -89,12 +94,24 @@ const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__Audience_m
   })
 };
 
+typedef struct {
+  upb_MiniTableField fields[1];
+} envoy__extensions__filters__http__gcp_0authn__v3__Audience__AccessToken_msg_init_Fields;
+
+static const envoy__extensions__filters__http__gcp_0authn__v3__Audience__AccessToken_msg_init_Fields envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken__fields = {{
+  {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+}};
+
 const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__Audience__AccessToken_msg_init = {
-  NULL,
-  8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+  &envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken__fields.fields[0],
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.gcp_authn.v3.Audience.AccessToken",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000800003f00000a, &upb_DecodeFast_String_Repeated_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -117,12 +134,48 @@ const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__Audience__
   })
 };
 
+typedef struct {
+  upb_MiniTableField fields[1];
+} envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundAccessToken_msg_init_Fields;
+
+static const envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundAccessToken_msg_init_Fields envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken__fields = {{
+  {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+}};
+
 const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundAccessToken_msg_init = {
-  NULL,
-  8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+  &envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken__fields.fields[0],
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.gcp_authn.v3.Audience.BoundAccessToken",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000800003f00000a, &upb_DecodeFast_String_Repeated_Tag1Byte},
+  })
+};
+
+typedef struct {
+  upb_MiniTableField fields[3];
+} envoy__extensions__filters__http__gcp_0authn__v3__Audience__IAMAccessToken_msg_init_Fields;
+
+static const envoy__extensions__filters__http__gcp_0authn__v3__Audience__IAMAccessToken_msg_init_Fields envoy_extensions_filters_http_gcp_authn_v3_Audience_IAMAccessToken__fields = {{
+  {1, UPB_SIZE(12, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(20, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(8, 40), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+}};
+
+const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__Audience__IAMAccessToken_msg_init = {
+  &envoy_extensions_filters_http_gcp_authn_v3_Audience_IAMAccessToken__fields.fields[0],
+  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.http.gcp_authn.v3.Audience.IAMAccessToken",
+#endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x001800003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x002800003f00001a, &upb_DecodeFast_String_Repeated_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -146,43 +199,58 @@ const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__TokenCache
 };
 
 typedef struct {
-  upb_MiniTableField fields[2];
+  upb_MiniTableField fields[3];
+  upb_MiniTableSubInternal subs[1];
 } envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader_msg_init_Fields;
 
 static const envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader_msg_init_Fields envoy_extensions_filters_http_gcp_authn_v3_TokenHeader__fields = {{
-  {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(24, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 48), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader__PreserveExisting_msg_init},
 }};
 
 const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader_msg_init = {
   &envoy_extensions_filters_http_gcp_authn_v3_TokenHeader__fields.fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 56), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.gcp_authn.v3.TokenHeader",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x001800003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x002000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-static const upb_MiniTable *messages_layout[7] = {
+const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader__PreserveExisting_msg_init = {
+  NULL,
+  8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.http.gcp_authn.v3.TokenHeader.PreserveExisting",
+#endif
+};
+
+static const upb_MiniTable *messages_layout[9] = {
   &envoy__extensions__filters__http__gcp_0authn__v3__GcpAuthnFilterConfig_msg_init,
   &envoy__extensions__filters__http__gcp_0authn__v3__Audience_msg_init,
   &envoy__extensions__filters__http__gcp_0authn__v3__Audience__AccessToken_msg_init,
   &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundJwt_msg_init,
   &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundAccessToken_msg_init,
+  &envoy__extensions__filters__http__gcp_0authn__v3__Audience__IAMAccessToken_msg_init,
   &envoy__extensions__filters__http__gcp_0authn__v3__TokenCacheConfig_msg_init,
   &envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader_msg_init,
+  &envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader__PreserveExisting_msg_init,
 };
 
 const upb_MiniTableFile envoy_extensions_filters_http_gcp_authn_v3_gcp_authn_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  7,
+  9,
   0,
   0,
 };
