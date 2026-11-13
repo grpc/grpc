@@ -109,8 +109,12 @@ void NullThenSchedClosure(const DebugLocation& location, grpc_closure** closure,
 }
 }  // namespace
 
-void Chttp2Connector::Connect(const Args& args, Result* result,
-                              grpc_closure* notify) {
+//
+// OldChttp2Connector
+//
+
+void OldChttp2Connector::Connect(const Args& args, Result* result,
+                                 grpc_closure* notify) {
   {
     MutexLock lock(mu_);
     GRPC_CHECK_EQ(notify_, nullptr);
@@ -148,9 +152,219 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       HANDSHAKER_CLIENT, channel_args, args_.interested_parties,
       handshake_mgr_.get());
-  if (IsServerConnectionManagementEnabled()) {
-    handshake_mgr_->Add(MakeHttp2SettingsHandshaker(/*is_client=*/true));
+  handshake_mgr_->DoHandshake(std::move(endpoint), channel_args, args.deadline,
+                              /*acceptor=*/nullptr,
+                              [self = RefAsSubclass<OldChttp2Connector>()](
+                                  absl::StatusOr<HandshakerArgs*> result) {
+                                self->OnHandshakeDone(std::move(result));
+                              });
+}
+
+void OldChttp2Connector::Shutdown(grpc_error_handle error) {
+  MutexLock lock(mu_);
+  shutdown_ = true;
+  if (handshake_mgr_ != nullptr) {
+    // Handshaker will also shutdown the endpoint if it exists
+    handshake_mgr_->Shutdown(error);
   }
+}
+
+void OldChttp2Connector::OnHandshakeDone(
+    absl::StatusOr<HandshakerArgs*> result) {
+  MutexLock lock(mu_);
+  if (!result.ok() || shutdown_) {
+    if (result.ok()) {
+      result = GRPC_ERROR_CREATE("connector shutdown");
+    }
+    result_->Reset();
+    NullThenSchedClosure(DEBUG_LOCATION, &notify_, result.status());
+  } else if ((*result)->endpoint != nullptr) {
+    GRPC_HTTP2_CONNECTOR_DLOG
+        << "OldChttp2Connector::OnHandshakeDone handshake succeeded with "
+           "endpoint";
+    const bool is_callv1 =
+        !((*result)->args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false));
+    if (is_callv1) {
+      GRPC_HTTP2_CONNECTOR_DLOG
+          << "OldChttp2Connector::OnHandshakeDone creating chttp2 transport";
+      result_->transport = grpc_create_chttp2_transport(
+          (*result)->args, std::move((*result)->endpoint), true);
+      GRPC_CHECK_NE(result_->transport, nullptr);
+      result_->channel_args = std::move((*result)->args);
+      grpc_chttp2_transport_start_reading(
+          result_->transport, (*result)->read_buffer.c_slice_buffer(),
+          [self = RefAsSubclass<OldChttp2Connector>()](
+              absl::StatusOr<uint32_t> max_concurrent_streams) {
+            self->OnReceiveSettings(max_concurrent_streams);
+          },
+          args_.interested_parties, nullptr);
+      timer_handle_ = event_engine_->RunAfter(
+          args_.deadline - Timestamp::Now(),
+          [self = RefAsSubclass<OldChttp2Connector>()]() mutable {
+            ExecCtx exec_ctx;
+            self->OnTimeout();
+            // Ensure the OldChttp2Connector is deleted under an ExecCtx.
+            self.reset();
+          });
+#ifdef GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2
+      // GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2 is a temporary fix to help
+      // some customers who are having severe memory constraints. This macro
+      // will not always be available and we strongly recommend anyone to avoid
+      // the usage of this MACRO for any other purpose. We expect to delete this
+      // MACRO within 8-15 months.
+    }
+#else
+    } else {
+      GRPC_HTTP2_CONNECTOR_DLOG
+          << "OldChttp2Connector::OnHandshakeDone creating PH2 transport";
+      // TODO(tjagtap) : [PH2][P2][Client] : Validate this code block thoroughly
+      // once the ping pong test is in place.
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+          event_engine_endpoint = grpc_event_engine::experimental::
+              grpc_take_wrapped_event_engine_endpoint(
+                  (*result)->endpoint.release());
+      if (event_engine_endpoint == nullptr) {
+        LOG(ERROR) << "Failed to take endpoint.";
+        result = GRPC_ERROR_CREATE("Failed to take endpoint.");
+      }
+      // Create the PromiseEndpoint
+      PromiseEndpoint promise_endpoint(std::move(event_engine_endpoint),
+                                       std::move((*result)->read_buffer));
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine_ptr =
+              (*result)
+                  ->args
+                  .GetObjectRef<grpc_event_engine::experimental::EventEngine>();
+      auto on_receive_settings =
+          [self = RefAsSubclass<OldChttp2Connector>()](
+              absl::StatusOr<uint32_t> max_concurrent_streams) {
+            self->OnReceiveSettings(max_concurrent_streams);
+          };
+      // Http2ClientTransport does not take ownership of the channel args.
+      http2::Http2ClientTransport* client_transport =
+          new http2::Http2ClientTransport(std::move(promise_endpoint),
+                                          (*result)->args, event_engine_ptr,
+                                          std::move(on_receive_settings));
+      GRPC_DCHECK_NE(client_transport, nullptr);
+      result_->transport = client_transport;
+      result_->channel_args = std::move((*result)->args);
+      client_transport->SpawnTransportLoops();
+      timer_handle_ = event_engine_->RunAfter(
+          args_.deadline - Timestamp::Now(),
+          [self = RefAsSubclass<OldChttp2Connector>()]() mutable {
+            ExecCtx exec_ctx;
+            self->OnTimeout();
+            // Ensure the OldChttp2Connector is deleted under an ExecCtx.
+            self.reset();
+          });
+    }
+#endif  // GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2
+  } else {
+    // If the handshaking succeeded but there is no endpoint, then the
+    // handshaker may have handed off the connection to some external
+    // code. Just verify that exit_early flag is set.
+    GRPC_DCHECK((*result)->exit_early);
+    NullThenSchedClosure(DEBUG_LOCATION, &notify_, result.status());
+  }
+  handshake_mgr_.reset();
+}
+
+void OldChttp2Connector::OnReceiveSettings(
+    absl::StatusOr<uint32_t> max_concurrent_streams) {
+  MutexLock lock(mu_);
+  if (max_concurrent_streams.ok()) {
+    result_->max_concurrent_streams = *max_concurrent_streams;
+  }
+  if (!notify_error_.has_value()) {
+    if (!max_concurrent_streams.ok()) {
+      // Transport got an error while waiting on SETTINGS frame.
+      result_->Reset();
+    }
+    MaybeNotify(max_concurrent_streams.status());
+    if (timer_handle_.has_value()) {
+      if (event_engine_->Cancel(*timer_handle_)) {
+        // If we have cancelled the timer successfully, call Notify() again
+        // since the timer callback will not be called now.
+        MaybeNotify(absl::OkStatus());
+      }
+      timer_handle_.reset();
+    }
+  } else {
+    // OnTimeout() was already invoked. Call Notify() again so that notify_
+    // can be invoked.
+    MaybeNotify(absl::OkStatus());
+  }
+}
+
+void OldChttp2Connector::OnTimeout() {
+  MutexLock lock(mu_);
+  timer_handle_.reset();
+  if (!notify_error_.has_value()) {
+    // The transport did not receive the settings frame in time. Destroy the
+    // transport.
+    result_->Reset();
+    MaybeNotify(GRPC_ERROR_CREATE(
+        "connection attempt timed out before receiving SETTINGS frame"));
+  } else {
+    // OnReceiveSettings() was already invoked. Call Notify() again so that
+    // notify_ can be invoked.
+    MaybeNotify(absl::OkStatus());
+  }
+}
+
+void OldChttp2Connector::MaybeNotify(grpc_error_handle error) {
+  if (notify_error_.has_value()) {
+    NullThenSchedClosure(DEBUG_LOCATION, &notify_, notify_error_.value());
+    // Clear state for a new Connect().
+    notify_error_.reset();
+  } else {
+    notify_error_ = error;
+  }
+}
+
+//
+// Chttp2Connector
+//
+
+void Chttp2Connector::Connect(const Args& args, Result* result,
+                              grpc_closure* notify) {
+  {
+    MutexLock lock(mu_);
+    GRPC_CHECK_EQ(notify_, nullptr);
+    args_ = args;
+    result_ = result;
+    notify_ = notify;
+  }
+  // Check if there is an endpoint in channel args.
+  OrphanablePtr<grpc_endpoint> endpoint;
+  auto endpoint_wrapper = args_.channel_args.GetObject<
+      grpc_event_engine::experimental::EndpointChannelArgWrapper>();
+  if (endpoint_wrapper != nullptr) {
+    auto ee_endpoint = endpoint_wrapper->TakeEndpoint();
+    if (ee_endpoint != nullptr) {
+      endpoint.reset(grpc_event_engine_endpoint_create(std::move(ee_endpoint)));
+    }
+  }
+  // If we weren't given the endpoint, add channel args needed by the
+  // TCP connect handshaker.
+  ChannelArgs channel_args = args_.channel_args;
+  if (endpoint == nullptr) {
+    absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
+    if (!address.ok()) {
+      grpc_error_handle error = GRPC_ERROR_CREATE(address.status().ToString());
+      NullThenSchedClosure(DEBUG_LOCATION, &notify_, error);
+      return;
+    }
+    channel_args =
+        channel_args
+            .Set(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS, address.value())
+            .Set(GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET, 1);
+  }
+  handshake_mgr_ = MakeRefCounted<HandshakeManager>();
+  CoreConfiguration::Get().handshaker_registry().AddHandshakers(
+      HANDSHAKER_CLIENT, channel_args, args_.interested_parties,
+      handshake_mgr_.get());
+  handshake_mgr_->Add(MakeHttp2SettingsHandshaker(/*is_client=*/true));
   handshake_mgr_->DoHandshake(std::move(endpoint), channel_args, args.deadline,
                               /*acceptor=*/nullptr,
                               [self = RefAsSubclass<Chttp2Connector>()](
@@ -175,12 +389,15 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
       result = GRPC_ERROR_CREATE("connector shutdown");
     }
     result_->Reset();
-    NullThenSchedClosure(DEBUG_LOCATION, &notify_, result.status());
   } else if ((*result)->endpoint != nullptr) {
     GRPC_HTTP2_CONNECTOR_DLOG
         << "Chttp2Connector::OnHandshakeDone handshake succeeded with endpoint";
     const auto* settings_handshake_result =
         (*result)->args.GetObject<Http2SettingsHandshakeResult>();
+    GRPC_CHECK_NE(settings_handshake_result, nullptr);
+    result_->max_concurrent_streams =
+        settings_handshake_result->peer_initial_settings()
+            .max_concurrent_streams();
     const bool is_callv1 =
         !((*result)->args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false));
     if (is_callv1) {
@@ -190,33 +407,11 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
           (*result)->args, std::move((*result)->endpoint), true);
       GRPC_CHECK_NE(result_->transport, nullptr);
       result_->channel_args = std::move((*result)->args);
-      if (settings_handshake_result != nullptr) {
-        result_->max_concurrent_streams =
-            settings_handshake_result->peer_initial_settings()
-                .max_concurrent_streams();
-        grpc_chttp2_transport_start_reading(
-            result_->transport, (*result)->read_buffer.c_slice_buffer(),
-            /*notify_on_receive_settings=*/nullptr,
-            /*interested_parties_until_recv_settings=*/nullptr,
-            /*notify_on_close=*/nullptr);
-        NullThenSchedClosure(DEBUG_LOCATION, &notify_, absl::OkStatus());
-      } else {
-        grpc_chttp2_transport_start_reading(
-            result_->transport, (*result)->read_buffer.c_slice_buffer(),
-            [self = RefAsSubclass<Chttp2Connector>()](
-                absl::StatusOr<uint32_t> max_concurrent_streams) {
-              self->OnReceiveSettings(max_concurrent_streams);
-            },
-            args_.interested_parties, nullptr);
-        timer_handle_ = event_engine_->RunAfter(
-            args_.deadline - Timestamp::Now(),
-            [self = RefAsSubclass<Chttp2Connector>()]() mutable {
-              ExecCtx exec_ctx;
-              self->OnTimeout();
-              // Ensure the Chttp2Connector is deleted under an ExecCtx.
-              self.reset();
-            });
-      }
+      grpc_chttp2_transport_start_reading(
+          result_->transport, (*result)->read_buffer.c_slice_buffer(),
+          /*notify_on_receive_settings=*/nullptr,
+          /*interested_parties_until_recv_settings=*/nullptr,
+          /*notify_on_close=*/nullptr);
 #ifdef GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2
       // GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2 is a temporary fix to help
       // some customers who are having severe memory constraints. This macro
@@ -246,38 +441,15 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
               (*result)
                   ->args
                   .GetObjectRef<grpc_event_engine::experimental::EventEngine>();
-      absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings;
-      if (settings_handshake_result == nullptr) {
-        on_receive_settings =
-            [self = RefAsSubclass<Chttp2Connector>()](
-                absl::StatusOr<uint32_t> max_concurrent_streams) {
-              self->OnReceiveSettings(max_concurrent_streams);
-            };
-      }
       // Http2ClientTransport does not take ownership of the channel args.
       http2::Http2ClientTransport* client_transport =
           new http2::Http2ClientTransport(std::move(promise_endpoint),
                                           (*result)->args, event_engine_ptr,
-                                          std::move(on_receive_settings));
+                                          /*on_receive_settings=*/nullptr);
       GRPC_DCHECK_NE(client_transport, nullptr);
       result_->transport = client_transport;
       result_->channel_args = std::move((*result)->args);
       client_transport->SpawnTransportLoops();
-      if (settings_handshake_result != nullptr) {
-        result_->max_concurrent_streams =
-            settings_handshake_result->peer_initial_settings()
-                .max_concurrent_streams();
-        NullThenSchedClosure(DEBUG_LOCATION, &notify_, absl::OkStatus());
-      } else {
-        timer_handle_ = event_engine_->RunAfter(
-            args_.deadline - Timestamp::Now(),
-            [self = RefAsSubclass<Chttp2Connector>()]() mutable {
-              ExecCtx exec_ctx;
-              self->OnTimeout();
-              // Ensure the Chttp2Connector is deleted under an ExecCtx.
-              self.reset();
-            });
-      }
     }
 #endif  // GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2
   } else {
@@ -285,62 +457,9 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
     // handshaker may have handed off the connection to some external
     // code. Just verify that exit_early flag is set.
     GRPC_DCHECK((*result)->exit_early);
-    NullThenSchedClosure(DEBUG_LOCATION, &notify_, result.status());
   }
+  NullThenSchedClosure(DEBUG_LOCATION, &notify_, result.status());
   handshake_mgr_.reset();
-}
-
-void Chttp2Connector::OnReceiveSettings(
-    absl::StatusOr<uint32_t> max_concurrent_streams) {
-  MutexLock lock(mu_);
-  if (max_concurrent_streams.ok()) {
-    result_->max_concurrent_streams = *max_concurrent_streams;
-  }
-  if (!notify_error_.has_value()) {
-    if (!max_concurrent_streams.ok()) {
-      // Transport got an error while waiting on SETTINGS frame.
-      result_->Reset();
-    }
-    MaybeNotify(max_concurrent_streams.status());
-    if (timer_handle_.has_value()) {
-      if (event_engine_->Cancel(*timer_handle_)) {
-        // If we have cancelled the timer successfully, call Notify() again
-        // since the timer callback will not be called now.
-        MaybeNotify(absl::OkStatus());
-      }
-      timer_handle_.reset();
-    }
-  } else {
-    // OnTimeout() was already invoked. Call Notify() again so that notify_
-    // can be invoked.
-    MaybeNotify(absl::OkStatus());
-  }
-}
-
-void Chttp2Connector::OnTimeout() {
-  MutexLock lock(mu_);
-  timer_handle_.reset();
-  if (!notify_error_.has_value()) {
-    // The transport did not receive the settings frame in time. Destroy the
-    // transport.
-    result_->Reset();
-    MaybeNotify(GRPC_ERROR_CREATE(
-        "connection attempt timed out before receiving SETTINGS frame"));
-  } else {
-    // OnReceiveSettings() was already invoked. Call Notify() again so that
-    // notify_ can be invoked.
-    MaybeNotify(absl::OkStatus());
-  }
-}
-
-void Chttp2Connector::MaybeNotify(grpc_error_handle error) {
-  if (notify_error_.has_value()) {
-    NullThenSchedClosure(DEBUG_LOCATION, &notify_, notify_error_.value());
-    // Clear state for a new Connect().
-    notify_error_.reset();
-  } else {
-    notify_error_ = error;
-  }
 }
 
 absl::StatusOr<grpc_channel*> CreateHttp2Channel(std::string target,
@@ -355,10 +474,14 @@ absl::StatusOr<grpc_channel*> CreateHttp2Channel(std::string target,
 #else
   const bool is_v3 = grpc_core::http2::ShouldEnablePh2Client();
 #endif  // GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2
+  ClientChannelFactory* factory;
+  if (IsServerConnectionManagementEnabled()) {
+    factory = EndpointTransportClientChannelFactory<Chttp2Connector>();
+  } else {
+    factory = EndpointTransportClientChannelFactory<OldChttp2Connector>();
+  }
   auto r = ChannelCreate(
-      target,
-      args.SetObject(EndpointTransportClientChannelFactory<Chttp2Connector>())
-          .Set(GRPC_ARG_USE_V3_STACK, is_v3),
+      target, args.SetObject(factory).Set(GRPC_ARG_USE_V3_STACK, is_v3),
       GRPC_CLIENT_CHANNEL, nullptr);
   if (r.ok()) {
     return r->release()->c_ptr();
