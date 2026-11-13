@@ -33,4 +33,14 @@ void grpc_rb_completion_queue_destroy(grpc_completion_queue* cq);
 grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
                                      gpr_timespec deadline, const char* reason);
 
+/* Does the same thing as rb_completion_queue_pluck, and additionally reports
+   via *plucked_flag whether the event was plucked out of the queue (1) or the
+   call was abandoned with the event still in the queue (0). Callers that run
+   batches which may outlive an interrupt need this to avoid destroying a
+   queue that still holds a pending event (see issue #42541). */
+grpc_event rb_completion_queue_pluck_track(grpc_completion_queue* queue,
+                                           void* tag, gpr_timespec deadline,
+                                           const char* reason,
+                                           int* plucked_flag);
+
 #endif /* GRPC_RB_COMPLETION_QUEUE_H_ */
