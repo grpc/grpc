@@ -848,15 +848,13 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked(
   }
   // Nothing to report until UpdateLocked() has set endpoints_ and config_.
   if (endpoints_.empty() || config_ == nullptr) return;
-  // Until the client reports its first result, report IDLE and queue all
-  // picks (gRFC A119).
-  // TODO(bpawan): The gRFC may change this to report CONNECTING while waiting
-  // for the first result (https://github.com/grpc/proposal/pull/551).  Update
-  // this when the gRFC decides.
+  // Until the client reports its first result, report CONNECTING and queue
+  // all picks.  CONNECTING (not IDLE) lets a priority parent fail over if
+  // the result does not arrive in time (gRFC A119).
   // TODO(bpawan): Set delay_type to "autosharding_assignment_pending" per
   // gRFC A121 once it is supported in C++.
   if (assignment_.ok() && *assignment_ == nullptr) {
-    UpdateStateLocked(GRPC_CHANNEL_IDLE, absl::OkStatus(),
+    UpdateStateLocked(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                       MakeRefCounted<QueuePicker>(nullptr));
     return;
   }
