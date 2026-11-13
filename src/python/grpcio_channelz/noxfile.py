@@ -53,4 +53,4 @@ def build_package_protos(session: nox.Session):
     session.log("Running build_package protos for grpcio-channelz...")
     from grpc_tools import command
 
-    command.build_package_protos(ROOT_DIR)
+    command.build_package_protos(ROOT_DIR, strict_mode=True)

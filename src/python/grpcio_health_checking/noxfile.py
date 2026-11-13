@@ -53,10 +53,9 @@ def build_package_protos(session: nox.Session):
     """
 
     session.log("Running build_package_protos for grpcio-health-checking...")
-    # due to limitations of the proto generator, we require that only *one*
-    # directory is provided as an 'include' directory. We assume it's the '' key
-    # to `self.distribution.package_dir` (and get a key error if it's not
-    # there).
+    # build_package_protos() uses ROOT_DIR as the single --proto_path
+    # include directory, so all .proto files must live under it.
+
     from grpc_tools import command
 
-    command.build_package_protos(ROOT_DIR)
+    command.build_package_protos(ROOT_DIR, strict_mode=True)

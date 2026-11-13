@@ -57,4 +57,4 @@ def build_package_protos(session: nox.Session):
     from grpc_tools import command
 
     # find and build all protos in the current package
-    command.build_package_protos(ROOT_DIR)
+    command.build_package_protos(ROOT_DIR, strict_mode=True)
