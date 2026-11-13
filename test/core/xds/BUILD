@@ -169,6 +169,7 @@ grpc_cc_test(
         "//src/core:xds_bootstrap_grpc",
         "//src/core:xds_bootstrap_grpc_builder",
         "//src/core:xds_lb_policy_registry",
+        "//src/core:xds_server_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
         "//test/cpp/util:grpc_cli_utils",

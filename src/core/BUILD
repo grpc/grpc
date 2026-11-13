@@ -6495,6 +6495,7 @@ grpc_cc_library(
         "validation_errors",
         "xds_common_types",
         "xds_common_types_parser",
+        "xds_server_grpc_interface",
         "//:config",
         "//:xds_client",
     ],

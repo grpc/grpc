@@ -24,6 +24,7 @@
 #include "envoy/config/cluster/v3/cluster.upb.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/validation_errors.h"
+#include "src/core/xds/grpc/xds_server_grpc_interface.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "absl/strings/string_view.h"
 
@@ -33,12 +34,25 @@ namespace grpc_core {
 // loadbalancing policy configurations to gRPC's JSON format.
 class XdsLbPolicyRegistry final {
  public:
+  // The context passed to each converter.
+  struct ConvertContext {
+    // Gives the converter access to:
+    // - the bootstrap config (decode_context.client->bootstrap()), and
+    // - the xDS server that sent the resource (decode_context.server).
+    // Both are needed to parse a GrpcService proto (gRFC A102).
+    const XdsResourceType::DecodeContext& decode_context;
+    // Output.  Converters that parse a GrpcService proto add it here,
+    // and put the same key in the generated LB policy config, so that the
+    // LB policy can ask the channel factory for a channel to that
+    // service.  Must not be null.
+    XdsGrpcServiceMap* grpc_services;
+  };
+
   class ConfigFactory {
    public:
     virtual ~ConfigFactory() = default;
     virtual Json::Object ConvertXdsLbPolicyConfig(
-        const XdsLbPolicyRegistry* registry,
-        const XdsResourceType::DecodeContext& context,
+        const XdsLbPolicyRegistry* registry, const ConvertContext& context,
         absl::string_view configuration, ValidationErrors* errors,
         int recursion_depth) = 0;
     virtual absl::string_view type() = 0;
@@ -55,9 +69,10 @@ class XdsLbPolicyRegistry final {
   // format. An error is returned if none of the lb policies in the list are
   // supported, or if a supported lb policy configuration conversion fails. \a
   // recursion_depth indicates the current depth of the tree if lb_policy
-  // configuration recursively holds other lb policies.
+  // configuration recursively holds other lb policies.  Converters add
+  // each GrpcService proto that they parse to \a context.grpc_services.
   Json::Array ConvertXdsLbPolicyConfig(
-      const XdsResourceType::DecodeContext& context,
+      const ConvertContext& context,
       const envoy_config_cluster_v3_LoadBalancingPolicy* lb_policy,
       ValidationErrors* errors, int recursion_depth = 0) const;
 

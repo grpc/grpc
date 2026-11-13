@@ -24,7 +24,9 @@
 #include <google/protobuf/wrappers.pb.h>
 #include <grpc/grpc.h>
 
+#include <memory>
 #include <string>
+#include <vector>
 
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/core/v3/extension.pb.h"
@@ -43,6 +45,7 @@
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
+#include "src/core/xds/grpc/xds_server_grpc.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "upb/mem/arena.hpp"
@@ -82,7 +85,9 @@ absl::StatusOr<std::string> ConvertXdsPolicy(
   ValidationErrors errors;
   ValidationErrors::ScopedField field(&errors, ".load_balancing_policy");
   auto registry = GrpcXdsBootstrapBuilder::CreateXdsLbPolicyRegistry();
-  auto config = registry.ConvertXdsLbPolicyConfig(context, upb_policy, &errors);
+  XdsGrpcServiceMap grpc_services;
+  auto config = registry.ConvertXdsLbPolicyConfig({context, &grpc_services},
+                                                  upb_policy, &errors);
   if (!errors.ok()) {
     return errors.status(absl::StatusCode::kInvalidArgument,
                          "validation errors");
@@ -628,6 +633,77 @@ TEST(XdsLbPolicyRegistryTest, MaxRecursion) {
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(std::string(result.status().message()),
               ::testing::EndsWith("error:exceeded max recursion depth of 16]"));
+}
+
+// A converter that adds a parsed GrpcService to the context's map, as
+// the autosharding converter does (gRFC A119).
+class FakeGrpcServiceLbPolicyConfigFactory final
+    : public XdsLbPolicyRegistry::ConfigFactory {
+ public:
+  static constexpr absl::string_view kKey = "fake_key";
+
+  Json::Object ConvertXdsLbPolicyConfig(
+      const XdsLbPolicyRegistry* /*registry*/,
+      const XdsLbPolicyRegistry::ConvertContext& context,
+      absl::string_view /*configuration*/, ValidationErrors* /*errors*/,
+      int /*recursion_depth*/) override {
+    (*context.grpc_services)[std::string(kKey)] =
+        std::make_shared<GrpcXdsServerTarget>(
+            "dns:///fake.example.com", /*channel_creds_config=*/nullptr,
+            /*call_creds_configs=*/
+            std::vector<RefCountedPtr<const CallCredsConfig>>());
+    return Json::Object{
+        {"fake_policy",
+         Json::FromObject(
+             {{"channelFactoryKey", Json::FromString(std::string(kKey))}})}};
+  }
+
+  absl::string_view type() override { return Type(); }
+
+  // Any proto type works here.  The converter ignores the contents.
+  static absl::string_view Type() { return "google.protobuf.Duration"; }
+};
+
+TEST(XdsLbPolicyRegistryTest, ConverterOutputsGrpcServiceMap) {
+  // Put the fake policy under wrr_locality, to check that the map is
+  // passed down to nested converters.
+  LoadBalancingPolicyProto inner_policy;
+  inner_policy.add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(google::protobuf::Duration());
+  WrrLocality wrr_locality;
+  *wrr_locality.mutable_endpoint_picking_policy() = inner_policy;
+  LoadBalancingPolicyProto policy;
+  policy.add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(wrr_locality);
+  std::string serialized_policy = policy.SerializeAsString();
+  upb::Arena arena;
+  upb::DefPool def_pool;
+  XdsResourceType::DecodeContext context = {nullptr, GrpcXdsServer(),
+                                            def_pool.ptr(), arena.ptr()};
+  auto* upb_policy = envoy_config_cluster_v3_LoadBalancingPolicy_parse(
+      serialized_policy.data(), serialized_policy.size(), arena.ptr());
+  auto registry = GrpcXdsBootstrapBuilder::CreateXdsLbPolicyRegistry();
+  registry.RegisterFactory(
+      std::make_unique<FakeGrpcServiceLbPolicyConfigFactory>());
+  ValidationErrors errors;
+  XdsGrpcServiceMap grpc_services;
+  auto config = registry.ConvertXdsLbPolicyConfig({context, &grpc_services},
+                                                  upb_policy, &errors);
+  ASSERT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "validation errors");
+  ASSERT_EQ(config.size(), 1);
+  EXPECT_EQ(JsonDump(Json{config[0]}),
+            "{\"xds_wrr_locality_experimental\":{\"childPolicy\":["
+            "{\"fake_policy\":{\"channelFactoryKey\":\"fake_key\"}}]}}");
+  EXPECT_THAT(grpc_services,
+              ::testing::ElementsAre(::testing::Pair(
+                  "fake_key", ::testing::Pointee(::testing::Property(
+                                  &GrpcXdsServerInterface::server_uri,
+                                  "dns:///fake.example.com")))));
 }
 
 }  // namespace

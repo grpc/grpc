@@ -120,7 +120,7 @@ class RoundRobinLbPolicyConfigFactory final
  public:
   Json::Object ConvertXdsLbPolicyConfig(
       const XdsLbPolicyRegistry* /*registry*/,
-      const XdsResourceType::DecodeContext& /*context*/,
+      const XdsLbPolicyRegistry::ConvertContext& /*context*/,
       absl::string_view /*configuration*/, ValidationErrors* /*errors*/,
       int /*recursion_depth*/) override {
     return Json::Object{{"round_robin", Json::FromObject({})}};
@@ -138,12 +138,13 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory final
  public:
   Json::Object ConvertXdsLbPolicyConfig(
       const XdsLbPolicyRegistry* /*registry*/,
-      const XdsResourceType::DecodeContext& context,
+      const XdsLbPolicyRegistry::ConvertContext& context,
       absl::string_view configuration, ValidationErrors* errors,
       int /*recursion_depth*/) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_parse(
-            configuration.data(), configuration.size(), context.arena);
+            configuration.data(), configuration.size(),
+            context.decode_context.arena);
     if (resource == nullptr) {
       errors->AddError(
           "can't decode ClientSideWeightedRoundRobin LB policy config");
@@ -237,12 +238,13 @@ class RingHashLbPolicyConfigFactory final
  public:
   Json::Object ConvertXdsLbPolicyConfig(
       const XdsLbPolicyRegistry* /*registry*/,
-      const XdsResourceType::DecodeContext& context,
+      const XdsLbPolicyRegistry::ConvertContext& context,
       absl::string_view configuration, ValidationErrors* errors,
       int /*recursion_depth*/) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_parse(
-            configuration.data(), configuration.size(), context.arena);
+            configuration.data(), configuration.size(),
+            context.decode_context.arena);
     if (resource == nullptr) {
       errors->AddError("can't decode RingHash LB policy config");
       return {};
@@ -300,12 +302,13 @@ class WrrLocalityLbPolicyConfigFactory final
  public:
   Json::Object ConvertXdsLbPolicyConfig(
       const XdsLbPolicyRegistry* registry,
-      const XdsResourceType::DecodeContext& context,
+      const XdsLbPolicyRegistry::ConvertContext& context,
       absl::string_view configuration, ValidationErrors* errors,
       int recursion_depth) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_parse(
-            configuration.data(), configuration.size(), context.arena);
+            configuration.data(), configuration.size(),
+            context.decode_context.arena);
     if (resource == nullptr) {
       errors->AddError("can't decode WrrLocality LB policy config");
       return {};
@@ -339,12 +342,13 @@ class PickFirstLbPolicyConfigFactory final
  public:
   Json::Object ConvertXdsLbPolicyConfig(
       const XdsLbPolicyRegistry* /*registry*/,
-      const XdsResourceType::DecodeContext& context,
+      const XdsLbPolicyRegistry::ConvertContext& context,
       absl::string_view configuration, ValidationErrors* errors,
       int /*recursion_depth*/) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst_parse(
-            configuration.data(), configuration.size(), context.arena);
+            configuration.data(), configuration.size(),
+            context.decode_context.arena);
     if (resource == nullptr) {
       errors->AddError("can't decode PickFirst LB policy config");
       return {};
