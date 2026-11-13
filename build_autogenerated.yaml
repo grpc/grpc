@@ -1,5 +1,195 @@
 filegroups: []
 libs:
+- name: _libupb
+  build: private
+  language: c
+  public_headers: []
+  headers:
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
+  - third_party/upb/upb/base/descriptor_constants.h
+  - third_party/upb/upb/base/error_handler.h
+  - third_party/upb/upb/base/internal/endian.h
+  - third_party/upb/upb/base/internal/log2.h
+  - third_party/upb/upb/base/status.h
+  - third_party/upb/upb/base/status.hpp
+  - third_party/upb/upb/base/string_view.h
+  - third_party/upb/upb/base/upcast.h
+  - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/hash/common.h
+  - third_party/upb/upb/hash/ext_table.h
+  - third_party/upb/upb/hash/int_table.h
+  - third_party/upb/upb/hash/str_table.h
+  - third_party/upb/upb/json/decode.h
+  - third_party/upb/upb/json/encode.h
+  - third_party/upb/upb/lex/atoi.h
+  - third_party/upb/upb/lex/round_trip.h
+  - third_party/upb/upb/lex/strtod.h
+  - third_party/upb/upb/lex/unicode.h
+  - third_party/upb/upb/mem/alloc.h
+  - third_party/upb/upb/mem/arena.h
+  - third_party/upb/upb/mem/arena.hpp
+  - third_party/upb/upb/mem/internal/arena.h
+  - third_party/upb/upb/message/accessors.h
+  - third_party/upb/upb/message/array.h
+  - third_party/upb/upb/message/compat.h
+  - third_party/upb/upb/message/copy.h
+  - third_party/upb/upb/message/internal/accessors.h
+  - third_party/upb/upb/message/internal/array.h
+  - third_party/upb/upb/message/internal/extension.h
+  - third_party/upb/upb/message/internal/iterator.h
+  - third_party/upb/upb/message/internal/map.h
+  - third_party/upb/upb/message/internal/map_entry.h
+  - third_party/upb/upb/message/internal/map_sorter.h
+  - third_party/upb/upb/message/internal/message.h
+  - third_party/upb/upb/message/internal/types.h
+  - third_party/upb/upb/message/map.h
+  - third_party/upb/upb/message/map_gencode_util.h
+  - third_party/upb/upb/message/merge.h
+  - third_party/upb/upb/message/message.h
+  - third_party/upb/upb/message/value.h
+  - third_party/upb/upb/mini_descriptor/build_enum.h
+  - third_party/upb/upb/mini_descriptor/decode.h
+  - third_party/upb/upb/mini_descriptor/internal/base92.h
+  - third_party/upb/upb/mini_descriptor/internal/decoder.h
+  - third_party/upb/upb/mini_descriptor/internal/encode.h
+  - third_party/upb/upb/mini_descriptor/internal/encode.hpp
+  - third_party/upb/upb/mini_descriptor/internal/modifiers.h
+  - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
+  - third_party/upb/upb/mini_descriptor/link.h
+  - third_party/upb/upb/mini_table/enum.h
+  - third_party/upb/upb/mini_table/extension.h
+  - third_party/upb/upb/mini_table/extension_registry.h
+  - third_party/upb/upb/mini_table/field.h
+  - third_party/upb/upb/mini_table/file.h
+  - third_party/upb/upb/mini_table/generated_registry.h
+  - third_party/upb/upb/mini_table/internal/enum.h
+  - third_party/upb/upb/mini_table/internal/extension.h
+  - third_party/upb/upb/mini_table/internal/field.h
+  - third_party/upb/upb/mini_table/internal/file.h
+  - third_party/upb/upb/mini_table/internal/generated_registry.h
+  - third_party/upb/upb/mini_table/internal/message.h
+  - third_party/upb/upb/mini_table/internal/size_log2.h
+  - third_party/upb/upb/mini_table/internal/sub.h
+  - third_party/upb/upb/mini_table/message.h
+  - third_party/upb/upb/mini_table/sub.h
+  - third_party/upb/upb/port/atomic.h
+  - third_party/upb/upb/port/def.inc
+  - third_party/upb/upb/port/sanitizers.h
+  - third_party/upb/upb/port/undef.inc
+  - third_party/upb/upb/port/vsnprintf_compat.h
+  - third_party/upb/upb/reflection/common.h
+  - third_party/upb/upb/reflection/def.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/def_pool.h
+  - third_party/upb/upb/reflection/def_type.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
+  - third_party/upb/upb/reflection/enum_def.h
+  - third_party/upb/upb/reflection/enum_reserved_range.h
+  - third_party/upb/upb/reflection/enum_value_def.h
+  - third_party/upb/upb/reflection/extension_range.h
+  - third_party/upb/upb/reflection/field_def.h
+  - third_party/upb/upb/reflection/file_def.h
+  - third_party/upb/upb/reflection/internal/def_builder.h
+  - third_party/upb/upb/reflection/internal/def_pool.h
+  - third_party/upb/upb/reflection/internal/desc_state.h
+  - third_party/upb/upb/reflection/internal/enum_def.h
+  - third_party/upb/upb/reflection/internal/enum_reserved_range.h
+  - third_party/upb/upb/reflection/internal/enum_value_def.h
+  - third_party/upb/upb/reflection/internal/extension_range.h
+  - third_party/upb/upb/reflection/internal/field_def.h
+  - third_party/upb/upb/reflection/internal/file_def.h
+  - third_party/upb/upb/reflection/internal/message_def.h
+  - third_party/upb/upb/reflection/internal/message_reserved_range.h
+  - third_party/upb/upb/reflection/internal/method_def.h
+  - third_party/upb/upb/reflection/internal/oneof_def.h
+  - third_party/upb/upb/reflection/internal/service_def.h
+  - third_party/upb/upb/reflection/internal/strdup2.h
+  - third_party/upb/upb/reflection/internal/upb_edition_defaults.h
+  - third_party/upb/upb/reflection/message.h
+  - third_party/upb/upb/reflection/message.hpp
+  - third_party/upb/upb/reflection/message_def.h
+  - third_party/upb/upb/reflection/message_reserved_range.h
+  - third_party/upb/upb/reflection/method_def.h
+  - third_party/upb/upb/reflection/oneof_def.h
+  - third_party/upb/upb/reflection/service_def.h
+  - third_party/upb/upb/text/encode.h
+  - third_party/upb/upb/text/internal/encode.h
+  - third_party/upb/upb/text/options.h
+  - third_party/upb/upb/wire/decode.h
+  - third_party/upb/upb/wire/decode_fast/combinations.h
+  - third_party/upb/upb/wire/decode_fast/data.h
+  - third_party/upb/upb/wire/decode_fast/select.h
+  - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
+  - third_party/upb/upb/wire/internal/constants.h
+  - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/eps_copy_input_stream.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
+  - third_party/upb/upb/wire/writer.h
+  src:
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  - third_party/upb/upb/base/status.c
+  - third_party/upb/upb/hash/common.c
+  - third_party/upb/upb/json/decode.c
+  - third_party/upb/upb/json/encode.c
+  - third_party/upb/upb/lex/atoi.c
+  - third_party/upb/upb/lex/round_trip.c
+  - third_party/upb/upb/lex/strtod.c
+  - third_party/upb/upb/lex/unicode.c
+  - third_party/upb/upb/mem/alloc.c
+  - third_party/upb/upb/mem/arena.c
+  - third_party/upb/upb/message/accessors.c
+  - third_party/upb/upb/message/array.c
+  - third_party/upb/upb/message/compat.c
+  - third_party/upb/upb/message/copy.c
+  - third_party/upb/upb/message/internal/extension.c
+  - third_party/upb/upb/message/internal/iterator.c
+  - third_party/upb/upb/message/internal/message.c
+  - third_party/upb/upb/message/map.c
+  - third_party/upb/upb/message/map_sorter.c
+  - third_party/upb/upb/message/merge.c
+  - third_party/upb/upb/message/message.c
+  - third_party/upb/upb/mini_descriptor/build_enum.c
+  - third_party/upb/upb/mini_descriptor/decode.c
+  - third_party/upb/upb/mini_descriptor/internal/base92.c
+  - third_party/upb/upb/mini_descriptor/internal/encode.c
+  - third_party/upb/upb/mini_descriptor/link.c
+  - third_party/upb/upb/mini_table/extension_registry.c
+  - third_party/upb/upb/mini_table/generated_registry.c
+  - third_party/upb/upb/mini_table/internal/message.c
+  - third_party/upb/upb/mini_table/message.c
+  - third_party/upb/upb/reflection/def_pool.c
+  - third_party/upb/upb/reflection/def_type.c
+  - third_party/upb/upb/reflection/desc_state.c
+  - third_party/upb/upb/reflection/enum_def.c
+  - third_party/upb/upb/reflection/enum_reserved_range.c
+  - third_party/upb/upb/reflection/enum_value_def.c
+  - third_party/upb/upb/reflection/extension_range.c
+  - third_party/upb/upb/reflection/field_def.c
+  - third_party/upb/upb/reflection/file_def.c
+  - third_party/upb/upb/reflection/internal/def_builder.c
+  - third_party/upb/upb/reflection/internal/strdup2.c
+  - third_party/upb/upb/reflection/message.c
+  - third_party/upb/upb/reflection/message_def.c
+  - third_party/upb/upb/reflection/message_reserved_range.c
+  - third_party/upb/upb/reflection/method_def.c
+  - third_party/upb/upb/reflection/oneof_def.c
+  - third_party/upb/upb/reflection/service_def.c
+  - third_party/upb/upb/text/encode.c
+  - third_party/upb/upb/text/internal/encode.c
+  - third_party/upb/upb/wire/decode.c
+  - third_party/upb/upb/wire/decode_fast/select.c
+  - third_party/upb/upb/wire/encode.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/internal/decoder.c
+  - third_party/upb/upb/wire/reader.c
+  deps:
+  - utf8_range_lib
+  - absl/strings:strings
+  cmake_target: protobuf::libupb
 - name: address_sorting
   build: all
   language: c
@@ -1410,7 +1600,6 @@ libs:
   - src/core/xds/xds_client/xds_resource_type_impl.h
   - src/core/xds/xds_client/xds_transport.h
   - src/core/xds/xds_client/xds_transport_factory.h
-  - third_party/upb/upb/generated_code_support.h
   - third_party/xxhash/xxhash.h
   src:
   - src/core/call/call_arena_allocator.cc
@@ -2334,10 +2523,9 @@ libs:
   - src/core/xds/xds_client/xds_bootstrap.cc
   - src/core/xds/xds_client/xds_client.cc
   deps:
-  - upb_json_lib
-  - upb_textformat_lib
   - re2
   - z
+  - _libupb
   - absl/algorithm:container
   - absl/base:no_destructor
   - absl/container:btree
@@ -3094,7 +3282,6 @@ libs:
   - src/core/xds/grpc/certificate_provider_store_interface.h
   - src/core/xds/grpc/xds_transport_grpc.h
   - src/core/xds/xds_client/xds_transport.h
-  - third_party/upb/upb/generated_code_support.h
   - third_party/xxhash/xxhash.h
   src:
   - src/core/call/call_arena_allocator.cc
@@ -3550,8 +3737,8 @@ libs:
   - src/core/util/work_serializer.cc
   - src/core/xds/grpc/xds_transport_grpc.cc
   deps:
-  - upb_textformat_lib
   - z
+  - _libupb
   - absl/algorithm:container
   - absl/base:no_destructor
   - absl/container:btree
@@ -3696,301 +3883,6 @@ libs:
   - third_party/re2/util/rune.cc
   - third_party/re2/util/strutil.cc
   deps: []
-- name: upb_base_lib
-  build: all
-  language: c
-  public_headers: []
-  headers:
-  - third_party/upb/upb/base/descriptor_constants.h
-  - third_party/upb/upb/base/error_handler.h
-  - third_party/upb/upb/base/status.h
-  - third_party/upb/upb/base/status.hpp
-  - third_party/upb/upb/base/string_view.h
-  - third_party/upb/upb/base/upcast.h
-  - third_party/upb/upb/port/atomic.h
-  - third_party/upb/upb/port/def.inc
-  - third_party/upb/upb/port/sanitizers.h
-  - third_party/upb/upb/port/undef.inc
-  - third_party/upb/upb/port/vsnprintf_compat.h
-  src:
-  - third_party/upb/upb/base/status.c
-  deps: []
-- name: upb_descriptor_lib
-  build: all
-  language: c
-  public_headers: []
-  headers:
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
-  src:
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
-  deps: []
-- name: upb_hash_lib
-  build: all
-  language: c
-  public_headers: []
-  headers:
-  - third_party/upb/upb/base/internal/endian.h
-  - third_party/upb/upb/base/internal/log2.h
-  - third_party/upb/upb/hash/common.h
-  - third_party/upb/upb/hash/ext_table.h
-  - third_party/upb/upb/hash/int_table.h
-  - third_party/upb/upb/hash/str_table.h
-  src:
-  - third_party/upb/upb/hash/common.c
-  deps:
-  - upb_base_lib
-  - upb_mem_lib
-- name: upb_json_lib
-  build: all
-  language: c
-  public_headers: []
-  headers:
-  - third_party/upb/upb/json/decode.h
-  - third_party/upb/upb/json/encode.h
-  src:
-  - third_party/upb/upb/json/decode.c
-  - third_party/upb/upb/json/encode.c
-  deps:
-  - upb_lex_lib
-  - upb_reflection_lib
-- name: upb_lex_lib
-  build: all
-  language: c
-  public_headers: []
-  headers:
-  - third_party/upb/upb/lex/atoi.h
-  - third_party/upb/upb/lex/round_trip.h
-  - third_party/upb/upb/lex/strtod.h
-  - third_party/upb/upb/lex/unicode.h
-  - third_party/upb/upb/port/atomic.h
-  - third_party/upb/upb/port/def.inc
-  - third_party/upb/upb/port/sanitizers.h
-  - third_party/upb/upb/port/undef.inc
-  - third_party/upb/upb/port/vsnprintf_compat.h
-  src:
-  - third_party/upb/upb/lex/atoi.c
-  - third_party/upb/upb/lex/round_trip.c
-  - third_party/upb/upb/lex/strtod.c
-  - third_party/upb/upb/lex/unicode.c
-  deps: []
-- name: upb_mem_lib
-  build: all
-  language: c
-  public_headers: []
-  headers:
-  - third_party/upb/upb/mem/alloc.h
-  - third_party/upb/upb/mem/arena.h
-  - third_party/upb/upb/mem/arena.hpp
-  - third_party/upb/upb/mem/internal/arena.h
-  - third_party/upb/upb/port/atomic.h
-  - third_party/upb/upb/port/def.inc
-  - third_party/upb/upb/port/sanitizers.h
-  - third_party/upb/upb/port/undef.inc
-  - third_party/upb/upb/port/vsnprintf_compat.h
-  src:
-  - third_party/upb/upb/mem/alloc.c
-  - third_party/upb/upb/mem/arena.c
-  deps: []
-- name: upb_message_lib
-  build: all
-  language: c
-  public_headers: []
-  headers:
-  - third_party/upb/upb/message/accessors.h
-  - third_party/upb/upb/message/array.h
-  - third_party/upb/upb/message/compat.h
-  - third_party/upb/upb/message/internal/accessors.h
-  - third_party/upb/upb/message/internal/array.h
-  - third_party/upb/upb/message/internal/extension.h
-  - third_party/upb/upb/message/internal/map.h
-  - third_party/upb/upb/message/internal/map_sorter.h
-  - third_party/upb/upb/message/internal/message.h
-  - third_party/upb/upb/message/map.h
-  - third_party/upb/upb/message/map_gencode_util.h
-  - third_party/upb/upb/message/message.h
-  - third_party/upb/upb/message/value.h
-  src:
-  - third_party/upb/upb/message/accessors.c
-  - third_party/upb/upb/message/array.c
-  - third_party/upb/upb/message/compat.c
-  - third_party/upb/upb/message/internal/extension.c
-  - third_party/upb/upb/message/internal/message.c
-  - third_party/upb/upb/message/map.c
-  - third_party/upb/upb/message/map_sorter.c
-  - third_party/upb/upb/message/message.c
-  deps:
-  - upb_mini_table_lib
-- name: upb_mini_descriptor_lib
-  build: all
-  language: c
-  public_headers: []
-  headers:
-  - third_party/upb/upb/mini_descriptor/build_enum.h
-  - third_party/upb/upb/mini_descriptor/decode.h
-  - third_party/upb/upb/mini_descriptor/internal/base92.h
-  - third_party/upb/upb/mini_descriptor/internal/decoder.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.hpp
-  - third_party/upb/upb/mini_descriptor/internal/modifiers.h
-  - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
-  - third_party/upb/upb/mini_descriptor/link.h
-  - third_party/upb/upb/wire/decode_fast/combinations.h
-  - third_party/upb/upb/wire/decode_fast/data.h
-  - third_party/upb/upb/wire/decode_fast/select.h
-  - third_party/upb/upb/wire/eps_copy_input_stream.h
-  - third_party/upb/upb/wire/internal/eps_copy_input_stream.h
-  - third_party/upb/upb/wire/internal/reader.h
-  - third_party/upb/upb/wire/reader.h
-  - third_party/upb/upb/wire/types.h
-  src:
-  - third_party/upb/upb/mini_descriptor/build_enum.c
-  - third_party/upb/upb/mini_descriptor/decode.c
-  - third_party/upb/upb/mini_descriptor/internal/base92.c
-  - third_party/upb/upb/mini_descriptor/internal/encode.c
-  - third_party/upb/upb/mini_descriptor/link.c
-  - third_party/upb/upb/wire/decode_fast/select.c
-  - third_party/upb/upb/wire/eps_copy_input_stream.c
-  - third_party/upb/upb/wire/reader.c
-  deps:
-  - upb_mini_table_lib
-  - absl/strings:strings
-- name: upb_mini_table_lib
-  build: all
-  language: c
-  public_headers: []
-  headers:
-  - third_party/upb/upb/message/internal/map_entry.h
-  - third_party/upb/upb/message/internal/types.h
-  - third_party/upb/upb/mini_table/enum.h
-  - third_party/upb/upb/mini_table/extension.h
-  - third_party/upb/upb/mini_table/extension_registry.h
-  - third_party/upb/upb/mini_table/field.h
-  - third_party/upb/upb/mini_table/file.h
-  - third_party/upb/upb/mini_table/generated_registry.h
-  - third_party/upb/upb/mini_table/internal/enum.h
-  - third_party/upb/upb/mini_table/internal/extension.h
-  - third_party/upb/upb/mini_table/internal/field.h
-  - third_party/upb/upb/mini_table/internal/file.h
-  - third_party/upb/upb/mini_table/internal/generated_registry.h
-  - third_party/upb/upb/mini_table/internal/message.h
-  - third_party/upb/upb/mini_table/internal/size_log2.h
-  - third_party/upb/upb/mini_table/internal/sub.h
-  - third_party/upb/upb/mini_table/message.h
-  - third_party/upb/upb/mini_table/sub.h
-  src:
-  - third_party/upb/upb/mini_table/extension_registry.c
-  - third_party/upb/upb/mini_table/generated_registry.c
-  - third_party/upb/upb/mini_table/internal/message.c
-  - third_party/upb/upb/mini_table/message.c
-  deps:
-  - upb_hash_lib
-- name: upb_reflection_lib
-  build: all
-  language: c
-  public_headers: []
-  headers:
-  - third_party/upb/upb/message/copy.h
-  - third_party/upb/upb/message/merge.h
-  - third_party/upb/upb/reflection/common.h
-  - third_party/upb/upb/reflection/def.h
-  - third_party/upb/upb/reflection/def.hpp
-  - third_party/upb/upb/reflection/def_pool.h
-  - third_party/upb/upb/reflection/def_type.h
-  - third_party/upb/upb/reflection/enum_def.h
-  - third_party/upb/upb/reflection/enum_reserved_range.h
-  - third_party/upb/upb/reflection/enum_value_def.h
-  - third_party/upb/upb/reflection/extension_range.h
-  - third_party/upb/upb/reflection/field_def.h
-  - third_party/upb/upb/reflection/file_def.h
-  - third_party/upb/upb/reflection/internal/def_builder.h
-  - third_party/upb/upb/reflection/internal/def_pool.h
-  - third_party/upb/upb/reflection/internal/desc_state.h
-  - third_party/upb/upb/reflection/internal/enum_def.h
-  - third_party/upb/upb/reflection/internal/enum_reserved_range.h
-  - third_party/upb/upb/reflection/internal/enum_value_def.h
-  - third_party/upb/upb/reflection/internal/extension_range.h
-  - third_party/upb/upb/reflection/internal/field_def.h
-  - third_party/upb/upb/reflection/internal/file_def.h
-  - third_party/upb/upb/reflection/internal/message_def.h
-  - third_party/upb/upb/reflection/internal/message_reserved_range.h
-  - third_party/upb/upb/reflection/internal/method_def.h
-  - third_party/upb/upb/reflection/internal/oneof_def.h
-  - third_party/upb/upb/reflection/internal/service_def.h
-  - third_party/upb/upb/reflection/internal/strdup2.h
-  - third_party/upb/upb/reflection/internal/upb_edition_defaults.h
-  - third_party/upb/upb/reflection/message.h
-  - third_party/upb/upb/reflection/message.hpp
-  - third_party/upb/upb/reflection/message_def.h
-  - third_party/upb/upb/reflection/message_reserved_range.h
-  - third_party/upb/upb/reflection/method_def.h
-  - third_party/upb/upb/reflection/oneof_def.h
-  - third_party/upb/upb/reflection/service_def.h
-  src:
-  - third_party/upb/upb/message/copy.c
-  - third_party/upb/upb/message/merge.c
-  - third_party/upb/upb/reflection/def_pool.c
-  - third_party/upb/upb/reflection/def_type.c
-  - third_party/upb/upb/reflection/desc_state.c
-  - third_party/upb/upb/reflection/enum_def.c
-  - third_party/upb/upb/reflection/enum_reserved_range.c
-  - third_party/upb/upb/reflection/enum_value_def.c
-  - third_party/upb/upb/reflection/extension_range.c
-  - third_party/upb/upb/reflection/field_def.c
-  - third_party/upb/upb/reflection/file_def.c
-  - third_party/upb/upb/reflection/internal/def_builder.c
-  - third_party/upb/upb/reflection/internal/strdup2.c
-  - third_party/upb/upb/reflection/message.c
-  - third_party/upb/upb/reflection/message_def.c
-  - third_party/upb/upb/reflection/message_reserved_range.c
-  - third_party/upb/upb/reflection/method_def.c
-  - third_party/upb/upb/reflection/oneof_def.c
-  - third_party/upb/upb/reflection/service_def.c
-  deps:
-  - upb_mini_descriptor_lib
-  - upb_descriptor_lib
-  - upb_wire_lib
-- name: upb_textformat_lib
-  build: all
-  language: c
-  public_headers: []
-  headers:
-  - third_party/upb/upb/text/encode.h
-  - third_party/upb/upb/text/internal/encode.h
-  - third_party/upb/upb/text/options.h
-  src:
-  - third_party/upb/upb/text/encode.c
-  - third_party/upb/upb/text/internal/encode.c
-  deps:
-  - upb_lex_lib
-  - upb_reflection_lib
-- name: upb_wire_lib
-  build: all
-  language: c
-  public_headers: []
-  headers:
-  - third_party/upb/upb/message/internal/iterator.h
-  - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/encode.h
-  - third_party/upb/upb/wire/eps_copy_input_stream.h
-  - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decoder.h
-  - third_party/upb/upb/wire/internal/eps_copy_input_stream.h
-  - third_party/upb/upb/wire/internal/reader.h
-  - third_party/upb/upb/wire/reader.h
-  - third_party/upb/upb/wire/types.h
-  - third_party/upb/upb/wire/writer.h
-  src:
-  - third_party/upb/upb/message/internal/iterator.c
-  - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/encode.c
-  - third_party/upb/upb/wire/eps_copy_input_stream.c
-  - third_party/upb/upb/wire/internal/decoder.c
-  - third_party/upb/upb/wire/reader.c
-  deps:
-  - utf8_range_lib
-  - upb_message_lib
 - name: utf8_range_lib
   build: all
   language: c
@@ -5170,7 +5062,6 @@ libs:
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
   - src/core/xds/grpc/certificate_provider_store_interface.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
@@ -5473,9 +5364,9 @@ libs:
   - src/core/util/wait_for_single_owner.cc
   - src/core/util/work_serializer.cc
   deps:
-  - upb_textformat_lib
   - re2
   - z
+  - _libupb
   - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -5746,7 +5637,6 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - test/core/promise/test_wakeup_schedulers.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -5816,7 +5706,7 @@ targets:
   - test/core/promise/activity_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -6145,7 +6035,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -6212,7 +6101,7 @@ targets:
   - test/core/promise/all_ok_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -6922,7 +6811,6 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - src/core/xds/grpc/blackboard.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -6989,7 +6877,7 @@ targets:
   - test/core/xds/blackboard_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -7245,7 +7133,6 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - test/core/promise/poll_matcher.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/call/call_filters.cc
@@ -7335,7 +7222,7 @@ targets:
   - test/core/call/call_filters_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -7474,7 +7361,6 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - test/core/promise/poll_matcher.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/call_state.cc
   - src/core/channelz/channel_trace.cc
@@ -7544,7 +7430,7 @@ targets:
   - test/core/call/call_state_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -7921,7 +7807,6 @@ targets:
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
   - src/core/xds/grpc/certificate_provider_store_interface.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
@@ -8192,8 +8077,8 @@ targets:
   - test/core/call/call_utils_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
   - z
+  - _libupb
   - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -8354,7 +8239,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -8432,7 +8316,7 @@ targets:
   - test/core/promise/cancel_callback_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -9416,7 +9300,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -9494,7 +9377,7 @@ targets:
   - test/core/util/chunked_vector_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -10021,7 +9904,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -10086,7 +9968,7 @@ targets:
   - test/core/promise/context_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -12808,7 +12690,6 @@ targets:
   - src/core/util/ref_counted_string.h
   - src/core/util/time.h
   - src/core/util/upb_utils.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
@@ -12830,7 +12711,7 @@ targets:
   - test/core/event_engine/endpoint_config_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
@@ -13095,7 +12976,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -13164,7 +13044,7 @@ targets:
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -13741,7 +13621,6 @@ targets:
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
   - src/core/xds/grpc/certificate_provider_store_interface.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
@@ -14012,8 +13891,8 @@ targets:
   - test/core/call/filter_fusion_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
   - z
+  - _libupb
   - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -14205,7 +14084,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/message.cc
   - src/core/channelz/channel_trace.cc
@@ -14289,7 +14167,7 @@ targets:
   - test/core/transport/chttp2/flow_control_manager_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -14435,7 +14313,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/message.cc
   - src/core/channelz/channel_trace.cc
@@ -14519,7 +14396,7 @@ targets:
   - test/core/transport/chttp2/flow_control_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -14670,7 +14547,6 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - test/core/promise/test_wakeup_schedulers.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -14748,7 +14624,7 @@ targets:
   - test/core/promise/for_each_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -14934,7 +14810,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/message.cc
   - src/core/channelz/channel_trace.cc
@@ -15015,7 +14890,7 @@ targets:
   - test/core/transport/chttp2/frame_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -16243,7 +16118,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -16310,7 +16184,7 @@ targets:
   - test/core/promise/if_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -16690,7 +16564,6 @@ targets:
   - test/cpp/sleuth/tool.h
   - test/cpp/sleuth/tool_test.h
   - test/cpp/sleuth/version.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
@@ -16965,8 +16838,8 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
-  - upb_textformat_lib
   - z
+  - _libupb
   - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -17181,7 +17054,6 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - test/core/promise/test_wakeup_schedulers.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -17250,7 +17122,7 @@ targets:
   - test/core/promise/inter_activity_pipe_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -17404,7 +17276,6 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - test/core/promise/test_context.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -17482,7 +17353,7 @@ targets:
   - test/core/promise/interceptor_list_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -17690,7 +17561,6 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - test/core/promise/poll_matcher.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -17757,7 +17627,7 @@ targets:
   - test/core/promise/join_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -17954,7 +17824,6 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - test/core/promise/test_wakeup_schedulers.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -18023,7 +17892,7 @@ targets:
   - test/core/promise/latch_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -18199,7 +18068,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/message.cc
   - src/core/channelz/channel_trace.cc
@@ -18281,7 +18149,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -18630,7 +18498,6 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - test/core/promise/poll_matcher.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -18700,7 +18567,7 @@ targets:
   - test/core/promise/lock_based_mpsc_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -18840,7 +18707,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -18909,7 +18775,7 @@ targets:
   - test/core/promise/loop_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -19021,7 +18887,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -19086,7 +18951,7 @@ targets:
   - test/core/util/lru_cache_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -19236,7 +19101,6 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - test/core/promise/test_wakeup_schedulers.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -19314,7 +19178,7 @@ targets:
   - test/core/promise/map_pipe_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -19436,7 +19300,6 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - test/core/promise/poll_matcher.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -19503,7 +19366,7 @@ targets:
   - test/core/promise/match_promise_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -19949,7 +19812,6 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - test/core/promise/poll_matcher.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -20018,7 +19880,7 @@ targets:
   - test/core/promise/observable_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -20456,7 +20318,6 @@ targets:
   - src/core/util/status_helper.h
   - src/core/util/time.h
   - src/core/util/upb_utils.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
@@ -20495,7 +20356,7 @@ targets:
   - test/core/resource_quota/periodic_update_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -20683,7 +20544,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -20748,7 +20608,7 @@ targets:
   - test/core/promise/poll_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -21199,7 +21059,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -21266,7 +21125,7 @@ targets:
   - test/core/promise/prioritized_race_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -21416,7 +21275,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -21483,7 +21341,7 @@ targets:
   - test/core/promise/promise_factory_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -21602,7 +21460,6 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - test/core/promise/poll_matcher.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -21669,7 +21526,7 @@ targets:
   - test/core/promise/map_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -21799,7 +21656,6 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - test/core/promise/test_wakeup_schedulers.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -21868,7 +21724,7 @@ targets:
   - test/core/promise/promise_mutex_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -21984,7 +21840,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -22051,7 +21906,7 @@ targets:
   - test/core/promise/promise_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -22093,7 +21948,6 @@ targets:
   - src/core/util/overload.h
   - src/core/util/time.h
   - src/core/util/upb_utils.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
@@ -22113,7 +21967,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:flat_hash_map
   - absl/status:statusor
   - absl/types:span
@@ -22529,7 +22383,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -22599,7 +22452,7 @@ targets:
   - test/core/event_engine/query_extensions_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -22714,7 +22567,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -22780,7 +22632,7 @@ targets:
   - test/core/promise/race_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -23092,7 +22944,6 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - test/core/promise/poll_matcher.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
@@ -23185,7 +23036,7 @@ targets:
   - test/core/call/request_buffer_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -23528,7 +23379,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -23595,7 +23445,7 @@ targets:
   - test/core/promise/seq_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -24316,7 +24166,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -24382,7 +24231,7 @@ targets:
   - test/core/load_balancing/static_stride_scheduler_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -24506,7 +24355,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -24571,7 +24419,7 @@ targets:
   - test/core/promise/status_flag_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -24915,7 +24763,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -24982,7 +24829,7 @@ targets:
   - test/core/promise/switch_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -25239,7 +25086,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -25307,7 +25153,7 @@ targets:
   - test/core/event_engine/posix/timer_heap_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -25422,7 +25268,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -25492,7 +25337,7 @@ targets:
   - test/core/event_engine/slice_buffer_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -25802,7 +25647,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -25868,7 +25712,7 @@ targets:
   - test/core/resource_quota/thread_quota_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -26481,7 +26325,6 @@ targets:
   - src/core/xds/grpc/certificate_provider_store_interface.h
   - test/cpp/sleuth/tool.h
   - test/cpp/sleuth/tool_test.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
@@ -26755,8 +26598,8 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
-  - upb_textformat_lib
   - z
+  - _libupb
   - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -26941,7 +26784,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -27008,7 +26850,7 @@ targets:
   - test/core/promise/try_join_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -27168,7 +27010,6 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - test/core/promise/poll_matcher.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -27247,7 +27088,7 @@ targets:
   - test/core/promise/try_seq_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -27360,7 +27201,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -27425,7 +27265,7 @@ targets:
   - test/core/util/unique_ptr_with_bitset_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -27659,7 +27499,6 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - test/core/promise/test_wakeup_schedulers.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -27728,7 +27567,7 @@ targets:
   - test/core/promise/wait_for_callback_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -28003,7 +27842,6 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -28069,7 +27907,7 @@ targets:
   - test/core/transport/chttp2/write_size_policy_test.cc
   deps:
   - gtest
-  - upb_textformat_lib
+  - _libupb
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector

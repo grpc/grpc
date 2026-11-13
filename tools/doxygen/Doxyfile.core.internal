@@ -3173,7 +3173,6 @@ src/core/xds/xds_client/xds_resource_type.h \
 src/core/xds/xds_client/xds_resource_type_impl.h \
 src/core/xds/xds_client/xds_transport.h \
 src/core/xds/xds_client/xds_transport_factory.h \
-third_party/upb/upb/generated_code_support.h \
 third_party/xxhash/xxhash.h
 
 # This tag can be used to specify the character encoding of the source files
