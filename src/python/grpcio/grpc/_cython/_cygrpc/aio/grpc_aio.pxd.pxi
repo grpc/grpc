@@ -20,7 +20,7 @@ cdef class _AioState:
     cdef BaseCompletionQueue cq
 
 
-cdef grpc_completion_queue *global_completion_queue()
+cdef grpc_completion_queue *global_completion_queue() except NULL
 
 
 cpdef init_grpc_aio()
