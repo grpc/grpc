@@ -9,13 +9,11 @@ gRPC depends on several third-party libraries, their source code is available
   makes gRPC installation harder for users, as it forces them to always build the dependency from source and prevents them from using more
   convenient installation channels (linux packages, package managers etc.)
 
-- To update the dependencies of gRPC, you need to modify the following three key areas.
+- To update the dependencies of gRPC, you need to modify the following two key areas:
   - First, for non-Bazel build, update the Git submodule under the `third_party` directory to point to the new commit.
-  - Next, for the legacy Bazel WORKSPACE, update the `grpc_deps.bzl` with the new version's URL, prefix, and checksum.
-    (This step will be removed once Bazel module migration is complete.)
-  - Finally, for modern Bazel, update the `MODULE.bazel` file to have new version.
+  - Next, for Bazel, update the `MODULE.bazel` file to have new version.
 
-- Note that all versions used in three area should point to the same commit. There are CI tests enforcing this.
+- Note that all versions used in both areas should point to the same commit. There are CI tests enforcing this.
 
 ## Considerations when adding a new third-party dependency
 
@@ -47,8 +45,7 @@ gRPC depends on several third-party libraries, their source code is available
 Usually the process is
 
 1. update the submodule to selected commit (see guidance above)
-2. update the dependency in `grpc_deps.bzl` to the same commit
-3. update the dependency in `MODULE.bazel` (generated from `templates/MODULE.bazel.inja`) to the same version.
+2. update the dependency in `MODULE.bazel` (generated from `templates/MODULE.bazel.inja`) to the same version.
    - Bazel modules are versioned by release, not by commit hash. If a specific commit is needed but lacks a corresponding release, you have three options:
      1. Ask the project's maintainer to create a new release.
      2. Request a BCR volunteer to add a new release by filing an issue at [Github](https://github.com/bazelbuild/bazel-central-registry/issues).
@@ -88,21 +85,13 @@ git add  third_party/boringssl-with-bazel     # we actually want to update the c
 git commit -m "update submodule boringssl-with-bazel with origin/master-with-bazel"   # commit
 ```
 
-- Update boringssl dependency in `bazel/grpc_deps.bzl` to the same commit SHA as master-with-bazel branch
-    - Update `http_archive(name = "boringssl",` section by updating the sha in `strip_prefix` and `urls` fields.
-    - Also, set `sha256` field to "" as the existing value is not valid. This will be added later once we know what that value is.
+- Update boringssl dependency in `MODULE.bazel` (generated from `templates/MODULE.bazel.inja`) to the matching version
 
 - Update `tools/run_tests/sanity/check_submodules.sh` with the same commit
 
 - Commit these changes `git commit -m "update boringssl dependency to master-with-bazel commit SHA"`
 
 - Run `tools/buildgen/generate_projects.sh` to regenerate the generated files
-    - Because `sha256` in `bazel/grpc_deps.bzl` was left empty, you will get a DEBUG msg like this one:
-      ```
-      Rule 'boringssl' indicated that a canonical reproducible form can be obtained by modifying arguments sha256 = "SHA value"
-      ```
-    - Commit the regenrated files `git commit -m "regenerate files"`
-    - Update `bazel/grpc_deps.bzl` with the SHA value shown in the above debug msg. Commit again `git commit -m "Updated sha256"`
 
 - Run `tools/distrib/generate_boringssl_prefix_header.sh`
     - Commit again `git commit -m "generate boringssl prefix headers"`
