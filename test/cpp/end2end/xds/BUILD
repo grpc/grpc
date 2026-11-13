@@ -809,6 +809,40 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "xds_autosharding_end2end_test",
+    size = "large",
+    srcs = ["xds_autosharding_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    linkstatic = True,  # Fixes dyld error on MacOS
+    tags = [
+        "no_test_ios",
+        "no_windows",
+        "xds_end2end_test",
+    ],
+    deps = [
+        ":xds_end2end_test_lib",
+        "//:config_vars",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+        "//test/core/test_util:scoped_env_var",
+        "//test/cpp/end2end:autosharding_test_server",
+        "//test/cpp/end2end:connection_attempt_injector",
+        "@envoy_api//envoy/config/cluster/v3:pkg_cc_proto",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/grpc_service/channel_credentials/insecure/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/load_balancing_policies/autosharding/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/load_balancing_policies/wrr_locality/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_pick_first_end2end_test",
     size = "large",
     srcs = ["xds_pick_first_end2end_test.cc"],
