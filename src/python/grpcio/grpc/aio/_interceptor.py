@@ -350,7 +350,30 @@ class InterceptedCall:
         )
 
     def __del__(self):
-        self.cancel()
+        task = getattr(self, "_interceptors_task", None)
+        if task is None or not task.done():
+            # A pending task means the `InterceptedCall`, the task and its
+            # coroutine are one garbage cycle. In this same collection the GC
+            # closes the coroutine directly, not through task API. It makes
+            # a task stay in a pending state. Cancelling it would make the task
+            # resume a closed coroutine, which might throw.
+            return
+
+        if self.done():
+            # The RPC was finished or the interceptors were cancelled or failed.
+            # Nothing to cancel.
+            return
+
+        # `__del__` might be executed by any thread. Cancelling the coroutine
+        # ends in `_AioCall.cancel()`, which must be executed on a loop's owning
+        # thread, since it resolves loop-related futures: status waiters and
+        # initial metadata waiters. Hand it to the loop even when already on its
+        # thread.
+        try:
+            task.get_loop().call_soon_threadsafe(self.cancel)
+        except RuntimeError:
+            # Event loop is closed
+            pass
 
     def _fire_or_add_pending_done_callbacks(
         self, interceptors_task: asyncio.Task[_base_call.Call]

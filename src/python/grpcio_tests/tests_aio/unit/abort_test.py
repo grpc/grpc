@@ -13,15 +13,14 @@
 # limitations under the License.
 
 import asyncio
-import gc
 import logging
-import time
+import sys
+import threading
 import unittest
 
 import grpc
 from grpc.experimental import aio
 
-from tests.unit.framework.common import test_constants
 from tests_aio.unit._test_base import AioTestBase
 
 _UNARY_UNARY_ABORT = "/test/UnaryUnaryAbort"
@@ -29,13 +28,24 @@ _SYNC_UNARY_UNARY_ABORT = "/test/SyncUnaryUnaryAbort"
 _SUPPRESS_ABORT = "/test/SuppressAbort"
 _REPLACE_ABORT = "/test/ReplaceAbort"
 _ABORT_AFTER_REPLY = "/test/AbortAfterReply"
+_STREAM_UNARY_ABORT_AFTER_FIRST_REQ = "/test/StreamUnaryAbortAfterFirstReq"
+_STREAM_STREAM_ABORT_AFTER_FIRST_REQ = "/test/StreamStreamAbortAfterFirstReq"
+_STREAM_UNARY_REPLY_AFTER_FIRST_REQ = "/test/StreamUnaryReplyAfterFirstReq"
+_STREAM_STREAM_NEVER_READ = "/test/StreamStreamNeverRead"
+_STREAM_UNARY_NEVER_READ = "/test/StreamUnaryNeverRead"
 
 _REQUEST = b"\x00\x00\x00"
 _RESPONSE = b"\x01\x01\x01"
-_NUM_STREAM_RESPONSES = 5
+
+_LARGE_REQUEST = b"\x00" * (1024 * 1024)
+_MAX_LARGE_WRITES = 64
+_ROUNDS = 3
+_READER_ROUNDS = 40
 
 _ABORT_CODE = grpc.StatusCode.RESOURCE_EXHAUSTED
 _ABORT_DETAILS = "Phony error details"
+# Mirrors grpc.aio._call._INTERNAL_ERROR_DETAILS
+_INTERNAL_ERROR_DETAILS = "Internal error from Core"
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
@@ -72,6 +82,24 @@ class _GenericHandler(grpc.GenericRpcHandler):
         await context.abort(_ABORT_CODE, _ABORT_DETAILS)
         raise RuntimeError("This line should not be executed")
 
+    @staticmethod
+    async def _abort_after_first_request(request_iterator, context):
+        async for _ in request_iterator:
+            break
+        await context.abort(_ABORT_CODE, _ABORT_DETAILS)
+
+    @staticmethod
+    async def _reply_after_first_request(request_iterator, context):
+        async for _ in request_iterator:
+            break
+        return _RESPONSE
+
+    @staticmethod
+    async def _never_read(unused_request_iterator, unused_context):
+        # Keeps the RPC open without consuming requests, so the client's flow
+        # control window fills up and a large write stays pending in Core.
+        await asyncio.Event().wait()
+
     def service(self, handler_details):
         if handler_details.method == _UNARY_UNARY_ABORT:
             return grpc.unary_unary_rpc_method_handler(self._unary_unary_abort)
@@ -85,10 +113,37 @@ class _GenericHandler(grpc.GenericRpcHandler):
             return grpc.unary_unary_rpc_method_handler(self._replace_abort)
         if handler_details.method == _ABORT_AFTER_REPLY:
             return grpc.unary_stream_rpc_method_handler(self._abort_after_reply)
+        if handler_details.method == _STREAM_UNARY_ABORT_AFTER_FIRST_REQ:
+            return grpc.stream_unary_rpc_method_handler(
+                self._abort_after_first_request
+            )
+        if handler_details.method == _STREAM_STREAM_ABORT_AFTER_FIRST_REQ:
+            return grpc.stream_stream_rpc_method_handler(
+                self._abort_after_first_request
+            )
+        if handler_details.method == _STREAM_UNARY_REPLY_AFTER_FIRST_REQ:
+            return grpc.stream_unary_rpc_method_handler(
+                self._reply_after_first_request
+            )
+        if handler_details.method == _STREAM_STREAM_NEVER_READ:
+            return grpc.stream_stream_rpc_method_handler(self._never_read)
+        if handler_details.method == _STREAM_UNARY_NEVER_READ:
+            return grpc.stream_unary_rpc_method_handler(self._never_read)
 
 
-async def _start_test_server():
-    server = aio.server()
+async def _large_requests():
+    for _ in range(_MAX_LARGE_WRITES):
+        yield _LARGE_REQUEST
+
+
+def _record_repr_when_done(call):
+    reprs = []
+    call.add_done_callback(lambda done_call: reprs.append(repr(done_call)))
+    return reprs
+
+
+async def _start_test_server(options=None):
+    server = aio.server(options=options)
     port = server.add_insecure_port("[::]:0")
     server.add_generic_rpc_handlers((_GenericHandler(),))
     await server.start()
@@ -168,6 +223,146 @@ class TestAbort(AioTestBase):
 
         self.assertEqual(_ABORT_CODE, await call.code())
         self.assertEqual(_ABORT_DETAILS, await call.details())
+
+    async def test_stream_unary_abort_during_request_iteration(self):
+        method = self._channel.stream_unary(_STREAM_UNARY_ABORT_AFTER_FIRST_REQ)
+        for _ in range(_ROUNDS):
+            call = method(_large_requests())
+            reprs_when_done = _record_repr_when_done(call)
+
+            with self.assertRaises(aio.AioRpcError) as exc_ctx:
+                await call
+
+            rpc_error = exc_ctx.exception
+            self.assertEqual(_ABORT_CODE, rpc_error.code())
+            self.assertEqual(_ABORT_DETAILS, rpc_error.details())
+            self.assertEqual(_ABORT_CODE, await call.code())
+            self.assertEqual([repr(call)], reprs_when_done)
+
+    async def test_stream_stream_abort_during_write(self):
+        method = self._channel.stream_stream(
+            _STREAM_STREAM_ABORT_AFTER_FIRST_REQ
+        )
+        for _ in range(_ROUNDS):
+            call = method()
+            reprs_when_done = _record_repr_when_done(call)
+
+            with self.assertRaises(
+                (aio.AioRpcError, asyncio.InvalidStateError)
+            ):
+                for _ in range(_MAX_LARGE_WRITES):
+                    await call.write(_LARGE_REQUEST)
+
+            self.assertEqual(_ABORT_CODE, await call.code())
+            self.assertEqual(_ABORT_DETAILS, await call.details())
+            self.assertEqual([repr(call)], reprs_when_done)
+
+    async def test_stream_unary_reply_during_request_iteration(self):
+        method = self._channel.stream_unary(_STREAM_UNARY_REPLY_AFTER_FIRST_REQ)
+        for _ in range(_ROUNDS):
+            call = method(_large_requests())
+            reprs_when_done = _record_repr_when_done(call)
+
+            self.assertEqual(_RESPONSE, await call)
+            self.assertEqual(grpc.StatusCode.OK, await call.code())
+            self.assertEqual([repr(call)], reprs_when_done)
+
+    async def _assert_refused_write_reports_internal(self, call):
+        reprs_when_done = _record_repr_when_done(call)
+        await call.wait_for_connection()
+
+        results = await asyncio.gather(
+            call.write(_LARGE_REQUEST),
+            call.write(_LARGE_REQUEST),
+            return_exceptions=True,
+        )
+
+        for result in results:
+            self.assertIsInstance(result, aio.AioRpcError)
+            self.assertEqual(grpc.StatusCode.INTERNAL, result.code())
+            self.assertEqual(_INTERNAL_ERROR_DETAILS, result.details())
+        self.assertEqual(grpc.StatusCode.INTERNAL, await call.code())
+        self.assertEqual(_INTERNAL_ERROR_DETAILS, await call.details())
+        self.assertFalse(call.cancelled())
+        self.assertEqual([repr(call)], reprs_when_done)
+
+    async def test_refused_write_reports_internal(self):
+        """Tests the status of an RPC whose send batch is refused by Core.
+
+        Unlike a server abort, nothing else finishes the RPC here, so the
+        status the client asks Core to cancel with is the one that must be
+        observed. Concurrent writes make `grpc_call_start_batch` refuse the
+        second send with TOO_MANY_OPERATIONS while the first one is pending.
+        """
+        # Without BDP probing the server keeps the HTTP/2 default 64 KiB
+        # stream window instead of advertising 4 MiB, so a 1 MiB write to a
+        # never-reading server stays pending in Core.
+        address, server = await _start_test_server(
+            options=(("grpc.http2.bdp_probe", 0),)
+        )
+        channel = aio.insecure_channel(address)
+        try:
+            with self.subTest(arity="stream_stream"):
+                await self._assert_refused_write_reports_internal(
+                    channel.stream_stream(_STREAM_STREAM_NEVER_READ)()
+                )
+            with self.subTest(arity="stream_unary"):
+                call = channel.stream_unary(_STREAM_UNARY_NEVER_READ)()
+                await self._assert_refused_write_reports_internal(call)
+                with self.assertRaises(aio.AioRpcError) as exc_ctx:
+                    await call
+                self.assertEqual(
+                    grpc.StatusCode.INTERNAL, exc_ctx.exception.code()
+                )
+        finally:
+            await channel.close()
+            await server.stop(None)
+
+    @unittest.skipIf(
+        getattr(sys, "_is_gil_enabled", lambda: True)(),
+        "The use-after-free needs a free-threaded build",
+    )
+    async def test_status_read_from_another_thread_during_abort(self):
+        """Tests if status of an RPC is published once.
+
+        Replacing the status while another thread reads it (`repr()` and
+        `cancelled()` API) is a use-after-free on a free-threaded builds
+        (a crash).
+        """
+        method = self._channel.stream_stream(
+            _STREAM_STREAM_ABORT_AFTER_FIRST_REQ
+        )
+        errors = []
+        codes = []
+        for _ in range(_READER_ROUNDS):
+            call = method()
+            stop = threading.Event()
+
+            def read(call=call):
+                while not stop.is_set():
+                    try:
+                        repr(call)
+                        call.cancelled()
+                    except Exception as exc:  # pylint: disable=broad-except
+                        errors.append(exc)
+                        return
+
+            reader = threading.Thread(target=read)
+            reader.start()
+
+            try:
+                with self.assertRaises(
+                    (aio.AioRpcError, asyncio.InvalidStateError)
+                ):
+                    for _ in range(_MAX_LARGE_WRITES):
+                        await call.write(_LARGE_REQUEST)
+                codes.append(await call.code())
+            finally:
+                stop.set()
+                reader.join()
+
+        self.assertEqual([], errors)
+        self.assertEqual([_ABORT_CODE] * _READER_ROUNDS, codes)
 
 
 if __name__ == "__main__":
