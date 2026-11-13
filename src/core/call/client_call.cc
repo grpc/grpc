@@ -36,18 +36,22 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
+#include "src/core/call/call_destination.h"
 #include "src/core/call/metadata.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call_utils.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/bitset.h"
@@ -56,6 +60,7 @@
 #include "src/core/util/latent_see.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
@@ -102,18 +107,23 @@ grpc_call_error ValidateClientBatch(
 
 }  // namespace
 
-ClientCall::ClientCall(grpc_call*, uint32_t, grpc_completion_queue* cq,
-                       Slice path, std::optional<Slice> authority,
-                       bool registered_method, Timestamp deadline,
-                       grpc_compression_options compression_options,
-                       RefCountedPtr<Arena> arena,
-                       RefCountedPtr<UnstartedCallDestination> destination)
+ClientCall::ClientCall(
+    grpc_call*, uint32_t, grpc_completion_queue* cq, Slice path,
+    std::optional<Slice> authority, bool registered_method, Timestamp deadline,
+    grpc_compression_options compression_options, RefCountedPtr<Arena> arena,
+    RefCountedPtr<UnstartedCallDestination> destination,
+    GlobalStatsPluginRegistry::StatsPluginGroup* const stats_plugin_group)
     : Call(/*is_client=*/true, deadline, std::move(arena)),
       DualRefCounted("ClientCall"),
       cq_(cq),
       call_destination_(std::move(destination)),
       compression_options_(compression_options) {
   global_stats().IncrementClientCallsCreated();
+  if (stats_plugin_group != nullptr) {
+    stats_plugin_group->AddClientCallTracers(path, registered_method,
+                                             this->arena());
+  }
+
   send_initial_metadata_->Set(HttpPathMetadata(), std::move(path));
   if (authority.has_value()) {
     send_initial_metadata_->Set(HttpAuthorityMetadata(), std::move(*authority));
@@ -491,13 +501,13 @@ char* ClientCall::GetPeer() {
 // TODO(b/568493863): Plumb the local address through to the client side.
 char* ClientCall::GetLocalAddress() { return gpr_strdup("unknown"); }
 
-grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
-                          grpc_completion_queue* cq, Slice path,
-                          std::optional<Slice> authority,
-                          bool registered_method, Timestamp deadline,
-                          grpc_compression_options compression_options,
-                          RefCountedPtr<Arena> arena,
-                          RefCountedPtr<UnstartedCallDestination> destination) {
+grpc_call* MakeClientCall(
+    grpc_call* parent_call, uint32_t propagation_mask,
+    grpc_completion_queue* cq, Slice path, std::optional<Slice> authority,
+    bool registered_method, Timestamp deadline,
+    grpc_compression_options compression_options, RefCountedPtr<Arena> arena,
+    RefCountedPtr<UnstartedCallDestination> destination,
+    GlobalStatsPluginRegistry::StatsPluginGroup* const stats_plugin_group) {
   GRPC_DCHECK_NE(arena.get(), nullptr);
   GRPC_DCHECK_NE(
       arena->GetContext<grpc_event_engine::experimental::EventEngine>(),
@@ -505,7 +515,8 @@ grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
   return arena
       ->New<ClientCall>(parent_call, propagation_mask, cq, std::move(path),
                         std::move(authority), registered_method, deadline,
-                        compression_options, arena, destination)
+                        compression_options, arena, destination,
+                        stats_plugin_group)
       ->c_ptr();
 }
 

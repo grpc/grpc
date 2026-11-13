@@ -45,11 +45,16 @@ grpc_fuzz_test(
     ],
     deps = [
         "batch_builder",
+        "//:call_tracer",
         "//:debug_location",
         "//:grpc_base",
+        "//:ref_counted_ptr",
         "//src/core:arena",
         "//src/core:metadata",
+        "//src/core:metrics",
+        "//src/core:time",
         "//test/core/call/yodel:yodel_test",
+        "//test/core/test_util:fake_stats_plugin",
     ],
 )
 
