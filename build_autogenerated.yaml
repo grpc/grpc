@@ -6581,6 +6581,30 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: autosharding_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/autosharding_test_server.h
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/autosharding/proto/autosharding/v1/autosharding.proto
+  - third_party/googleapis/google/api/field_behavior.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - test/cpp/end2end/autosharding_end2end_test.cc
+  - test/cpp/end2end/autosharding_test_server.cc
+  - test/cpp/end2end/test_service_impl.cc
+  deps:
+  - gtest
+  - grpc++_test_util
 - name: autosharding_test
   gtest: true
   build: test

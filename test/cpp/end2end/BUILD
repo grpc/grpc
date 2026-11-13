@@ -133,6 +133,29 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "autosharding_test_server",
+    testonly = True,
+    srcs = ["autosharding_test_server.cc"],
+    hdrs = ["autosharding_test_server.h"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log",
+        "absl/strings",
+    ],
+    deps = [
+        ":counted_service",
+        "//:autosharding_cc_grpc",
+        "//:autosharding_cc_proto",
+        "//:gpr",
+        "//:grpc++",
+        "//src/core:grpc_check",
+        "//src/core:sync",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_library(
     name = "end2end_test_utils",
     testonly = True,
     hdrs = ["end2end_test_utils.h"],
@@ -917,6 +940,45 @@ grpc_cc_test(
         "//test/cpp/util:channelz_util",
         "//test/cpp/util:test_util",
         "@com_github_cncf_xds//xds/data/orca/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_test(
+    name = "autosharding_end2end_test",
+    srcs = ["autosharding_end2end_test.cc"],
+    external_deps = [
+        "absl/log",
+        "absl/status",
+        "absl/strings",
+        "absl/strings:str_format",
+        "gtest",
+    ],
+    tags = [
+        "cpp_end2end_test",
+        "cpp_lb_end2end_test",
+        "no_test_ios",
+    ],
+    deps = [
+        ":autosharding_test_server",
+        ":counted_service",
+        ":test_service_impl",
+        "//:endpoint_addresses",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_public_hdrs",
+        "//:grpc_resolver_fake",
+        "//:grpc_service_config_impl",
+        "//:parse_address",
+        "//:ref_counted_ptr",
+        "//:uri",
+        "//src/core:channel_args",
+        "//src/core:channel_factory",
+        "//src/core:grpc_check",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )
 
