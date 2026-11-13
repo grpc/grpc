@@ -23,6 +23,7 @@ package(
 )
 
 _XDS_PROTO_DIRECTORIES = [
+    "cel",
     "contrib",
     "envoy",
     "google",
