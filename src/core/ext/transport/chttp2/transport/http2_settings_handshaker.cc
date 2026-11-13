@@ -387,10 +387,9 @@ absl::Status Http2SettingsHandshaker::ProcessReadBufferLocked() {
                   "Settings frame received for non-zero stream");
             }
             if (frame_length_ > settings_.acked().max_frame_size()) {
-              return GRPC_ERROR_CREATE(
-                  absl::StrFormat("Frame size %d larger than max frame size %d",
-                                  frame_length_,
-                                  settings_.acked().max_frame_size()));
+              return GRPC_ERROR_CREATE(absl::StrFormat(
+                  "Frame size %d larger than max frame size %d", frame_length_,
+                  settings_.acked().max_frame_size()));
             }
             grpc_error_handle err = grpc_chttp2_settings_parser_begin_frame(
                 &settings_parser_, frame_length_, frame_flags_,
