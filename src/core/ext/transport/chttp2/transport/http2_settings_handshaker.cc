@@ -37,7 +37,6 @@
 #include "src/core/ext/transport/chttp2/transport/frame_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
-#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/handshaker/handshaker.h"
@@ -51,12 +50,10 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/status_helper.h"
 #include "src/core/util/sync.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
@@ -64,8 +61,6 @@
 namespace grpc_core {
 
 namespace {
-
-using http2::Http2ErrorCode;
 
 class Http2SettingsHandshaker final : public Handshaker {
  public:
@@ -124,7 +119,6 @@ class Http2SettingsHandshaker final : public Handshaker {
   bool write_done_ ABSL_GUARDED_BY(mu_) = false;
   bool read_done_ ABSL_GUARDED_BY(mu_) = false;
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
-  bool sent_goaway_ ABSL_GUARDED_BY(mu_) = false;
   absl::Status overall_status_ ABSL_GUARDED_BY(mu_);
 
   ReadState read_state_ ABSL_GUARDED_BY(mu_);
@@ -200,6 +194,9 @@ void Http2SettingsHandshaker::DoHandshake(
       if (!read_status.ok()) {
         RecordErrorLocked(std::move(read_status));
         read_done_ = true;
+        if (write_in_progress_ && args_->endpoint != nullptr) {
+          args_->endpoint.reset();
+        }
         finished = MaybeFinishLocked(&done_cb, &done_status);
       } else if (read_state_ == ReadState::kDone) {
         read_bytes_for_http1_check_.Clear();
@@ -248,10 +245,8 @@ void Http2SettingsHandshaker::OnWriteDone(absl::Status error) {
     write_done_ = true;
     write_buffer_.Clear();
     if (!error.ok() || args_->endpoint == nullptr) {
-      if (!sent_goaway_) {
-        RecordErrorLocked(error.ok() ? GRPC_ERROR_CREATE("Handshaker shutdown")
-                                     : std::move(error));
-      }
+      RecordErrorLocked(error.ok() ? GRPC_ERROR_CREATE("Handshaker shutdown")
+                                   : std::move(error));
       if (read_in_progress_ && args_->endpoint != nullptr) {
         args_->endpoint.reset();
       }
@@ -300,10 +295,7 @@ void Http2SettingsHandshaker::OnReadDone(absl::Status error) {
       if (!parse_status.ok()) {
         RecordErrorLocked(std::move(parse_status));
         read_done_ = true;
-        intptr_t unused_http2_error;
-        if (write_in_progress_ && args_->endpoint != nullptr &&
-            !grpc_error_get_int(overall_status_, StatusIntProperty::kHttp2Error,
-                                &unused_http2_error)) {
+        if (write_in_progress_ && args_->endpoint != nullptr) {
           args_->endpoint.reset();
         }
         finished = MaybeFinishLocked(&done_cb, &done_status);
@@ -385,38 +377,25 @@ absl::Status Http2SettingsHandshaker::ProcessReadBufferLocked() {
                 static_cast<uint32_t>(frame_header_buf_[8]);
             if (frame_type_ != GRPC_CHTTP2_FRAME_SETTINGS ||
                 frame_flags_ != 0) {
-              return grpc_error_set_int(
-                  GRPC_ERROR_CREATE(absl::StrFormat(
-                      "Expected SETTINGS frame as the first frame, got frame "
-                      "type %d, flags %d",
-                      frame_type_, frame_flags_)),
-                  StatusIntProperty::kHttp2Error,
-                  static_cast<intptr_t>(Http2ErrorCode::kProtocolError));
+              return GRPC_ERROR_CREATE(absl::StrFormat(
+                  "Expected SETTINGS frame as the first frame, got frame "
+                  "type %d, flags %d",
+                  frame_type_, frame_flags_));
             }
             if (frame_stream_id_ != 0) {
-              return grpc_error_set_int(
-                  GRPC_ERROR_CREATE(
-                      "Settings frame received for non-zero stream"),
-                  StatusIntProperty::kHttp2Error,
-                  static_cast<intptr_t>(Http2ErrorCode::kProtocolError));
+              return GRPC_ERROR_CREATE(
+                  "Settings frame received for non-zero stream");
             }
             if (frame_length_ > settings_.acked().max_frame_size()) {
-              return grpc_error_set_int(
-                  GRPC_ERROR_CREATE(absl::StrFormat(
-                      "Frame size %d larger than max frame "
-                      "size %d",
-                      frame_length_, settings_.acked().max_frame_size())),
-                  StatusIntProperty::kHttp2Error,
-                  static_cast<intptr_t>(Http2ErrorCode::kFrameSizeError));
+              return GRPC_ERROR_CREATE(
+                  absl::StrFormat("Frame size %d larger than max frame size %d",
+                                  frame_length_,
+                                  settings_.acked().max_frame_size()));
             }
             grpc_error_handle err = grpc_chttp2_settings_parser_begin_frame(
                 &settings_parser_, frame_length_, frame_flags_,
                 settings_.mutable_peer());
-            if (!err.ok()) {
-              return grpc_error_set_int(
-                  err, StatusIntProperty::kHttp2Error,
-                  static_cast<intptr_t>(Http2ErrorCode::kFrameSizeError));
-            }
+            if (!err.ok()) return err;
             payload_bytes_remaining_ = frame_length_;
             if (payload_bytes_remaining_ == 0) {
               err = grpc_chttp2_settings_parser_parse(
@@ -486,31 +465,6 @@ bool Http2SettingsHandshaker::MaybeFinishLocked(
     absl::Status* status) {
   if (!write_done_ || !read_done_) {
     return false;
-  }
-  if (!overall_status_.ok() && !is_shutdown_ && !sent_goaway_ &&
-      args_->endpoint != nullptr) {
-    intptr_t http2_error = 0;
-    if (grpc_error_get_int(overall_status_, StatusIntProperty::kHttp2Error,
-                           &http2_error)) {
-      sent_goaway_ = true;
-      write_done_ = false;
-      write_in_progress_ = true;
-      Http2Frame goaway_frame(
-          Http2GoawayFrame{0, static_cast<uint32_t>(http2_error),
-                           Slice::FromCopiedString(overall_status_.message())});
-      Serialize(absl::Span<Http2Frame>(&goaway_frame, 1), write_buffer_);
-      Ref().release();  // Ref held by OnWriteDoneScheduler
-      grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs
-          write_args;
-      write_args.set_max_frame_size(INT_MAX);
-      grpc_endpoint_write(
-          args_->endpoint.get(), write_buffer_.c_slice_buffer(),
-          GRPC_CLOSURE_INIT(&on_write_done_scheduler_,
-                            &Http2SettingsHandshaker::OnWriteDoneScheduler,
-                            this, grpc_schedule_on_exec_ctx),
-          std::move(write_args));
-      return false;
-    }
   }
   if (overall_status_.ok()) {
     args_->args =

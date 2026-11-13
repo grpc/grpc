@@ -37,7 +37,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/status_helper.h"
 #include "src/core/util/useful.h"
 #include "absl/base/attributes.h"
 #include "absl/log/log.h"
@@ -230,12 +229,9 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
                 grpc_slice_from_static_string("HTTP2 settings error"), &t->qbuf,
                 &t->http2_ztrace_collector);
           }
-          return grpc_error_set_int(
-              GRPC_ERROR_CREATE(absl::StrFormat(
-                  "invalid value %u passed for %s", parser->value,
-                  grpc_core::Http2Settings::WireIdToName(parser->id).c_str())),
-              grpc_core::StatusIntProperty::kHttp2Error,
-              static_cast<intptr_t>(error));
+          return GRPC_ERROR_CREATE(absl::StrFormat(
+              "invalid value %u passed for %s", parser->value,
+              grpc_core::Http2Settings::WireIdToName(parser->id).c_str()));
         }
         if (t != nullptr) {
           GRPC_TRACE_LOG(http, INFO)
