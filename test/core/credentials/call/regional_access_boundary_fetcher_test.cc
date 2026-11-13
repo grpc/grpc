@@ -138,6 +138,7 @@ class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
 namespace {
 
 grpc_closure* g_stalled_on_done = nullptr;
+std::vector<grpc_closure*> g_stalled_on_done_list;
 grpc_http_response* g_stalled_response = nullptr;
 
 int httpcli_get_stalled(const grpc_http_request* request, const URI& uri,
@@ -478,6 +479,7 @@ int httpcli_get_stalled(const grpc_http_request* /*request*/,
                         grpc_closure* on_done, grpc_http_response* response) {
   g_mock_get_count++;
   g_stalled_on_done = on_done;
+  g_stalled_on_done_list.push_back(on_done);
   g_stalled_response = response;
   // Do not call ExecCtx::Run here. The request is now "in flight" and stalled.
   return 1;
@@ -668,6 +670,9 @@ int httpcli_get_email_success(const grpc_http_request* /*request*/,
   if (uri.path() ==
       "/computeMetadata/v1/instance/service-accounts/default/email") {
     *response = http_response(200, "foo@bar.com");
+  } else if (uri.path() ==
+             "/computeMetadata/v1/universe/universe-domain") {
+    *response = http_response(200, "googleapis.com");
   } else {
     // RAB fetch
     *response = http_response(
@@ -738,11 +743,14 @@ TEST_F(EmailFetcherTest, EmailFetchFailureSkipsRab) {
 }
 
 int httpcli_get_email_failure_counted(const grpc_http_request* /*request*/,
-                                      const URI& /*uri*/,
+                                      const URI& uri,
                                       Timestamp /*deadline*/,
                                       grpc_closure* on_done,
                                       grpc_http_response* response) {
-  g_mock_get_count++;
+  if (uri.path() ==
+      "/computeMetadata/v1/instance/service-accounts/default/email") {
+    g_mock_get_count++;
+  }
   *response = http_response(404, "Not Found");
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
@@ -770,17 +778,18 @@ TEST_F(EmailFetcherTest, EmailFetchBackoffRespected) {
 
 TEST_F(EmailFetcherTest, EarlyDestructionDoesNotCrash) {
   ExecCtx exec_ctx;
+  g_stalled_on_done_list.clear();
   HttpRequest::SetOverride(httpcli_get_stalled, nullptr, nullptr);
   email_fetcher_->StartEmailFetch();
   // Do NOT flush ExecCtx. We want the request to be in flight.
   // Now destroy the fetcher.
   email_fetcher_.reset();
-  // Clean up the stalled request to avoid leaks and timeouts in shutdown.
-  if (g_stalled_on_done != nullptr) {
-    ExecCtx::Run(DEBUG_LOCATION, g_stalled_on_done,
-                 absl::CancelledError("orphaned"));
-    ExecCtx::Get()->Flush();
+  // Clean up the stalled requests to avoid leaks and timeouts in shutdown.
+  for (grpc_closure* on_done : g_stalled_on_done_list) {
+    ExecCtx::Run(DEBUG_LOCATION, on_done, absl::CancelledError("orphaned"));
   }
+  g_stalled_on_done_list.clear();
+  ExecCtx::Get()->Flush();
 }
 
 int httpcli_get_spiffe_id(const grpc_http_request* /*request*/, const URI& uri,
@@ -790,6 +799,9 @@ int httpcli_get_spiffe_id(const grpc_http_request* /*request*/, const URI& uri,
       "/computeMetadata/v1/instance/service-accounts/default/email") {
     *response = http_response(
         200, "spiffe://my-project.svc.id.goog/ns/default/sa/default");
+  } else if (uri.path() ==
+             "/computeMetadata/v1/universe/universe-domain") {
+    *response = http_response(200, "googleapis.com");
   }
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
@@ -819,6 +831,9 @@ int httpcli_get_email_with_whitespace(const grpc_http_request* /*request*/,
   if (uri.path() ==
       "/computeMetadata/v1/instance/service-accounts/default/email") {
     *response = http_response(200, "  foo@bar.com\n");
+  } else if (uri.path() ==
+             "/computeMetadata/v1/universe/universe-domain") {
+    *response = http_response(200, "  googleapis.com\n");
   } else {
     // RAB fetch
     *response = http_response(
@@ -857,6 +872,109 @@ TEST_F(EmailFetcherTest, EmailWithWhitespaceTrimmedAndSucceeds) {
   std::optional<absl::string_view> value2 =
       metadata_->GetStringValue("x-allowed-locations", &buffer2);
   EXPECT_THAT(value2, ::testing::Optional(absl::string_view("us-west1")));
+}
+
+int httpcli_get_non_gdu_universe_domain(const grpc_http_request* /*request*/,
+                                        const URI& uri, Timestamp /*deadline*/,
+                                        grpc_closure* on_done,
+                                        grpc_http_response* response) {
+  g_mock_get_count++;
+  if (uri.path() ==
+      "/computeMetadata/v1/instance/service-accounts/default/email") {
+    *response = http_response(200, "foo@bar.com");
+  } else if (uri.path() == "/computeMetadata/v1/universe/universe-domain") {
+    *response = http_response(200, "apis-tpclp.goog");
+  } else {
+    *response = http_response(
+        200,
+        "{\"encodedLocations\": \"us-west1\", \"locations\": [\"us-west1\"]}");
+  }
+  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
+TEST_F(EmailFetcherTest, NonGduUniverseDomainFromMdsSkipsRab) {
+  ExecCtx exec_ctx;
+  g_mock_get_count = 0;
+  HttpRequest::SetOverride(httpcli_get_non_gdu_universe_domain, nullptr,
+                           nullptr);
+  email_fetcher_->StartEmailFetch();
+  ExecCtx::Get()->Flush();
+  EXPECT_EQ(g_mock_get_count, 2);
+  metadata_->Append("authorization", Slice::FromStaticString("Bearer token"),
+                    [](absl::string_view, const Slice&) { abort(); });
+  metadata_->Append(":authority", Slice::FromStaticString("foo.googleapis.com"),
+                    [](absl::string_view, const Slice&) { abort(); });
+  email_fetcher_->Fetch("token", *metadata_);
+  ExecCtx::Get()->Flush();
+  EXPECT_EQ(g_mock_get_count, 2);
+  std::string buffer;
+  std::optional<absl::string_view> value =
+      metadata_->GetStringValue("x-allowed-locations", &buffer);
+  EXPECT_FALSE(value.has_value());
+  // Subsequent StartEmailFetch should not retry MDS for terminal non-GDU.
+  fuzzing_event_engine_->TickForDuration(Duration::Minutes(5));
+  email_fetcher_->StartEmailFetch();
+  ExecCtx::Get()->Flush();
+  EXPECT_EQ(g_mock_get_count, 2);
+}
+
+int httpcli_get_universe_domain_500_then_gdu(
+    const grpc_http_request* /*request*/, const URI& uri,
+    Timestamp /*deadline*/, grpc_closure* on_done,
+    grpc_http_response* response) {
+  if (uri.path() ==
+      "/computeMetadata/v1/instance/service-accounts/default/email") {
+    *response = http_response(200, "foo@bar.com");
+  } else if (uri.path() == "/computeMetadata/v1/universe/universe-domain") {
+    g_mock_get_count++;
+    if (g_mock_get_count == 1) {
+      *response = http_response(500, "Internal Server Error");
+    } else {
+      *response = http_response(200, "googleapis.com");
+    }
+  } else {
+    *response = http_response(
+        200,
+        "{\"encodedLocations\": \"us-west1\", \"locations\": [\"us-west1\"]}");
+  }
+  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
+TEST_F(EmailFetcherTest, UniverseDomainFetchErrorRetriesWithBackoff) {
+  ExecCtx exec_ctx;
+  g_mock_get_count = 0;
+  HttpRequest::SetOverride(httpcli_get_universe_domain_500_then_gdu, nullptr,
+                           nullptr);
+  email_fetcher_->StartEmailFetch();
+  ExecCtx::Get()->Flush();
+  EXPECT_EQ(g_mock_get_count, 1);
+  // Immediate retry skipped due to backoff.
+  email_fetcher_->StartEmailFetch();
+  ExecCtx::Get()->Flush();
+  EXPECT_EQ(g_mock_get_count, 1);
+  // Advance past backoff and retry; should succeed and enable RAB.
+  fuzzing_event_engine_->TickForDuration(Duration::Seconds(20));
+  email_fetcher_->StartEmailFetch();
+  ExecCtx::Get()->Flush();
+  EXPECT_EQ(g_mock_get_count, 2);
+  metadata_->Append("authorization", Slice::FromStaticString("Bearer token"),
+                    [](absl::string_view, const Slice&) { abort(); });
+  metadata_->Append(":authority", Slice::FromStaticString("foo.googleapis.com"),
+                    [](absl::string_view, const Slice&) { abort(); });
+  email_fetcher_->Fetch("token", *metadata_);
+  ExecCtx::Get()->Flush();
+  metadata_ = arena_->MakePooled<ClientMetadata>();
+  metadata_->Append("authorization", Slice::FromStaticString("Bearer token"),
+                    [](absl::string_view, const Slice&) { abort(); });
+  metadata_->Append(":authority", Slice::FromStaticString("foo.googleapis.com"),
+                    [](absl::string_view, const Slice&) { abort(); });
+  email_fetcher_->Fetch("token", *metadata_);
+  std::string buffer;
+  std::optional<absl::string_view> value =
+      metadata_->GetStringValue("x-allowed-locations", &buffer);
+  EXPECT_THAT(value, ::testing::Optional(absl::string_view("us-west1")));
 }
 
 TEST(IsValidEmailTest, Valid) {

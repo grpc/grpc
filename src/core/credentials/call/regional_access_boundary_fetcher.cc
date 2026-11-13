@@ -47,6 +47,9 @@ constexpr Duration kRegionalAccessBoundaryCacheDuration = Duration::Hours(6);
 constexpr absl::string_view kRegionalEndpoint = "rep.googleapis.com";
 constexpr char kComputeEngineDefaultSaEmailPath[] =
     "/computeMetadata/v1/instance/service-accounts/default/email";
+constexpr char kComputeEngineUniverseDomainPath[] =
+    "/computeMetadata/v1/universe/universe-domain";
+constexpr absl::string_view kDefaultUniverseDomain = "googleapis.com";
 }  // namespace
 
 RefCountedPtr<RegionalAccessBoundaryFetcher>
@@ -242,17 +245,19 @@ void RegionalAccessBoundaryFetcher::Request::OnResponse(
   }
 }
 
-class EmailFetcher::EmailRequest final
-    : public InternallyRefCounted<EmailRequest> {
+class EmailFetcher::MetadataRequest final
+    : public InternallyRefCounted<MetadataRequest> {
  public:
-  explicit EmailRequest(WeakRefCountedPtr<EmailFetcher> fetcher)
-      : fetcher_(std::move(fetcher)) {
+  enum class Type { kEmail, kUniverseDomain };
+
+  MetadataRequest(WeakRefCountedPtr<EmailFetcher> fetcher, Type type)
+      : fetcher_(std::move(fetcher)), type_(type) {
     memset(&response_, 0, sizeof(response_));
     pollent_ =
         grpc_polling_entity_create_from_pollset_set(grpc_pollset_set_create());
   }
 
-  ~EmailRequest() override {
+  ~MetadataRequest() override {
     grpc_http_response_destroy(&response_);
     grpc_pollset_set_destroy(grpc_polling_entity_pollset_set(&pollent_));
   }
@@ -263,10 +268,12 @@ class EmailFetcher::EmailRequest final
     grpc_http_request request = {};
     request.hdr_count = 1;
     request.hdrs = &header;
+    const char* path = type_ == Type::kEmail
+                           ? kComputeEngineDefaultSaEmailPath
+                           : kComputeEngineUniverseDomainPath;
     auto uri = URI::Create(
-        "http", /*user_info=*/"", GRPC_COMPUTE_ENGINE_METADATA_HOST,
-        kComputeEngineDefaultSaEmailPath, /*query_parameter_pairs=*/{},
-        /*fragment=*/"");
+        "http", /*user_info=*/"", GRPC_COMPUTE_ENGINE_METADATA_HOST, path,
+        /*query_parameter_pairs=*/{}, /*fragment=*/"");
     GRPC_CHECK(uri.ok());
     GRPC_CLOSURE_INIT(&closure_, OnResponseWrapper, this,
                       grpc_schedule_on_exec_ctx);
@@ -286,7 +293,7 @@ class EmailFetcher::EmailRequest final
 
  private:
   static void OnResponseWrapper(void* arg, grpc_error_handle error) {
-    RefCountedPtr<EmailRequest> req(static_cast<EmailRequest*>(arg));
+    RefCountedPtr<MetadataRequest> req(static_cast<MetadataRequest*>(arg));
     // RefCountedPtr adopts the reference from Start().
     req->OnResponse(error);
   }
@@ -296,13 +303,27 @@ class EmailFetcher::EmailRequest final
     if (response_.body != nullptr) {
       response_body = absl::string_view(response_.body, response_.body_length);
     }
-    if (!error.ok()) {
-      fetcher_->OnEmailFetchError(error);
-    } else if (response_.status != 200) {
-      fetcher_->OnEmailFetchError(GRPC_ERROR_CREATE(absl::StrCat(
-          "Failed to fetch service account email: HTTP ", response_.status)));
+    if (type_ == Type::kEmail) {
+      if (!error.ok()) {
+        fetcher_->OnEmailFetchError(error);
+      } else if (response_.status != 200) {
+        fetcher_->OnEmailFetchError(GRPC_ERROR_CREATE(absl::StrCat(
+            "Failed to fetch service account email: HTTP ", response_.status)));
+      } else {
+        fetcher_->OnEmailFetchComplete(response_body);
+      }
     } else {
-      fetcher_->OnEmailFetchComplete(response_body);
+      if (!error.ok()) {
+        fetcher_->OnUniverseDomainFetchError(error);
+      } else if (response_.status == 404) {
+        fetcher_->OnUniverseDomainFetchComplete("");
+      } else if (response_.status != 200) {
+        fetcher_->OnUniverseDomainFetchError(GRPC_ERROR_CREATE(
+            absl::StrCat("Failed to fetch universe domain: HTTP ",
+                         response_.status)));
+      } else {
+        fetcher_->OnUniverseDomainFetchComplete(response_body);
+      }
     }
   }
 
@@ -310,6 +331,7 @@ class EmailFetcher::EmailRequest final
   OrphanablePtr<HttpRequest> http_request_;
   grpc_polling_entity pollent_;
   WeakRefCountedPtr<EmailFetcher> fetcher_;
+  const Type type_;
   grpc_closure closure_;
 };
 
@@ -327,13 +349,27 @@ void EmailFetcher::StartEmailFetch() {
   if (Timestamp::Now() < next_fetch_earliest_time_) {
     return;
   }
-  // Check if we are in the initial/retryable state (null EmailRequest)
-  auto* pending = std::get_if<OrphanablePtr<EmailRequest>>(&state_);
-  if (pending == nullptr) return;   // Already have RAB fetcher.
-  if (*pending != nullptr) return;  // Email fetch already in progress.
-  auto request = MakeOrphanable<EmailRequest>(WeakRef());
-  request->Start();
-  state_ = std::move(request);
+  // Check if we are in the initial/retryable state (PendingRequests).
+  auto* pending = std::get_if<PendingRequests>(&state_);
+  if (pending == nullptr) return;  // Already have RAB fetcher.
+  if (pending->email_request != nullptr ||
+      pending->universe_domain_request != nullptr) {
+    return;  // Metadata fetch already in progress.
+  }
+  if (!email_.has_value()) {
+    pending->email_request = MakeOrphanable<MetadataRequest>(
+        WeakRef(), MetadataRequest::Type::kEmail);
+  }
+  if (!is_gdu_.has_value()) {
+    pending->universe_domain_request = MakeOrphanable<MetadataRequest>(
+        WeakRef(), MetadataRequest::Type::kUniverseDomain);
+  }
+  if (pending->email_request != nullptr) {
+    pending->email_request->Start();
+  }
+  if (pending->universe_domain_request != nullptr) {
+    pending->universe_domain_request->Start();
+  }
 }
 
 void EmailFetcher::Fetch(absl::string_view token,
@@ -353,40 +389,88 @@ void EmailFetcher::Orphaned() {
 
 void EmailFetcher::OnEmailFetchComplete(absl::string_view email) {
   MutexLock lock(mu_);
-  if (std::holds_alternative<OrphanablePtr<EmailRequest>>(state_)) {
-    absl::string_view trimmed_email = absl::StripAsciiWhitespace(email);
-    if (!IsValidEmail(trimmed_email)) {
-      LOG(INFO) << "Regional Access Boundary fetch skipped: service account "
-                   "email is not a valid email address (could be a principal "
-                   "string or pool id): \""
-                << trimmed_email << "\"";
-      state_ = RefCountedPtr<RegionalAccessBoundaryFetcher>(nullptr);
-      return;
-    }
+  auto* pending = std::get_if<PendingRequests>(&state_);
+  if (pending == nullptr) return;
+  pending->email_request.reset();
+  absl::string_view trimmed_email = absl::StripAsciiWhitespace(email);
+  if (!IsValidEmail(trimmed_email)) {
+    LOG(INFO) << "Regional Access Boundary fetch skipped: service account "
+                 "email is not a valid email address (could be a principal "
+                 "string or pool id): \""
+              << trimmed_email << "\"";
+    email_ = "";
+  } else {
+    email_ = std::string(trimmed_email);
+  }
+  MaybeFinishMetadataFetch();
+}
+
+void EmailFetcher::OnEmailFetchError(grpc_error_handle error) {
+  MutexLock lock(mu_);
+  auto* pending = std::get_if<PendingRequests>(&state_);
+  if (pending == nullptr) return;
+  pending->email_request.reset();
+  pending->error = error;
+  MaybeFinishMetadataFetch();
+}
+
+void EmailFetcher::OnUniverseDomainFetchComplete(
+    absl::string_view universe_domain) {
+  MutexLock lock(mu_);
+  auto* pending = std::get_if<PendingRequests>(&state_);
+  if (pending == nullptr) return;
+  pending->universe_domain_request.reset();
+  absl::string_view trimmed_domain =
+      absl::StripAsciiWhitespace(universe_domain);
+  is_gdu_ = trimmed_domain.empty() || trimmed_domain == kDefaultUniverseDomain;
+  if (!*is_gdu_) {
+    LOG(INFO) << "Regional Access Boundary fetch skipped for non-GDU "
+                 "universe domain: \""
+              << trimmed_domain << "\"";
+  }
+  MaybeFinishMetadataFetch();
+}
+
+void EmailFetcher::OnUniverseDomainFetchError(grpc_error_handle error) {
+  MutexLock lock(mu_);
+  auto* pending = std::get_if<PendingRequests>(&state_);
+  if (pending == nullptr) return;
+  pending->universe_domain_request.reset();
+  pending->error = error;
+  MaybeFinishMetadataFetch();
+}
+
+void EmailFetcher::MaybeFinishMetadataFetch() {
+  auto* pending = std::get_if<PendingRequests>(&state_);
+  if (pending == nullptr) return;
+  if (pending->email_request != nullptr ||
+      pending->universe_domain_request != nullptr) {
+    return;
+  }
+  if ((email_.has_value() && email_->empty()) ||
+      (is_gdu_.has_value() && !*is_gdu_)) {
+    state_ = RefCountedPtr<RegionalAccessBoundaryFetcher>(nullptr);
+    return;
+  }
+  if (email_.has_value() && is_gdu_.has_value() && *is_gdu_) {
     std::string rab_url = absl::StrFormat(
         "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/"
         "%s/allowedLocations",
-        trimmed_email);
+        *email_);
     auto rab_fetcher =
         RegionalAccessBoundaryFetcher::Create(rab_url, event_engine_);
     if (rab_fetcher != nullptr) {
       state_ = std::move(rab_fetcher);
     } else {
-      state_ = OrphanablePtr<EmailRequest>(nullptr);
+      state_ = RefCountedPtr<RegionalAccessBoundaryFetcher>(nullptr);
     }
+    return;
   }
-}
-
-void EmailFetcher::OnEmailFetchError(grpc_error_handle error) {
-  MutexLock lock(mu_);
-  if (std::holds_alternative<OrphanablePtr<EmailRequest>>(state_)) {
-    LOG_EVERY_N_SEC(INFO, 60) << "Regional Access Boundary fetch skipped due "
-                                 "to service account email fetch failure: "
-                              << StatusToString(error);
-    state_ = OrphanablePtr<EmailRequest>(
-        nullptr);  // Reset to allow retry on next invocation.
-    next_fetch_earliest_time_ = Timestamp::Now() + backoff_.NextAttemptDelay();
-  }
+  LOG_EVERY_N_SEC(INFO, 60) << "Regional Access Boundary fetch skipped due "
+                               "to service account email fetch failure: "
+                            << StatusToString(pending->error);
+  pending->error = absl::OkStatus();
+  next_fetch_earliest_time_ = Timestamp::Now() + backoff_.NextAttemptDelay();
 }
 
 bool EmailFetcher::IsValidEmail(absl::string_view email) {

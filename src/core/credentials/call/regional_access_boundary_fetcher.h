@@ -131,16 +131,27 @@ class EmailFetcher final : public DualRefCounted<EmailFetcher> {
   void Orphaned() override;
 
  private:
-  class EmailRequest;
+  class MetadataRequest;
+
+  struct PendingRequests {
+    OrphanablePtr<MetadataRequest> email_request;
+    OrphanablePtr<MetadataRequest> universe_domain_request;
+    grpc_error_handle error;
+  };
 
   void OnEmailFetchComplete(absl::string_view email);
   void OnEmailFetchError(grpc_error_handle error);
+  void OnUniverseDomainFetchComplete(absl::string_view universe_domain);
+  void OnUniverseDomainFetchError(grpc_error_handle error);
+  void MaybeFinishMetadataFetch() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   Mutex mu_;
 
-  // Either a pending email request or an RAB fetcher.
-  std::variant<OrphanablePtr<EmailRequest>,
+  std::optional<std::string> email_ ABSL_GUARDED_BY(&mu_);
+  std::optional<bool> is_gdu_ ABSL_GUARDED_BY(&mu_);
+  // Either pending metadata requests or an RAB fetcher.
+  std::variant<PendingRequests,
                RefCountedPtr<RegionalAccessBoundaryFetcher>>
       state_ ABSL_GUARDED_BY(&mu_);
   BackOff backoff_ ABSL_GUARDED_BY(&mu_) =
