@@ -16,11 +16,25 @@
 
 #include "src/core/xds/grpc/xds_client_grpc.h"
 
+#include <grpc/channel_factory.h>
 #include <grpc/grpc.h>
 
 #include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
+#include "src/core/client_channel/channel_factory.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/util/down_cast.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_args.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
+#include "src/core/xds/grpc/xds_server_grpc.h"
+#include "src/core/xds/grpc/xds_transport_factory_grpc.h"
+#include "src/core/xds/grpc/xds_transport_grpc.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -89,6 +103,49 @@ TEST(GrpcXdsClient, GetOrCreateReplacesIfRefcountIsZero) {
   EXPECT_EQ(
       GrpcXdsClient::GetOrCreate(kKey, ChannelArgs(), "reason", bootstrap),
       xds_client2);
+}
+
+// Returns the transport that a ChannelFactory handle wraps.
+GrpcXdsTransport* GetTransport(
+    const experimental::ChannelFactory::ChannelHandle& handle) {
+  return DownCast<GrpcXdsTransport*>(
+      DownCast<const ChannelHandleImpl&>(handle).transport().get());
+}
+
+TEST(GrpcXdsClient, CreateChannelFactory) {
+  constexpr absl::string_view kKey = "channel_factory_key";
+  constexpr absl::string_view kTargetUri = "dns:///autosharding.example.com";
+  ExecCtx exec_ctx;
+  auto xds_client = GrpcXdsClient::GetOrCreate("foo", ChannelArgs(), "reason",
+                                               MakeBootstrap());
+  ASSERT_TRUE(xds_client.ok()) << xds_client.status();
+  ValidationErrors errors;
+  auto channel_creds_config = ParseXdsBootstrapChannelCreds(
+      Json::FromObject(
+          {{"channel_creds", Json::FromArray({Json::FromObject(
+                                 {{"type", Json::FromString("insecure")}})})}}),
+      JsonArgs(), &errors);
+  ASSERT_TRUE(errors.ok());
+  XdsTransportFactoryWrapper::TargetMap targets;
+  targets.emplace(kKey,
+                  std::make_shared<GrpcXdsServerTarget>(
+                      std::string(kTargetUri), std::move(channel_creds_config),
+                      std::vector<RefCountedPtr<const CallCredsConfig>>()));
+  auto channel_factory =
+      (*xds_client)->CreateChannelFactory(std::move(targets));
+  ASSERT_NE(channel_factory, nullptr);
+  auto handle1 = channel_factory->CreateChannel(kKey);
+  ASSERT_NE(handle1, nullptr);
+  EXPECT_FALSE(GetTransport(*handle1)->channel()->IsLame());
+  EXPECT_EQ(GetTransport(*handle1)->channel()->target(), kTargetUri);
+  // While handle1 is alive, the key gets the same transport.
+  auto handle2 = channel_factory->CreateChannel(kKey);
+  ASSERT_NE(handle2, nullptr);
+  EXPECT_EQ(GetTransport(*handle1), GetTransport(*handle2));
+  // An unknown key gets a lame channel.
+  auto handle3 = channel_factory->CreateChannel("unknown");
+  ASSERT_NE(handle3, nullptr);
+  EXPECT_TRUE(GetTransport(*handle3)->channel()->IsLame());
 }
 
 }  // namespace

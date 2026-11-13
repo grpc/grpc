@@ -16,6 +16,7 @@
 
 #include "src/core/load_balancing/xds/cds.h"
 
+#include <grpc/channel_factory.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/json.h>
@@ -58,9 +59,11 @@
 #include "src/core/util/time.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/work_serializer.h"
+#include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_health_status.h"
+#include "src/core/xds/grpc/xds_transport_factory_grpc.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -255,6 +258,10 @@ class CdsLb final : public LoadBalancingPolicy {
   Json CreateChildPolicyConfigForAggregateCluster(
       const XdsConfig::ClusterConfig::AggregateConfig& aggregate_config);
 
+  ChannelArgs UpdateChannelFactory(
+      const XdsConfig::ClusterConfig* old_cluster_config,
+      const XdsClusterResource& new_cluster, ChannelArgs args);
+
   void ResetState();
 
   void ReportTransientFailure(absl::Status status);
@@ -266,6 +273,10 @@ class CdsLb final : public LoadBalancingPolicy {
   RefCountedPtr<XdsDependencyManager::ClusterSubscription> subscription_;
 
   CdsChildNameState child_name_state_;
+
+  // Channel factory for the GrpcServices in the LB policy config of a
+  // leaf cluster (gRFC A119).  Null if there are none.
+  std::shared_ptr<experimental::ChannelFactory> channel_factory_;
 
   // Child LB policy.
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
@@ -421,10 +432,15 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
         // Pass backend service label to child policy.
         args.args = args.args.Set(GRPC_ARG_BACKEND_SERVICE,
                                   cluster_name_.as_string_view());
+        args.args = UpdateChannelFactory(old_cluster_config,
+                                         *new_cluster_config->cluster,
+                                         std::move(args.args));
       },
       // Aggregate cluster.
       [&](const XdsConfig::ClusterConfig::AggregateConfig& aggregate_config) {
         child_name_state_.Reset();
+        // No channel factory for aggregate clusters (gRFC A119).
+        channel_factory_.reset();
         // Populate resolution_note for child policy.
         update_args.resolution_note = aggregate_config.resolution_note;
         // Construct child policy config.
@@ -472,6 +488,35 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   update_args.config = std::move(*child_config);
   update_args.args = args.args;
   return child_policy_->UpdateLocked(std::move(update_args));
+}
+
+// Adds the channel factory for the GrpcServices in the LB policy config of
+// a leaf cluster to args (gRFC A119).  Creates a new factory only when the
+// GrpcServices change, so that recreated child policies reuse channels.
+ChannelArgs CdsLb::UpdateChannelFactory(
+    const XdsConfig::ClusterConfig* old_cluster_config,
+    const XdsClusterResource& new_cluster, ChannelArgs args) {
+  const XdsGrpcServiceMap& grpc_services = new_cluster.lb_policy_grpc_services;
+  if (grpc_services.empty()) {
+    channel_factory_.reset();
+    return args;
+  }
+  if (channel_factory_ == nullptr || old_cluster_config == nullptr ||
+      !GrpcServiceMapsEqual(
+          old_cluster_config->cluster->lb_policy_grpc_services,
+          grpc_services)) {
+    // The xDS resolver always passes the XdsClient to the CDS policy.
+    auto* xds_client = args.GetObject<GrpcXdsClient>();
+    GRPC_CHECK_NE(xds_client, nullptr);
+    channel_factory_ =
+        xds_client->CreateChannelFactory(XdsTransportFactoryWrapper::TargetMap(
+            grpc_services.begin(), grpc_services.end()));
+    GRPC_TRACE_LOG(cds_lb, INFO)
+        << "[cdslb " << this << "] created channel factory "
+        << channel_factory_.get() << " for " << grpc_services.size()
+        << " GrpcService(s)";
+  }
+  return args.SetObject(channel_factory_);
 }
 
 Json CdsLb::CreateChildPolicyConfigForLeafCluster(
@@ -617,6 +662,7 @@ void CdsLb::ResetState() {
   cluster_name_ = RefCountedStringValue("");
   xds_config_.reset();
   child_name_state_.Reset();
+  channel_factory_.reset();
   if (child_policy_ != nullptr) {
     grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
                                      interested_parties());

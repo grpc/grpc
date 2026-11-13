@@ -17,6 +17,8 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_CLIENT_GRPC_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_CLIENT_GRPC_H
 
+#include <grpc/channel_factory.h>
+
 #include <memory>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -27,6 +29,7 @@
 #include "src/core/util/useful.h"
 #include "src/core/xds/grpc/certificate_provider_store.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_transport_factory_grpc.h"
 #include "src/core/xds/xds_client/lrs_client.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_transport_factory.h"
@@ -80,6 +83,12 @@ class GrpcXdsClient final : public XdsClient {
   void ResetBackoff() override;
 
   grpc_pollset_set* interested_parties() const;
+
+  // Returns a channel factory that creates channels to the targets
+  // (gRFC A119).  It gets transports from this client's transport factory,
+  // so a channel is shared while references to it exist.
+  std::shared_ptr<experimental::ChannelFactory> CreateChannelFactory(
+      XdsTransportFactoryWrapper::TargetMap targets);
 
   CertificateProviderStore& certificate_provider_store() const {
     return *certificate_provider_store_;
