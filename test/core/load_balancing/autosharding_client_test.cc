@@ -364,6 +364,28 @@ TEST_F(AutoshardingClientTest, StaleGenerationIsNacked) {
   EXPECT_FALSE(WaitForResult().has_value());
 }
 
+TEST_F(AutoshardingClientTest,
+       StaleGenerationBeforeFirstAssignmentIsNotReported) {
+  CreateClient(/*initial_assignment_timeout=*/Duration::Seconds(10));
+  RefCountedPtr<Stream> stream = WaitForStream();
+  ASSERT_NE(stream, nullptr);
+  EXPECT_THAT(stream->WaitForMessageFromClient(), IsInitialClientConfig(0));
+  // Before the first valid assignment, generation 0 is stale.  It is NACKed,
+  // but it is not reported, so it does not end the initial wait.
+  Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host0"}));
+  Send(stream.get(), MakeMetadata(0));
+  EXPECT_THAT(stream->WaitForMessageFromClient(),
+              IsAck(0, false,
+                    "received generation 0 is not greater than the latest "
+                    "generation 0"));
+  // The initial assignment timer is still running, so the first reported
+  // result is its timeout.
+  EXPECT_THAT(WaitForResult(),
+              Optional(HasStatus(absl::UnavailableError(
+                  "timed out waiting for initial assignment from autosharding "
+                  "server"))));
+}
+
 TEST_F(AutoshardingClientTest, MultipleAssignmentsOnOneStream) {
   CreateClient();
   RefCountedPtr<Stream> stream = WaitForStream();

@@ -63,6 +63,10 @@ class AutoshardingAssignmentBuilder final {
     // Issues in an accepted assignment (dropped slices or gaps), or empty if
     // there were no issues.
     std::string issues;
+    // True if the assignment was rejected because its generation is not
+    // greater than the latest accepted generation.  The client NACKs a stale
+    // assignment but does not report it to the LB policy (gRFC A119).
+    bool stale = false;
   };
 
   AutoshardingAssignmentBuilder() = default;

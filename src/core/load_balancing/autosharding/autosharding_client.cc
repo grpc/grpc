@@ -241,10 +241,12 @@ void AutoshardingClient::StreamCall::HandleResultLocked(
       << error_message << "\"";
   SendMessageLocked(
       CreateAssignmentAckRequest(result.generation, accepted, error_message));
+  // A stale assignment is only NACKed.  It is not reported to the LB policy,
+  // so it does not end the wait for the initial assignment (gRFC A119).
   if (accepted) {
     seen_valid_assignment_ = true;
     client_->ReportAssignmentLocked(*std::move(result.assignment));
-  } else {
+  } else if (!result.stale) {
     client_->ReportErrorLocked(absl::UnavailableError(absl::StrCat(
         "autosharding server sent an invalid assignment: ", error_message)));
   }

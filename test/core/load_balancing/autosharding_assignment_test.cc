@@ -82,13 +82,22 @@ MATCHER_P2(IsAssignment, slices_matcher, endpoint_names_matcher, "") {
 template <typename AssignmentMatcher>
 auto IsAccepted(int64_t generation, AssignmentMatcher assignment,
                 absl::string_view issues) {
-  return Optional(
-      FieldsAre(generation, IsOkAndHolds(assignment), std::string(issues)));
+  return Optional(FieldsAre(generation, IsOkAndHolds(assignment),
+                            std::string(issues),
+                            /*stale=*/false));
 }
 
 // Matches the result of ProcessResponse() for a rejected assignment.
 auto IsRejected(int64_t generation, absl::Status status) {
-  return Optional(FieldsAre(generation, HasStatus(std::move(status)), ""));
+  return Optional(
+      FieldsAre(generation, HasStatus(std::move(status)), "", /*stale=*/false));
+}
+
+// Matches the result of ProcessResponse() for an assignment that is rejected
+// because its generation is stale.
+auto IsStale(int64_t generation, absl::Status status) {
+  return Optional(
+      FieldsAre(generation, HasStatus(std::move(status)), "", /*stale=*/true));
 }
 
 class AutoshardingAssignmentBuilderTest : public ::testing::Test {
@@ -572,9 +581,9 @@ TEST_F(AutoshardingAssignmentBuilderTest, StaleGeneration) {
               IsAccepted(5, kSingleSliceAssignment, ""));
   EXPECT_EQ(ProcessResponse(kSingleSliceChunk), std::nullopt);
   EXPECT_THAT(ProcessResponse("metadata { generation: 5 }"),
-              IsRejected(5, absl::InvalidArgumentError(
-                                "received generation 5 is not greater than "
-                                "the latest generation 5")));
+              IsStale(5, absl::InvalidArgumentError(
+                             "received generation 5 is not greater than "
+                             "the latest generation 5")));
   EXPECT_EQ(ProcessResponse(kSingleSliceChunk), std::nullopt);
   EXPECT_THAT(ProcessResponse("metadata { generation: 6 }"),
               IsAccepted(6, kSingleSliceAssignment, ""));
@@ -583,17 +592,17 @@ TEST_F(AutoshardingAssignmentBuilderTest, StaleGeneration) {
 TEST_F(AutoshardingAssignmentBuilderTest, ZeroGenerationIsStale) {
   EXPECT_EQ(ProcessResponse(kSingleSliceChunk), std::nullopt);
   EXPECT_THAT(ProcessResponse("metadata { generation: 0 }"),
-              IsRejected(0, absl::InvalidArgumentError(
-                                "received generation 0 is not greater than "
-                                "the latest generation 0")));
+              IsStale(0, absl::InvalidArgumentError(
+                             "received generation 0 is not greater than "
+                             "the latest generation 0")));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, NegativeGenerationIsStale) {
   EXPECT_EQ(ProcessResponse(kSingleSliceChunk), std::nullopt);
   EXPECT_THAT(ProcessResponse("metadata { generation: -1 }"),
-              IsRejected(-1, absl::InvalidArgumentError(
-                                 "received generation -1 is not greater than "
-                                 "the latest generation 0")));
+              IsStale(-1, absl::InvalidArgumentError(
+                              "received generation -1 is not greater than "
+                              "the latest generation 0")));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, TracksLastAcceptedGeneration) {
@@ -672,9 +681,9 @@ TEST_F(AutoshardingAssignmentBuilderTest, StaleBuildClearsChunks) {
                          ""));
   EXPECT_EQ(ProcessResponse(kSingleSliceChunk), std::nullopt);
   EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
-              IsRejected(1, absl::InvalidArgumentError(
-                                "received generation 1 is not greater than "
-                                "the latest generation 1")));
+              IsStale(1, absl::InvalidArgumentError(
+                             "received generation 1 is not greater than "
+                             "the latest generation 1")));
   EXPECT_EQ(ProcessResponse(R"pb(
               chunk {
                 slice_assignments {

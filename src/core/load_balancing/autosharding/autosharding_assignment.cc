@@ -184,7 +184,7 @@ AutoshardingAssignmentBuilder::Result AutoshardingAssignmentBuilder::Build(
                 absl::StrCat("received generation ", generation,
                              " is not greater than the latest generation ",
                              last_accepted_generation_)),
-            ""};
+            "", /*stale=*/true};
   }
   if (num_chunks == 0) {
     return {generation,
