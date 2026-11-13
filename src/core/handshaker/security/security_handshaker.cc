@@ -184,6 +184,9 @@ void SecurityHandshaker::HandshakeFailedLocked(absl::Status error,
 }
 
 void SecurityHandshaker::Finish(absl::Status status) {
+  if (on_handshake_done_ == nullptr) {
+    return;
+  }
   InvokeOnHandshakeDone(args_, std::move(on_handshake_done_),
                         std::move(status));
 }
