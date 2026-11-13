@@ -895,6 +895,11 @@ class MetricsQuery {
   }
 
   // Runs the query, outputting the results to `sink`.
+  // Counters and histograms are emitted once per distinct (label values,
+  // metric name) pair, summed over every storage reachable from `scope` that
+  // shares those label values (including storages owned by child scopes).
+  // Gauges are emitted once per storage when no label is collapsed, and are
+  // dropped when labels are collapsed.
   void Run(RefCountedPtr<CollectionScope> scope, MetricsSink& sink) const;
 
  private:
