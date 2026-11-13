@@ -197,7 +197,8 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
     void ResetBackoffLocked();
 
     // If the child policy does not yet exist, creates it; otherwise,
-    // asks the child to exit IDLE.
+    // asks the child to exit IDLE.  Does nothing if the endpoint has been
+    // removed.
     void RequestConnectionLocked();
 
    private:
@@ -221,6 +222,11 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
     grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_IDLE;
     absl::Status status_;
     RefCountedPtr<SubchannelPicker> picker_;
+
+    // Set by Orphan() when a resolver update removes this endpoint.  An old
+    // picker can still hold a ref to this endpoint, so this prevents it from
+    // creating a child policy for a removed endpoint (gRFC A119).
+    bool orphaned_ = false;
   };
 
   class Picker final : public SubchannelPicker {
@@ -486,6 +492,7 @@ class AutoshardingLbPolicy::AutoShardingEndpoint::Helper final
 //
 
 void AutoshardingLbPolicy::AutoShardingEndpoint::Orphan() {
+  orphaned_ = true;
   if (child_policy_ != nullptr) {
     // Remove pollset_set linkage.
     grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
@@ -508,6 +515,7 @@ void AutoshardingLbPolicy::AutoShardingEndpoint::ResetBackoffLocked() {
 }
 
 void AutoshardingLbPolicy::AutoShardingEndpoint::RequestConnectionLocked() {
+  if (orphaned_) return;
   if (child_policy_ == nullptr) {
     CreateChildPolicy();
   } else {
@@ -567,7 +575,9 @@ AutoshardingLbPolicy::AutoShardingEndpoint::UpdateChildPolicyLocked() {
 void AutoshardingLbPolicy::AutoShardingEndpoint::OnStateUpdate(
     grpc_connectivity_state new_state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
-  if (child_policy_ == nullptr) return;
+  // Ignore lingering updates from the child policy of a removed endpoint
+  // (gRFC A119).
+  if (orphaned_) return;
   GRPC_TRACE_LOG(autosharding_lb, INFO)
       << "[AS " << autosharding_lb_.get()
       << "] connectivity changed for endpoint " << this << " ("

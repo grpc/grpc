@@ -890,6 +890,75 @@ TEST_F(AutoShardingTest, EndpointReorderAndRemovalRebuildSliceMap) {
       {}, MakeMetadata("a"));
 }
 
+TEST_F(AutoShardingTest, OldPickerDoesNotConnectToRemovedEndpoint) {
+  ChannelArgs args = MakeChannelArgs();
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
+                        lb_policy()),
+            absl::OkStatus());
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
+                              MakeMetadata("some_key"));
+  // Route all keys to kAddresses[1].
+  SendAssignment({{"", {0}}}, {EndpointName(kAddresses[1])});
+  auto old_picker = ExpectState(GRPC_CHANNEL_IDLE);
+  // The resolver removes kAddresses[1].  The new picker has no endpoint for
+  // the key.
+  constexpr std::array<absl::string_view, 1> kFirstAddress = {kAddresses[0]};
+  EXPECT_EQ(
+      ApplyUpdate(BuildUpdate(kFirstAddress, ConfigBuilder().Build(), args),
+                  lb_policy()),
+      absl::OkStatus());
+  auto picker = ExpectState(GRPC_CHANNEL_IDLE);
+  ExpectPickFail(
+      picker.get(),
+      [](const absl::Status& status) {
+        EXPECT_EQ(status, absl::UnavailableError("no endpoint available"));
+      },
+      {}, MakeMetadata("a"));
+  // The old picker still holds a ref to the removed endpoint.  A pick on it
+  // requests a connection, but the removed endpoint does not create a child
+  // policy, so no subchannel is created.
+  ExpectPickQueued(old_picker.get(), {}, MakeMetadata("a"));
+  EXPECT_EQ(FindSubchannel(kAddresses[1], args), nullptr);
+  EXPECT_EQ(FindSubchannel(kAddresses[0], args), nullptr);
+  ExpectQueueEmpty();
+}
+
+TEST_F(AutoShardingTest, IgnoresStateUpdateFromRemovedEndpoint) {
+  ChannelArgs args = MakeChannelArgs();
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
+                        lb_policy()),
+            absl::OkStatus());
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
+                              MakeMetadata("some_key"));
+  // Route all keys to kAddresses[1], and connect to it.
+  SendAssignment({{"", {0}}}, {EndpointName(kAddresses[1])});
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
+                              MakeMetadata("a"));
+  SubchannelState* subchannel = FindSubchannel(kAddresses[1], args);
+  ASSERT_NE(subchannel, nullptr);
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+                              MakeMetadata("a"));
+  // The resolver removes kAddresses[1].  The remaining endpoint is IDLE.
+  constexpr std::array<absl::string_view, 1> kFirstAddress = {kAddresses[0]};
+  EXPECT_EQ(
+      ApplyUpdate(BuildUpdate(kFirstAddress, ConfigBuilder().Build(), args),
+                  lb_policy()),
+      absl::OkStatus());
+  auto picker = ExpectState(GRPC_CHANNEL_IDLE);
+  ExpectPickFail(
+      picker.get(),
+      [](const absl::Status& status) {
+        EXPECT_EQ(status, absl::UnavailableError("no endpoint available"));
+      },
+      {}, MakeMetadata("a"));
+  // A late state change on the removed endpoint's subchannel does not change
+  // the reported state.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  ExpectQueueEmpty();
+}
+
 TEST_F(AutoShardingTest, AssignedEndpointMissingFromResolverUsesFallback) {
   ChannelArgs args = MakeChannelArgs();
   EXPECT_EQ(
