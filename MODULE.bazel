@@ -89,8 +89,8 @@ single_version_override(
 
 # Declare a Go SDK compatible with gazelle 0.54.0 (pulled in by envoy_api)
 # before transitive dependencies like cel-spec, which registers Go 1.23.0.
-# go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
-# go_sdk.download(version = "1.27.3")
+go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
+go_sdk.download(version = "1.27.3")
 
 bazel_dep(name = "xds", version = "0.0.0-20251210-ee656c7", repo_name = "com_github_cncf_xds")
 
