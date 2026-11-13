@@ -235,16 +235,14 @@ void OldChttp2Connector::OnHandshakeDone(
               (*result)
                   ->args
                   .GetObjectRef<grpc_event_engine::experimental::EventEngine>();
-      auto on_receive_settings =
-          [self = RefAsSubclass<OldChttp2Connector>()](
-              absl::StatusOr<uint32_t> max_concurrent_streams) {
-            self->OnReceiveSettings(max_concurrent_streams);
-          };
       // Http2ClientTransport does not take ownership of the channel args.
       http2::Http2ClientTransport* client_transport =
-          new http2::Http2ClientTransport(std::move(promise_endpoint),
-                                          (*result)->args, event_engine_ptr,
-                                          std::move(on_receive_settings));
+          new http2::Http2ClientTransport(
+              std::move(promise_endpoint), (*result)->args, event_engine_ptr,
+              [self = RefAsSubclass<OldChttp2Connector>()](
+                  absl::StatusOr<uint32_t> max_concurrent_streams) {
+                self->OnReceiveSettings(max_concurrent_streams);
+              });
       GRPC_DCHECK_NE(client_transport, nullptr);
       result_->transport = client_transport;
       result_->channel_args = std::move((*result)->args);
