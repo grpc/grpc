@@ -30,6 +30,7 @@
 #include <functional>
 
 #include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 
 namespace grpc {
 namespace internal {
@@ -83,7 +84,15 @@ class InterceptorBatchMethodsImpl
   ByteBuffer* GetSerializedSendMessage() override {
     ABSL_CHECK_NE(orig_send_message_, nullptr);
     if (*orig_send_message_ != nullptr) {
-      ABSL_CHECK(serializer_(*orig_send_message_).ok());
+      auto status = serializer_(*orig_send_message_);
+      if (!status.ok()) {
+        ABSL_LOG(ERROR) << "Failed to serialize message: "
+                        << status.error_code() << " " << status.error_message()
+                        << " " << status.error_details();
+        *fail_send_message_ = true;
+        *orig_send_message_ = nullptr;
+        return nullptr;
+      }
       *orig_send_message_ = nullptr;
     }
     return send_message_;
