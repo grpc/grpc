@@ -314,12 +314,9 @@ void ParseLbPolicyConfig(const XdsResourceType::DecodeContext& context,
             .lb_policy_registry();
     ValidationErrors::ScopedField field(errors, ".load_balancing_policy");
     const size_t original_error_count = errors->size();
-    // TODO(bpawan): Store the parsed GrpcService protos in the
-    // XdsClusterResource, so that the CDS LB policy can use them
-    // (gRFC A119).
-    XdsGrpcServiceMap grpc_services;
     cds_update->lb_policy_config = registry.ConvertXdsLbPolicyConfig(
-        {context, &grpc_services}, load_balancing_policy, errors);
+        {context, &cds_update->lb_policy_grpc_services}, load_balancing_policy,
+        errors);
     // If there were no conversion errors, validate that the converted config
     // parses with the gRPC LB policy registry.
     if (original_error_count == errors->size()) {

@@ -7061,12 +7061,14 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "libcrypto",
     ],
     tags = ["nofixdeps"],
     deps = [
         "envoy_config_core_upb",
         "envoy_extensions_filters_http_router_upb",
         "envoy_extensions_filters_http_router_upbdefs",
+        "envoy_extensions_load_balancing_policies_autosharding_upb",
         "envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_upb",
         "envoy_extensions_load_balancing_policies_pick_first_upb",
         "envoy_extensions_load_balancing_policies_ring_hash_upb",
@@ -7078,12 +7080,14 @@ grpc_cc_library(
         "protobuf_wrappers_upb",
         "sync",
         "time",
+        "upb_utils",
         "validation_errors",
         "xds_audit_logger_registry",
         "xds_bootstrap_grpc",
         "xds_common_types",
         "xds_common_types_parser",
         "xds_file_watcher_certificate_provider_factory",
+        "xds_grpc_service_parser",
         "xds_http_composite_filter",
         "xds_http_ext_proc_filter",
         "xds_http_fault_filter",
@@ -7093,6 +7097,7 @@ grpc_cc_library(
         "xds_http_rbac_filter",
         "xds_http_stateful_session_filter",
         "xds_lb_policy_registry",
+        "xds_server_grpc",
         "//:xds_client",
         "@com_google_protobuf//upb/reflection",
     ],
@@ -7172,6 +7177,7 @@ grpc_cc_library(
         "xds_health_status",
         "xds_metadata",
         "xds_server_grpc",
+        "xds_server_grpc_interface",
         "xds_tls_context",
         "//:gpr",
         "//:xds_client",
@@ -13058,6 +13064,11 @@ grpc_upb_proto_reflection_library(
 grpc_upb_proto_library(
     name = "envoy_type_http_upb",
     deps = ["@envoy_api//envoy/type/http/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_load_balancing_policies_autosharding_upb",
+    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/autosharding/v3:pkg"],
 )
 
 grpc_upb_proto_library(

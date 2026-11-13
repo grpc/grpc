@@ -16,10 +16,12 @@
 
 #include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 
+#include <openssl/sha.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -29,6 +31,7 @@
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
+#include "envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb.h"
 #include "envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h"
 #include "envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.h"
 #include "envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h"
@@ -40,9 +43,11 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/xds/grpc/xds_grpc_service_parser.h"
 #include "src/core/xds/grpc/xds_http_composite_filter.h"
 #include "src/core/xds/grpc/xds_http_ext_proc_filter.h"
 #include "src/core/xds/grpc/xds_http_fault_filter.h"
@@ -50,6 +55,8 @@
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
 #include "src/core/xds/grpc/xds_http_stateful_session_filter.h"
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
+#include "src/core/xds/grpc/xds_server_grpc.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 
 namespace grpc_core {
@@ -370,6 +377,96 @@ class PickFirstLbPolicyConfigFactory final
   }
 };
 
+// Returns the channel factory key for a parsed GrpcService (gRFC A119).
+// The key must change whenever any part of the GrpcService changes, so it
+// uses a hash of GrpcXdsServerTarget::Key().  It does not use Key() itself,
+// because Key() can contain credentials (for example an access token) and
+// the key appears in the LB policy config, which is logged.
+std::string MakeChannelFactoryKey(const GrpcXdsServerTarget& grpc_service) {
+  const std::string full_key = grpc_service.Key();
+  uint8_t digest[SHA256_DIGEST_LENGTH];
+  SHA256(reinterpret_cast<const uint8_t*>(full_key.data()), full_key.size(),
+         digest);
+  return absl::StrCat(
+      grpc_service.server_uri(), "#",
+      absl::BytesToHexString(absl::string_view(
+          reinterpret_cast<const char*>(digest), sizeof(digest))));
+}
+
+// Converts the Autosharding proto to the autosharding_experimental LB
+// policy config (gRFC A119).
+class AutoshardingLbPolicyConfigFactory final
+    : public XdsLbPolicyRegistry::ConfigFactory {
+ public:
+  Json::Object ConvertXdsLbPolicyConfig(
+      const XdsLbPolicyRegistry* /*registry*/,
+      const XdsLbPolicyRegistry::ConvertContext& context,
+      absl::string_view configuration, ValidationErrors* errors,
+      int /*recursion_depth*/) override {
+    const auto* resource =
+        envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding_parse(
+            configuration.data(), configuration.size(),
+            context.decode_context.arena);
+    if (resource == nullptr) {
+      errors->AddError("can't decode Autosharding LB policy config");
+      return {};
+    }
+    Json::Object config;
+    // grpc_service
+    {
+      ValidationErrors::ScopedField field(errors, ".grpc_service");
+      const size_t original_error_size = errors->size();
+      auto grpc_service = std::make_shared<
+          GrpcXdsServerTarget>(ParseXdsGrpcService(
+          context.decode_context,
+          envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding_grpc_service(
+              resource),
+          errors));
+      if (errors->size() == original_error_size) {
+        // The LB policy passes the key to the channel factory that the
+        // CDS policy creates from the map.
+        std::string key = MakeChannelFactoryKey(*grpc_service);
+        config["channelFactoryKey"] = Json::FromString(key);
+        (*context.grpc_services)[std::move(key)] = std::move(grpc_service);
+      }
+    }
+    // The LB policy validates the remaining fields when the cluster parser
+    // checks the generated config.
+    // autosharding_target
+    config["autoshardingTarget"] = Json::FromString(UpbStringToStdString(
+        envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding_autosharding_target(
+            resource)));
+    // key_header_name
+    config["keyHeaderName"] = Json::FromString(UpbStringToStdString(
+        envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding_key_header_name(
+            resource)));
+    // enable_fallback
+    config["enableFallback"] = Json::FromBool(
+        envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding_enable_fallback(
+            resource));
+    // initial_assignment_timeout
+    const auto* duration_proto =
+        envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding_initial_assignment_timeout(
+            resource);
+    if (duration_proto != nullptr) {
+      ValidationErrors::ScopedField field(errors,
+                                          ".initial_assignment_timeout");
+      Duration duration = ParseDuration(duration_proto, errors);
+      config["initialAssignmentTimeout"] =
+          Json::FromString(duration.ToJsonString());
+    }
+    return Json::Object{
+        {"autosharding_experimental", Json::FromObject(std::move(config))}};
+  }
+
+  absl::string_view type() override { return Type(); }
+
+  static absl::string_view Type() {
+    return "envoy.extensions.load_balancing_policies.autosharding.v3."
+           "Autosharding";
+  }
+};
+
 }  // namespace
 
 XdsLbPolicyRegistry GrpcXdsBootstrapBuilder::CreateXdsLbPolicyRegistry() {
@@ -381,6 +478,10 @@ XdsLbPolicyRegistry GrpcXdsBootstrapBuilder::CreateXdsLbPolicyRegistry() {
   registry.RegisterFactory(
       std::make_unique<WrrLocalityLbPolicyConfigFactory>());
   registry.RegisterFactory(std::make_unique<PickFirstLbPolicyConfigFactory>());
+  if (XdsAutoshardingLbEnabled()) {
+    registry.RegisterFactory(
+        std::make_unique<AutoshardingLbPolicyConfigFactory>());
+  }
   return registry;
 }
 
