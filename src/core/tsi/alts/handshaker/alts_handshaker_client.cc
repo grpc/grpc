@@ -290,8 +290,14 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
         result, &client->recv_bytes,
         grpc_gcp_HandshakerResp_bytes_consumed(resp));
   }
-  grpc_status_code code = static_cast<grpc_status_code>(
-      grpc_gcp_HandshakerStatus_code(resp_status));
+  const uint32_t status_code = grpc_gcp_HandshakerStatus_code(resp_status);
+  // The handshaker service response is not trusted to be in range: casting an
+  // out-of-range value to grpc_status_code would be undefined behavior, so map
+  // such values to GRPC_STATUS_UNKNOWN (mirroring
+  // GrpcStatusMetadata::ParseMemento) instead.
+  grpc_status_code code = status_code >= GRPC_STATUS__DO_NOT_USE
+                              ? GRPC_STATUS_UNKNOWN
+                              : static_cast<grpc_status_code>(status_code);
   std::string error;
   if (code != GRPC_STATUS_OK) {
     upb_StringView details = grpc_gcp_HandshakerStatus_details(resp_status);

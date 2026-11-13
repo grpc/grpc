@@ -218,8 +218,14 @@ absl::StatusOr<ServerMetadataHandle> ServerMetadataGrpcFromProto(
   auto md = Arena::MakePooled<ServerMetadata>();
   md->Set(GrpcStatusFromWire(), true);
   if (metadata.has_status()) {
+    // The wire value is an untrusted uint32_t; values outside the
+    // grpc_status_code range map to GRPC_STATUS_UNKNOWN (mirroring
+    // GrpcStatusMetadata::ParseMemento) rather than being cast directly,
+    // which would be undefined behavior.
     md->Set(GrpcStatusMetadata(),
-            static_cast<grpc_status_code>(metadata.status()));
+            metadata.status() >= GRPC_STATUS__DO_NOT_USE
+                ? GRPC_STATUS_UNKNOWN
+                : static_cast<grpc_status_code>(metadata.status()));
   }
   if (metadata.has_message()) {
     md->Set(GrpcMessageMetadata(), Slice::FromCopiedString(metadata.message()));
