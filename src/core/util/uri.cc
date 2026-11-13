@@ -381,6 +381,7 @@ URI& URI::operator=(const URI& other) {
   path_ = other.path_;
   query_parameter_pairs_ = other.query_parameter_pairs_;
   fragment_ = other.fragment_;
+  query_parameter_map_.clear();
   for (const auto& kv : query_parameter_pairs_) {
     query_parameter_map_[kv.key] = kv.value;
   }
