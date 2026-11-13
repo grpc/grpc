@@ -1584,6 +1584,44 @@ TEST_F(CredentialsTest, TestJwtCredsWithNonGduUniverseDomainInJsonSkipsRab) {
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
+TEST_F(CredentialsTest, TestJwtCredsWithGduUniverseDomainInJsonFetchesRab) {
+  char* original_json_key = test_json_key_str();
+  ExecCtx exec_ctx;
+  std::string json_key_str = absl::StrReplaceAll(
+      original_json_key,
+      {{"\"type\": \"service_account\"",
+        "\"type\": \"service_account\", \"universe_domain\": "
+        "\"googleapis.com\""}});
+  gpr_free(original_json_key);
+  std::string expected_md_value = absl::StrCat("Bearer ", test_signed_jwt);
+  std::string emd_without_rab =
+      absl::StrCat("authorization: ", expected_md_value);
+  std::string emd_with_rab =
+      absl::StrCat("authorization: ", expected_md_value, ", ",
+                   "x-allowed-locations: us-west1");
+  grpc_call_credentials* creds =
+      grpc_service_account_jwt_access_credentials_create(
+          json_key_str.c_str(), grpc_max_auth_token_lifetime(), nullptr);
+  GRPC_CHECK_NE(creds, nullptr);
+  HttpRequest::SetOverride(httpcli_get_valid_json_regional_access_boundary,
+                           nullptr, nullptr);
+  auto state =
+      RequestMetadataState::NewInstance(absl::OkStatus(), emd_without_rab);
+  grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_success);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  state = RequestMetadataState::NewInstance(absl::OkStatus(), emd_with_rab);
+  grpc_jwt_encode_and_sign_set_override(
+      encode_and_sign_jwt_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  creds->Unref();
+  grpc_jwt_encode_and_sign_set_override(nullptr);
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
 TEST_F(CredentialsTest, TestJwtCredsSuccess) {
   const char expected_creds_debug_string_prefix[] =
       "JWTAccessCredentials{ExpirationTime:";
