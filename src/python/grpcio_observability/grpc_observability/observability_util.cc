@@ -101,13 +101,15 @@ void NativeObservabilityInit() {
 
 void* CreateClientCallTracer(const char* method, const char* target,
                              const char* trace_id, const char* parent_span_id,
+                             const std::optional<bool> parent_span_sampled,
                              const char* identifier,
                              const std::vector<Label> exchange_labels,
                              bool add_csm_optional_labels,
                              bool registered_method) {
   void* client_call_tracer = new PythonOpenCensusCallTracer(
-      method, target, trace_id, parent_span_id, identifier, exchange_labels,
-      PythonCensusTracingEnabled(), add_csm_optional_labels, registered_method);
+      method, target, trace_id, parent_span_id, parent_span_sampled, identifier,
+      exchange_labels, PythonCensusTracingEnabled(), add_csm_optional_labels,
+      registered_method);
   return client_call_tracer;
 }
 
