@@ -92,4 +92,11 @@ bool IdleFilterState::CheckTimer() {
   return start_timer;
 }
 
+bool IdleFilterState::HasCallsInProgress() {
+  // A plain load would not give the ordering guarantee documented in the
+  // header, so use a read-modify-write that does not change the state.
+  const uintptr_t state = state_.fetch_add(0, std::memory_order_acq_rel);
+  return (state >> kCallsInProgressShift) != 0;
+}
+
 }  // namespace grpc_core

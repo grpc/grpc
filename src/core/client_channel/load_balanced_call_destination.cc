@@ -14,6 +14,8 @@
 
 #include "src/core/client_channel/load_balanced_call_destination.h"
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/call/status_util.h"
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -213,8 +215,22 @@ void LoadBalancedCallDestination::StartCall(
                       picker.Next(last_picker),
                       [unstarted_handler, &last_picker](
                           RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
-                              picker) mutable {
-                        CHECK_NE(picker.get(), nullptr);
+                              picker) mutable
+                      -> LoopCtl<absl::StatusOr<
+                          RefCountedPtr<UnstartedCallDestination>>> {
+                        // The channel publishes a null picker when it enters
+                        // IDLE.  If that happened after this pick was queued,
+                        // keep waiting until the channel reconnects and
+                        // publishes a new picker.
+                        if (GPR_UNLIKELY(picker == nullptr)) {
+                          GRPC_TRACE_LOG(client_channel_lb_call, INFO)
+                              << "client_channel: "
+                              << GetContext<Activity>()->DebugTag()
+                              << " channel entered IDLE; waiting for a new "
+                                 "picker";
+                          last_picker.reset();
+                          return Continue{};
+                        }
                         last_picker = std::move(picker);
                         // Returns 3 possible things:
                         // - Continue to queue the pick

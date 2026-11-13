@@ -682,6 +682,12 @@ void ClientChannel::Orphaned() {
   work_serializer_->Run(
       [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
         self->DestroyResolverAndLbPolicyLocked();
+        // Fail calls that are waiting for an LB pick.  This is done here
+        // rather than in DestroyResolverAndLbPolicyLocked(), which also runs
+        // when the channel enters IDLE, where calls must keep waiting.  It is
+        // also needed if the channel is already IDLE (no resolver).
+        self->picker_.Set(MakeRefCounted<LoadBalancingPolicy::DropPicker>(
+            absl::UnavailableError("Channel shutdown")));
       });
   // IncreaseCallCount() introduces a phony call and prevents the idle
   // timer from being reset by other threads.
@@ -1041,8 +1047,6 @@ void ClientChannel::DestroyResolverAndLbPolicyLocked() {
           << "client_channel=" << this
           << ": shutting down lb_policy=" << lb_policy_.get();
       lb_policy_.reset();
-      picker_.Set(MakeRefCounted<LoadBalancingPolicy::DropPicker>(
-          absl::UnavailableError("Channel shutdown")));
     }
   }
 }
@@ -1438,18 +1442,49 @@ void ClientChannel::StartIdleTimer() {
         if (status.ok()) {
           self->work_serializer_->Run(
               [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
-                self->DestroyResolverAndLbPolicyLocked();
-                self->UpdateStateAndPickerLocked(
-                    GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                    "channel entering IDLE", nullptr);
-                // TODO(roth): In case there's a race condition, we
-                // might need to check for any calls that are
-                // queued waiting for a resolver result or an LB
-                // pick.
+                self->EnterIdleLocked();
               });
         }
       },
       std::move(arena)));
+}
+
+void ClientChannel::EnterIdleLocked() {
+  // Do nothing if the channel is shutting down.  Orphaned() tears it down in
+  // its own WorkSerializer callback (which may already have run, in which case
+  // entering IDLE here would replace its DropPicker with a null picker), and
+  // reconnecting here would create a resolver that is never destroyed.
+  // Holding a strong ref also keeps the channel from being orphaned until this
+  // callback returns.
+  const RefCountedPtr<UnstartedCallDestination> strong_ref = RefIfNonZero();
+  if (strong_ref == nullptr) return;
+  // The idle timer saw no calls, but a call may have started since then.  If
+  // one is still in progress, the channel is not idle.
+  if (idle_state_.HasCallsInProgress()) {
+    GRPC_TRACE_LOG(client_channel, INFO)
+        << "client_channel=" << this
+        << ": call started after the idle timer fired; not entering IDLE";
+    return;
+  }
+  GRPC_TRACE_LOG(client_channel, INFO)
+      << "client_channel=" << this << ": entering IDLE";
+  // Publishes only a null picker (no DropPicker), so that calls waiting for
+  // an LB pick keep waiting instead of failing.
+  DestroyResolverAndLbPolicyLocked();
+  UpdateStateAndPickerLocked(GRPC_CHANNEL_IDLE, absl::OkStatus(),
+                             "channel entering IDLE", nullptr);
+  // A call that started after the check above may have seen the old state
+  // in StartCall() (so it did not ask to reconnect) and then found no resolver
+  // result or picker, so it would wait forever.  HasCallsInProgress() is
+  // ordered with the IncreaseCallCount() in StartCall(): any such call either
+  // saw IDLE (and asked to reconnect itself) or is counted here.  So
+  // reconnect on behalf of the calls counted here.
+  if (GPR_UNLIKELY(idle_state_.HasCallsInProgress())) {
+    GRPC_TRACE_LOG(client_channel, INFO)
+        << "client_channel=" << this
+        << ": call started while entering IDLE; reconnecting";
+    TryToConnectLocked();
+  }
 }
 
 absl::StatusOr<RefCountedPtr<const FilterChain>>
