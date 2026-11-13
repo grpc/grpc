@@ -175,8 +175,13 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
                     event.success
                 )
             else:
-                loop.call_soon_threadsafe(
-                    _handle_callback_wrapper,
-                    <CallbackWrapper>context.callback_wrapper,
-                    event.success
-                )
+                try:
+                    loop.call_soon_threadsafe(
+                        _handle_callback_wrapper,
+                        <CallbackWrapper>context.callback_wrapper,
+                        event.success
+                    )
+                except RuntimeError:
+                    # the loop is closed; release Core's reference of
+                    # the wrapper
+                    cpython.Py_DECREF(<object>context.callback_wrapper)
