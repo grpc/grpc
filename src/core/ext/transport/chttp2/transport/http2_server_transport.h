@@ -310,6 +310,12 @@ class Http2ServerTransport final : public ServerTransport,
   // do post processing after the write is done.
   void NotifyUrgentFramesWriteDone();
 
+  void StartWriteCycle() {
+    transport_write_context_.StartWriteCycle();
+    http2_transport_stats_.BeginWrite(
+        transport_write_context_.GetWriteCycle().GetTargetWriteSize());
+  }
+
   absl::Status DequeueStreamFrames(RefCountedPtr<Stream> stream,
                                    WriteCycle& write_cycle);
 

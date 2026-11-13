@@ -1503,6 +1503,206 @@ TEST_F(Http2ClientTransportTest, TestActiveStreamAllowedToDrainAfterGoaway) {
   step3->Wait();
 }
 
+TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportRecordsStats) {
+  // Verifies that Http2ClientTransport records all Http2TransportStats metrics
+  // (excluding window update periods):
+  // 1. BeginWrite (http2_writes_begun and http2_write_target_size).
+  // 2. RecordSettingsWrites (non-ACK SETTINGS only).
+  // 3. RecordPingsSent (non-ACK PING only).
+  // 4. RecordSendMessageSize, RecordWriteDataFrameSize, and
+  //    RecordReadDataFrameSize.
+  // 5. MaybeRecordStall (http2_stream_stalls and http2_transport_stalls).
+  // 6. RecordStreamWindowUpdate and RecordTransportWindowUpdate increments.
+  ExecCtx ctx;
+  const Http2GlobalStatsTestHelper stats_helper;
+
+  // Step 1: Initialize the client transport (BDP probe disabled) and exchange
+  // initial settings.
+  InitTransport(GetChannelArgs().Set(GRPC_ARG_HTTP2_BDP_PROBE, false));
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // Step 2: Peer sets INITIAL_WINDOW_SIZE = 0 and MAX_FRAME_SIZE = 65535.
+  const std::shared_ptr<EventSequenceEndpoint::Step> settings_step =
+      endpoint()->NewStep();
+  const std::vector<Http2SettingsFrame::Setting> peer_settings = {
+      {Http2Settings::kInitialWindowSizeWireId, 0u},
+      {Http2Settings::kMaxFrameSizeWireId, 65535u},
+  };
+  settings_step->ThenPerformRead({
+      helper_.SerializedSettingsFrame(peer_settings),
+  });
+  settings_step->ThenExpectWrite({
+      helper_.SerializedSettingsFrameAck(),
+  });
+  settings_step->Wait();
+  event_engine()->Tick();
+
+  // Step 3: Client sends an outgoing PING and receives PING ACK.
+  StrictMock<MockFunction<void()>> ping_ack_received;
+  EXPECT_CALL(ping_ack_received, Call());
+  uint64_t opaque_id = 0u;
+  const std::shared_ptr<EventSequenceEndpoint::Step> ping_step =
+      endpoint()->NewStep();
+  ping_step->ThenExpectWrite([this, &opaque_id](SliceBuffer& buffer) {
+    opaque_id = VerifyPingFrameAndReturnOpaqueId(buffer, /*is_ack=*/false);
+  });
+  client_transport()->TestOnlySpawnPromise("PingRequest", [this,
+                                                           &ping_ack_received] {
+    return Map(
+        TrySeq(
+            [this] { return client_transport()->TestOnlyTriggerWriteCycle(); },
+            [this] { return client_transport()->TestOnlySendPing([] {}); }),
+        [&ping_ack_received](const absl::Status status) {
+          EXPECT_TRUE(status.ok());
+          ping_ack_received.Call();
+          return Empty{};
+        });
+  });
+  ping_step->Wait();
+  event_engine()->Tick();
+
+  const std::shared_ptr<EventSequenceEndpoint::Step> ping_ack_step =
+      endpoint()->NewStep();
+  ping_ack_step->ThenPerformRead(
+      {helper_.SerializedPingFrame(/*ack=*/true, /*opaque=*/opaque_id)});
+  ping_ack_step->Wait();
+  event_engine()->Tick();
+
+  // Step 4: Start a call and enqueue two messages plus half-close. Because the
+  // peer's initial stream window is 0 while the transport window is 65535,
+  // initial metadata HEADERS is sent first and attempting to dequeue message
+  // DATA records a stream stall.
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(on_done, Call());
+
+  const std::string large_message_payload(
+      Http2Settings::kDefaultInitialWindowSize - kGrpcHeaderSizeInBytes, 'a');
+
+  const std::shared_ptr<EventSequenceEndpoint::Step> headers_step =
+      endpoint()->NewStep();
+  headers_step->ThenExpectWrite({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+
+  CallInitiator initiator = StartCall(TestInitialMetadata());
+  initiator.SpawnGuarded("test-send", [initiator,
+                                       large_message_payload]() mutable {
+    return Seq(
+        initiator.PushMessage(Arena::MakePooled<Message>(
+            SliceBuffer(Slice::FromCopiedString(large_message_payload)), 0u)),
+        [initiator]() mutable {
+          return initiator.PushMessage(Arena::MakePooled<Message>(
+              SliceBuffer(Slice::FromCopiedString(kString1)), 0u));
+        },
+        [initiator]() mutable { return initiator.FinishSends(); },
+        []() { return absl::OkStatus(); });
+  });
+  initiator.SpawnInfallible("test-wait", [initiator, &on_done]() mutable {
+    return Seq(
+        initiator.PullServerInitialMetadata(),
+        [](std::optional<ServerMetadataHandle> header) {
+          EXPECT_TRUE(header.has_value());
+        },
+        initiator.PullMessage(),
+        [](ServerToClientNextMessage message) {
+          EXPECT_TRUE(message.ok());
+          EXPECT_TRUE(message.has_value());
+        },
+        initiator.PullServerTrailingMetadata(),
+        [&on_done](ServerMetadataHandle /*metadata*/) mutable {
+          on_done.Call();
+          return Empty{};
+        });
+  });
+
+  headers_step->Wait();
+  event_engine()->Tick();
+
+  // Step 5: Peer sends stream WINDOW_UPDATE(stream_id=1, increment=131070).
+  // Sending the first DATA frame consumes the entire 65535 transport window
+  // while the second message is still queued, recording a transport stall.
+  const std::shared_ptr<EventSequenceEndpoint::Step> first_data_step =
+      endpoint()->NewStep();
+  first_data_step->ThenPerformRead({
+      helper_.SerializedWindowUpdateFrame(/*stream_id=*/1u,
+                                          /*increment=*/131070u),
+  });
+  first_data_step->ThenExpectWrite({
+      helper_.SerializedDataFrame(large_message_payload, /*stream_id=*/1u,
+                                  /*end_stream=*/false),
+  });
+  first_data_step->Wait();
+  event_engine()->Tick();
+
+  // Step 6: Peer sends transport WINDOW_UPDATE(stream_id=0, increment=65535).
+  // Client writes the remaining DATA frame (end_stream=true), and peer responds
+  // with initial metadata, a DATA frame, and trailing metadata.
+  const std::shared_ptr<EventSequenceEndpoint::Step> finish_step =
+      endpoint()->NewStep();
+  finish_step->ThenPerformRead({
+      helper_.SerializedWindowUpdateFrame(/*stream_id=*/0u,
+                                          /*increment=*/65535u),
+  });
+  finish_step->ThenExpectWrite({
+      helper_.SerializedDataFrame(kString1, /*stream_id=*/1u,
+                                  /*end_stream=*/true),
+  });
+  finish_step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+      helper_.SerializedDataFrame(kString3, /*stream_id=*/1u,
+                                  /*end_stream=*/false),
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/true),
+  });
+  finish_step->Wait();
+  event_engine()->Tick();
+
+  // Step 7: Validate all recorded transport stats.
+  constexpr int kInitialWriteTargetSize = 128 * 1024;
+  stats_helper.ExpectWritesBegun(/*expected_count=*/8u);
+  stats_helper.ExpectWriteTargetSize(/*value=*/kInitialWriteTargetSize,
+                                     /*expected_count=*/8u);
+  stats_helper.ExpectSettingsWrites(/*expected_count=*/1u);
+  stats_helper.ExpectPingsSent(/*expected_count=*/1u);
+
+  stats_helper.ExpectSendMessageSize(
+      /*value=*/static_cast<int>(large_message_payload.size()),
+      /*expected_count=*/1u);
+  stats_helper.ExpectSendMessageSize(
+      /*value=*/static_cast<int>(kString1.size()),
+      /*expected_count=*/1u);
+
+  stats_helper.ExpectWriteDataFrameSize(
+      /*value=*/static_cast<int>(large_message_payload.size() +
+                                 kGrpcHeaderSizeInBytes),
+      /*expected_count=*/1u);
+  stats_helper.ExpectWriteDataFrameSize(
+      /*value=*/static_cast<int>(kString1.size() + kGrpcHeaderSizeInBytes),
+      /*expected_count=*/1u);
+
+  stats_helper.ExpectReadDataFrameSize(
+      /*value=*/static_cast<int>(kString3.size() + kGrpcHeaderSizeInBytes),
+      /*expected_count=*/1u);
+
+  stats_helper.ExpectStreamStalls(/*expected_count=*/1u);
+  stats_helper.ExpectTransportStalls(/*expected_count=*/1u);
+  stats_helper.ExpectStreamRemoteWindowUpdate(/*value=*/131070,
+                                              /*expected_count=*/1u);
+  stats_helper.ExpectTransportRemoteWindowUpdate(/*value=*/65535,
+                                                 /*expected_count=*/1u);
+
+  // Step 8: Tear down the transport.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  AddTransportCloseExpectations(teardown_step.get());
+  teardown_step->Wait();
+}
+
 // TODO(tjagtap) : [PH2][P4] Write tests similar to
 // TestHeaderDataHeaderFrameOrder for Continuation frame read.
 
