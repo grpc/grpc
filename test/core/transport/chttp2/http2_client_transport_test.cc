@@ -52,6 +52,8 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "test/core/transport/chttp2/http2_common_test_inputs.h"
 #include "test/core/transport/chttp2/http2_frame_test_helper.h"
 #include "test/core/transport/util/transport_test.h"
@@ -1501,6 +1503,84 @@ TEST_F(Http2ClientTransportTest, TestActiveStreamAllowedToDrainAfterGoaway) {
   std::shared_ptr<EventSequenceEndpoint::Step> step3 = endpoint()->NewStep();
   AddTransportCloseExpectations(step3.get());
   step3->Wait();
+}
+
+TEST_F(Http2ClientTransportTest,
+       TestCloseBeforeSpawnTransportLoopsClosesImmediately) {
+  // Orphaning before SpawnTransportLoops() closes immediately without sending
+  // GOAWAY or waiting for kGoawaySendTimeoutSeconds.
+  ExecCtx ctx;
+  const std::shared_ptr<std::optional<absl::Status>>
+      on_receive_settings_status =
+          std::make_shared<std::optional<absl::Status>>();
+  endpoint()->NewStep();  // Fails on any unexpected write.
+  InitTransport(GetChannelArgs(),
+                [on_receive_settings_status](
+                    const absl::StatusOr<uint32_t>& status) {
+                  *on_receive_settings_status = status.status();
+                });
+  const WeakRefCountedPtr<channelz::BaseNode> weak_socket_node =
+      client_transport()->GetSocketNode()->WeakRef();
+
+  client_transport_.reset();
+  event_engine()->TickForDuration(Duration::Milliseconds(100));
+
+  ASSERT_TRUE(on_receive_settings_status->has_value());
+  EXPECT_EQ(on_receive_settings_status->value().code(),
+            absl::StatusCode::kUnavailable);
+  EXPECT_EQ(weak_socket_node->RefIfNonZero(), nullptr);
+}
+
+TEST_F(Http2ClientTransportTest,
+       TestCloseOnMultiplexerLoopWriteErrorClosesImmediately) {
+  // When MultiplexerLoop exits on a write error, CloseTransport completes
+  // immediately without sending GOAWAY or waiting kGoawaySendTimeoutSeconds.
+  ExecCtx ctx;
+  const std::shared_ptr<std::optional<absl::Status>>
+      on_receive_settings_status =
+          std::make_shared<std::optional<absl::Status>>();
+  InitTransport(GetChannelArgs(),
+                [on_receive_settings_status](
+                    const absl::StatusOr<uint32_t>& status) {
+                  *on_receive_settings_status = status.status();
+                });
+  const WeakRefCountedPtr<channelz::BaseNode> weak_socket_node =
+      client_transport()->GetSocketNode()->WeakRef();
+  const std::shared_ptr<EventSequenceEndpoint::Step> step =
+      endpoint()->NewStep();
+  step->ThenExpectWriteError(absl::UnavailableError(kConnectionClosed));
+
+  SpawnTransportLoops();
+  step->Wait();
+  client_transport_.reset();
+  event_engine()->TickForDuration(Duration::Milliseconds(100));
+
+  ASSERT_TRUE(on_receive_settings_status->has_value());
+  EXPECT_EQ(on_receive_settings_status->value().code(),
+            absl::StatusCode::kUnavailable);
+  EXPECT_EQ(weak_socket_node->RefIfNonZero(), nullptr);
+}
+
+TEST_F(Http2ClientTransportTest,
+       TestCloseWhenGoawayWriteFailsClosesImmediately) {
+  // When a pending GOAWAY write fails, MultiplexerLoop exiting wakes
+  // CloseTransport immediately instead of waiting kGoawaySendTimeoutSeconds.
+  ExecCtx ctx;
+  InitTransport(GetChannelArgs());
+  const WeakRefCountedPtr<channelz::BaseNode> weak_socket_node =
+      client_transport()->GetSocketNode()->WeakRef();
+  SpawnTransportLoopsAndExchangeSettings();
+
+  const std::shared_ptr<EventSequenceEndpoint::Step> step =
+      endpoint()->NewStep();
+  step->ThenFailRead(absl::UnavailableError(kConnectionClosed));
+  step->ThenExpectWriteError(absl::UnavailableError(kConnectionClosed));
+  step->Wait();
+  client_transport_.reset();
+  // Use TickForDuration (< 5s); TickUntilIdle() fast-forwards cancelled timers.
+  event_engine()->TickForDuration(Duration::Milliseconds(100));
+
+  EXPECT_EQ(weak_socket_node->RefIfNonZero(), nullptr);
 }
 
 // TODO(tjagtap) : [PH2][P4] Write tests similar to
