@@ -132,10 +132,69 @@ struct UnrefDestroy {
 
 }  // namespace arena_detail
 
+class ArenaBlockPool {
+ public:
+  static constexpr size_t kMaxPoolSize = 4;
+
+  ArenaBlockPool() {
+    for (size_t i = 0; i < kMaxPoolSize; ++i) {
+      pool_[i].store(nullptr, std::memory_order_relaxed);
+    }
+  }
+
+  ~ArenaBlockPool() { Clear(); }
+
+  void* TryPop() {
+    for (size_t i = 0; i < kMaxPoolSize; ++i) {
+      void* val = pool_[i].load(std::memory_order_relaxed);
+      if (val != nullptr && pool_[i].compare_exchange_strong(
+                                val, nullptr, std::memory_order_acquire,
+                                std::memory_order_relaxed)) {
+        return val;
+      }
+    }
+    return nullptr;
+  }
+
+  bool TryPush(void* block) {
+    for (size_t i = 0; i < kMaxPoolSize; ++i) {
+      void* expected = nullptr;
+      if (pool_[i].compare_exchange_strong(expected, block,
+                                           std::memory_order_release,
+                                           std::memory_order_relaxed)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void Clear() {
+    for (size_t i = 0; i < kMaxPoolSize; ++i) {
+      void* val = pool_[i].exchange(nullptr, std::memory_order_relaxed);
+      if (val != nullptr) {
+        gpr_free_aligned(val);
+      }
+    }
+  }
+
+ private:
+  std::atomic<void*> pool_[kMaxPoolSize];
+};
+
 class ArenaFactory : public RefCounted<ArenaFactory> {
  public:
   virtual RefCountedPtr<Arena> MakeArena() = 0;
-  virtual void FinalizeArena(Arena* arena) = 0;
+  virtual void FinalizeArena(Arena* arena, size_t initial_zone_size,
+                             size_t total_used) = 0;
+
+  virtual void* AllocateArenaBlock(size_t size) {
+    static constexpr size_t alignment =
+        (GPR_CACHELINE_SIZE > GPR_MAX_ALIGNMENT &&
+         GPR_CACHELINE_SIZE % GPR_MAX_ALIGNMENT == 0)
+            ? GPR_CACHELINE_SIZE
+            : GPR_MAX_ALIGNMENT;
+    return gpr_malloc_aligned(size, alignment);
+  }
 
   MemoryAllocator& allocator() { return allocator_; }
 
@@ -159,6 +218,14 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
   // Create an arena, with \a initial_size bytes in the first allocated buffer.
   static RefCountedPtr<Arena> Create(size_t initial_size,
                                      RefCountedPtr<ArenaFactory> arena_factory);
+
+  static RefCountedPtr<Arena> CreateAt(void* block, size_t initial_size,
+                                       RefCountedPtr<ArenaFactory> arena_factory) {
+    return RefCountedPtr<Arena>(
+        new (block) Arena(initial_size, std::move(arena_factory)));
+  }
+
+  static size_t RoundedInitialSize(size_t initial_size);
 
   // Destroy all `ManagedNew` allocated objects.
   // Allows safe destruction of these objects even if they need context held by
