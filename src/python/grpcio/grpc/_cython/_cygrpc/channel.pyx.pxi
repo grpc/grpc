@@ -315,7 +315,13 @@ cdef void _call(
 
 cdef void _process_integrated_call_tag(
     _ChannelState state, _BatchOperationTag tag) except *:
-  cdef _CallState call_state = state.integrated_call_states.pop(tag)
+  cdef _CallState call_state = state.integrated_call_states.pop(tag, None)
+  if call_state is None:
+    # Tags are registered under the channel lock right after their batch
+    # starts. In a fork child, the thread that started this batch may have been
+    # stopped by fork() before registering it. The caller still delivers the
+    # event to the tag's handler.
+    return
   call_state.due.remove(tag)
   if not call_state.due:
     call_state.delete_call()
@@ -359,7 +365,9 @@ cdef object _process_segregated_call_tag(
   if not call_state.due:
     #TODO(xuanwn): Expand the scope of nogil
     call_state.delete_call()
-    state.segregated_call_states.remove(call_state)
+    # discard(): a fork child stops tracking segregated calls (see
+    # _cancel_all_calls), but the forking thread may still own one.
+    state.segregated_call_states.discard(call_state)
     _destroy_c_completion_queue(c_completion_queue)
     return True
   else:
@@ -386,7 +394,7 @@ cdef class SegregatedCall:
     def on_failure():
       self._call_state.due.clear()
       self._call_state.delete_call()
-      self._channel_state.segregated_call_states.remove(self._call_state)
+      self._channel_state.segregated_call_states.discard(self._call_state)
       _destroy_c_completion_queue(self._c_completion_queue)
     return _next_call_event(
         self._channel_state, self._c_completion_queue, on_success, on_failure, None)
@@ -499,8 +507,17 @@ cdef _cancel_all_calls(Channel channel, grpc_status_code code, object details):
       grpc_call_cancel_with_status(
           call_state.c_call, code, encoded_details, NULL)
     for call_state in state.segregated_call_states:
-      grpc_call_cancel_with_status(
-          call_state.c_call, code, encoded_details, NULL)
+      # A call with nothing due already finished: the thread that owned it may
+      # have been deleting it at fork() time, so don't touch it.
+      if call_state.due:
+        grpc_call_cancel_with_status(
+            call_state.c_call, code, encoded_details, NULL)
+    # Segregated calls complete on their own completion queues, which only the
+    # threads that started them poll, so the loop below would never see them
+    # finish: stop tracking them. If the forking thread owns one, it still gets
+    # the cancellation from next_event() and releases the call itself. Calls
+    # owned by threads that don't exist in the child are abandoned.
+    state.segregated_call_states.clear()
     while not _calls_drained(state):
       event = channel.next_call_event()
       if event.completion_type == CompletionType.queue_timeout:
@@ -588,6 +605,10 @@ cdef class Channel:
     _close(self, code, details, True)
 
   def cancel_calls_on_fork(self, code, details):
+    # Runs in the fork child, where only the forking thread exists. Another
+    # thread may have held this lock at fork() time and can never release it,
+    # so replace it before use.
+    self._state.condition = threading.Condition()
     _cancel_all_calls(self, code, details)
 
   def get_registered_call_handle(self, method):

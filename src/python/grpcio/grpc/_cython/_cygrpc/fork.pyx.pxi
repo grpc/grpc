@@ -14,6 +14,7 @@
 
 import os
 import sys
+import weakref
 
 _AWAIT_THREADS_TIMEOUT_SECONDS = 5
 
@@ -31,7 +32,7 @@ _TRUE_VALUES = ['yes',  'Yes',  'YES', 'true', 'True', 'TRUE', '1']
 # This flag is not supported on Windows.
 # This flag is also not supported for non-native IO manager.
 _GRPC_ENABLE_FORK_SUPPORT = (
-    os.environ.get('GRPC_ENABLE_FORK_SUPPORT', '0')
+    os.environ.get('GRPC_ENABLE_FORK_SUPPORT', '1')
         .lower() in _TRUE_VALUES)
 
 if sys.platform == "win32":
@@ -81,7 +82,7 @@ cdef void __postfork_child() noexcept nogil:
                 state_to_reset.reset_postfork_child()
             _fork_state.postfork_states_to_reset = []
             _fork_state.fork_epoch += 1
-            for channel in _fork_state.channels:
+            for channel in tuple(_fork_state.channels):
                 channel._postfork_child()
             with _fork_state.fork_in_progress_condition:
                 _fork_state.fork_in_progress = False
@@ -211,7 +212,8 @@ class _ForkState:
         self.fork_handler_registered = False
         self.active_thread_count = _ActiveThreadCount()
         self.fork_epoch = 0
-        self.channels = set()
+        # Weak, so that unclosed channels can still be garbage collected.
+        self.channels = weakref.WeakSet()
 
 
 _fork_state = _ForkState()
