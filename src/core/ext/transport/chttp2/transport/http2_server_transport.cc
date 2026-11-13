@@ -64,6 +64,7 @@
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
+#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/party.h"
@@ -1963,10 +1964,11 @@ auto Http2ServerTransport::CloseTransportFactory(
 
     return AssertResultType<Empty>(Map(
         If(
-            self->is_multiplexer_loop_spawned_,
+            self->IsMultiplexerLoopActive(),
             [&self, &http2_status]() {
-              // Race the GOAWAY write against kGoawaySendTimeoutSeconds so
-              // a stuck write cannot delay the close forever.
+              // Race the GOAWAY write against MultiplexerLoop exiting and
+              // kGoawaySendTimeoutSeconds so a failed or stuck write cannot
+              // delay the close.
               return Race(
                   AssertResultType<absl::Status>(
                       self->goaway_manager_.RequestGoaway(
@@ -1974,17 +1976,23 @@ auto Http2ServerTransport::CloseTransportFactory(
                           Slice::FromCopiedString(std::string(
                               http2_status.GetAbslConnectionError().message())),
                           self->GetLastStreamId(), /*immediate=*/true)),
+                  Map(self->multiplexer_loop_done_.Wait(),
+                      [](Empty) { return absl::OkStatus(); }),
                   Sleep(Duration::Seconds(kGoawaySendTimeoutSeconds)));
             },
             []() {
-              // MultiplexerLoop was never spawned. No GOAWAY can be written.
+              // MultiplexerLoop was never spawned or has already exited. No
+              // GOAWAY can be written.
               GRPC_HTTP2_SERVER_DLOG
                   << "Http2ServerTransport::CloseTransportFactory "
-                     "MultiplexerLoop not spawned. Closing immediately.";
+                     "MultiplexerLoop not active. Closing immediately.";
               return Immediate(absl::OkStatus());
             }),
-        [self](absl::Status) mutable {
-          self->CloseTransport();
+        [self, disconnect_status = http2_status.GetAbslConnectionError(),
+         disconnect_reason =
+             absl::StrCat("Transport closed: ", http2_status.DebugString())](
+            absl::Status) mutable {
+          self->CloseTransport(disconnect_status, disconnect_reason.c_str());
           return Empty{};
         }));
   };
@@ -2009,9 +2017,6 @@ void Http2ServerTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list =
       std::move(stream_list_);
   stream_list_.clear();
-  ReportDisconnectionLocked(
-      GRPC_CHANNEL_SHUTDOWN, http2_status.GetAbslConnectionError(), {},
-      absl::StrCat("Transport closed: ", http2_status.DebugString()).c_str());
   lock.Release();
 
   SpawnInfallibleTransportParty(
@@ -2019,11 +2024,17 @@ void Http2ServerTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
                                               std::move(http2_status), whence));
 }
 
-void Http2ServerTransport::CloseTransport() {
+void Http2ServerTransport::CloseTransport(
+    const absl::Status& disconnect_status,
+    const char* const disconnect_reason) {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::CloseTransport";
 
   shutdown_tracker_.MarkShutdownComplete();
   settings_->HandleTransportShutdown(event_engine_.get());
+  // Based on CHTTP2's close_transport_locked in chttp2_transport.cc: report
+  // GRPC_CHANNEL_SHUTDOWN only after any in-progress GOAWAY write finishes.
+  ReportDisconnection(GRPC_CHANNEL_SHUTDOWN, disconnect_status, {},
+                      disconnect_reason);
 
   if (on_close_callback_ != nullptr) {
     event_engine_->Run(
@@ -2313,8 +2324,16 @@ void Http2ServerTransport::SpawnTransportLoops() {
   // For Server, read happens before write. So ReadLoop is spawned first.
   SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
   GRPC_DCHECK(!is_multiplexer_loop_spawned_);
-  SpawnGuardedTransportParty("MultiplexerLoop",
-                             UntilTransportClosed(MultiplexerLoop()));
+  SpawnGuardedTransportParty(
+      "MultiplexerLoop",
+      Map(UntilTransportClosed(MultiplexerLoop()),
+          [self = RefAsSubclass<Http2ServerTransport>()](absl::Status status) {
+            GRPC_HTTP2_SERVER_DLOG
+                << "Http2ServerTransport::MultiplexerLoop exited with status: "
+                << status;
+            self->multiplexer_loop_done_.Set();
+            return status;
+          }));
   is_multiplexer_loop_spawned_ = true;
   if (tarpit_manager_.allow_tarpit()) {
     SpawnGuardedTransportParty("TarpitDrainLoop",

@@ -59,6 +59,7 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/transport/chttp2/http2_common_test_inputs.h"
 #include "test/core/transport/chttp2/http2_frame_test_helper.h"
@@ -112,11 +113,12 @@ class Http2ServerTransportTest : public Http2TransportTest {
   // Initializes the transport with the given channel args.
   void InitTransport(ChannelArgs channel_args,
                      absl::AnyInvocable<void(absl::StatusOr<uint32_t>)>
-                         on_receive_settings = nullptr) {
+                         on_receive_settings = nullptr,
+                     absl::AnyInvocable<void()> on_close_callback = nullptr) {
     server_transport_ = MakeOrphanable<Http2ServerTransport>(
         std::move(endpoint()->promise_endpoint()), std::move(channel_args),
         event_engine(), std::move(on_receive_settings),
-        /*on_close_callback=*/nullptr);
+        std::move(on_close_callback));
   }
 
   void SpawnTransportLoopsAndExchangeSettings(
@@ -862,6 +864,55 @@ TEST_F(Http2ServerTransportTest,
           .count();
   EXPECT_LT(close_elapsed_ms,
             static_cast<int64_t>(kGoawaySendTimeoutSeconds) * 1000);
+}
+
+TEST_F(Http2ServerTransportTest,
+       TestCloseOnMultiplexerLoopWriteErrorClosesImmediately) {
+  // When MultiplexerLoop exits on a write error, CloseTransport completes
+  // immediately without sending GOAWAY or waiting kGoawaySendTimeoutSeconds.
+  ExecCtx ctx;
+  const std::shared_ptr<bool> is_closed = std::make_shared<bool>(false);
+  InitTransport(
+      GetChannelArgs(), /*on_receive_settings=*/nullptr,
+      /*on_close_callback=*/[is_closed]() { *is_closed = true; });
+
+  const std::shared_ptr<EventSequenceEndpoint::Step> step =
+      endpoint()->NewStep();
+  step->ThenPerformRead({
+      EventEngineSlice(
+          grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+      helper_.SerializedDefaultClientSettingsFrame(),
+  });
+  step->ThenExpectWriteError(absl::UnavailableError(kConnectionClosed));
+
+  server_transport()->SetCallDestination(
+      MakeRefCounted<TestCallDestination>(this));
+  step->Wait();
+  event_engine()->TickForDuration(Duration::Milliseconds(100));
+
+  EXPECT_TRUE(*is_closed);
+}
+
+TEST_F(Http2ServerTransportTest,
+       TestCloseWhenGoawayWriteFailsClosesImmediately) {
+  // When a pending GOAWAY write fails, MultiplexerLoop exiting wakes
+  // CloseTransport immediately instead of waiting kGoawaySendTimeoutSeconds.
+  ExecCtx ctx;
+  const std::shared_ptr<bool> is_closed = std::make_shared<bool>(false);
+  InitTransport(
+      GetChannelArgs(), /*on_receive_settings=*/nullptr,
+      /*on_close_callback=*/[is_closed]() { *is_closed = true; });
+  SpawnTransportLoopsAndExchangeSettings();
+
+  const std::shared_ptr<EventSequenceEndpoint::Step> step =
+      endpoint()->NewStep();
+  step->ThenFailRead(absl::UnavailableError(kConnectionClosed));
+  step->ThenExpectWriteError(absl::UnavailableError(kConnectionClosed));
+  step->Wait();
+  // Use TickForDuration (< 5s); TickUntilIdle() fast-forwards cancelled timers.
+  event_engine()->TickForDuration(Duration::Milliseconds(100));
+
+  EXPECT_TRUE(*is_closed);
 }
 
 TEST_F(Http2ServerTransportTest, TestKeepAliveTimeout) {
