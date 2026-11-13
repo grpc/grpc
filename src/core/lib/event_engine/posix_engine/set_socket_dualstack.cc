@@ -54,8 +54,17 @@ namespace grpc_event_engine::experimental {
 #ifndef GRPC_SET_SOCKET_DUALSTACK_CUSTOM
 
 bool SetSocketDualStack(int fd) {
+#ifdef GPR_DRAGONFLY
+  // DragonFly accepts IPV6_V6ONLY=0 but has no IPv4-mapped IPv6 addresses,
+  // so a socket set up this way still cannot reach ::ffff:127.0.0.1 and
+  // connect() fails with EADDRNOTAVAIL.  Reporting no dualstack support
+  // makes the caller fall back to AF_INET, which works.
+  (void)fd;
+  return false;
+#else
   const int off = 0;
   return 0 == setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
+#endif
 }
 
 #endif  // GRPC_SET_SOCKET_DUALSTACK_CUSTOM
