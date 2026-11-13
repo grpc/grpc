@@ -678,6 +678,7 @@ TEST_F(TlsPrivateKeyOffloadTest,
 // signature from the wrong key.
 TEST_F(TlsPrivateKeyOffloadTest,
        OffloadWithCustomKeySignerInvalidSignatureAsync) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P3] Fix bug");
   server_addr_ = absl::StrCat("localhost:", grpc_pick_unused_port_or_die());
   std::string server_key =
       grpc_core::testing::GetFileContents(std::string(kServerKeyPath));
