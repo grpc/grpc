@@ -125,8 +125,6 @@ class ServerLoadReportingEnd2endTest : public ::testing::Test {
   EchoTestServiceImpl echo_service_;
 };
 
-TEST_F(ServerLoadReportingEnd2endTest, NoCall) {}
-
 TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
   SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ChannelArguments args;
