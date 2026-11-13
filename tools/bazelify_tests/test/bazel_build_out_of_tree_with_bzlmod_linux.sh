@@ -26,7 +26,6 @@ cd test/bazel_build_out_of_tree/bzlmod_test
 # releases.
 $GIT_ROOT/tools/bazel \
     build \
-    --nobuild \
     -- \
     "@grpc" \
     "@grpc//:grpc++" \
