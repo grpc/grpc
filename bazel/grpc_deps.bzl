@@ -406,11 +406,11 @@ def grpc_deps():
                 "@protobuf": "@com_google_protobuf",
                 "@re2": "@com_googlesource_code_re2",
             },
-            sha256 = "0e43c6f8686cacb30f6d5e936bbce4cbd30fb3519ccf025c487911ca9e1022f2",
-            strip_prefix = "cel-c-1cf2909f6c0c5e56b69070a6f3646bf046b6b075",
+            sha256 = "c64ef62403043027c3f637b630be6606f72728852a3e6afa6ac711eb8f68f0a8",
+            strip_prefix = "cel-c-520a63dc23c3e7072826f1be68b940f648133c75",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cel-expr/cel-c/archive/1cf2909f6c0c5e56b69070a6f3646bf046b6b075.tar.gz",
-                "https://github.com/cel-expr/cel-c/archive/1cf2909f6c0c5e56b69070a6f3646bf046b6b075.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cel-expr/cel-c/archive/520a63dc23c3e7072826f1be68b940f648133c75.tar.gz",
+                "https://github.com/cel-expr/cel-c/archive/520a63dc23c3e7072826f1be68b940f648133c75.tar.gz",
             ],
         )
 
