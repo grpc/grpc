@@ -333,6 +333,7 @@ grpc_cc_library(
         "function_signature",
         "json",
         "json_writer",
+        "no_destruct",
         "notification",
         "sync",
         "time",
@@ -12285,7 +12286,6 @@ grpc_cc_library(
     ],
     deps = [
         "channelz_text_encode",
-        "experiments",
         "function_signature",
         "json_writer",
         "latent_see",

@@ -3034,7 +3034,6 @@ grpc_cc_library(
         "grpc++_config_proto",
         ":channelz_cc_grpc",
         "//src/core:channelz_v2tov1_convert",
-        "//src/core:experiments",
         "//src/core:notification",
         "//src/proto/grpc/channelz/v2:service_cc_grpc",
     ],
@@ -5222,6 +5221,7 @@ grpc_cc_library(
         "src/cpp/util/status.cc",
     ],
     external_deps = [
+        "absl/log:log",
         "absl/status",
         "absl/strings",
     ],

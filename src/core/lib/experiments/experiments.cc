@@ -92,10 +92,6 @@ const char* const additional_constraints_h2_max_deallocating_streams_headroom =
 const char* const description_header_data_frame =
     "Managing header and data memory better";
 const char* const additional_constraints_header_data_frame = "{}";
-const char* const description_internal_fix = "Gate for the internal fix.";
-const char* const additional_constraints_internal_fix = "{}";
-const char* const description_internal_fix1 = "Gate for the internal fix1.";
-const char* const additional_constraints_internal_fix1 = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -139,6 +135,25 @@ const char* const additional_constraints_optimization_06 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_client =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test PH2 Client "
+    "with CHTTP2 Server.";
+const char* const additional_constraints_ph2_client = "{}";
+const char* const description_ph2_client_server =
+    "This is a combination of ph2_server and ph2_client experiments. When this "
+    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
+    "Server. We will NEVER be rolling out this experiment, because the roll "
+    "out would be done using ph2_server and ph2_client. This experiment MUST "
+    "be deleted when either ph2_server or ph2_client experiments are deleted.";
+const char* const additional_constraints_ph2_client_server = "{}";
+const char* const description_ph2_server =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test CHTTP2 "
+    "Client with PH2 Server.";
+const char* const additional_constraints_ph2_server = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
@@ -163,6 +178,11 @@ const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_batch_cleanup_on_cancel =
     "Fix completion queue tag handling during promise batch cancellation.";
 const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
+const char* const description_promise_filter_client_half_close =
+    "Propagate client half-close in promise-based filters and v3 filter "
+    "bridge.";
+const char* const additional_constraints_promise_filter_client_half_close =
+    "{}";
 const char* const description_recv_message_filter_bypass_fix =
     "Receive message bypass happen if trailing metadata is received while "
     "Server Initial Metadata is getting processed.";
@@ -170,31 +190,6 @@ const char* const additional_constraints_recv_message_filter_bypass_fix = "{}";
 const char* const description_replace_auth_filter =
     "Replacing ServerAuthFilter in Call V3.";
 const char* const additional_constraints_replace_auth_filter = "{}";
-const char* const description_ph2_client =
-    "Use promises for the http2 client transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs. "
-    "When this flag is enabled for the test suites, it would test PH2 Client "
-    "with CHTTP2 Server.";
-const char* const additional_constraints_ph2_client = "{}";
-const uint8_t required_experiments_ph2_client[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdReplaceAuthFilter)};
-const char* const description_ph2_client_server =
-    "This is a combination of ph2_server and ph2_client experiments. When this "
-    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
-    "Server. We will NEVER be rolling out this experiment, because the roll "
-    "out would be done using ph2_server and ph2_client. This experiment MUST "
-    "be deleted when either ph2_server or ph2_client experiments are deleted.";
-const char* const additional_constraints_ph2_client_server = "{}";
-const uint8_t required_experiments_ph2_client_server[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdReplaceAuthFilter)};
-const char* const description_ph2_server =
-    "Use promises for the http2 server transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs. "
-    "When this flag is enabled for the test suites, it would test CHTTP2 "
-    "Client with PH2 Server.";
-const char* const additional_constraints_ph2_server = "{}";
-const uint8_t required_experiments_ph2_server[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdReplaceAuthFilter)};
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
@@ -316,10 +311,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"header_data_frame", description_header_data_frame,
      additional_constraints_header_data_frame, nullptr, 0, true, true},
-    {"internal_fix", description_internal_fix,
-     additional_constraints_internal_fix, nullptr, 0, false, true},
-    {"internal_fix1", description_internal_fix1,
-     additional_constraints_internal_fix1, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -328,7 +319,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"map_host_header_to_authority", description_map_host_header_to_authority,
-     additional_constraints_map_host_header_to_authority, nullptr, 0, false,
+     additional_constraints_map_host_header_to_authority, nullptr, 0, true,
      true},
     {"memory_optimization_01", description_memory_optimization_01,
      additional_constraints_memory_optimization_01, nullptr, 0, false, false},
@@ -356,6 +347,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
+     nullptr, 0, false, true},
+    {"ph2_client_server", description_ph2_client_server,
+     additional_constraints_ph2_client_server, nullptr, 0, false, true},
+    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
+     nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
@@ -378,19 +375,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_batch_cleanup_on_cancel,
      additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
      true},
+    {"promise_filter_client_half_close",
+     description_promise_filter_client_half_close,
+     additional_constraints_promise_filter_client_half_close, nullptr, 0, false,
+     true},
     {"recv_message_filter_bypass_fix",
      description_recv_message_filter_bypass_fix,
      additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
      true},
     {"replace_auth_filter", description_replace_auth_filter,
      additional_constraints_replace_auth_filter, nullptr, 0, false, true},
-    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
-     required_experiments_ph2_client, 1, false, true},
-    {"ph2_client_server", description_ph2_client_server,
-     additional_constraints_ph2_client_server,
-     required_experiments_ph2_client_server, 1, false, true},
-    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
-     required_experiments_ph2_server, 1, false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
@@ -519,10 +513,6 @@ const char* const additional_constraints_h2_max_deallocating_streams_headroom =
 const char* const description_header_data_frame =
     "Managing header and data memory better";
 const char* const additional_constraints_header_data_frame = "{}";
-const char* const description_internal_fix = "Gate for the internal fix.";
-const char* const additional_constraints_internal_fix = "{}";
-const char* const description_internal_fix1 = "Gate for the internal fix1.";
-const char* const additional_constraints_internal_fix1 = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -566,6 +556,25 @@ const char* const additional_constraints_optimization_06 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_client =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test PH2 Client "
+    "with CHTTP2 Server.";
+const char* const additional_constraints_ph2_client = "{}";
+const char* const description_ph2_client_server =
+    "This is a combination of ph2_server and ph2_client experiments. When this "
+    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
+    "Server. We will NEVER be rolling out this experiment, because the roll "
+    "out would be done using ph2_server and ph2_client. This experiment MUST "
+    "be deleted when either ph2_server or ph2_client experiments are deleted.";
+const char* const additional_constraints_ph2_client_server = "{}";
+const char* const description_ph2_server =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test CHTTP2 "
+    "Client with PH2 Server.";
+const char* const additional_constraints_ph2_server = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
@@ -590,6 +599,11 @@ const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_batch_cleanup_on_cancel =
     "Fix completion queue tag handling during promise batch cancellation.";
 const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
+const char* const description_promise_filter_client_half_close =
+    "Propagate client half-close in promise-based filters and v3 filter "
+    "bridge.";
+const char* const additional_constraints_promise_filter_client_half_close =
+    "{}";
 const char* const description_recv_message_filter_bypass_fix =
     "Receive message bypass happen if trailing metadata is received while "
     "Server Initial Metadata is getting processed.";
@@ -597,31 +611,6 @@ const char* const additional_constraints_recv_message_filter_bypass_fix = "{}";
 const char* const description_replace_auth_filter =
     "Replacing ServerAuthFilter in Call V3.";
 const char* const additional_constraints_replace_auth_filter = "{}";
-const char* const description_ph2_client =
-    "Use promises for the http2 client transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs. "
-    "When this flag is enabled for the test suites, it would test PH2 Client "
-    "with CHTTP2 Server.";
-const char* const additional_constraints_ph2_client = "{}";
-const uint8_t required_experiments_ph2_client[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdReplaceAuthFilter)};
-const char* const description_ph2_client_server =
-    "This is a combination of ph2_server and ph2_client experiments. When this "
-    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
-    "Server. We will NEVER be rolling out this experiment, because the roll "
-    "out would be done using ph2_server and ph2_client. This experiment MUST "
-    "be deleted when either ph2_server or ph2_client experiments are deleted.";
-const char* const additional_constraints_ph2_client_server = "{}";
-const uint8_t required_experiments_ph2_client_server[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdReplaceAuthFilter)};
-const char* const description_ph2_server =
-    "Use promises for the http2 server transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs. "
-    "When this flag is enabled for the test suites, it would test CHTTP2 "
-    "Client with PH2 Server.";
-const char* const additional_constraints_ph2_server = "{}";
-const uint8_t required_experiments_ph2_server[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdReplaceAuthFilter)};
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
@@ -743,10 +732,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"header_data_frame", description_header_data_frame,
      additional_constraints_header_data_frame, nullptr, 0, true, true},
-    {"internal_fix", description_internal_fix,
-     additional_constraints_internal_fix, nullptr, 0, false, true},
-    {"internal_fix1", description_internal_fix1,
-     additional_constraints_internal_fix1, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -755,7 +740,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"map_host_header_to_authority", description_map_host_header_to_authority,
-     additional_constraints_map_host_header_to_authority, nullptr, 0, false,
+     additional_constraints_map_host_header_to_authority, nullptr, 0, true,
      true},
     {"memory_optimization_01", description_memory_optimization_01,
      additional_constraints_memory_optimization_01, nullptr, 0, false, false},
@@ -783,6 +768,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
+     nullptr, 0, false, true},
+    {"ph2_client_server", description_ph2_client_server,
+     additional_constraints_ph2_client_server, nullptr, 0, false, true},
+    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
+     nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
@@ -805,19 +796,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_batch_cleanup_on_cancel,
      additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
      true},
+    {"promise_filter_client_half_close",
+     description_promise_filter_client_half_close,
+     additional_constraints_promise_filter_client_half_close, nullptr, 0, false,
+     true},
     {"recv_message_filter_bypass_fix",
      description_recv_message_filter_bypass_fix,
      additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
      true},
     {"replace_auth_filter", description_replace_auth_filter,
      additional_constraints_replace_auth_filter, nullptr, 0, false, true},
-    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
-     required_experiments_ph2_client, 1, false, true},
-    {"ph2_client_server", description_ph2_client_server,
-     additional_constraints_ph2_client_server,
-     required_experiments_ph2_client_server, 1, false, true},
-    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
-     required_experiments_ph2_server, 1, false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
@@ -946,10 +934,6 @@ const char* const additional_constraints_h2_max_deallocating_streams_headroom =
 const char* const description_header_data_frame =
     "Managing header and data memory better";
 const char* const additional_constraints_header_data_frame = "{}";
-const char* const description_internal_fix = "Gate for the internal fix.";
-const char* const additional_constraints_internal_fix = "{}";
-const char* const description_internal_fix1 = "Gate for the internal fix1.";
-const char* const additional_constraints_internal_fix1 = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -993,6 +977,25 @@ const char* const additional_constraints_optimization_06 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_client =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test PH2 Client "
+    "with CHTTP2 Server.";
+const char* const additional_constraints_ph2_client = "{}";
+const char* const description_ph2_client_server =
+    "This is a combination of ph2_server and ph2_client experiments. When this "
+    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
+    "Server. We will NEVER be rolling out this experiment, because the roll "
+    "out would be done using ph2_server and ph2_client. This experiment MUST "
+    "be deleted when either ph2_server or ph2_client experiments are deleted.";
+const char* const additional_constraints_ph2_client_server = "{}";
+const char* const description_ph2_server =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test CHTTP2 "
+    "Client with PH2 Server.";
+const char* const additional_constraints_ph2_server = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
@@ -1017,6 +1020,11 @@ const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_batch_cleanup_on_cancel =
     "Fix completion queue tag handling during promise batch cancellation.";
 const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
+const char* const description_promise_filter_client_half_close =
+    "Propagate client half-close in promise-based filters and v3 filter "
+    "bridge.";
+const char* const additional_constraints_promise_filter_client_half_close =
+    "{}";
 const char* const description_recv_message_filter_bypass_fix =
     "Receive message bypass happen if trailing metadata is received while "
     "Server Initial Metadata is getting processed.";
@@ -1024,31 +1032,6 @@ const char* const additional_constraints_recv_message_filter_bypass_fix = "{}";
 const char* const description_replace_auth_filter =
     "Replacing ServerAuthFilter in Call V3.";
 const char* const additional_constraints_replace_auth_filter = "{}";
-const char* const description_ph2_client =
-    "Use promises for the http2 client transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs. "
-    "When this flag is enabled for the test suites, it would test PH2 Client "
-    "with CHTTP2 Server.";
-const char* const additional_constraints_ph2_client = "{}";
-const uint8_t required_experiments_ph2_client[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdReplaceAuthFilter)};
-const char* const description_ph2_client_server =
-    "This is a combination of ph2_server and ph2_client experiments. When this "
-    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
-    "Server. We will NEVER be rolling out this experiment, because the roll "
-    "out would be done using ph2_server and ph2_client. This experiment MUST "
-    "be deleted when either ph2_server or ph2_client experiments are deleted.";
-const char* const additional_constraints_ph2_client_server = "{}";
-const uint8_t required_experiments_ph2_client_server[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdReplaceAuthFilter)};
-const char* const description_ph2_server =
-    "Use promises for the http2 server transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs. "
-    "When this flag is enabled for the test suites, it would test CHTTP2 "
-    "Client with PH2 Server.";
-const char* const additional_constraints_ph2_server = "{}";
-const uint8_t required_experiments_ph2_server[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdReplaceAuthFilter)};
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
@@ -1170,10 +1153,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"header_data_frame", description_header_data_frame,
      additional_constraints_header_data_frame, nullptr, 0, true, true},
-    {"internal_fix", description_internal_fix,
-     additional_constraints_internal_fix, nullptr, 0, false, true},
-    {"internal_fix1", description_internal_fix1,
-     additional_constraints_internal_fix1, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -1182,7 +1161,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"map_host_header_to_authority", description_map_host_header_to_authority,
-     additional_constraints_map_host_header_to_authority, nullptr, 0, false,
+     additional_constraints_map_host_header_to_authority, nullptr, 0, true,
      true},
     {"memory_optimization_01", description_memory_optimization_01,
      additional_constraints_memory_optimization_01, nullptr, 0, false, false},
@@ -1210,6 +1189,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
+     nullptr, 0, false, true},
+    {"ph2_client_server", description_ph2_client_server,
+     additional_constraints_ph2_client_server, nullptr, 0, false, true},
+    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
+     nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
@@ -1232,19 +1217,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_batch_cleanup_on_cancel,
      additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
      true},
+    {"promise_filter_client_half_close",
+     description_promise_filter_client_half_close,
+     additional_constraints_promise_filter_client_half_close, nullptr, 0, false,
+     true},
     {"recv_message_filter_bypass_fix",
      description_recv_message_filter_bypass_fix,
      additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
      true},
     {"replace_auth_filter", description_replace_auth_filter,
      additional_constraints_replace_auth_filter, nullptr, 0, false, true},
-    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
-     required_experiments_ph2_client, 1, false, true},
-    {"ph2_client_server", description_ph2_client_server,
-     additional_constraints_ph2_client_server,
-     required_experiments_ph2_client_server, 1, false, true},
-    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
-     required_experiments_ph2_server, 1, false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
