@@ -22,6 +22,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
 #include <utility>
 #include <variant>
@@ -47,6 +48,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
@@ -245,6 +247,22 @@ class AutoShardingTest : public LoadBalancingPolicyTest {
         MakeChunkResponse(slices, endpoint_names).SerializeAsString());
     stream->SendMessageToClient(
         MakeMetadataResponse(generation).SerializeAsString());
+  }
+
+  // Replaces the LB policy with a new one that reports to a new helper.
+  void RecreateLbPolicy() {
+    ExecCtx exec_ctx;
+    DrainPendingWork();
+    ExpectQueueEmpty();
+    lb_policy_.reset();
+    auto helper = std::make_unique<FakeHelper>(this);
+    helper_ = helper.get();
+    lb_policy_ =
+        CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
+            lb_policy_name_,
+            LoadBalancingPolicy::Args{work_serializer_, std::move(helper),
+                                      channel_args_});
+    ASSERT_NE(lb_policy_, nullptr);
   }
 
   void SetUp() override {
@@ -1430,6 +1448,78 @@ TEST_F(AutoShardingTest,
   picker = ExpectState(GRPC_CHANNEL_READY);
   auto address = ExpectPickComplete(picker.get(), {}, MakeMetadata("some_key"));
   ASSERT_TRUE(address.has_value());
+}
+
+TEST_F(AutoShardingTest, ProactiveConnectionAttemptChoosesRandomIdleEndpoint) {
+  constexpr std::array<absl::string_view, 4> kFourAddresses = {
+      kAddresses[0], kAddresses[1], "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
+  // Each policy routes all keys to kFourAddresses[0].  When that endpoint
+  // fails, the policy triggers a connection attempt on one of the other
+  // endpoints.  Run this with many policies, and check that more than one
+  // endpoint is chosen.
+  constexpr int kNumPolicies = 20;
+  std::set<absl::string_view> chosen_addresses;
+  for (int i = 0; i < kNumPolicies; ++i) {
+    if (i > 0) RecreateLbPolicy();
+    // Use a different channel factory key and subchannel args for each
+    // policy, so that each policy has its own stream and subchannels.
+    const std::string channel_factory_key = absl::StrCat("key", i);
+    ChannelArgs args = MakeChannelArgs().Set("grpc.test.policy_index", i);
+    std::array<SubchannelState*, 4> subchannels;
+    for (size_t j = 0; j < subchannels.size(); ++j) {
+      subchannels[j] = CreateSubchannel(kFourAddresses[j], args);
+    }
+    EXPECT_EQ(
+        ApplyUpdate(BuildUpdate(kFourAddresses,
+                                ConfigBuilder()
+                                    .SetChannelFactoryKey(channel_factory_key)
+                                    .Build(),
+                                args),
+                    lb_policy()),
+        absl::OkStatus());
+    ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
+                                MakeMetadata("some_key"));
+    SendAssignment({{"", {0}}}, {EndpointName(kFourAddresses[0])},
+                   /*generation=*/1, channel_factory_key);
+    ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
+                                MakeMetadata("a"));
+    EXPECT_TRUE(subchannels[0]->ConnectionRequested());
+    subchannels[0]->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+    ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+                                MakeMetadata("a"));
+    // While an endpoint is CONNECTING, the policy does not trigger another
+    // connection attempt.
+    for (size_t j = 1; j < subchannels.size(); ++j) {
+      EXPECT_FALSE(subchannels[j]->ConnectionRequested()) << "index " << j;
+    }
+    subchannels[0]->SetConnectivityState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE,
+        absl::UnavailableError("connection attempt failed"));
+    ExpectReresolutionRequest();
+    auto picker = ExpectState(GRPC_CHANNEL_CONNECTING);
+    // The key is assigned only to the failed endpoint, and fallback is
+    // disabled, so the pick fails.
+    ExpectPickFail(
+        picker.get(),
+        [](const absl::Status& status) {
+          EXPECT_EQ(status, absl::UnavailableError(
+                                "UNAVAILABLE: connection attempt failed"));
+        },
+        {}, MakeMetadata("a"));
+    // The policy triggers a connection attempt on exactly one IDLE endpoint.
+    SubchannelState* chosen = nullptr;
+    for (size_t j = 1; j < subchannels.size(); ++j) {
+      if (subchannels[j]->ConnectionRequested()) {
+        ASSERT_EQ(chosen, nullptr) << "index " << j;
+        chosen = subchannels[j];
+        chosen_addresses.insert(kFourAddresses[j]);
+      }
+    }
+    ASSERT_NE(chosen, nullptr);
+    chosen->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+    ExpectState(GRPC_CHANNEL_CONNECTING);
+  }
+  EXPECT_GT(chosen_addresses.size(), 1u);
 }
 
 }  // namespace

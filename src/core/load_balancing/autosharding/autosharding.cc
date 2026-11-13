@@ -291,6 +291,10 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   // TRANSIENT_FAILURE, then status is the status reported by the endpoint.
   void UpdateAggregatedConnectivityStateLocked(absl::Status status);
 
+  // Triggers a connection attempt on an IDLE endpoint chosen at random,
+  // unless an endpoint is already CONNECTING (gRFC A119).
+  void ConnectToRandomIdleEndpointLocked();
+
   // Creates (or recreates) client_.
   void CreateAutoshardingClientLocked(
       experimental::ChannelFactory& channel_factory);
@@ -858,7 +862,6 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked(
   size_t num_connecting = 0;
   size_t num_ready = 0;
   size_t num_transient_failure = 0;
-  AutoShardingEndpoint* idle_endpoint = nullptr;
   for (const auto& [_, endpoint] : endpoint_map_) {
     switch (endpoint->connectivity_state()) {
       case GRPC_CHANNEL_READY:
@@ -866,7 +869,6 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked(
         break;
       case GRPC_CHANNEL_IDLE:
         ++num_idle;
-        if (idle_endpoint == nullptr) idle_endpoint = endpoint.get();
         break;
       case GRPC_CHANNEL_CONNECTING:
         ++num_connecting;
@@ -925,20 +927,39 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked(
       MakeRefCounted<Picker>(RefAsSubclass<AutoshardingLbPolicy>(
                                  DEBUG_LOCATION, "AutoShardingPicker"),
                              slice_map_));
-  // If in TRANSIENT_FAILURE or CONNECTING without a CONNECTING endpoint,
-  // trigger a connection attempt on an IDLE endpoint to prevent premature
-  // failover when used as a child of the priority policy (same as ring_hash).
-  if ((state == GRPC_CHANNEL_CONNECTING ||
-       state == GRPC_CHANNEL_TRANSIENT_FAILURE) &&
-      num_connecting == 0 && idle_endpoint != nullptr) {
-    GRPC_TRACE_LOG(autosharding_lb, INFO)
-        << "[AS " << this
-        << "] triggering internal connection attempt for endpoint "
-        << idle_endpoint << " ("
-        << endpoints_[idle_endpoint->index()].ToString() << ") (index "
-        << idle_endpoint->index() << " of " << endpoints_.size() << ")";
-    idle_endpoint->RequestConnectionLocked();
+  // If in TRANSIENT_FAILURE or CONNECTING, trigger a connection attempt on
+  // an IDLE endpoint to prevent premature failover when used as a child of
+  // the priority policy (same as ring_hash).
+  if (state == GRPC_CHANNEL_CONNECTING ||
+      state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    ConnectToRandomIdleEndpointLocked();
   }
+}
+
+void AutoshardingLbPolicy::ConnectToRandomIdleEndpointLocked() {
+  std::vector<AutoShardingEndpoint*> idle_endpoints;
+  for (const auto& [_, endpoint] : endpoint_map_) {
+    switch (endpoint->connectivity_state()) {
+      case GRPC_CHANNEL_CONNECTING:
+        return;
+      case GRPC_CHANNEL_IDLE:
+        idle_endpoints.push_back(endpoint.get());
+        break;
+      default:
+        break;
+    }
+  }
+  if (idle_endpoints.empty()) return;
+  // Choose the endpoint at random, so that many clients that connect at the
+  // same time spread their load across the endpoints (gRFC A117).
+  AutoShardingEndpoint* endpoint = idle_endpoints[absl::Uniform<size_t>(
+      SharedBitGen(), 0, idle_endpoints.size())];
+  GRPC_TRACE_LOG(autosharding_lb, INFO)
+      << "[AS " << this << "] triggering internal connection attempt for "
+      << "endpoint " << endpoint << " ("
+      << endpoints_[endpoint->index()].ToString() << ") (index "
+      << endpoint->index() << " of " << endpoints_.size() << ")";
+  endpoint->RequestConnectionLocked();
 }
 
 //
