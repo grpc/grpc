@@ -21,6 +21,9 @@ import grpc
 from grpc_health.v1 import health_pb2 as _health_pb2
 from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
 
+# The maximum number of services List is allowed to report.
+MAX_ALLOWED_SERVICES = 100
+
 
 class HealthServicer(_health_pb2_grpc.HealthServicer):
     """An AsyncIO implementation of health checking servicer."""
@@ -47,6 +50,21 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
             await context.abort(grpc.StatusCode.NOT_FOUND)
         else:
             return _health_pb2.HealthCheckResponse(status=status)
+
+    async def List(
+        self, request: _health_pb2.HealthListRequest, context
+    ) -> _health_pb2.HealthListResponse:
+        if len(self._server_status) > MAX_ALLOWED_SERVICES:
+            await context.abort(
+                grpc.StatusCode.RESOURCE_EXHAUSTED,
+                "server health list exceeds maximum capacity: %d"
+                % MAX_ALLOWED_SERVICES,
+            )
+        statuses = {
+            service: _health_pb2.HealthCheckResponse(status=status)
+            for service, status in self._server_status.items()
+        }
+        return _health_pb2.HealthListResponse(statuses=statuses)
 
     async def Watch(
         self, request: _health_pb2.HealthCheckRequest, context
