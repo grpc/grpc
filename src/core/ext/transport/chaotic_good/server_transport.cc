@@ -440,37 +440,39 @@ void ChaoticGoodServerTransport::StreamDispatch::StopConnectivityWatch(
 }
 
 void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
-  RefCountedPtr<Party> cancelled_party;
-  bool did_stuff = false;
-  auto stream_dispatch = [this]() {
-    return std::get<RefCountedPtr<StreamDispatch>>(state_);
-  };
-  if (op->start_connectivity_watch != nullptr) {
-    stream_dispatch()->StartConnectivityWatch(
-        op->start_connectivity_watch_state,
-        std::move(op->start_connectivity_watch));
-    did_stuff = true;
-  }
-  if (op->stop_connectivity_watch != nullptr) {
-    stream_dispatch()->StopConnectivityWatch(op->stop_connectivity_watch);
-    did_stuff = true;
-  }
-  if (op->set_accept_stream) {
-    if (op->set_accept_stream_fn != nullptr) {
-      Crash(absl::StrCat(
-          "set_accept_stream not supported on chaotic good transports: ",
-          grpc_transport_op_string(op)));
+  if (!std::holds_alternative<Orphaned>(state_)) {
+    RefCountedPtr<Party> cancelled_party;
+    bool did_stuff = false;
+    auto stream_dispatch = [this]() {
+      return std::get<RefCountedPtr<StreamDispatch>>(state_);
+    };
+    if (op->start_connectivity_watch != nullptr) {
+      stream_dispatch()->StartConnectivityWatch(
+          op->start_connectivity_watch_state,
+          std::move(op->start_connectivity_watch));
+      did_stuff = true;
     }
-    did_stuff = true;
-  }
-  if (!op->goaway_error.ok() || !op->disconnect_with_error.ok()) {
-    stream_dispatch()->OnFrameTransportClosed(
-        absl::UnavailableError("transport closed"));
-    did_stuff = true;
-  }
-  if (!did_stuff) {
-    Crash(absl::StrCat("unimplemented transport perform op: ",
-                       grpc_transport_op_string(op)));
+    if (op->stop_connectivity_watch != nullptr) {
+      stream_dispatch()->StopConnectivityWatch(op->stop_connectivity_watch);
+      did_stuff = true;
+    }
+    if (op->set_accept_stream) {
+      if (op->set_accept_stream_fn != nullptr) {
+        Crash(absl::StrCat(
+            "set_accept_stream not supported on chaotic good transports: ",
+            grpc_transport_op_string(op)));
+      }
+      did_stuff = true;
+    }
+    if (!op->goaway_error.ok() || !op->disconnect_with_error.ok()) {
+      stream_dispatch()->OnFrameTransportClosed(
+          absl::UnavailableError("transport closed"));
+      did_stuff = true;
+    }
+    if (!did_stuff) {
+      Crash(absl::StrCat("unimplemented transport perform op: ",
+                         grpc_transport_op_string(op)));
+    }
   }
   ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
 }
