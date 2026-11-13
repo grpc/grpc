@@ -126,6 +126,17 @@ class GrpcXdsTransportTest : public ::testing::Test {
                                                        std::move(store));
   }
 
+  // Returns a target with insecure channel creds and no call creds.
+  std::shared_ptr<const GrpcXdsServerTarget> MakeTarget(
+      std::string server_uri) const {
+    return std::make_shared<GrpcXdsServerTarget>(
+        std::move(server_uri), channel_creds_config_,
+        /*call_creds_configs=*/
+        std::vector<RefCountedPtr<const CallCredsConfig>>{},
+        /*initial_metadata=*/std::vector<std::pair<std::string, std::string>>{},
+        Duration::Seconds(10));
+  }
+
   std::string server_uri_;
   RefCountedPtr<const ChannelCredsConfig> channel_creds_config_;
   std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs_;
@@ -436,6 +447,52 @@ TEST_F(GrpcXdsTransportTest, WrapperUnknownKeyReturnsLameTransport) {
   absl::Status call_status = RunStreamingCall(*GetXdsTransport(*channel));
   EXPECT_EQ(call_status.code(), absl::StatusCode::kUnavailable) << call_status;
   EXPECT_EQ(call_status.message(), "channel key not allowed: unknown");
+}
+
+TEST_F(GrpcXdsTransportTest, WrapperSameKeyWhileHandlesAliveSharesTransport) {
+  ExecCtx exec_ctx;
+  XdsTransportFactoryWrapper::TargetMap targets;
+  targets.emplace("key1", MakeTarget(server_uri_));
+  XdsTransportFactoryWrapper wrapper(factory_, std::move(targets));
+  auto channel1 = wrapper.CreateChannel("key1");
+  auto channel2 = wrapper.CreateChannel("key1");
+  ASSERT_NE(channel1, nullptr);
+  ASSERT_NE(channel2, nullptr);
+  EXPECT_EQ(GetXdsTransport(*channel1), GetXdsTransport(*channel2));
+}
+
+TEST_F(GrpcXdsTransportTest, WrapperCreatesNewTransportAfterHandlesReleased) {
+  ExecCtx exec_ctx;
+  XdsTransportFactoryWrapper::TargetMap targets;
+  targets.emplace("key1", MakeTarget(server_uri_));
+  XdsTransportFactoryWrapper wrapper(factory_, std::move(targets));
+  auto channel1 = wrapper.CreateChannel("key1");
+  auto channel2 = wrapper.CreateChannel("key1");
+  ASSERT_NE(channel1, nullptr);
+  ASSERT_NE(channel2, nullptr);
+  // Keep the old transport's memory alive, so that a new transport
+  // cannot get the same address.
+  WeakRefCountedPtr<XdsTransport> old_transport =
+      GetXdsTransport(*channel1)->WeakRef();
+  channel1.reset();
+  channel2.reset();
+  auto channel3 = wrapper.CreateChannel("key1");
+  ASSERT_NE(channel3, nullptr);
+  EXPECT_NE(GetXdsTransport(*channel3), old_transport.get());
+}
+
+TEST_F(GrpcXdsTransportTest, WrapperDifferentTargetsUseDifferentTransports) {
+  ExecCtx exec_ctx;
+  XdsTransportFactoryWrapper::TargetMap targets;
+  targets.emplace("key1", MakeTarget(server_uri_));
+  targets.emplace("key2", MakeTarget(absl::StrCat(
+                              "localhost:", grpc_pick_unused_port_or_die())));
+  XdsTransportFactoryWrapper wrapper(factory_, std::move(targets));
+  auto channel1 = wrapper.CreateChannel("key1");
+  auto channel2 = wrapper.CreateChannel("key2");
+  ASSERT_NE(channel1, nullptr);
+  ASSERT_NE(channel2, nullptr);
+  EXPECT_NE(GetXdsTransport(*channel1), GetXdsTransport(*channel2));
 }
 
 class GrpcXdsServerTargetTest : public ::testing::Test {
