@@ -124,13 +124,14 @@
   "5S"
 
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
-                     void* /*registered_method*/) {
+                     void* /*registered_method*/, gpr_event* ready) {
   grpc_call_error error;
   grpc_call* s;
   grpc_call_details call_details;
   grpc_core::CqVerifier cqv(cq);
   grpc_metadata_array request_metadata_recv;
 
+  gpr_event_set(ready, reinterpret_cast<void*>(1));
   grpc_call_details_init(&call_details);
   grpc_metadata_array_init(&request_metadata_recv);
 
@@ -151,7 +152,8 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
 
 static void VerifyRpcDoesNotGetCanceled(grpc_server* server,
                                         grpc_completion_queue* cq,
-                                        void* /*registered_method*/) {
+                                        void* /*registered_method*/,
+                                        gpr_event* ready) {
   grpc_call_error error;
   grpc_call* s;
   grpc_call_details call_details;
@@ -159,6 +161,7 @@ static void VerifyRpcDoesNotGetCanceled(grpc_server* server,
   grpc_metadata_array request_metadata_recv;
   int was_cancelled = 2;
 
+  gpr_event_set(ready, reinterpret_cast<void*>(1));
   grpc_call_details_init(&call_details);
   grpc_metadata_array_init(&request_metadata_recv);
 
@@ -211,7 +214,8 @@ static void VerifyRpcDoesNotGetCanceled(grpc_server* server,
 }
 
 static void failure_verifier(grpc_server* server, grpc_completion_queue* cq,
-                             void* /*registered_method*/) {
+                             void* /*registered_method*/, gpr_event* ready) {
+  gpr_event_set(ready, reinterpret_cast<void*>(1));
   while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
     GRPC_CHECK(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
