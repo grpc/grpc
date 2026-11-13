@@ -79,6 +79,10 @@ class ObservabilityPlugin(
     Any future methods added to this interface cannot have the
     @abc.abstractmethod annotation.
 
+    Plugin hooks on the client call path may be invoked concurrently from
+    multiple threads without external locking. Implementations must be
+    thread-safe.
+
     Attributes:
       _stats_enabled: A bool indicates whether tracing is enabled.
       _tracing_enabled: A bool indicates whether stats(metrics) is enabled.
@@ -198,6 +202,9 @@ class ObservabilityPlugin(
         When exporting metrics, method name for unregistered methods will be replaced
         with 'other' by default.
 
+        Might be called concurrently without external locking; implementations
+        must be atomic / thread-safe.
+
         Args:
           method_name: The method name in bytes.
         """
@@ -226,6 +233,23 @@ def get_plugin() -> Generator[Optional[ObservabilityPlugin], None, None]:
     """
     with _plugin_lock:
         yield _OBSERVABILITY_PLUGIN
+
+
+def get_plugin_unlocked() -> Optional[ObservabilityPlugin]:
+    """Return the registered ObservabilityPlugin without acquiring _plugin_lock.
+
+    Intended for latency-sensitive per-call paths that run on the AsyncIO event
+    loop thread. Blocking on the process-global _plugin_lock there would stall
+    the entire event loop whenever another thread holds it (e.g. during a
+    metrics export), freezing every coroutine on the loop.
+
+    Reading the module-level reference is atomic under the GIL, and the plugin
+    is only ever swapped under _plugin_lock by set_plugin() at
+    (de)registration, which is rare. A caller therefore observes either the
+    previous or the next plugin -- never a torn value -- which is safe for the
+    best-effort "should this call be traced?" decision.
+    """
+    return _OBSERVABILITY_PLUGIN
 
 
 def set_plugin(observability_plugin: Optional[ObservabilityPlugin]) -> None:
