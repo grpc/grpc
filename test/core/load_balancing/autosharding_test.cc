@@ -674,7 +674,7 @@ TEST_F(AutoShardingTest, NoChannelFactoryKeepsExistingClient) {
 }
 
 TEST_F(AutoShardingTest,
-       NoChannelFactoryOnTargetChangeClosesClientAndClearsAssignment) {
+       NoChannelFactoryOnTargetChangeClosesClientAndKeepsAssignment) {
   ChannelArgs args = MakeChannelArgs();
   EXPECT_EQ(
       ApplyUpdate(
@@ -697,7 +697,8 @@ TEST_F(AutoShardingTest,
       /*call_attributes=*/{}, MakeMetadata("z"));
   auto stream = WaitForStream();
   ASSERT_NE(stream, nullptr);
-  // A target change needs a new client, which fails without a channel factory.
+  // A target change needs a new client.  Without a channel factory, the
+  // policy closes the current client and reports a bad resolver state.
   const absl::Status kError =
       absl::UnavailableError("no channel factory in channel args");
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses,
@@ -713,8 +714,8 @@ TEST_F(AutoShardingTest,
       picker.get(),
       [kError](const absl::Status& status) { EXPECT_EQ(status, kError); },
       /*call_attributes=*/{}, MakeMetadata("a"));
-  // A subsequent valid update creates a fresh channel and client, and queues
-  // picks in IDLE until the new client reports an assignment.
+  // A later valid update creates a new channel and client.  The policy keeps
+  // the old assignment, so picks are routed at once.
   EXPECT_EQ(
       ApplyUpdate(
           BuildUpdate(kAddresses,
@@ -725,8 +726,23 @@ TEST_F(AutoShardingTest,
   auto stream2 = WaitForStream();
   ASSERT_NE(stream2, nullptr);
   EXPECT_NE(stream2, stream);
+  picker = ExpectState(GRPC_CHANNEL_IDLE);
+  ExpectPickFail(
+      picker.get(),
+      [](const absl::Status& status) {
+        EXPECT_EQ(status, absl::UnavailableError(
+                              "no endpoints assigned to this slice and "
+                              "fallback is disabled"));
+      },
+      /*call_attributes=*/{}, MakeMetadata("z"));
+  // The new client reports an assignment, which replaces the old one.
+  SendAssignment({{"", {0}}}, {EndpointName(kAddresses[1])});
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
                               MakeMetadata("z"));
+  SubchannelState* subchannel = FindSubchannel(kAddresses[1], args);
+  ASSERT_NE(subchannel, nullptr);
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  EXPECT_EQ(FindSubchannel(kAddresses[0], args), nullptr);
 }
 
 TEST_F(AutoShardingTest, ChannelFactoryAddedLaterCreatesClient) {
@@ -1026,13 +1042,12 @@ TEST_F(AutoShardingTest, EmptyEndpointList) {
       BuildUpdate(kNoAddresses, ConfigBuilder().Build(), MakeChannelArgs());
   update.resolution_note = "DNS resolution note";
   EXPECT_EQ(ApplyUpdate(std::move(update), lb_policy()),
-            absl::UnavailableError("empty address list: DNS resolution note"));
+            absl::UnavailableError("empty address list (DNS resolution note)"));
   ExpectTransientFailureUpdate(
-      absl::UnavailableError("empty address list: DNS resolution note"));
+      absl::UnavailableError("empty address list (DNS resolution note)"));
 }
 
-TEST_F(AutoShardingTest,
-       EmptyEndpointListClosesExistingClientAndClearsAssignment) {
+TEST_F(AutoShardingTest, EmptyEndpointListKeepsClientAndAssignment) {
   ChannelArgs args = MakeChannelArgs();
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
                         lb_policy()),
@@ -1058,21 +1073,61 @@ TEST_F(AutoShardingTest,
   auto update = BuildUpdate(kNoAddresses, ConfigBuilder().Build(), args);
   update.resolution_note = "DNS resolution note";
   EXPECT_EQ(ApplyUpdate(std::move(update), lb_policy()),
-            absl::UnavailableError("empty address list: DNS resolution note"));
+            absl::UnavailableError("empty address list (DNS resolution note)"));
   ExpectTransientFailureUpdate(
-      absl::UnavailableError("empty address list: DNS resolution note"));
-  EXPECT_TRUE(stream->IsOrphaned());
-  // A later valid update creates a new client.  The old assignment is
-  // cleared, so the same key is queued until the new client reports.
+      absl::UnavailableError("empty address list (DNS resolution note)"));
+  // The empty address list does not close the client.
+  EXPECT_FALSE(stream->IsOrphaned());
+  // A later valid update keeps the client and its assignment, so picks are
+  // routed at once.
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
                         lb_policy()),
             absl::OkStatus());
-  auto stream2 = WaitForStream();
-  ASSERT_NE(stream2, nullptr);
-  EXPECT_NE(stream2, stream);
+  EXPECT_EQ(factory_->num_create_channels(), 1);
+  EXPECT_EQ(WaitForStream(), stream);
+  picker = ExpectState(GRPC_CHANNEL_IDLE);
+  ExpectPickFail(
+      picker.get(),
+      [](const absl::Status& status) {
+        EXPECT_EQ(status, absl::UnavailableError(
+                              "no endpoints assigned to this slice and "
+                              "fallback is disabled"));
+      },
+      /*call_attributes=*/{}, MakeMetadata("z"));
+  ExpectPickQueued(picker.get(), {}, MakeMetadata("a"));
+  SubchannelState* subchannel = FindSubchannel(kAddresses[0], args);
+  ASSERT_NE(subchannel, nullptr);
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  EXPECT_EQ(FindSubchannel(kAddresses[1], args), nullptr);
+}
+
+TEST_F(AutoShardingTest, AssignmentDuringEmptyEndpointListKeepsFailing) {
+  ChannelArgs args = MakeChannelArgs();
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
+                        lb_policy()),
+            absl::OkStatus());
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("z"));
-  ExpectQueueEmpty();
+                              MakeMetadata("some_key"));
+  const std::vector<absl::string_view> kNoAddresses;
+  const absl::Status kError = absl::UnavailableError("empty address list");
+  EXPECT_EQ(
+      ApplyUpdate(BuildUpdate(kNoAddresses, ConfigBuilder().Build(), args),
+                  lb_policy()),
+      kError);
+  ExpectTransientFailureUpdate(kError);
+  // An assignment from the kept client does not hide the resolver error.
+  SendAssignment({{"", {0}}}, {EndpointName(kAddresses[0])});
+  ExpectTransientFailureUpdate(kError);
+  // The next valid update uses the assignment at once.
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
+                        lb_policy()),
+            absl::OkStatus());
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
+                              MakeMetadata("a"));
+  SubchannelState* subchannel = FindSubchannel(kAddresses[0], args);
+  ASSERT_NE(subchannel, nullptr);
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  EXPECT_EQ(FindSubchannel(kAddresses[1], args), nullptr);
 }
 
 TEST_F(AutoShardingTest, EndpointsWithDuplicateHostnames) {

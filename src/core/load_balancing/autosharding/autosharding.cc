@@ -91,6 +91,15 @@ std::string EffectiveTarget(absl::string_view target,
   return absl::StrCat(target.substr(0, pos), locality, target.substr(pos + 2));
 }
 
+// Returns an UNAVAILABLE status with message, followed by the resolution
+// note in parentheses if it is not empty.
+absl::Status UnavailableErrorWithNote(absl::string_view message,
+                                      absl::string_view resolution_note) {
+  if (resolution_note.empty()) return absl::UnavailableError(message);
+  return absl::UnavailableError(
+      absl::StrCat(message, " (", resolution_note, ")"));
+}
+
 RefCountedPtr<XdsTransport> CreateTransportFromChannelFactory(
     experimental::ChannelFactory& channel_factory,
     absl::string_view channel_factory_key) {
@@ -286,8 +295,6 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   void CreateAutoshardingClientLocked(
       experimental::ChannelFactory& channel_factory);
 
-  void ReportBadResolverStateLocked(absl::Status status);
-
   void OnAssignmentReceivedLocked(
       RefCountedPtr<AutoshardingClient> client,
       absl::StatusOr<RefCountedPtr<const AutoshardingAssignment>> result);
@@ -310,6 +317,11 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   RefCountedPtr<SliceMap> slice_map_;
   RefCountedPtr<AutoShardingLbConfig> config_;
   std::string resolution_note_;
+  // Set when the latest resolver update is a bad resolver state (empty
+  // address list or missing channel factory).  While set, the policy reports
+  // TRANSIENT_FAILURE, but keeps assignment_ for the next good update
+  // (gRFC A119).
+  absl::Status resolver_error_;
 
   // TODO(roth): If we ever change the helper UpdateState() API to not
   // need the status reported for TRANSIENT_FAILURE state (because
@@ -660,49 +672,13 @@ std::string ComputeHostname(const EndpointAddresses& endpoint) {
       .value_or("<invalid address>");
 }
 
-void AutoshardingLbPolicy::ReportBadResolverStateLocked(absl::Status status) {
-  client_.reset();
-  config_.reset();
-  effective_target_.clear();
-  resolution_note_.clear();
-  assignment_ = nullptr;
-  slice_map_.reset();
-  channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-      MakeRefCounted<TransientFailurePicker>(status));
-}
-
 absl::Status AutoshardingLbPolicy::UpdateLocked(UpdateArgs args) {
   // Save channel args.
   args_ = std::move(args.args);
   auto new_config = args.config.TakeAsSubclass<AutoShardingLbConfig>();
   // Update resolution note.
   resolution_note_ = std::move(args.resolution_note);
-  // Locality attribute changes can alter effective_target_ without changing
-  // config_, which also requires recreating client_ (gRFC A119).
-  std::string new_effective_target = EffectiveTarget(
-      new_config->autosharding_target(),
-      args_.GetString(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD).value_or(""));
-  const bool create_client =
-      config_ == nullptr ||
-      new_config->channel_factory_key() != config_->channel_factory_key() ||
-      new_effective_target != effective_target_;
-  // If we need a new client but there is no channel factory, fail with a bad
-  // resolver state, regardless of enable_fallback (gRFC A119).
-  experimental::ChannelFactory* channel_factory = nullptr;
-  if (create_client) {
-    channel_factory = args_.GetObject<experimental::ChannelFactory>();
-    if (channel_factory == nullptr) {
-      absl::Status status =
-          resolution_note_.empty()
-              ? absl::UnavailableError("no channel factory in channel args")
-              : absl::UnavailableError(
-                    absl::StrCat("no channel factory in channel args (",
-                                 resolution_note_, ")"));
-      ReportBadResolverStateLocked(status);
-      return status;
-    }
-  }
+  resolver_error_ = absl::OkStatus();
   // Update endpoint list.
   absl::Status status;
   if (!args.addresses.ok()) {
@@ -750,21 +726,46 @@ absl::Status AutoshardingLbPolicy::UpdateLocked(UpdateArgs args) {
           "errors from children: [", absl::StrJoin(errors, "; "), "]"));
     }
   }
-  // If the address list is empty, report TRANSIENT_FAILURE.
+  // Rebuild the slice map from the retained assignment.
+  UpdateSliceMapLocked();
+  // If the address list is empty, report TRANSIENT_FAILURE.  Keep client_ and
+  // assignment_, so that the next good update uses them at once (gRFC A119).
   if (endpoints_.empty()) {
     if (status.ok()) {
-      status = absl::UnavailableError(
-          absl::StrCat("empty address list: ", resolution_note_));
+      status = UnavailableErrorWithNote("empty address list", resolution_note_);
     }
-    ReportBadResolverStateLocked(status);
+    resolver_error_ = status;
+    UpdateAggregatedConnectivityStateLocked(absl::OkStatus());
     return status;
+  }
+  // Locality attribute changes can alter effective_target_ without changing
+  // config_, which also requires recreating client_ (gRFC A119).
+  std::string new_effective_target = EffectiveTarget(
+      new_config->autosharding_target(),
+      args_.GetString(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD).value_or(""));
+  const bool create_client =
+      client_ == nullptr ||
+      new_config->channel_factory_key() != config_->channel_factory_key() ||
+      new_effective_target != effective_target_;
+  // If we need a new client but there is no channel factory, close client_
+  // and fail with a bad resolver state, regardless of enable_fallback.  Keep
+  // assignment_ for the next good update (gRFC A119).
+  experimental::ChannelFactory* channel_factory = nullptr;
+  if (create_client) {
+    channel_factory = args_.GetObject<experimental::ChannelFactory>();
+    if (channel_factory == nullptr) {
+      client_.reset();
+      resolver_error_ = UnavailableErrorWithNote(
+          "no channel factory in channel args", resolution_note_);
+      UpdateAggregatedConnectivityStateLocked(absl::OkStatus());
+      return resolver_error_;
+    }
   }
   config_ = std::move(new_config);
   if (create_client) {
     effective_target_ = std::move(new_effective_target);
     CreateAutoshardingClientLocked(*channel_factory);
   }
-  UpdateSliceMapLocked();
   // Return a new picker.
   UpdateAggregatedConnectivityStateLocked(absl::OkStatus());
   return status;
@@ -818,8 +819,14 @@ void AutoshardingLbPolicy::UpdateSliceMapLocked() {
 
 void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked(
     absl::Status status) {
-  // UpdateLocked() reports TRANSIENT_FAILURE on a bad resolver state (empty
-  // address list or missing channel factory).
+  // A bad resolver state fails all picks (gRFC A119).
+  if (!resolver_error_.ok()) {
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE, resolver_error_,
+        MakeRefCounted<TransientFailurePicker>(resolver_error_));
+    return;
+  }
+  // Nothing to report until UpdateLocked() has set endpoints_ and config_.
   if (endpoints_.empty() || config_ == nullptr) return;
   // Until the client reports its first result, report IDLE and queue all
   // picks (gRFC A119).
@@ -836,11 +843,8 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked(
   // If there is no assignment and fallback is disabled, we cannot route any
   // pick, so report TRANSIENT_FAILURE.
   if (!assignment_.ok() && !config_->enable_fallback()) {
-    absl::Status pick_status =
-        resolution_note_.empty()
-            ? absl::UnavailableError(assignment_.status().message())
-            : absl::UnavailableError(absl::StrCat(
-                  assignment_.status().message(), " (", resolution_note_, ")"));
+    absl::Status pick_status = UnavailableErrorWithNote(
+        assignment_.status().message(), resolution_note_);
     GRPC_TRACE_LOG(autosharding_lb, INFO)
         << "[AS " << this << "] no assignment and fallback disabled, failing "
         << "picks: " << pick_status;
