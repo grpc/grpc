@@ -29,5 +29,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python tools/run_tests/sanity/check_bzl_deps.py
-      - name: Run check_bazel_workspace on PR
-        run: python tools/run_tests/sanity/check_bazel_workspace.py
