@@ -149,12 +149,11 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
     HandshakingConnection(RefCountedPtr<Server::ListenerState> listener_state,
                           grpc_tcp_server* tcp_server,
                           grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
-                          const ChannelArgs& args, MemoryOwner memory_owner,
-                          OrphanablePtr<grpc_endpoint> endpoint);
+                          const ChannelArgs& args, MemoryOwner memory_owner);
 
     ~HandshakingConnection() override;
 
-    void Start(const ChannelArgs& args);
+    void Start(OrphanablePtr<grpc_endpoint> endpoint, const ChannelArgs& args);
 
     void SendGoAway() override;
     void DisconnectImmediately() override;
@@ -166,7 +165,8 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
     using InternallyRefCounted<LogicalConnection>::RefAsSubclass;
 
    private:
-    void StartLocked(const ChannelArgs& args);
+    void StartLocked(OrphanablePtr<grpc_endpoint> endpoint,
+                     const ChannelArgs& args);
     void OnHandshakeDoneLocked(absl::StatusOr<HandshakerArgs*> result);
 
     void OnClose();
@@ -183,7 +183,6 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
     const AcceptorPtr acceptor_;
     grpc_pollset_set* const interested_parties_;
     const Timestamp deadline_;
-    OrphanablePtr<grpc_endpoint> endpoint_;
 
     // Remaining fields are protected by WorkSerializer.
 
