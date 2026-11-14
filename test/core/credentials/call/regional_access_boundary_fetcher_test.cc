@@ -138,7 +138,7 @@ class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
 namespace {
 
 grpc_closure* g_stalled_on_done = nullptr;
-std::vector<grpc_closure*> g_stalled_on_done_list;
+grpc_closure* g_stalled_universe_domain_on_done = nullptr;
 grpc_http_response* g_stalled_response = nullptr;
 
 int httpcli_get_stalled(const grpc_http_request* request, const URI& uri,
@@ -474,13 +474,16 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CancelPendingFetch) {
   EXPECT_FALSE(fetch_in_flight(fetcher.operator->()));
 }
 
-int httpcli_get_stalled(const grpc_http_request* /*request*/,
-                        const URI& /*uri*/, Timestamp /*deadline*/,
-                        grpc_closure* on_done, grpc_http_response* response) {
+int httpcli_get_stalled(const grpc_http_request* /*request*/, const URI& uri,
+                        Timestamp /*deadline*/, grpc_closure* on_done,
+                        grpc_http_response* response) {
   g_mock_get_count++;
-  g_stalled_on_done = on_done;
-  g_stalled_on_done_list.push_back(on_done);
-  g_stalled_response = response;
+  if (uri.path() == "/computeMetadata/v1/universe/universe-domain") {
+    g_stalled_universe_domain_on_done = on_done;
+  } else {
+    g_stalled_on_done = on_done;
+    g_stalled_response = response;
+  }
   // Do not call ExecCtx::Run here. The request is now "in flight" and stalled.
   return 1;
 }
@@ -778,17 +781,22 @@ TEST_F(MetadataFetcherTest, EmailFetchBackoffRespected) {
 
 TEST_F(MetadataFetcherTest, EarlyDestructionDoesNotCrash) {
   ExecCtx exec_ctx;
-  g_stalled_on_done_list.clear();
+  g_stalled_on_done = nullptr;
+  g_stalled_universe_domain_on_done = nullptr;
   HttpRequest::SetOverride(httpcli_get_stalled, nullptr, nullptr);
   metadata_fetcher_->StartMetadataFetch();
   // Do NOT flush ExecCtx. We want the request to be in flight.
   // Now destroy the fetcher.
   metadata_fetcher_.reset();
   // Clean up the stalled requests to avoid leaks and timeouts in shutdown.
-  for (grpc_closure* on_done : g_stalled_on_done_list) {
-    ExecCtx::Run(DEBUG_LOCATION, on_done, absl::CancelledError("orphaned"));
+  if (g_stalled_on_done != nullptr) {
+    ExecCtx::Run(DEBUG_LOCATION, g_stalled_on_done,
+                 absl::CancelledError("orphaned"));
   }
-  g_stalled_on_done_list.clear();
+  if (g_stalled_universe_domain_on_done != nullptr) {
+    ExecCtx::Run(DEBUG_LOCATION, g_stalled_universe_domain_on_done,
+                 absl::CancelledError("orphaned"));
+  }
   ExecCtx::Get()->Flush();
 }
 
