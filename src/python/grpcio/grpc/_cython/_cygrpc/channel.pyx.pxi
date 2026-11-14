@@ -569,23 +569,29 @@ cdef class Channel:
 
   def next_call_event(self):
     cdef grpc_completion_queue *c_call_cq
+
     def on_success(tag):
       if tag is not None:
         _process_integrated_call_tag(self._state, tag)
+
     if is_fork_support_enabled():
       queue_deadline = time.time() + 1.0
     else:
       queue_deadline = None
+
     # The call completion queue is set to NULL once the channel is closed.
     c_call_cq = self._state.c_call_completion_queue
     if c_call_cq == NULL:
       raise ValueError(
-          'Cannot get next call event: %s' % self._state.closed_reason)
+        f"Cannot get next call event: {self._state.closed_reason}"
+      )
+
     # NOTE(gnossen): It is acceptable for on_failure to be None here because
     # failure conditions can only ever happen on the main thread and this
     # method is only ever invoked on the channel spin thread.
-    return _next_call_event(self._state, c_call_cq, on_success, None,
-                            queue_deadline)
+    return _next_call_event(
+      self._state, c_call_cq, on_success, None, queue_deadline
+    )
 
   def segregated_call(
       self, int flags, method, host, object deadline, object metadata,
