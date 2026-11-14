@@ -23,6 +23,7 @@
 
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/sync.h>
 
 /* Class entry for the CallCredentials PHP class */
 extern zend_class_entry *grpc_ce_call_credentials;
@@ -39,10 +40,15 @@ static inline wrapped_grpc_call_credentials
       (char*)(obj) - XtOffsetOf(wrapped_grpc_call_credentials, std));
 }
 
-/* Struct to hold callback function for plugin creds API */
+/* Struct to hold callback function for plugin creds API*/
 typedef struct plugin_state {
   zend_fcall_info *fci;
   zend_fcall_info_cache *fci_cache;
+  gpr_mu mu;
+  zend_bool invalidated;
+  zend_bool callable_refs_added;
+  struct plugin_state *next;
+  struct plugin_state *prev;
 } plugin_state;
 
 /* Callback function for plugin creds API */
@@ -58,5 +64,8 @@ void plugin_destroy_state(void *ptr);
 
 /* Initializes the CallCredentials PHP class */
 void grpc_init_call_credentials(TSRMLS_D);
+void grpc_php_call_credentials_module_init(void);
+void grpc_php_call_credentials_module_shutdown(void);
+void grpc_php_call_credentials_request_shutdown(void);
 
 #endif /* NET_GRPC_PHP_GRPC_CALL_CREDENTIALS_H_ */
