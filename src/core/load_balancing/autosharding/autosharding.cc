@@ -89,6 +89,15 @@ std::string GenerateUuid() {
                         absl::Uniform<uint64_t>(bit_gen));
 }
 
+RefCountedPtr<LoadBalancingPolicy::Config> ParsePickFirstConfig() {
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>> config =
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          Json::FromArray(
+              {Json::FromObject({{"pick_first", Json::FromObject({})}})}));
+  GRPC_CHECK(config.ok());
+  return std::move(*config);
+}
+
 // Returns target with the first "%s" token replaced by locality (gRFC A119).
 std::string EffectiveTarget(absl::string_view target,
                             absl::string_view locality) {
@@ -207,7 +216,7 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
     struct EndpointInfo {
       RefCountedPtr<AutoShardingEndpoint> endpoint;
       RefCountedPtr<SubchannelPicker> picker;
-      grpc_connectivity_state state;
+      grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
       absl::Status status;
     };
     EndpointInfo GetInfoForPicker() {
@@ -358,6 +367,8 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   // factory is only for client_.  In the args of a subchannel, it would
   // prevent subchannel sharing and keep the factory alive.
   ChannelArgs child_args_;
+  // The pick_first config for the child policies.
+  const RefCountedPtr<LoadBalancingPolicy::Config> child_config_;
   // Reused across stream restarts and client recreations (gRFC A119).
   const std::string uuid_;
   std::string effective_target_;
@@ -519,14 +530,10 @@ AutoshardingLbPolicy::Picker::PickFromEndpointIndices(
   if (requested_connection || found_connecting) {
     return PickResult::Queue();
   }
-  // All endpoints in TRANSIENT_FAILURE. Delegate to the first endpoint's
-  // picker to yield a detailed error message (or queue if the child policy
-  // has not yet been created).
-  const auto& endpoint_info = endpoints_[indices[first_index]];
-  if (endpoint_info.picker == nullptr) {
-    return PickResult::Queue();
-  }
-  return endpoint_info.picker->Pick(args);
+  // All endpoints in TRANSIENT_FAILURE.  Delegate to the first endpoint's
+  // picker to yield a detailed error message.  An endpoint reports
+  // TRANSIENT_FAILURE only from its child policy, together with a picker.
+  return endpoints_[indices[first_index]].picker->Pick(args);
 }
 
 void AutoshardingLbPolicy::Picker::RequestConnectionForEndpoint(
@@ -672,18 +679,11 @@ void AutoshardingLbPolicy::AutoShardingEndpoint::CreateChildPolicy() {
 
 absl::Status
 AutoshardingLbPolicy::AutoShardingEndpoint::UpdateChildPolicyLocked() {
-  // Construct pick_first config.
-  auto config =
-      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
-          Json::FromArray(
-              {Json::FromObject({{"pick_first", Json::FromObject({})}})}));
-  GRPC_CHECK(config.ok());
-  // Update child policy.
   LoadBalancingPolicy::UpdateArgs update_args;
   update_args.addresses = std::make_shared<SingleEndpointIterator>(
       autosharding_lb_->endpoints_[index_]);
   update_args.args = autosharding_lb_->child_args_;
-  update_args.config = std::move(*config);
+  update_args.config = autosharding_lb_->child_config_;
   return child_policy_->UpdateLocked(std::move(update_args));
 }
 
@@ -741,7 +741,9 @@ AutoshardingLbPolicy::SliceMap::SliceMap(
 //
 
 AutoshardingLbPolicy::AutoshardingLbPolicy(Args args)
-    : LoadBalancingPolicy(std::move(args)), uuid_(GenerateUuid()) {
+    : LoadBalancingPolicy(std::move(args)),
+      child_config_(ParsePickFirstConfig()),
+      uuid_(GenerateUuid()) {
   GRPC_TRACE_LOG(autosharding_lb, INFO)
       << "[AS " << this << "] Created with client UUID " << uuid_;
 }
@@ -938,6 +940,10 @@ void AutoshardingLbPolicy::CreateAutoshardingClientLocked(
 void AutoshardingLbPolicy::OnAssignmentReceivedLocked(
     RefCountedPtr<AutoshardingClient> client,
     absl::StatusOr<RefCountedPtr<const AutoshardingAssignment>> result) {
+  // Ignore a result from a replaced client.  The result can already be in
+  // the WorkSerializer queue when UpdateLocked() replaces the client
+  // (gRFC A119).  The test transport cannot order these events, so no unit
+  // test covers this check.
   if (shutdown_ || client.get() != client_.get()) return;
   const bool first_result = assignment_.ok() && *assignment_ == nullptr;
   assignment_ = std::move(result);

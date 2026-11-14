@@ -373,6 +373,45 @@ TEST_F(AutoShardingTest, ReportsConnectingUntilFirstResult) {
   EXPECT_TRUE(subchannel->ConnectionRequested());
 }
 
+TEST_F(AutoShardingTest, SliceUsesFallbackPoolWhenAllEndpointsFail) {
+  std::array<SubchannelState*, 2> subchannels;
+  for (size_t i = 0; i < subchannels.size(); ++i) {
+    subchannels[i] = CreateSubchannel(kAddresses[i]);
+  }
+  EXPECT_EQ(
+      ApplyUpdate(BuildUpdate(kAddresses,
+                              ConfigBuilder().SetEnableFallback(true).Build(),
+                              MakeChannelArgs()),
+                  lb_policy()),
+      absl::OkStatus());
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+                              MakeMetadata("some_key"));
+  // All keys go to kAddresses[0].
+  SendAssignment({{"", {0}}}, {EndpointName(kAddresses[0])});
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+                              MakeMetadata("a"));
+  EXPECT_TRUE(subchannels[0]->ConnectionRequested());
+  subchannels[0]->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+                              MakeMetadata("a"));
+  // The only endpoint of the slice fails.  The policy triggers a connection
+  // attempt on the other endpoint.
+  subchannels[0]->SetConnectivityState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE,
+      absl::UnavailableError("connection attempt failed"));
+  ExpectReresolutionRequest();
+  ExpectState(GRPC_CHANNEL_CONNECTING);
+  EXPECT_TRUE(subchannels[1]->ConnectionRequested());
+  subchannels[1]->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectState(GRPC_CHANNEL_CONNECTING);
+  subchannels[1]->SetConnectivityState(GRPC_CHANNEL_READY);
+  auto picker = ExpectState(GRPC_CHANNEL_READY);
+  // All endpoints of the slice are in TRANSIENT_FAILURE and fallback is
+  // enabled, so the key uses the fallback pool (gRFC A119).
+  EXPECT_THAT(ExpectPickComplete(picker.get(), {}, MakeMetadata("a")),
+              ::testing::Optional(kAddresses[1]));
+}
+
 TEST_F(AutoShardingTest, GapUsesFallbackPool) {
   ChannelArgs args = MakeChannelArgs();
   EXPECT_EQ(
@@ -1916,6 +1955,91 @@ TEST_F(AutoShardingTest, ShutdownWhileInitialConnectTimerPending) {
   for (SubchannelState* subchannel : subchannels) {
     EXPECT_FALSE(subchannel->ConnectionRequested());
   }
+}
+
+TEST_F(AutoShardingTest, EmptyEndpointListClearsInitialConnect) {
+  std::array<SubchannelState*, 2> subchannels;
+  for (size_t i = 0; i < subchannels.size(); ++i) {
+    subchannels[i] = CreateSubchannel(kAddresses[i]);
+  }
+  ChannelArgs args = MakeChannelArgs();
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
+                        lb_policy()),
+            absl::OkStatus());
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+                              MakeMetadata("some_key"));
+  SendAssignment({{"m", {0}}, {"", {1}}},
+                 {EndpointName(kAddresses[0]), EndpointName(kAddresses[1])});
+  ExpectState(GRPC_CHANNEL_CONNECTING);
+  // The initial connect timer is running.  An empty address list reports
+  // TRANSIENT_FAILURE, which clears initial_connect_pending and cancels the
+  // timer.
+  const std::vector<absl::string_view> kNoAddresses;
+  const absl::Status kError = absl::UnavailableError("empty address list");
+  EXPECT_EQ(
+      ApplyUpdate(BuildUpdate(kNoAddresses, ConfigBuilder().Build(), args),
+                  lb_policy()),
+      kError);
+  ExpectTransientFailureUpdate(kError);
+  // After the policy recovers, it reports IDLE (not CONNECTING), and the
+  // timer does not trigger a connection attempt.
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
+                        lb_policy()),
+            absl::OkStatus());
+  ExpectState(GRPC_CHANNEL_IDLE);
+  IncrementTimeBy(Duration::Seconds(1));
+  for (SubchannelState* subchannel : subchannels) {
+    EXPECT_FALSE(subchannel->ConnectionRequested());
+  }
+  ExpectQueueEmpty();
+}
+
+TEST_F(AutoShardingTest, NoChannelFactoryClearsInitialConnect) {
+  std::array<SubchannelState*, 2> subchannels;
+  for (size_t i = 0; i < subchannels.size(); ++i) {
+    subchannels[i] = CreateSubchannel(kAddresses[i]);
+  }
+  ChannelArgs args = MakeChannelArgs();
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
+                        lb_policy()),
+            absl::OkStatus());
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+                              MakeMetadata("some_key"));
+  SendAssignment({{"m", {0}}, {"", {1}}},
+                 {EndpointName(kAddresses[0]), EndpointName(kAddresses[1])});
+  ExpectState(GRPC_CHANNEL_CONNECTING);
+  // The initial connect timer is running.  A target change without a channel
+  // factory reports TRANSIENT_FAILURE, which clears initial_connect_pending
+  // and cancels the timer.
+  const absl::Status kError =
+      absl::UnavailableError("no channel factory in channel args");
+  EXPECT_EQ(
+      ApplyUpdate(
+          BuildUpdate(
+              kAddresses,
+              ConfigBuilder().SetAutoshardingTarget("other_target").Build()),
+          lb_policy()),
+      kError);
+  ExpectTransientFailureUpdate(kError);
+  // After the policy recovers with the kept assignment, it reports IDLE (not
+  // CONNECTING), and the timer does not trigger a connection attempt.  The
+  // new client has a long initial assignment timeout, so that its timer does
+  // not fire in this test.
+  EXPECT_EQ(
+      ApplyUpdate(
+          BuildUpdate(kAddresses,
+                      ConfigBuilder()
+                          .SetInitialAssignmentTimeout(Duration::Seconds(10))
+                          .Build(),
+                      args),
+          lb_policy()),
+      absl::OkStatus());
+  ExpectState(GRPC_CHANNEL_IDLE);
+  IncrementTimeBy(Duration::Seconds(1));
+  for (SubchannelState* subchannel : subchannels) {
+    EXPECT_FALSE(subchannel->ConnectionRequested());
+  }
+  ExpectQueueEmpty();
 }
 
 TEST_F(AutoShardingTest, ErrorWithFallbackDisabledDoesNotStartTimer) {

@@ -174,8 +174,9 @@ TEST_P(XdsAutoshardingTest, UnderWrrLocality) {
 
 // While the policy waits for the first assignment, it reports CONNECTING,
 // so the priority policy fails over to the next priority when its failover
-// timer fires (items 6 and 7).  If the policy reported IDLE, the priority
-// policy would cancel the timer and never fail over.
+// timer fires (gRFC A119, "Initial connection behavior").  If the policy
+// reported IDLE, the priority policy would cancel the timer and never fail
+// over.
 TEST_P(XdsAutoshardingTest, PriorityFailoverWhileWaitingForAssignment) {
   CreateAndStartBackends(2);
   ResetStub(/*failover_timeout_ms=*/500);
