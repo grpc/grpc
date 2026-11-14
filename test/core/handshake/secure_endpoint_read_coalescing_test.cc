@@ -520,6 +520,56 @@ TEST_F(SecureEndpointReadCoalescingTest, TransportReadError) {
   EXPECT_FALSE(read_status.ok());
 }
 
+TEST_F(SecureEndpointReadCoalescingTest, WriteReclaimerAndConcurrentShutdown) {
+  // Payload > STAGING_BUFFER_SIZE (8192) to trigger FlushWriteStagingBuffer()
+  // and MaybePostReclaimer().
+  const std::string large_payload(16384, 'x');
+
+  for (int i = 0; i < 50; ++i) {
+    auto resource_quota = MakeRefCounted<ResourceQuota>("reclaimer_test_quota");
+    resource_quota->memory_quota()->SetSize(1024 * 1024);
+    ChannelArgs args = ChannelArgs().SetObject(resource_quota);
+    auto ctrl = MockEndpointController::Create(engine_);
+    tsi_frame_protector* protector = tsi_create_fake_frame_protector(nullptr);
+    auto secure_ep_grpc = grpc_secure_endpoint_create(
+        protector, nullptr, OrphanablePtr<grpc_endpoint>(ctrl->TakeCEndpoint()),
+        nullptr, 0, args);
+    auto secure_ep = grpc_event_engine::experimental::
+        grpc_take_wrapped_event_engine_endpoint(secure_ep_grpc.release());
+
+    grpc_event_engine::experimental::SliceBuffer write_buffer;
+    write_buffer.Append(
+        grpc_event_engine::experimental::Slice::FromCopiedString(
+            large_payload));
+    EventEngine::Endpoint::WriteArgs write_args;
+    write_args.set_max_frame_size(16384);
+
+    absl::Notification write_done;
+    absl::Status write_status;
+    bool immediate = secure_ep->Write(
+        [&](absl::Status s) {
+          write_status = s;
+          write_done.Notify();
+        },
+        &write_buffer, std::move(write_args));
+    if (!immediate) write_done.WaitForNotification();
+    EXPECT_TRUE(write_status.ok());
+
+    // Trigger benign memory reclamation while shutting down and destroying the
+    // endpoint.
+    absl::Notification ready;
+    absl::Notification reclaim_triggered;
+    engine_->Run([resource_quota, &ready, &reclaim_triggered]() {
+      ready.Notify();
+      resource_quota->memory_quota()->SetSize(0);
+      reclaim_triggered.Notify();
+    });
+    ready.WaitForNotification();
+    secure_ep.reset();
+    reclaim_triggered.WaitForNotification();
+  }
+}
+
 }  // namespace
 }  // namespace grpc_core
 
