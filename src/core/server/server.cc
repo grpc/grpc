@@ -470,22 +470,20 @@ bool Server::ListenerState::OnHandshakeDone(
       << "[server " << server_.get() << " listener_state " << this
       << "]: OnHandshakeDone(handshaking_connection="
       << handshaking_connection << ", transport=" << transport << ")";
-  absl::StatusOr<OrphanablePtr<ServerTransport>> owned_transport =
-      server_->SetupCallLinkageForTransport(transport, accepting_pollset, args,
-                                            GRPC_SERVER_CHANNEL);
-  const bool transport_initialized = owned_transport.ok();
+  absl::StatusOr<OrphanablePtr<Connection>> connection = Connection::Create(
+      Ref(), transport, accepting_pollset, args, GRPC_SERVER_CHANNEL,
+      /*hold_connection_quota=*/true);
+  if (connection.ok() && *connection == nullptr) {
+    connection = absl::InternalError("failed to create connection");
+  }
+  const bool connection_initialized = connection.ok();
   OrphanablePtr<Orphanable> handshaking_connection_to_orphan;
   {
     MutexLock lock(server_->mu_global_);
-    // Create Connection object while holding the mutex.  This ensures
+    // Start connectivity watch while holding the mutex.  This ensures
     // that there's no race condition if the transport immediately reports
     // a connection failure.
-    OrphanablePtr<Connection> connection;
-    if (owned_transport.ok()) {
-      connection = MakeOrphanable<Connection>(
-          Ref(), std::move(*owned_transport), /*hold_connection_quota=*/true);
-      GRPC_TRACE_LOG(server, INFO) << "created Connection " << connection.get();
-    }
+    if (connection.ok()) (*connection)->StartConnectivityWatch();
     // Find the handshaking connection.
     auto nh = handshaking_connections_.extract(handshaking_connection);
     if (!nh.empty()) {
@@ -494,11 +492,11 @@ bool Server::ListenerState::OnHandshakeDone(
       handshaking_connection_to_orphan = std::move(nh.value());
       // If the handshake succeeded, track the new connection as an
       // active connection.
-      if (connection != nullptr) {
+      if (connection.ok()) {
         GRPC_TRACE_LOG(server, INFO) << "tracking new active connection";
-        active_connections_.insert(std::move(connection));
+        active_connections_.insert(std::move(*connection));
       }
-      return transport_initialized;
+      return connection_initialized;
     }
     GRPC_TRACE_LOG(server, INFO) << "did NOT find handshaking connection";
     // If the connection succeeded but we didn't find the handshaking
@@ -508,16 +506,16 @@ bool Server::ListenerState::OnHandshakeDone(
     // may start receiving RPCs, so we need to drain it gracefully.
     // FIXME: what if this is called after MaybeFinishShutdown() has
     // already thought there were no connections and has started shutdown?
-    if (connection != nullptr) {
+    if (connection.ok()) {
       GRPC_TRACE_LOG(server, INFO) << "immediately draining new connection";
       server_->StartDrainingConnectionLocked(
-          std::move(connection),
+          std::move(*connection),
           // FIXME: what is the right reason and time to use here?
           "server closing connection", Duration::Infinity());
     }
   }
-  if (!transport_initialized) connection_quota_->ReleaseConnections(1);
-  return transport_initialized;
+  if (!connection_initialized) connection_quota_->ReleaseConnections(1);
+  return connection_initialized;
 }
 
 absl::Status Server::ListenerState::LegacyAddActiveConnection(
@@ -526,26 +524,27 @@ absl::Status Server::ListenerState::LegacyAddActiveConnection(
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << server_.get() << " listener_state " << this
       << "]: LegacyAddActiveConnection(transport=" << transport << ")";
-  absl::StatusOr<OrphanablePtr<ServerTransport>> owned_transport =
-      server_->SetupCallLinkageForTransport(transport, accepting_pollset, args,
-                                            GRPC_SERVER_CHANNEL);
-  if (!owned_transport.ok()) return owned_transport.status();
+  absl::StatusOr<OrphanablePtr<Connection>> connection = Connection::Create(
+      Ref(), transport, accepting_pollset, args, GRPC_SERVER_CHANNEL,
+      /*hold_connection_quota=*/false);
+  if (!connection.ok()) return connection.status();
+  if (*connection == nullptr) {
+    return absl::InternalError("failed to create connection");
+  }
   MutexLock lock(server_->mu_global_);
-  // Create Connection object while holding the mutex.  This ensures
+  // Start connectivity watch while holding the mutex.  This ensures
   // that there's no race condition if the transport immediately reports
   // a connection failure.
-  auto connection = MakeOrphanable<Connection>(
-      Ref(), std::move(*owned_transport), /*hold_connection_quota=*/false);
-  GRPC_TRACE_LOG(server, INFO) << "created Connection " << connection.get();
+  (*connection)->StartConnectivityWatch();
   if (state_ != State::kStarted) {
     GRPC_TRACE_LOG(server, INFO) << "immediately draining new connection";
     server_->StartDrainingConnectionLocked(
-        std::move(connection),
+        std::move(*connection),
         // FIXME: what is the right reason and time to use here?
         "server closing connection", Duration::Infinity());
   } else {
     GRPC_TRACE_LOG(server, INFO) << "tracking new active connection";
-    active_connections_.insert(std::move(connection));
+    active_connections_.insert(std::move(*connection));
   }
   return absl::OkStatus();
 }
@@ -705,16 +704,38 @@ class Server::Connection::ConnectivityWatcher final
 // Server::Connection
 //
 
-Server::Connection::Connection(
+absl::StatusOr<OrphanablePtr<Server::Connection>>
+Server::Connection::Create(
     RefCountedPtr<ListenerState> listener_state,
-    OrphanablePtr<ServerTransport> transport, bool hold_connection_quota)
-    : listener_state_(std::move(listener_state)),
-      transport_(std::move(transport)),
-      hold_connection_quota_(hold_connection_quota) {
+    Transport* transport, grpc_pollset* accepting_pollset,
+    const ChannelArgs& args, grpc_channel_stack_type channel_stack_type,
+    bool hold_connection_quota) {
+  if (transport == nullptr) return absl::UnavailableError("handshake failed");
+  // Don't use OrphanablePtr<> here, since we do not want to call
+  // Orphan() if we don't set the transport in the Connection object.
+  auto* connection =
+      new Connection(std::move(listener_state), hold_connection_quota);
+  absl::StatusOr<OrphanablePtr<ServerTransport>> owned_transport =
+      connection->listener_state_->server_->SetupCallLinkageForTransport(
+          connection, transport, accepting_pollset, args, channel_stack_type);
+  if (!owned_transport.ok()) {
+    delete connection;
+    return owned_transport.status();
+  }
+  GRPC_TRACE_LOG(server, INFO)
+      << "[server " << connection->listener_state_->server_.get()
+      << " listener_state " << connection->listener_state_.get()
+      << " connection " << connection << "]: created with transport "
+      << transport;
+  connection->transport_ = std::move(*owned_transport);
+  return OrphanablePtr<Connection>(connection);
+}
+
+void Server::Connection::StartConnectivityWatch() {
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << listener_state_->server_.get() << " listener_state "
       << listener_state_.get() << " connection " << this
-      << "]: created with transport " << transport_.get();
+      << "]: StartConnectivityWatch()";
   // The caller is holding the server's mutex when creating this object,
   // so we do an async hop here before calling into the transport code,
   // just to avoid the possibility of deadlocks.
@@ -1606,8 +1627,9 @@ auto Server::MatchAndPublishCall(CallHandler call_handler) {
 }
 
 absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>
-Server::MakeCallDestination(const ChannelArgs& args,
+Server::MakeCallDestination(const ChannelArgs& args, Connection* connection,
                             grpc_channel_stack_type channel_stack_type) {
+  // FIXME: track connection for each call somehow?
   InterceptionChainBuilder builder(args);
   // TODO(ctiller): find a way to avoid adding a server ref per call
   builder.AddOnClientInitialMetadata([self = Ref()](ClientMetadata& md) {
@@ -1773,9 +1795,9 @@ grpc_error_handle Server::SetupTransport(
 // channel_stack_type argument.
 absl::StatusOr<OrphanablePtr<ServerTransport>>
 Server::SetupCallLinkageForTransport(
-    Transport* transport, grpc_pollset* accepting_pollset,
-    const ChannelArgs& args, grpc_channel_stack_type channel_stack_type) {
-  if (transport == nullptr) return absl::UnavailableError("handshake failed");
+    Connection* connection, Transport* transport,
+    grpc_pollset* accepting_pollset, const ChannelArgs& args,
+    grpc_channel_stack_type channel_stack_type) {
   global_stats().IncrementServerChannelsCreated();
   OrphanablePtr<ServerTransport> owned_transport;
   if (transport->server_transport() != nullptr) {
@@ -1784,10 +1806,11 @@ Server::SetupCallLinkageForTransport(
     auto destination = MakeCallDestination(
         args.SetObject(transport).SetObject<channelz::BaseNode>(
             transport->GetSocketNode()),
-        channel_stack_type);
+        connection, channel_stack_type);
     if (!destination.ok()) return destination.status();
     owned_transport->SetCallDestination(std::move(*destination));
   } else {
+    // FIXME: figure out how to plumb connection object to be visible to RPCs
     GRPC_CHECK(transport->filter_stack_transport() != nullptr);
     absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
         "",
@@ -1848,7 +1871,7 @@ grpc_error_handle Server::LegacySetupTransport(
     auto destination = MakeCallDestination(
         args.SetObject(transport).SetObject<channelz::BaseNode>(
             transport->GetSocketNode()),
-        channel_stack_type);
+        /*connection=*/nullptr, channel_stack_type);
     if (!destination.ok()) return destination.status();
     t->SetCallDestination(std::move(*destination));
     MutexLock lock(mu_global_);

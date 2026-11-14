@@ -534,8 +534,9 @@ class Server : public ServerInterface,
   // an OrphanablePtr<ServerTransport>, so this can take the parameter as
   // ServerTransport& and just return absl::Status.
   absl::StatusOr<OrphanablePtr<ServerTransport>> SetupCallLinkageForTransport(
-      Transport* transport, grpc_pollset* accepting_pollset,
-      const ChannelArgs& args, grpc_channel_stack_type channel_stack_type);
+      Connection* connection, Transport* transport,
+      grpc_pollset* accepting_pollset, const ChannelArgs& args,
+      grpc_channel_stack_type channel_stack_type);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 
@@ -760,11 +761,15 @@ class Server : public ServerInterface,
 
   class Connection final : public InternallyRefCounted<Connection> {
    public:
-    Connection(RefCountedPtr<ListenerState> listener_state,
-               OrphanablePtr<ServerTransport> transport,
-               bool hold_connection_quota);
+    static absl::StatusOr<OrphanablePtr<Connection>> Create(
+        RefCountedPtr<ListenerState> listener_state,
+        Transport* transport, grpc_pollset* accepting_pollset,
+        const ChannelArgs& args, grpc_channel_stack_type channel_stack_type,
+        bool hold_connection_quota);
 
     ~Connection() override;
+
+    void StartConnectivityWatch();
 
     void Orphan() override;
 
@@ -779,9 +784,14 @@ class Server : public ServerInterface,
    private:
     class ConnectivityWatcher;
 
+    Connection(RefCountedPtr<ListenerState> listener_state,
+               bool hold_connection_quota)
+        : listener_state_(std::move(listener_state)),
+          hold_connection_quota_(hold_connection_quota) {}
+
     const RefCountedPtr<ListenerState> listener_state_;
-    const OrphanablePtr<ServerTransport> transport_;
     const bool hold_connection_quota_;
+    OrphanablePtr<ServerTransport> transport_;
     std::atomic<bool> disconnected_{false};
   };
 
@@ -894,7 +904,8 @@ class Server : public ServerInterface,
                                             ClientMetadataHandle md);
   auto MatchAndPublishCall(CallHandler call_handler);
   absl::StatusOr<RefCountedPtr<UnstartedCallDestination>> MakeCallDestination(
-      const ChannelArgs& args, grpc_channel_stack_type channel_stack_type);
+      const ChannelArgs& args, Connection* connection,
+      grpc_channel_stack_type channel_stack_type);
 
   ChannelArgs const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
