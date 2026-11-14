@@ -60,6 +60,8 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
 
   // Keeps state for an individual connection. Lifetime: Internally refcounted
   // and owned by Server::ListenerState.
+  // TODO(roth): Remove this in favor of HandshakingConnection once the
+  // server_connection_management experiment is removed.
   class ActiveConnection : public LogicalConnection {
    public:
     // State for handshake. Lifetime: Owned by ActiveConnection and lasts while
@@ -136,6 +138,62 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
                  RefCountedPtr<http2::Http2ServerTransport>>
         state_;
     bool shutdown_ = false;
+  };
+
+  // Keeps state for an individual connection. Lifetime: Internally refcounted
+  // and owned by Server::ListenerState.
+  // TODO(roth): In a subsequent PR, change this object to exist only
+  // while handshaking is in progress.
+  class HandshakingConnection : public LogicalConnection {
+   public:
+    HandshakingConnection(RefCountedPtr<Server::ListenerState> listener_state,
+                          grpc_tcp_server* tcp_server,
+                          grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
+                          const ChannelArgs& args, MemoryOwner memory_owner);
+
+    ~HandshakingConnection() override;
+
+    void Start(OrphanablePtr<grpc_endpoint> endpoint, const ChannelArgs& args);
+
+    void SendGoAway() override;
+    void DisconnectImmediately() override;
+
+    void Orphan() override;
+
+    // Needed to be able to grab an external weak ref in
+    // NewChttp2ServerListener::OnAccept()
+    using InternallyRefCounted<LogicalConnection>::RefAsSubclass;
+
+   private:
+    void StartLocked(OrphanablePtr<grpc_endpoint> endpoint,
+                     const ChannelArgs& args);
+    void OnHandshakeDoneLocked(absl::StatusOr<HandshakerArgs*> result);
+
+    void OnClose();
+
+    void SendGoAwayImplLocked();
+    void DisconnectImmediatelyImplLocked();
+
+    void MaybeShutdownHandshakeLocked();
+
+    const RefCountedPtr<Server::ListenerState> listener_state_;
+    WorkSerializer work_serializer_;
+    grpc_tcp_server* const tcp_server_;
+    grpc_pollset* const accepting_pollset_;
+    const AcceptorPtr acceptor_;
+    grpc_pollset_set* const interested_parties_;
+    const Timestamp deadline_;
+
+    // Remaining fields are protected by WorkSerializer.
+
+    // Gets reset to null when handshaking is done or when it gets
+    // cancelled.
+    RefCountedPtr<HandshakeManager> handshake_mgr_;
+
+    // Set to the transport when handshaking completes successfully.
+    std::variant<RefCountedPtr<grpc_chttp2_transport>,
+                 RefCountedPtr<http2::Http2ServerTransport>>
+        transport_;
   };
 
   static grpc_error_handle Create(
