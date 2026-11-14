@@ -265,6 +265,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-gen\\envoy\\extensions\\grpc_service\\channel_credentials\\tls\\v3\\tls_credentials.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\envoy\\extensions\\grpc_service\\channel_credentials\\xds\\v3\\xds_credentials.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\envoy\\extensions\\http\\stateful_session\\cookie\\v3\\cookie.upb_minitable.c " +
+    "src\\core\\ext\\upb-gen\\envoy\\extensions\\load_balancing_policies\\autosharding\\v3\\autosharding.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\envoy\\extensions\\load_balancing_policies\\client_side_weighted_round_robin\\v3\\client_side_weighted_round_robin.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\envoy\\extensions\\load_balancing_policies\\common\\v3\\common.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\envoy\\extensions\\load_balancing_policies\\pick_first\\v3\\pick_first.upb_minitable.c " +
@@ -1647,6 +1648,8 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\http\\stateful_session\\cookie");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\http\\stateful_session\\cookie\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\load_balancing_policies");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\load_balancing_policies\\autosharding");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\load_balancing_policies\\autosharding\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\load_balancing_policies\\client_side_weighted_round_robin");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\load_balancing_policies\\client_side_weighted_round_robin\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\load_balancing_policies\\common");

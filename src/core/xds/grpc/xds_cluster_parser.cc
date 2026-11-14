@@ -315,7 +315,8 @@ void ParseLbPolicyConfig(const XdsResourceType::DecodeContext& context,
     ValidationErrors::ScopedField field(errors, ".load_balancing_policy");
     const size_t original_error_count = errors->size();
     cds_update->lb_policy_config = registry.ConvertXdsLbPolicyConfig(
-        context, load_balancing_policy, errors);
+        {context, &cds_update->lb_policy_grpc_services}, load_balancing_policy,
+        errors);
     // If there were no conversion errors, validate that the converted config
     // parses with the gRPC LB policy registry.
     if (original_error_count == errors->size()) {

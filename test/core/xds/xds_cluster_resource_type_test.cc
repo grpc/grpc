@@ -36,6 +36,8 @@
 #include "envoy/config/endpoint/v3/endpoint.pb.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.pb.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.pb.h"
+#include "envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.pb.h"
+#include "envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.pb.h"
 #include "envoy/extensions/load_balancing_policies/round_robin/v3/round_robin.pb.h"
 #include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.pb.h"
 #include "envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.pb.h"
@@ -67,11 +69,16 @@
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
 using envoy::config::cluster::v3::Cluster;
 using envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 using envoy::extensions::filters::http::gcp_authn::v3::Audience;
+using envoy::extensions::grpc_service::channel_credentials::insecure::v3::
+    InsecureCredentials;
+using envoy::extensions::load_balancing_policies::autosharding::v3::
+    Autosharding;
 using envoy::extensions::load_balancing_policies::round_robin::v3::RoundRobin;
 using envoy::extensions::load_balancing_policies::wrr_locality::v3::WrrLocality;
 using envoy::extensions::transport_sockets::http_11_proxy::v3::
@@ -92,13 +99,17 @@ class XdsClusterTest : public ::testing::Test {
                         *xds_client_->bootstrap().servers().front(),
                         upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
-  static RefCountedPtr<XdsClient> MakeXdsClient() {
+  static RefCountedPtr<XdsClient> MakeXdsClient(
+      bool trusted_xds_server = false) {
     grpc_error_handle error;
-    auto bootstrap = GrpcXdsBootstrapBuilder::Build(
+    auto bootstrap = GrpcXdsBootstrapBuilder::Build(absl::StrCat(
         "{\n"
         "  \"xds_servers\": [\n"
         "    {\n"
-        "      \"server_uri\": \"xds.example.com\",\n"
+        "      \"server_uri\": \"xds.example.com\",\n",
+        trusted_xds_server
+            ? "      \"server_features\": [\"trusted_xds_server\"],\n"
+            : "",
         "      \"channel_creds\": [\n"
         "        {\"type\": \"google_default\"}\n"
         "      ]\n"
@@ -113,7 +124,7 @@ class XdsClusterTest : public ::testing::Test {
         "      }\n"
         "    }\n"
         "  }\n"
-        "}");
+        "}"));
     if (!bootstrap.ok()) {
       Crash(absl::StrFormat("Error parsing bootstrap: %s",
                             bootstrap.status().ToString().c_str()));
@@ -842,6 +853,93 @@ TEST_F(LbPolicyTest, LoadBalancingPolicyField) {
   EXPECT_EQ(JsonDump(Json::FromArray(resource.lb_policy_config)),
             "[{\"xds_wrr_locality_experimental\":{"
             "\"childPolicy\":[{\"round_robin\":{}}]}}]");
+}
+
+TEST_F(LbPolicyTest, AutoshardingPolicyFillsGrpcServiceMap) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AUTOSHARDING_LB");
+  // Create the bootstrap after setting the env var, so that its xDS LB
+  // policy registry has the Autosharding converter.
+  auto xds_client = MakeXdsClient(/*trusted_xds_server=*/true);
+  XdsResourceType::DecodeContext decode_context = {
+      xds_client.get(), *xds_client->bootstrap().servers().front(),
+      upb_def_pool_.ptr(), upb_arena_.ptr()};
+  Autosharding autosharding;
+  auto* google_grpc =
+      autosharding.mutable_grpc_service()->mutable_google_grpc();
+  google_grpc->set_target_uri("dns:///autosharding.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      InsecureCredentials());
+  autosharding.set_autosharding_target("target");
+  autosharding.set_key_header_name("x-shard-key");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.mutable_load_balancing_policy()
+      ->add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(autosharding);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  ASSERT_EQ(resource.lb_policy_grpc_services.size(), 1);
+  const auto& [key, grpc_service] = *resource.lb_policy_grpc_services.begin();
+  EXPECT_EQ(grpc_service->server_uri(), "dns:///autosharding.example.com");
+  EXPECT_EQ(JsonDump(Json::FromArray(resource.lb_policy_config)),
+            JsonDump(Json::FromArray({Json::FromObject(
+                {{"autosharding_experimental",
+                  Json::FromObject({
+                      {"channelFactoryKey", Json::FromString(key)},
+                      {"autoshardingTarget", Json::FromString("target")},
+                      {"keyHeaderName", Json::FromString("x-shard-key")},
+                      {"enableFallback", Json::FromBool(false)},
+                  })}})})));
+}
+
+// The converter leaves field validation to the LB policy config parser,
+// which the cluster parser runs on the generated config.
+TEST_F(LbPolicyTest, AutoshardingPolicyInvalidKeyHeaderName) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AUTOSHARDING_LB");
+  auto xds_client = MakeXdsClient(/*trusted_xds_server=*/true);
+  XdsResourceType::DecodeContext decode_context = {
+      xds_client.get(), *xds_client->bootstrap().servers().front(),
+      upb_def_pool_.ptr(), upb_arena_.ptr()};
+  Autosharding autosharding;
+  auto* google_grpc =
+      autosharding.mutable_grpc_service()->mutable_google_grpc();
+  google_grpc->set_target_uri("dns:///autosharding.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      InsecureCredentials());
+  autosharding.set_autosharding_target("target");
+  autosharding.set_key_header_name("Bad Key");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.mutable_load_balancing_policy()
+      ->add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(autosharding);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating Cluster resource: ["
+                "field:load_balancing_policy error:errors validating "
+                "autosharding LB policy config: ["
+                "field:keyHeaderName error:Illegal header key]]"));
 }
 
 // This tests that we're passing along errors from XdsLbPolicyRegistry.

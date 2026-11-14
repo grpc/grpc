@@ -32,7 +32,7 @@
 namespace grpc_core {
 
 Json::Array XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
-    const XdsResourceType::DecodeContext& context,
+    const ConvertContext& context,
     const envoy_config_cluster_v3_LoadBalancingPolicy* lb_policy,
     ValidationErrors* errors, int recursion_depth) const {
   constexpr int kMaxRecursionDepth = 16;
@@ -59,7 +59,8 @@ Json::Array XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
     const auto* typed_config =
         envoy_config_core_v3_TypedExtensionConfig_typed_config(
             typed_extension_config);
-    auto extension = ExtractXdsExtension(context, typed_config, errors);
+    auto extension =
+        ExtractXdsExtension(context.decode_context, typed_config, errors);
     if (!extension.has_value()) return {};
     // Check for registered LB policy type.
     absl::string_view* serialized_value =
