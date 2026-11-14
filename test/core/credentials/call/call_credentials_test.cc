@@ -765,6 +765,7 @@ void validate_compute_engine_http_request(const grpc_http_request* request,
       ::testing::AnyOf(
           "/computeMetadata/v1/instance/service-accounts/default/token",
           "/computeMetadata/v1/instance/service-accounts/default/email",
+          "/computeMetadata/v1/universe/universe-domain",
           "/v1/projects/-/serviceAccounts/foo@bar.com/allowedLocations"));
 }
 
@@ -785,6 +786,8 @@ int compute_engine_httpcli_get_success_override(
   if (uri.path() ==
       "/computeMetadata/v1/instance/service-accounts/default/email") {
     *response = http_response(200, "foo@bar.com");
+  } else if (uri.path() == "/computeMetadata/v1/universe/universe-domain") {
+    *response = http_response(200, "googleapis.com");
   } else if (uri.path() ==
              "/v1/projects/-/serviceAccounts/foo@bar.com/allowedLocations") {
     *response = http_response(200, "{\"locations\": [\"us-west1\"]}");
@@ -800,6 +803,7 @@ int compute_engine_httpcli_get_success_alts_override(
     grpc_closure* on_done, grpc_http_response* response) {
   if (uri.path() !=
           "/computeMetadata/v1/instance/service-accounts/default/email" &&
+      uri.path() != "/computeMetadata/v1/universe/universe-domain" &&
       uri.path() !=
           "/v1/projects/-/serviceAccounts/foo@bar.com/allowedLocations") {
     assert_query_parameters(uri, "transport", "alts");
@@ -822,6 +826,7 @@ int compute_engine_httpcli_get_failure_alts_override(
     grpc_closure* on_done, grpc_http_response* response) {
   if (uri.path() !=
           "/computeMetadata/v1/instance/service-accounts/default/email" &&
+      uri.path() != "/computeMetadata/v1/universe/universe-domain" &&
       uri.path() !=
           "/v1/projects/-/serviceAccounts/foo@bar.com/allowedLocations") {
     assert_query_parameters(uri, "transport", "alts");
@@ -5154,6 +5159,45 @@ TEST_F(CredentialsTest, TestComputeEngineCredsWithRab401) {
   creds->Unref();
 }
 
+int compute_engine_non_gdu_httpcli_get_override(
+    const grpc_http_request* /*request*/, const URI& uri,
+    Timestamp /*deadline*/, grpc_closure* on_done,
+    grpc_http_response* response) {
+  if (uri.path() ==
+      "/computeMetadata/v1/instance/service-accounts/default/email") {
+    *response = http_response(200, "foo@bar.com");
+  } else if (uri.path() == "/computeMetadata/v1/universe/universe-domain") {
+    *response = http_response(200, "apis-tpclp.goog");
+  } else if (uri.path() ==
+             "/computeMetadata/v1/instance/service-accounts/default/token") {
+    *response = http_response(200, valid_oauth2_json_response);
+  } else {
+    Crash("unexpected GET request: " + uri.ToString());
+  }
+  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
+TEST_F(CredentialsTest, TestComputeEngineCredsWithNonGduUniverseDomainSkipsRab) {
+  ExecCtx exec_ctx;
+  std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
+  grpc_call_credentials* creds =
+      grpc_google_compute_engine_credentials_create(nullptr);
+  auto state1 = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  auto state2 = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  HttpRequest::SetOverride(compute_engine_non_gdu_httpcli_get_override,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state1->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                 kTestPath);
+  ExecCtx::Get()->Flush();
+  state2->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                 kTestPath);
+  ExecCtx::Get()->Flush();
+  creds->Unref();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
 std::atomic<int> g_email_fetch_count{0};
 int compute_engine_concurrent_fetch_override(const grpc_http_request* request,
                                              const URI& uri, Timestamp deadline,
@@ -5196,6 +5240,10 @@ int compute_engine_httpcli_get_stalled_email_override(
       "/computeMetadata/v1/instance/service-accounts/default/email") {
     g_stalled_email_fetch_on_done = on_done;
     return 1;  // Stall the request
+  } else if (uri.path() == "/computeMetadata/v1/universe/universe-domain") {
+    *response = http_response(200, "googleapis.com");
+    ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+    return 1;
   } else {
     *response = http_response(200, valid_oauth2_json_response);
     ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
