@@ -62,9 +62,11 @@ cdef void _raise_call_error(c_call_error, metadata) except *:
   raise ValueError(_call_error(c_call_error, metadata))
 
 
-cdef _destroy_c_completion_queue(grpc_completion_queue *c_completion_queue):
-  grpc_completion_queue_shutdown(c_completion_queue)
-  grpc_completion_queue_destroy(c_completion_queue)
+cdef void _destroy_c_completion_queue(
+    grpc_completion_queue *c_completion_queue) noexcept nogil:
+  if c_completion_queue != NULL:
+    grpc_completion_queue_shutdown(c_completion_queue)
+    grpc_completion_queue_destroy(c_completion_queue)
 
 
 cdef class _CallState:
@@ -448,6 +450,9 @@ cdef _close(Channel channel, grpc_status_code code, object details,
     drain_calls):
   cdef _ChannelState state = channel._state
   cdef _CallState call_state
+  cdef grpc_completion_queue* c_call_cq
+  cdef grpc_completion_queue* c_conn_cq
+  cdef grpc_channel* c_channel
   encoded_details = _encode(details)
   with state.condition:
     if state.open:
@@ -474,11 +479,23 @@ cdef _close(Channel channel, grpc_status_code code, object details,
         while state.connectivity_due:
           state.condition.wait()
 
-      _destroy_c_completion_queue(state.c_call_completion_queue)
-      _destroy_c_completion_queue(state.c_connectivity_completion_queue)
-      grpc_channel_destroy(state.c_channel)
+      # Releasing the GIL is required here: destroying the channel (and
+      # shutting down gRPC) may block until gRPC's internal threads finish
+      # their work, and those threads may need the GIL to run Python
+      # callbacks (e.g. cleanup of call credentials plugins). Holding the
+      # GIL while waiting for them would deadlock.
+      c_call_cq = state.c_call_completion_queue
+      c_conn_cq = state.c_connectivity_completion_queue
+      c_channel = state.c_channel
       state.c_channel = NULL
-      grpc_shutdown()
+      state.c_call_completion_queue = NULL
+      state.c_connectivity_completion_queue = NULL
+      with nogil:
+        _destroy_c_completion_queue(c_call_cq)
+        _destroy_c_completion_queue(c_conn_cq)
+        if c_channel != NULL:
+          grpc_channel_destroy(c_channel)
+        grpc_shutdown()
       state.condition.notify_all()
     else:
       # Another call to close already completed in the past or is currently
