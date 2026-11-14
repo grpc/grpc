@@ -41,7 +41,6 @@
 
 static gpr_mu g_mu;
 static gpr_cv g_rcv;
-static int g_shutdown;
 static grpc_iomgr_object g_root_object;
 
 void grpc_iomgr_init() {
@@ -49,7 +48,6 @@ void grpc_iomgr_init() {
   if (!grpc_have_determined_iomgr_platform()) {
     grpc_set_default_iomgr_platform();
   }
-  g_shutdown = 0;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
   g_root_object.next = g_root_object.prev = &g_root_object;
@@ -93,7 +91,6 @@ void grpc_iomgr_shutdown() {
     grpc_iomgr_platform_flush();
 
     gpr_mu_lock(&g_mu);
-    g_shutdown = 1;
     while (g_root_object.next != &g_root_object) {
       if (gpr_time_cmp(
               gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), last_warning_time),
