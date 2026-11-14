@@ -68,6 +68,7 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
     std::string workforce_pool_id;
     std::string workload_pool_project;
     std::string workload_pool_id;
+    std::string universe_domain;
   };
 
   static absl::StatusOr<RefCountedPtr<ExternalAccountCredentials>> Create(
