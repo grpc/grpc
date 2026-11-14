@@ -65,6 +65,24 @@ class TypeSmokeTest(unittest.TestCase):
         channel = cygrpc.Channel(b"[::]:0", None, None)
         channel.close(cygrpc.StatusCode.cancelled, "Test method anyway!")
 
+    def test_next_call_event_after_close(self):
+        """next_call_event() on a closed channel raises instead of crashing.
+
+        Closing the channel destroys its call completion queue and sets the
+        pointer to NULL. Calling next_call_event() afterwards used to pass
+        that NULL pointer to grpc_completion_queue_next() and segfault the
+        process; it now raises ValueError that includes the close details.
+
+        gRPC's own callers never do this (the channel spin thread exits
+        before the queue is destroyed), so this only guards direct use of
+        the private Cython API. A regression here crashes the test runner
+        rather than failing this test.
+        """
+        channel = cygrpc.Channel(b"[::]:0", None, None)
+        channel.close(cygrpc.StatusCode.cancelled, "Test method anyway!")
+        with self.assertRaisesRegex(ValueError, "Test method anyway!"):
+            channel.next_call_event()
+
     def test_metadata_plugin_call_credentials_up_down(self):
         cygrpc.MetadataPluginCallCredentials(
             _metadata_plugin, b"test plugin name!"
