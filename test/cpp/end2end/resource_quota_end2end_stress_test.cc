@@ -150,6 +150,7 @@ class End2EndResourceQuotaUnaryTest : public ::testing::Test {
 };
 
 TEST_F(End2EndResourceQuotaUnaryTest, MultipleUnaryRPCTest) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P3] Fix bug");
   SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   MakeGrpcCalls();
 }

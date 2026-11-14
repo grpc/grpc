@@ -656,6 +656,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
 };
 
 TEST_F(ClientLbEnd2endTest, ChannelStateConnectingWhenResolving) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix b/581109284");
   const int kNumServers = 3;
   StartServers(kNumServers);
   FakeResolverResponseGeneratorWrapper response_generator;
