@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import asyncio
+import gc
 import logging
 import unittest
+import warnings
 
 import grpc
 from grpc.experimental import aio
@@ -82,6 +84,43 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
             self.assertSequenceEqual(interceptors_executed, interceptors)
 
             self.assertIsInstance(response, messages_pb2.SimpleResponse)
+
+    async def test_continuation_returned_without_await(self):
+        class Interceptor(aio.UnaryUnaryClientInterceptor):
+            """Interceptor returning the continuation without awaiting it."""
+
+            async def intercept_unary_unary(
+                self, continuation, client_call_details, request
+            ):
+                return continuation(client_call_details, request)
+
+        with warnings.catch_warnings(record=True) as caught_warnings:
+            warnings.simplefilter("always")
+            async with aio.insecure_channel(
+                self._server_target, interceptors=[Interceptor(), Interceptor()]
+            ) as channel:
+                multicallable = channel.unary_unary(
+                    "/grpc.testing.TestService/UnaryCall",
+                    request_serializer=messages_pb2.SimpleRequest.SerializeToString,
+                    response_deserializer=messages_pb2.SimpleResponse.FromString,
+                )
+                call = multicallable(messages_pb2.SimpleRequest())
+                response = await call
+
+                self.assertIsInstance(response, messages_pb2.SimpleResponse)
+                self.assertEqual(grpc.StatusCode.OK, await call.code())
+
+                # Awaiting the same call again returns the same response.
+                self.assertEqual(response, await call)
+            gc.collect()
+
+        never_awaited = [
+            w
+            for w in caught_warnings
+            if issubclass(w.category, RuntimeWarning)
+            and "never awaited" in str(w.message)
+        ]
+        self.assertEqual([], never_awaited)
 
     @unittest.expectedFailure
     # TODO(https://github.com/grpc/grpc/issues/20144) Once metadata support is
