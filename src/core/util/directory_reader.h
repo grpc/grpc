@@ -34,8 +34,8 @@ class DirectoryReader {
   virtual ~DirectoryReader() = default;
   // Returns the name of the directory being read.
   virtual absl::string_view Name() const = 0;
-  // Calls callback for each name in the directory except for "." and "..".
-  // Returns non-OK if there was an error reading the directory.
+  // Calls callback for each non-directory entry in the directory (following
+  // symlinks). Returns non-OK if there was an error reading the directory.
   virtual absl::Status ForEach(
       absl::FunctionRef<void(absl::string_view)> callback) = 0;
 };

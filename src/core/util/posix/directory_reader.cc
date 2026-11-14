@@ -28,9 +28,13 @@
     defined(GPR_APPLE) || defined(GPR_NETBSD) || defined(GPR_OPENBSD)
 
 #include <dirent.h>
+#include <sys/stat.h>
 
 #include <string>
 
+// IWYU pragma: no_include <bits/struct_stat.h>
+
+#include "absl/strings/str_cat.h"
 #include "src/core/util/directory_reader.h"
 
 namespace grpc_core {
@@ -69,6 +73,16 @@ absl::Status DirectoryReaderImpl::ForEach(
     const absl::string_view file_name = directory_entry->d_name;
     // Skip "." and ".."
     if (file_name == kSkipEntriesParent || file_name == kSkipEntriesSelf) {
+      continue;
+    }
+    // Stat the entry (following symlinks) so subdirectories and symlinks to
+    // directories are skipped (matching the Windows implementation), while
+    // symlinks to regular files are still visited.
+    struct stat entry_stat;
+    const std::string entry_path =
+        absl::StrCat(directory_path_, "/", file_name);
+    if (stat(entry_path.c_str(), &entry_stat) != 0 ||
+        S_ISDIR(entry_stat.st_mode)) {
       continue;
     }
     // Call the callback with this filename

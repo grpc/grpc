@@ -20,6 +20,10 @@
 #include <grpc/support/port_platform.h>
 #include <stdio.h>
 #include <string.h>
+#ifdef GPR_POSIX_STAT
+#include <sys/stat.h>
+// IWYU pragma: no_include <bits/struct_stat.h>
+#endif
 
 #include "src/core/util/strerror.h"
 #include "absl/cleanup/cleanup.h"
@@ -49,6 +53,19 @@ absl::StatusOr<Slice> LoadFile(const std::string& filename) {
         absl::StrCat("Failed to load file: ", filename,
                      " due to error(fdopen): ", StrError(errno)));
   }
+#ifdef GPR_POSIX_STAT
+  struct stat file_stat;
+  if (fstat(fileno(file), &file_stat) != 0) {
+    return absl::InternalError(
+        absl::StrCat("Failed to load file: ", filename,
+                     " due to error(fstat): ", StrError(errno)));
+  }
+  if (S_ISDIR(file_stat.st_mode)) {
+    return absl::InternalError(
+        absl::StrCat("Failed to load file: ", filename,
+                     " due to error(fstat): ", StrError(EISDIR)));
+  }
+#endif
   if (fseek(file, 0, SEEK_END) < 0) {
     return absl::InternalError(
         absl::StrCat("Failed to load file: ", filename,

@@ -112,6 +112,11 @@ TEST(LoadFileTest, TestLoadBigFile) {
   gpr_free(buffer);
 }
 
+TEST(LoadFileTest, TestLoadDirectoryFailsWithoutAborting) {
+  absl::StatusOr<grpc_core::Slice> result = grpc_core::LoadFile(".");
+  EXPECT_FALSE(result.ok());
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
