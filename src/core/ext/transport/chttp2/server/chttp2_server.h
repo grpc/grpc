@@ -186,7 +186,8 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
 
     // Remaining fields are protected by WorkSerializer.
 
-    // If null, that means we're shutting down.
+    // Gets reset to null when handshaking is done or when it gets
+    // cancelled.
     RefCountedPtr<HandshakeManager> handshake_mgr_;
 
     // Set to the transport when handshaking completes successfully.
