@@ -9465,7 +9465,6 @@ grpc_cc_library(
         "http2_status",
         "slice",
         "slice_buffer",
-        "status_helper",
         "sync",
         "transport_common",
         "//:chttp2_frame",

@@ -61,6 +61,8 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
 
   // Keeps state for an individual connection. Lifetime: Internally refcounted
   // and owned by Server::ListenerState.
+  // TODO(roth): Remove this in favor of HandshakingConnection once the
+  // server_connection_management experiment is removed.
   class ActiveConnection : public LogicalConnection {
    public:
     // State for handshake. Lifetime: Owned by ActiveConnection and lasts while
@@ -147,12 +149,11 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
     HandshakingConnection(RefCountedPtr<Server::ListenerState> listener_state,
                           grpc_tcp_server* tcp_server,
                           grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
-                          const ChannelArgs& args,
-                          OrphanablePtr<grpc_endpoint> endpoint);
+                          const ChannelArgs& args);
 
     ~HandshakingConnection() override;
 
-    void Start(const ChannelArgs& args);
+    void Start(OrphanablePtr<grpc_endpoint> endpoint, const ChannelArgs& args);
 
     void Orphan() override;
 
@@ -161,17 +162,17 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
 
     friend class grpc_core::testing::HandshakingConnectionTestPeer;
 
-    void StartLocked(const ChannelArgs& args);
+    void StartLocked(OrphanablePtr<grpc_endpoint> endpoint,
+                     const ChannelArgs& args);
     void OnHandshakeDoneLocked(absl::StatusOr<HandshakerArgs*> result);
 
-    RefCountedPtr<Server::ListenerState> const listener_state_;
+    const RefCountedPtr<Server::ListenerState> listener_state_;
     WorkSerializer work_serializer_;
     grpc_tcp_server* const tcp_server_;
     grpc_pollset* const accepting_pollset_;
     const AcceptorPtr acceptor_;
     grpc_pollset_set* const interested_parties_;
-    Timestamp const deadline_;
-    OrphanablePtr<grpc_endpoint> endpoint_;
+    const Timestamp deadline_;
 
     // If null, that means we're shutting down.
     // Protected by WorkSerializer.

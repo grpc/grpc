@@ -498,8 +498,7 @@ void NewChttp2ServerListener::ActiveConnection::
 NewChttp2ServerListener::HandshakingConnection::HandshakingConnection(
     RefCountedPtr<Server::ListenerState> listener_state,
     grpc_tcp_server* tcp_server, grpc_pollset* accepting_pollset,
-    AcceptorPtr acceptor, const ChannelArgs& args,
-    OrphanablePtr<grpc_endpoint> endpoint)
+    AcceptorPtr acceptor, const ChannelArgs& args)
     : InternallyRefCounted(
           GRPC_TRACE_FLAG_ENABLED(chttp2_server_refcount)
               ? "NewChttp2ServerListener::HandshakingConnection"
@@ -512,7 +511,6 @@ NewChttp2ServerListener::HandshakingConnection::HandshakingConnection(
       acceptor_(std::move(acceptor)),
       interested_parties_(grpc_pollset_set_create()),
       deadline_(GetConnectionDeadline(args)),
-      endpoint_(std::move(endpoint)),
       handshake_mgr_(MakeRefCounted<HandshakeManager>()) {
   if (accepting_pollset != nullptr) {
     grpc_pollset_set_add_pollset(interested_parties_, accepting_pollset_);
@@ -529,31 +527,6 @@ NewChttp2ServerListener::HandshakingConnection::~HandshakingConnection() {
   }
 }
 
-void NewChttp2ServerListener::HandshakingConnection::Start(
-    const ChannelArgs& args) {
-  work_serializer_.Run([self = Ref(), args]() { self->StartLocked(args); },
-                       DEBUG_LOCATION);
-}
-
-void NewChttp2ServerListener::HandshakingConnection::StartLocked(
-    const ChannelArgs& channel_args) {
-  if (handshake_mgr_ == nullptr) return;
-  CoreConfiguration::Get().handshaker_registry().AddHandshakers(
-      HANDSHAKER_SERVER, channel_args, interested_parties_,
-      handshake_mgr_.get());
-  handshake_mgr_->Add(MakeHttp2SettingsHandshaker(/*is_client=*/false));
-  handshake_mgr_->DoHandshake(
-      std::move(endpoint_), channel_args, deadline_, acceptor_.get(),
-      [self = Ref()](absl::StatusOr<HandshakerArgs*> result) mutable {
-        auto* self_ptr = self.get();
-        self_ptr->work_serializer_.Run(
-            [self = std::move(self), result = std::move(result)]() mutable {
-              self->OnHandshakeDoneLocked(std::move(result));
-            },
-            DEBUG_LOCATION);
-      });
-}
-
 void NewChttp2ServerListener::HandshakingConnection::Orphan() {
   work_serializer_.Run(
       [this]() {
@@ -565,6 +538,33 @@ void NewChttp2ServerListener::HandshakingConnection::Orphan() {
         Unref();
       },
       DEBUG_LOCATION);
+}
+
+void NewChttp2ServerListener::HandshakingConnection::Start(
+    OrphanablePtr<grpc_endpoint> endpoint, const ChannelArgs& args) {
+  work_serializer_.Run(
+      [self = Ref(), endpoint = std::move(endpoint), args]() mutable {
+        self->StartLocked(std::move(endpoint), args);
+      },
+      DEBUG_LOCATION);
+}
+
+void NewChttp2ServerListener::HandshakingConnection::StartLocked(
+    OrphanablePtr<grpc_endpoint> endpoint, const ChannelArgs& args) {
+  if (handshake_mgr_ == nullptr) return;  // Already shut down.
+  CoreConfiguration::Get().handshaker_registry().AddHandshakers(
+      HANDSHAKER_SERVER, args, interested_parties_, handshake_mgr_.get());
+  handshake_mgr_->Add(MakeHttp2SettingsHandshaker(/*is_client=*/false));
+  handshake_mgr_->DoHandshake(
+      std::move(endpoint), args, deadline_, acceptor_.get(),
+      [self = Ref()](absl::StatusOr<HandshakerArgs*> result) mutable {
+        auto* self_ptr = self.get();
+        self_ptr->work_serializer_.Run(
+            [self = std::move(self), result = std::move(result)]() mutable {
+              self->OnHandshakeDoneLocked(std::move(result));
+            },
+            DEBUG_LOCATION);
+      });
 }
 
 void NewChttp2ServerListener::HandshakingConnection::OnHandshakeDoneLocked(
@@ -832,12 +832,14 @@ void NewChttp2ServerListener::OnAccept(
   }
   auto connection = memory_owner.MakeOrphanable<HandshakingConnection>(
       self->listener_state_, self->tcp_server_, accepting_pollset,
-      std::move(acceptor), self->args_, std::move(endpoint));
+      std::move(acceptor), self->args_);
   RefCountedPtr<HandshakingConnection> connection_ref = connection->Ref();
   std::optional<ChannelArgs> new_args =
       self->listener_state_->AddHandshakingConnection(std::move(connection),
                                                       self->args_, tcp);
-  if (new_args.has_value()) connection_ref->Start(*new_args);
+  if (new_args.has_value()) {
+    connection_ref->Start(std::move(endpoint), *new_args);
+  }
 }
 
 void NewChttp2ServerListener::TcpServerShutdownComplete(
