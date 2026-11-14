@@ -707,11 +707,11 @@ TEST_F(MetricsTest, InstrumentDomainHistogramAndCounterQuery) {
   auto plugin = MakeStatsPluginForTarget(kTarget);
   auto storage = TestDomain::GetStorage(plugin->GetCollectionScope());
   storage->Increment(TestDomain::kCounter, 42);
-  storage->Increment(TestDomain::kHistogram, 10);
-  storage->Increment(TestDomain::kHistogram, 10);
-  storage->Increment(TestDomain::kHistogram, 10000);
-  storage->Increment(TestDomain::kDoubleHistogram, 12.5);
-  storage->Increment(TestDomain::kDoubleHistogram, 55.0);
+  storage->Increment(TestDomain::kHistogram, 10, nullptr);
+  storage->Increment(TestDomain::kHistogram, 10, nullptr);
+  storage->Increment(TestDomain::kHistogram, 10000, nullptr);
+  storage->Increment(TestDomain::kDoubleHistogram, 12.5, nullptr);
+  storage->Increment(TestDomain::kDoubleHistogram, 55.0, nullptr);
   auto counter_val =
       plugin->GetUInt64MetricValueByName(TestDomain::kCounter.name());
   EXPECT_THAT(counter_val, ::testing::Optional(42));
