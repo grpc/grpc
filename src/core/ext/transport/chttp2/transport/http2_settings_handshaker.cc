@@ -440,9 +440,8 @@ absl::Status Http2SettingsHandshaker::ParseAndApplySettingsPayloadLocked() {
   http2::Http2ErrorCode error =
       settings_.ApplyIncomingSettings(settings_frame.settings);
   if (error != http2::Http2ErrorCode::kNoError) {
-    return GRPC_ERROR_CREATE(
-        absl::StrFormat("invalid settings frame: %s",
-                        http2::Http2Status::DebugGetCode(error)));
+    return GRPC_ERROR_CREATE(absl::StrFormat(
+        "invalid settings frame: %s", http2::Http2Status::DebugGetCode(error)));
   }
   return absl::OkStatus();
 }

@@ -541,21 +541,18 @@ void NewChttp2ServerListener::HandshakingConnection::Orphan() {
       DEBUG_LOCATION);
 }
 
-void
-NewChttp2ServerListener::HandshakingConnection::MaybeShutdownHandshakeLocked() {
+void NewChttp2ServerListener::HandshakingConnection::
+    MaybeShutdownHandshakeLocked() {
   if (handshake_mgr_ == nullptr) return;
-  handshake_mgr_->Shutdown(
-      absl::UnavailableError("Listener stopped serving."));
+  handshake_mgr_->Shutdown(absl::UnavailableError("Listener stopped serving."));
   handshake_mgr_.reset();
 }
 
 void NewChttp2ServerListener::HandshakingConnection::Start(
     const ChannelArgs& args) {
-  work_serializer_.Run(
-      [self = RefAsSubclass<HandshakingConnection>(), args]() {
-        self->StartLocked(args);
-      },
-      DEBUG_LOCATION);
+  work_serializer_.Run([self = RefAsSubclass<HandshakingConnection>(),
+                        args]() { self->StartLocked(args); },
+                       DEBUG_LOCATION);
 }
 
 void NewChttp2ServerListener::HandshakingConnection::StartLocked(
@@ -598,8 +595,7 @@ void NewChttp2ServerListener::HandshakingConnection::OnHandshakeDoneLocked(
           listener_state_->server()->SetupTransport(
               transport.get(), accepting_pollset_, (*result)->args);
       if (channel_init_err.ok()) {
-        transport_ =
-            DownCast<grpc_chttp2_transport*>(transport.get())->Ref();
+        transport_ = DownCast<grpc_chttp2_transport*>(transport.get())->Ref();
         grpc_chttp2_transport_start_reading(
             transport.get(), (*result)->read_buffer.c_slice_buffer(),
             /*notify_on_receive_settings=*/nullptr, nullptr,
