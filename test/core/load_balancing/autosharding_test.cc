@@ -990,6 +990,68 @@ TEST_F(AutoShardingTest, ChildPoliciesDoNotGetChannelFactory) {
   EXPECT_EQ(FindSubchannel(kAddresses[0], args), nullptr);
 }
 
+TEST_F(AutoShardingTest, SynchronousChildStateUpdateDuringResolverUpdate) {
+  ChannelArgs args = MakeChannelArgs();
+  constexpr absl::string_view kNewAddress = "ipv4:127.0.0.1:443";
+  // host-b is first in the address list.  host-a is second.
+  const std::array<EndpointAddresses, 2> kEndpoints = {
+      MakeEndpointAddresses({kAddresses[0]},
+                            ChannelArgs().Set(GRPC_ARG_ADDRESS_NAME, "host-b")),
+      MakeEndpointAddresses(
+          {kAddresses[1]}, ChannelArgs().Set(GRPC_ARG_ADDRESS_NAME, "host-a"))};
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kEndpoints, ConfigBuilder().Build(), args),
+                        lb_policy()),
+            absl::OkStatus());
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+                              MakeMetadata("some_key"));
+  // All keys go to host-a.
+  SendAssignment({{"", {0}}}, {"host-a"});
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+                              MakeMetadata("a"));
+  SubchannelState* subchannel = FindSubchannel(kAddresses[1]);
+  ASSERT_NE(subchannel, nullptr);
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+                              MakeMetadata("a"));
+  // The resolver moves host-a to a new address, for which the channel cannot
+  // create a subchannel.  The child policy of host-a is not IDLE, so it
+  // reports TRANSIENT_FAILURE synchronously when it gets the new address.
+  // host-b is retained before host-a, so this happens while the policy
+  // updates its endpoints.
+  FailSubchannelCreation(kNewAddress);
+  const std::array<EndpointAddresses, 2> kNewEndpoints = {
+      kEndpoints[0],
+      MakeEndpointAddresses(
+          {kNewAddress}, ChannelArgs().Set(GRPC_ARG_ADDRESS_NAME, "host-a"))};
+  EXPECT_EQ(
+      ApplyUpdate(BuildUpdate(kNewEndpoints, ConfigBuilder().Build(), args),
+                  lb_policy()),
+      absl::OkStatus());
+  // host-a reports TRANSIENT_FAILURE, and requests re-resolution.  One of two
+  // endpoints is in TRANSIENT_FAILURE, so the policy reports CONNECTING and
+  // connects to host-b.  The key still goes only to host-a, so the pick fails.
+  ExpectReresolutionRequest();
+  auto picker = ExpectState(GRPC_CHANNEL_CONNECTING);
+  ExpectPickFail(
+      picker.get(),
+      [](const absl::Status& status) {
+        EXPECT_EQ(status, absl::UnavailableError("empty address list"));
+      },
+      {}, MakeMetadata("a"));
+  SubchannelState* subchannel_b = FindSubchannel(kAddresses[0]);
+  ASSERT_NE(subchannel_b, nullptr);
+  EXPECT_TRUE(subchannel_b->ConnectionRequested());
+  // UpdateLocked() reports the same state at the end.
+  picker = ExpectState(GRPC_CHANNEL_CONNECTING);
+  ExpectPickFail(
+      picker.get(),
+      [](const absl::Status& status) {
+        EXPECT_EQ(status, absl::UnavailableError("empty address list"));
+      },
+      {}, MakeMetadata("a"));
+}
+
 TEST_F(AutoShardingTest, OldPickerDoesNotConnectToRemovedEndpoint) {
   ChannelArgs args = MakeChannelArgs();
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),

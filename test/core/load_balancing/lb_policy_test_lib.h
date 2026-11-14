@@ -525,12 +525,15 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         const ChannelArgs& /*per_address_args*/,
         const ChannelArgs& args) override {
       // TODO(roth): Need to use per_address_args here.
+      auto address_uri = grpc_sockaddr_to_uri(&address);
+      GRPC_CHECK(address_uri.ok());
+      if (test_->subchannel_creation_failures_.count(*address_uri) > 0) {
+        return nullptr;
+      }
       SubchannelKey key(
           address, args.RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX));
       auto it = test_->subchannel_pool_.find(key);
       if (it == test_->subchannel_pool_.end()) {
-        auto address_uri = grpc_sockaddr_to_uri(&address);
-        GRPC_CHECK(address_uri.ok());
         it = test_->subchannel_pool_
                  .emplace(std::piecewise_construct, std::forward_as_tuple(key),
                           std::forward_as_tuple(std::move(*address_uri), test_))
@@ -1336,6 +1339,12 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return &it->second;
   }
 
+  // Makes the helper fail to create a subchannel for address_uri, as the
+  // channel does when, for example, it cannot create a security connector.
+  void FailSubchannelCreation(absl::string_view address_uri) {
+    subchannel_creation_failures_.emplace(address_uri);
+  }
+
   // Ticks fuzzing_ee_ until either predicate() returns true or fuzzing_ee_
   // has no more immediate callbacks to execute.  Returns true if predicate()
   // was satisfied, or false if fuzzing_ee_ became idle first.
@@ -1381,6 +1390,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   std::shared_ptr<WorkSerializer> work_serializer_;
   FakeHelper* helper_ = nullptr;
   std::map<SubchannelKey, SubchannelState> subchannel_pool_;
+  // Addresses for which the helper fails to create a subchannel.
+  std::set<std::string> subchannel_creation_failures_;
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
   const absl::string_view lb_policy_name_;
   const ChannelArgs channel_args_;

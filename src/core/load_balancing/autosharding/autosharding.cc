@@ -193,7 +193,11 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
 
     size_t index() const { return index_; }
 
-    absl::Status UpdateLocked(size_t index);
+    // Sets the index of this endpoint in AutoshardingLbPolicy::endpoints_.
+    void set_index(size_t index) { index_ = index; }
+
+    // Sends the endpoint's addresses to the child policy, if it exists.
+    absl::Status UpdateLocked();
 
     grpc_connectivity_state connectivity_state() const {
       return connectivity_state_;
@@ -616,9 +620,7 @@ void AutoshardingLbPolicy::AutoShardingEndpoint::Orphan() {
   Unref();
 }
 
-absl::Status AutoshardingLbPolicy::AutoShardingEndpoint::UpdateLocked(
-    size_t index) {
-  index_ = index;
+absl::Status AutoshardingLbPolicy::AutoShardingEndpoint::UpdateLocked() {
   if (child_policy_ == nullptr) return absl::OkStatus();
   return UpdateChildPolicyLocked();
 }
@@ -811,9 +813,14 @@ absl::Status AutoshardingLbPolicy::UpdateLocked(UpdateArgs args) {
   } else {
     GRPC_TRACE_LOG(autosharding_lb, INFO)
         << "[AS " << this << "] received update";
+    // Build the new endpoint list and EndpointMap first, and update the
+    // retained child policies only after that.  A child policy can report a
+    // new state synchronously, and that reads endpoints_, endpoint_map_ and
+    // slice_map_.
     endpoints_.clear();
     std::map<std::string, OrphanablePtr<AutoShardingEndpoint>> endpoint_map;
-    std::vector<std::string> errors;
+    std::vector<std::pair<std::string, AutoShardingEndpoint*>>
+        retained_endpoints;
     (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
       const std::string hostname = ComputeHostname(endpoint);
       auto& autosharding_endpoint = endpoint_map[hostname];
@@ -830,25 +837,30 @@ absl::Status AutoshardingLbPolicy::UpdateLocked(UpdateArgs args) {
       // If present in old map, retain it; otherwise, create a new one.
       auto it = endpoint_map_.find(hostname);
       if (it != endpoint_map_.end()) {
-        absl::Status status = it->second->UpdateLocked(index);
-        if (!status.ok()) {
-          errors.emplace_back(
-              absl::StrCat("endpoint ", hostname, ": ", status.ToString()));
-        }
         autosharding_endpoint = std::move(it->second);
+        autosharding_endpoint->set_index(index);
+        retained_endpoints.emplace_back(hostname, autosharding_endpoint.get());
       } else {
         autosharding_endpoint = MakeOrphanable<AutoShardingEndpoint>(
             RefAsSubclass<AutoshardingLbPolicy>(), index);
       }
     });
     endpoint_map_ = std::move(endpoint_map);
+    // Rebuild the slice map from the retained assignment.
+    UpdateSliceMapLocked();
+    std::vector<std::string> errors;
+    for (const auto& [hostname, endpoint] : retained_endpoints) {
+      absl::Status status = endpoint->UpdateLocked();
+      if (!status.ok()) {
+        errors.emplace_back(
+            absl::StrCat("endpoint ", hostname, ": ", status.ToString()));
+      }
+    }
     if (!errors.empty()) {
       status = absl::UnavailableError(absl::StrCat(
           "errors from children: [", absl::StrJoin(errors, "; "), "]"));
     }
   }
-  // Rebuild the slice map from the retained assignment.
-  UpdateSliceMapLocked();
   // If the address list is empty, report TRANSIENT_FAILURE.  Keep client_ and
   // assignment_, so that the next good update uses them at once (gRFC A119).
   if (endpoints_.empty()) {
