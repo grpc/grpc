@@ -37,6 +37,7 @@
 
 #include "src/core/credentials/call/json_util.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/tsi/ssl_init.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
@@ -74,6 +75,7 @@ int grpc_auth_json_key_is_valid(const grpc_auth_json_key* json_key) {
 }
 
 grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
+  tsi::InitOpenSslOnce();
   grpc_auth_json_key result;
   BIO* bio = nullptr;
   const char* prop_value;
