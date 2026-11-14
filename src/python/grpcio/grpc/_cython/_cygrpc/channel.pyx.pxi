@@ -579,7 +579,13 @@ cdef class Channel:
     else:
       queue_deadline = None
 
-    # The call completion queue is set to NULL once the channel is closed.
+    # Check the queue pointer rather than state.open: _close() sets open to
+    # False first and may still drain events through this method before it
+    # destroys the queue and sets the pointer to NULL. This only guards calls
+    # made after close(). A concurrent close() can still destroy the queue
+    # after this check, which is fine because gRPC only calls this from the
+    # channel spin thread, and that thread exits before the queue is
+    # destroyed.
     c_call_cq = self._state.c_call_completion_queue
     if c_call_cq == NULL:
       raise ValueError(

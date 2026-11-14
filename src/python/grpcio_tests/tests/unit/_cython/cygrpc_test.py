@@ -69,9 +69,10 @@ class TypeSmokeTest(unittest.TestCase):
         """next_call_event() on a closed channel raises instead of crashing.
 
         Closing the channel destroys its call completion queue and sets the
-        pointer to NULL. Calling next_call_event() afterwards used to pass
-        that NULL pointer to grpc_completion_queue_next() and segfault the
-        process; it now raises ValueError that includes the close details.
+        pointer to NULL. Without the NULL check in next_call_event(), that
+        pointer would be passed to grpc_completion_queue_next() and segfault
+        the process. With it, ValueError is raised, including the close
+        details.
 
         gRPC's own callers never do this (the channel spin thread exits
         before the queue is destroyed), so this only guards direct use of
