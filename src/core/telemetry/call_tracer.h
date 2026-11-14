@@ -189,7 +189,7 @@ class CallTracerInterface : public CallTracerAnnotationInterface {
 class ClientCallTracerInterface;
 class ServerCallTracerInterface;
 
-// Interface for a tracer that records activities on a call. Actual attempts for
+// Interface for a tracer that records activities on a call. Attempts for
 // this call are traced with CallAttemptTracer after invoking RecordNewAttempt()
 // on the ClientCallTracer object.
 class ClientCallTracerInterface : public CallTracerAnnotationInterface {
@@ -242,6 +242,9 @@ class ClientCallTracerInterface : public CallTracerAnnotationInterface {
   // RecordEnd() serves as an indication that the call stack is done with all
   // API calls, and the tracer library is free to destroy it after that.
   virtual CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) = 0;
+  // Should be the last API call to the object. Once invoked, the tracer
+  // library is free to destroy the object.
+  virtual void RecordEnd(const absl::Status& status) = 0;
 };
 
 // Interface for a tracer that records activities on a server call.
@@ -377,6 +380,8 @@ class ClientCallTracer final : public CallSpan {
       bool is_transparent_retry) {
     return interface_->StartNewAttempt(is_transparent_retry);
   }
+
+  void RecordEnd(const absl::Status& status) { interface_->RecordEnd(status); }
 
  private:
   ClientCallTracerInterface* interface_;

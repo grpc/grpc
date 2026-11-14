@@ -198,6 +198,69 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
   EXPECT_EQ(*status_value, "OK");
 }
 
+TEST_F(OpenTelemetryPluginEnd2EndTest, ClientCallDuration) {
+  Init(std::move(Options().set_metric_names(
+      {grpc::OpenTelemetryPluginBuilder::kClientCallDurationInstrumentName})));
+  SendRPC();
+  const char* kMetricName = "grpc.client.call.duration";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+  auto point_data =
+      std::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
+          &data[kMetricName][0].point_data);
+  ASSERT_NE(point_data, nullptr);
+  ASSERT_EQ(point_data->count_, 1);
+  const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), 3);
+  const auto* method_value =
+      std::get_if<std::string>(&attributes.at("grpc.method"));
+  ASSERT_NE(method_value, nullptr);
+  EXPECT_EQ(*method_value, kMethodName);
+  const auto* target_value =
+      std::get_if<std::string>(&attributes.at("grpc.target"));
+  ASSERT_NE(target_value, nullptr);
+  EXPECT_EQ(*target_value, canonical_server_address_);
+  const auto* status_value =
+      std::get_if<std::string>(&attributes.at("grpc.status"));
+  ASSERT_NE(status_value, nullptr);
+  EXPECT_EQ(*status_value, "OK");
+}
+
+// This call has no attempts. The target URI is invalid so the resolver returns no addresses.
+TEST_F(OpenTelemetryPluginEnd2EndTest, ClientCallDurationZeroAttempts) {
+  Init(std::move(Options().set_metric_names(
+      {grpc::OpenTelemetryPluginBuilder::kClientAttemptStartedInstrumentName,
+       grpc::OpenTelemetryPluginBuilder::kClientCallDurationInstrumentName})));
+  ResetStub(grpc::CreateChannel("dns:///", grpc::InsecureChannelCredentials()));
+  SendRPC();
+  const char* kAttemptStartedMetricName = "grpc.client.attempt.started";
+  const char* kCallDurationMetricName = "grpc.client.call.duration";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kCallDurationMetricName); });
+  EXPECT_FALSE(data.contains(kAttemptStartedMetricName));
+  EXPECT_THAT(
+      data[kCallDurationMetricName],
+      ::testing::ElementsAre(::testing::AllOf(
+          AttributesEq(
+              std::array<absl::string_view, 3>{"grpc.method", "grpc.target",
+                                               "grpc.status"},
+              std::array<absl::string_view, 3>{kMethodName, "dns:///",
+                                               "UNKNOWN"},
+              std::array<absl::string_view, 0>{},
+              std::array<absl::string_view, 0>{}),
+          HistogramResultEq(
+              IsWithinRange(0.0, 0.5 * grpc_test_slowdown_factor()),
+              IsWithinRange(0.0, 0.5 * grpc_test_slowdown_factor()),
+              IsWithinRange(0.0, 0.5 * grpc_test_slowdown_factor()), 1))));
+}
+
 TEST_F(OpenTelemetryPluginEnd2EndTest, ServerCallStarted) {
   Init(std::move(Options().set_metric_names(
       {grpc::OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName})));
@@ -353,7 +416,9 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RetryStatsWithRetries) {
                              grpc::OpenTelemetryPluginBuilder::
                                  kClientCallTransparentRetriesInstrumentName,
                              grpc::OpenTelemetryPluginBuilder::
-                                 kClientCallRetryDelayInstrumentName})
+                                 kClientCallRetryDelayInstrumentName,
+                             grpc::OpenTelemetryPluginBuilder::
+                                 kClientCallDurationInstrumentName})
           .set_service_config(
               "{\n"
               "  \"methodConfig\": [ {\n"
@@ -383,16 +448,18 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RetryStatsWithRetries) {
   const char* kTransparentRetryMetricName =
       "grpc.client.call.transparent_retries";
   const char* kRetryDelayMetricName = "grpc.client.call.retry_delay";
+  const char* kCallDurationMetricName = "grpc.client.call.duration";
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
           std::string,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
               data) {
         return !data.contains(kRetryMetricName) ||
-               !data.contains(kRetryDelayMetricName);
+               !data.contains(kRetryDelayMetricName) ||
+               !data.contains(kCallDurationMetricName);
       });
 
-  ASSERT_EQ(data.size(), 2);
+  ASSERT_EQ(data.size(), 3);
   // Check for retry stats
   EXPECT_THAT(data[kRetryMetricName],
               ::testing::UnorderedElementsAre(::testing::AllOf(
@@ -421,6 +488,21 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RetryStatsWithRetries) {
               IsWithinRange(0.1, 0.3 * grpc_test_slowdown_factor()), 1))));
   // No transparent retry stats reported
   EXPECT_FALSE(data.contains(kTransparentRetryMetricName));
+  // Check for call duration stats (1 call across 3 attempts, includes backoff)
+  EXPECT_THAT(
+      data[kCallDurationMetricName],
+      ::testing::ElementsAre(::testing::AllOf(
+          AttributesEq(
+              std::array<absl::string_view, 3>{"grpc.method", "grpc.target",
+                                               "grpc.status"},
+              std::array<absl::string_view, 3>{
+                  kMethodName, canonical_server_address_, "ABORTED"},
+              std::array<absl::string_view, 0>{},
+              std::array<absl::string_view, 0>{}),
+          HistogramResultEq(
+              IsWithinRange(0.1, 0.6 * grpc_test_slowdown_factor()),
+              IsWithinRange(0.1, 0.6 * grpc_test_slowdown_factor()),
+              IsWithinRange(0.1, 0.6 * grpc_test_slowdown_factor()), 1))));
 }
 
 class OTelMetricsTestForTransparentRetries
@@ -1705,7 +1787,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TelemetryLabelPropagation) {
                OpenTelemetryPluginBuilder::
                    kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName,
                OpenTelemetryPluginBuilder::kClientCallRetriesInstrumentName,
-               OpenTelemetryPluginBuilder::kClientCallRetryDelayInstrumentName})
+               OpenTelemetryPluginBuilder::kClientCallRetryDelayInstrumentName,
+               OpenTelemetryPluginBuilder::kClientCallDurationInstrumentName})
           .add_optional_label("grpc.client.call.custom")
           .set_service_config(
               "{\n"
@@ -1751,8 +1834,10 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TelemetryLabelPropagation) {
                    kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName) ||
            !data.contains(
                OpenTelemetryPluginBuilder::kClientCallRetriesInstrumentName) ||
+           !data.contains(OpenTelemetryPluginBuilder::
+                              kClientCallRetryDelayInstrumentName) ||
            !data.contains(
-               OpenTelemetryPluginBuilder::kClientCallRetryDelayInstrumentName);
+               OpenTelemetryPluginBuilder::kClientCallDurationInstrumentName);
   });
   // Verify client side metric (grpc.client.attempt.started)
   ASSERT_EQ(
@@ -1823,6 +1908,16 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TelemetryLabelPropagation) {
   EXPECT_EQ(std::get<std::string>(
                 client_retry_delay_attributes.at("grpc.client.call.custom")),
             kTelemetryLabelValue);
+  // Verify client side metric (grpc.client.call.duration)
+  ASSERT_EQ(data[OpenTelemetryPluginBuilder::kClientCallDurationInstrumentName]
+                .size(),
+            1);
+  const auto& client_call_duration_attributes =
+      data[OpenTelemetryPluginBuilder::kClientCallDurationInstrumentName][0]
+          .attributes.GetAttributes();
+  EXPECT_EQ(std::get<std::string>(
+                client_call_duration_attributes.at("grpc.client.call.custom")),
+            kTelemetryLabelValue);
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest,
@@ -1837,7 +1932,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
                OpenTelemetryPluginBuilder::
                    kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName,
                OpenTelemetryPluginBuilder::kClientCallRetriesInstrumentName,
-               OpenTelemetryPluginBuilder::kClientCallRetryDelayInstrumentName})
+               OpenTelemetryPluginBuilder::kClientCallRetryDelayInstrumentName,
+               OpenTelemetryPluginBuilder::kClientCallDurationInstrumentName})
           .add_optional_label("grpc.client.call.custom")
           .set_service_config(
               "{\n"
@@ -1881,8 +1977,10 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
                    kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName) ||
            !data.contains(
                OpenTelemetryPluginBuilder::kClientCallRetriesInstrumentName) ||
+           !data.contains(OpenTelemetryPluginBuilder::
+                              kClientCallRetryDelayInstrumentName) ||
            !data.contains(
-               OpenTelemetryPluginBuilder::kClientCallRetryDelayInstrumentName);
+               OpenTelemetryPluginBuilder::kClientCallDurationInstrumentName);
   });
   // Verify client side metric (grpc.client.attempt.started)
   ASSERT_EQ(
@@ -1952,6 +2050,16 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
           .attributes.GetAttributes();
   EXPECT_EQ(std::get<std::string>(
                 client_retry_delay_attributes.at("grpc.client.call.custom")),
+            "");
+  // Verify client side metric (grpc.client.call.duration)
+  ASSERT_EQ(data[OpenTelemetryPluginBuilder::kClientCallDurationInstrumentName]
+                .size(),
+            1);
+  const auto& client_call_duration_attributes =
+      data[OpenTelemetryPluginBuilder::kClientCallDurationInstrumentName][0]
+          .attributes.GetAttributes();
+  EXPECT_EQ(std::get<std::string>(
+                client_call_duration_attributes.at("grpc.client.call.custom")),
             "");
 }
 

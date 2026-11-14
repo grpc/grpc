@@ -231,6 +231,7 @@ class FakeCallTracer : public ClientCallTracerInterface {
 
   void RecordAnnotation(absl::string_view /*annotation*/) override {}
   void RecordAnnotation(const Annotation& /*annotation*/) override {}
+  void RecordEnd(const absl::Status& /*status*/) override {}
 
  private:
   std::shared_ptr<TestState> test_state_;

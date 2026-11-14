@@ -48,6 +48,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call_utils.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/bitset.h"
@@ -434,6 +435,10 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                 *out_error_string = nullptr;
               }
               out_trailing_metadata->count = 0;
+              auto* call_tracer = arena()->GetContext<ClientCallTracer>();
+              if (call_tracer != nullptr) {
+                call_tracer->RecordEnd(*status);
+              }
             })),
         is_notify_tag_closure, notify_tag, cq_));
   } else {
@@ -469,6 +474,10 @@ void ClientCall::OnReceivedStatus(ServerMetadataHandle server_trailing_metadata,
     } else {
       *out_error_string = nullptr;
     }
+  }
+  auto* call_tracer = arena()->GetContext<ClientCallTracer>();
+  if (call_tracer != nullptr) {
+    call_tracer->RecordEnd(ServerMetadataToStatus(*server_trailing_metadata));
   }
   PublishMetadataArray(server_trailing_metadata.get(), out_trailing_metadata,
                        true);

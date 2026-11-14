@@ -138,6 +138,7 @@ class FakeClientCallTracer : public ClientCallTracerInterface {
     annotation_logger_->push_back(std::string(annotation));
   }
   void RecordAnnotation(const Annotation& /*annotation*/) override {}
+  void RecordEnd(const absl::Status& /*status*/) override {}
   std::string TraceId() override { return ""; }
   std::string SpanId() override { return ""; }
   bool IsSampled() override { return false; }

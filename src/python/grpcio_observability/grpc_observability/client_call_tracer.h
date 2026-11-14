@@ -140,6 +140,7 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
 
   void RecordAnnotation(absl::string_view annotation) override;
   void RecordAnnotation(const Annotation& annotation) override;
+  void RecordEnd(const absl::Status& /*status*/) override {}
 
  private:
   PythonCensusContext CreateCensusContextForCallAttempt();
