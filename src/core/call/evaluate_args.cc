@@ -54,8 +54,10 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
     VLOG(2) << "Failed to split " << uri->path() << " into host and port.";
     return address;
   }
-  if (!absl::SimpleAtoi(port_view, &address.port)) {
-    VLOG(2) << "Port " << port_view << " is out of range or null.";
+  if (port_view.empty()) {
+    VLOG(2) << "Port is empty.";
+  } else if (!absl::SimpleAtoi(port_view, &address.port)) {
+    VLOG(2) << "Port " << port_view << " is out of range.";
   }
   address.address_str = std::string(host_view);
   auto resolved_address = StringToSockaddr(uri->path());
@@ -88,6 +90,9 @@ EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
         auth_context, GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME);
     tls_version =
         GetAuthPropertyValue(auth_context, GRPC_SSL_TLS_VERSION_PROPERTY_NAME);
+    // Note that this describes the local endpoint, not the peer.
+    local_principal = GetAuthPropertyValue(
+        auth_context, GRPC_X509_LOCAL_PRINCIPAL_PROPERTY_NAME);
   }
   local_address = ParseEndpointUri(
       args.GetString(GRPC_ARG_ENDPOINT_LOCAL_ADDRESS).value_or(""));
@@ -234,6 +239,13 @@ absl::string_view EvaluateArgs::GetTlsVersion() const {
     return "";
   }
   return channel_args_->tls_version;
+}
+
+absl::string_view EvaluateArgs::GetLocalPrincipal() const {
+  if (channel_args_ == nullptr) {
+    return "";
+  }
+  return channel_args_->local_principal;
 }
 
 }  // namespace grpc_core
