@@ -123,6 +123,9 @@ class ChannelInit {
   // Post processing slots - up to one PostProcessor per slot can be registered
   // They run after filters registered are added to the channel stack builder,
   // but before Build is called - allowing ad-hoc mutation to the channel stack.
+  // TODO(tjagtap): [PH2][P3] Remove the PostProcessor mechanism when the
+  // replace_auth_filter experiment is removed, as kAuthSubstitution is its
+  // only remaining use.
   enum class PostProcessorSlot : uint8_t { kAuthSubstitution, kCount };
   static const char* PostProcessorSlotName(PostProcessorSlot slot) {
     switch (slot) {

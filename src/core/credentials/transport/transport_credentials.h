@@ -134,6 +134,9 @@ grpc_channel_credentials* grpc_channel_credentials_find_in_args(
 
 #define GRPC_SERVER_CREDENTIALS_ARG "grpc.internal.server_credentials"
 
+#define GRPC_ARG_DISABLE_SERVER_AUTH_FILTER \
+  "grpc.internal.disable_server_auth_filter"
+
 // This type is forward declared as a C struct and we cannot define it as a
 // class. Otherwise, compiler will complain about type mismatch due to
 // -Wmismatched-tags.
@@ -156,6 +159,12 @@ struct grpc_server_credentials
   create_security_connector(const grpc_core::ChannelArgs& args) = 0;
 
   virtual grpc_core::UniqueTypeName type() const = 0;
+
+  // Customizes a server listener's channel args after these credentials are
+  // attached. Returns the updated args, or `args` unchanged by default.
+  virtual grpc_core::ChannelArgs update_arguments(grpc_core::ChannelArgs args) {
+    return args;
+  }
 
   const grpc_auth_metadata_processor& auth_metadata_processor() const {
     return processor_;
