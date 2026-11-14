@@ -27,6 +27,8 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
+struct census_context;
+
 namespace grpc_core {
 
 // Represents a transport for xDS communication (e.g., a gRPC channel).
@@ -48,6 +50,15 @@ class XdsTransport : public DualRefCounted<XdsTransport> {
     // instead of failing fast when the transport is not connected.
     bool wait_for_ready = false;
 
+    // If set, the tracing context of the call that this call is being made
+    // on behalf of (e.g., the data plane RPC that an ext_proc or ext_authz
+    // side-channel call is made for).  It is set as the census_context of
+    // the new call, so that tracing systems record the new call as a child
+    // of that call.  Tracing systems read it only when the new call is
+    // created, so it needs to remain valid only until CreateStreamingCall()
+    // returns.
+    census_context* parent_census_context = nullptr;
+
     CallOptions& set_start_upon_send_message(bool value) {
       start_upon_send_message = value;
       return *this;
@@ -55,6 +66,11 @@ class XdsTransport : public DualRefCounted<XdsTransport> {
 
     CallOptions& set_wait_for_ready(bool value) {
       wait_for_ready = value;
+      return *this;
+    }
+
+    CallOptions& set_parent_census_context(census_context* value) {
+      parent_census_context = value;
       return *this;
     }
   };

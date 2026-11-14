@@ -33,7 +33,7 @@ third_party/boringssl-with-bazel 427ec40cc8edc545253289232e885708c409e5ea
 third_party/cares/cares d3a507e920e7af18a5efb7f9f1d8044ed4750013
 third_party/cel-c 7c739eed27b702b45f664143540f76bd75d7bdd6
 third_party/cel-spec 9f069b3ee58b02d6f6736c5ebd6587075c1a1b22
-third_party/envoy-api 005c18a923f166a793a1c227171398dab883cc5d
+third_party/envoy-api 0a161d3b6cc400ed14fe35c3e5f95b77fa36376c
 third_party/googleapis 2193a2bfcecb92b92aad7a4d81baa428cafd7dfd
 third_party/googletest 52eb8108c5bdec04579160ae17225d66034bd723
 third_party/grpc-proto dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f
@@ -44,7 +44,7 @@ third_party/protobuf 35cd01f9fe9afbeea38cc7b979a3b6bfcde82c03
 third_party/protoc-gen-validate 7b06248484ceeaa947e93ca2747eccf336a88ecc
 third_party/re2 0c5616df9c0aaa44c9440d87422012423d91c7d1
 third_party/xds ee656c7534f5d7dc23d44dd611689568f72017a6
-third_party/zlib f1f503da85d52e56aae11557b4d79a42bcaa2b86
+third_party/zlib da607da739fa6047df13e66a2af6b8bec7c2a498
 EOF
 
 if ! diff -u "$submodules" "$want_submodules"; then

@@ -48,7 +48,6 @@
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/synchronization/notification.h"
 #include "absl/types/span.h"
 
 namespace grpc_core {
@@ -460,27 +459,10 @@ TEST_F(PickFirstTest, ResolverUpdateBeforeLeavingIdle) {
   // can get the initial connectivity state notifications for those
   // subchannels (i.e., before it can transition from IDLE to CONNECTING),
   // we send a new update.
-  absl::Notification notification;
-  work_serializer_->Run([&]() {
-    // Inject second update into WorkSerializer queue before we
-    // exit idle, so that the second update gets run before the initial
-    // subchannel connectivity state notifications from the first update
-    // are delivered.
-    work_serializer_->Run([&]() {
-      // Second update.
-      absl::Status status = lb_policy()->UpdateLocked(
-          BuildUpdate(kNewAddresses, MakePickFirstConfig(false)));
-      EXPECT_TRUE(status.ok()) << status;
-      // Trigger notification once all connectivity state
-      // notifications have been delivered.
-      work_serializer_->Run([&]() { notification.Notify(); });
-    });
-    // Exit idle.
-    lb_policy()->ExitIdleLocked();
-  });
-  while (!notification.HasBeenNotified()) {
-    fuzzing_ee_->Tick();
-  }
+  ExitIdle();
+  status = ApplyUpdate(BuildUpdate(kNewAddresses, MakePickFirstConfig(false)),
+                       lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
   // The LB policy should have created subchannels for the new addresses.
   auto* subchannel3 = FindSubchannel(kNewAddresses[0]);
   ASSERT_NE(subchannel3, nullptr);
@@ -1034,13 +1016,6 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
   // By checking the picker, we told the LB policy to trigger a new
   // connection attempt, so it should start over with the first
   // subchannel.
-  // Note that the picker will have enqueued the ExitIdle() call in the
-  // WorkSerializer, so the first flush will execute that call.  But
-  // executing that call will result in enqueueing subchannel
-  // connectivity state notifications, so we need to flush again to make
-  // sure all of that work is done before we continue.
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   EXPECT_TRUE(subchannel->ConnectionRequested());
   // The subchannel starts connecting.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -1232,13 +1207,6 @@ TEST_F(PickFirstTest, AddressUpdateRemovedSelectedAddress) {
   // By checking the picker, we told the LB policy to trigger a new
   // connection attempt, so it should start one on the subchannel for
   // the remaining address.
-  // Note that the picker will have enqueued the ExitIdle() call in the
-  // WorkSerializer, so the first flush will execute that call.  But
-  // executing that call will result in enqueueing subchannel
-  // connectivity state notifications, so we need to flush again to make
-  // sure all of that work is done before we continue.
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   EXPECT_TRUE(subchannel2->ConnectionRequested());
   // The subchannel starts connecting.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -1340,20 +1308,22 @@ TEST_F(PickFirstTest, SubchannelNotificationAfterShutdown) {
   //    is a no-op, because the LB policy has already been shut down,
   //    but it will release the last ref to the subchannel list.
   //
-  // To get the ordering right here, we need to do steps 2 and 3
-  // inside the WorkSerializer, after the READY notification has been
-  // enqueued but before we drain the WorkSerializer queue.
-  subchannel->SetConnectivityState(
-      GRPC_CHANNEL_READY, /*status=*/absl::OkStatus(),
-      /*validate_state_transition=*/true,
-      /*run_before_flush=*/[&]() {
-        // Step 2: Trigger the timer.  The callback will be enqueued in
-        // the WorkSerializer, but we don't drain it yet.
-        IncrementTimeBy(Duration::Milliseconds(250),
-                        /*flush_work_serializer=*/false);
-        // Step 3: Shut down the LB policy.
-        lb_policy_.reset();
-      });
+  // To get the ordering right here, we enqueue steps 1, 2, and 3 from
+  // inside a WorkSerializer callback so that neither the READY
+  // notification nor the Happy Eyeballs timer callback runs until after
+  // the LB policy has been shut down.
+  work_serializer_->Run([&]() {
+    // Step 1: Enqueue READY notification for the subchannel in the
+    // WorkSerializer.
+    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+    // Step 2: Trigger the timer.  The callback will be enqueued in
+    // the WorkSerializer behind the READY notification.
+    IncrementTimeBy(Duration::Milliseconds(250));
+    // Step 3: Shut down the LB policy.
+    lb_policy_.reset();
+  });
+  // Steps 4 & 5: Drain the WorkSerializer queue.
+  DrainPendingWork();
   // Now the subchannel reports IDLE.  Before the bug fix, this
   // triggered a crash.
   subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
@@ -1635,23 +1605,23 @@ TEST_F(PickFirstTest, MetricValues) {
   // The first subchannel's connection attempt fails.
   subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                    absl::UnavailableError("failed to connect"));
+  // The LB policy will start a connection attempt on the second subchannel.
+  EXPECT_TRUE(subchannel2->ConnectionRequested());
   EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kConnectionAttemptsFailed,
                                                   kLabelValues, {}),
               ::testing::Optional(1));
-  // The LB policy will start a connection attempt on the second subchannel.
-  EXPECT_TRUE(subchannel2->ConnectionRequested());
   // This causes the subchannel to start to connect, so it reports
   // CONNECTING.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // The connection attempt succeeds.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_READY);
-  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kConnectionAttemptsSucceeded,
-                                                  kLabelValues, {}),
-              ::testing::Optional(1));
   // The LB policy will report CONNECTING some number of times (doesn't
   // matter how many) and then report READY.
   auto picker = WaitForConnected();
   ASSERT_NE(picker, nullptr);
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kConnectionAttemptsSucceeded,
+                                                  kLabelValues, {}),
+              ::testing::Optional(1));
   // Picker should return the same subchannel repeatedly.
   for (size_t i = 0; i < 3; ++i) {
     EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[1]);

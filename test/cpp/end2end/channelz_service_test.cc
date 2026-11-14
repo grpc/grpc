@@ -643,8 +643,8 @@ TEST_P(ChannelzServerTest, ManySubchannelsAndSockets) {
         get_subchannel_resp.subchannel().socket_ref(0).socket_id());
     s = channelz_stub_->GetSocket(&get_socket_ctx, get_socket_req,
                                   &get_socket_resp);
-    EXPECT_TRUE(
-        get_subchannel_resp.subchannel().socket_ref(0).name().find("http"));
+    EXPECT_THAT(get_subchannel_resp.subchannel().socket_ref(0).name(),
+                ::testing::HasSubstr("http"));
     EXPECT_TRUE(s.ok()) << s.error_message();
     // calls started == streams started AND stream succeeded. Since none of
     // these RPCs were canceled, all of the streams will succeeded even though
@@ -716,8 +716,8 @@ TEST_P(ChannelzServerTest, StreamingRPC) {
   ClientContext get_socket_context;
   get_socket_request.set_socket_id(
       get_subchannel_response.subchannel().socket_ref(0).socket_id());
-  EXPECT_TRUE(
-      get_subchannel_response.subchannel().socket_ref(0).name().find("http"));
+  EXPECT_THAT(get_subchannel_response.subchannel().socket_ref(0).name(),
+              ::testing::HasSubstr("http"));
   s = channelz_stub_->GetSocket(&get_socket_context, get_socket_request,
                                 &get_socket_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
@@ -745,7 +745,6 @@ TEST_P(ChannelzServerTest, StreamingRPC) {
 }
 
 TEST_P(ChannelzServerTest, GetServerSocketsTest) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStubs();
   ConfigureProxy(1);
   GetServersRequest get_server_request;
@@ -767,7 +766,8 @@ TEST_P(ChannelzServerTest, GetServerSocketsTest) {
                                        &get_server_sockets_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(get_server_sockets_response.socket_ref_size(), 1);
-  EXPECT_TRUE(get_server_sockets_response.socket_ref(0).name().find("http"));
+  EXPECT_THAT(get_server_sockets_response.socket_ref(0).name(),
+              ::testing::HasSubstr("http"));
   // Get the socket to verify security information.
   GetSocketRequest get_socket_request;
   GetSocketResponse get_socket_response;
@@ -887,8 +887,8 @@ TEST_P(ChannelzServerTest, GetServerListenSocketsTest) {
   GetSocketResponse get_socket_response;
   get_socket_request.set_socket_id(
       get_server_response.server(0).listen_socket(0).socket_id());
-  EXPECT_TRUE(
-      get_server_response.server(0).listen_socket(0).name().find("http"));
+  EXPECT_THAT(get_server_response.server(0).listen_socket(0).name(),
+              ::testing::HasSubstr("http"));
   ClientContext get_socket_context_1;
   s = channelz_stub_->GetSocket(&get_socket_context_1, get_socket_request,
                                 &get_socket_response);
@@ -900,8 +900,8 @@ TEST_P(ChannelzServerTest, GetServerListenSocketsTest) {
     get_socket_request.set_socket_id(
         get_server_response.server(0).listen_socket(1).socket_id());
     ClientContext get_socket_context_2;
-    EXPECT_TRUE(
-        get_server_response.server(0).listen_socket(1).name().find("http"));
+    EXPECT_THAT(get_server_response.server(0).listen_socket(1).name(),
+                ::testing::HasSubstr("http"));
     s = channelz_stub_->GetSocket(&get_socket_context_2, get_socket_request,
                                   &get_socket_response);
     EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();

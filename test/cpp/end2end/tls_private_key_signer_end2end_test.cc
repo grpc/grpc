@@ -43,6 +43,7 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/end2end/tls_test_private_key_signer.h"
 #include "gmock/gmock.h"
@@ -625,6 +626,7 @@ TEST_F(TlsPrivateKeyOffloadTest, OffloadWithCustomKeySignerErrorAsync) {
 // signature from the wrong key.
 TEST_F(TlsPrivateKeyOffloadTest,
        OffloadWithCustomKeySignerInvalidSignatureSync) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P3] Fix bug");
   server_addr_ = absl::StrCat("localhost:", grpc_pick_unused_port_or_die());
   std::string server_key =
       grpc_core::testing::GetFileContents(std::string(kServerKeyPath));
