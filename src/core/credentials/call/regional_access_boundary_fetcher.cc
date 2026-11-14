@@ -245,19 +245,18 @@ void RegionalAccessBoundaryFetcher::Request::OnResponse(
   }
 }
 
-class EmailFetcher::MetadataRequest final
-    : public InternallyRefCounted<MetadataRequest> {
+class MetadataFetcher::Request final : public InternallyRefCounted<Request> {
  public:
   enum class Type { kEmail, kUniverseDomain };
 
-  MetadataRequest(WeakRefCountedPtr<EmailFetcher> fetcher, Type type)
+  Request(WeakRefCountedPtr<MetadataFetcher> fetcher, Type type)
       : fetcher_(std::move(fetcher)), type_(type) {
     memset(&response_, 0, sizeof(response_));
     pollent_ =
         grpc_polling_entity_create_from_pollset_set(grpc_pollset_set_create());
   }
 
-  ~MetadataRequest() override {
+  ~Request() override {
     grpc_http_response_destroy(&response_);
     grpc_pollset_set_destroy(grpc_polling_entity_pollset_set(&pollent_));
   }
@@ -293,7 +292,7 @@ class EmailFetcher::MetadataRequest final
 
  private:
   static void OnResponseWrapper(void* arg, grpc_error_handle error) {
-    RefCountedPtr<MetadataRequest> req(static_cast<MetadataRequest*>(arg));
+    RefCountedPtr<Request> req(static_cast<Request*>(arg));
     // RefCountedPtr adopts the reference from Start().
     req->OnResponse(error);
   }
@@ -330,21 +329,21 @@ class EmailFetcher::MetadataRequest final
   grpc_http_response response_;
   OrphanablePtr<HttpRequest> http_request_;
   grpc_polling_entity pollent_;
-  WeakRefCountedPtr<EmailFetcher> fetcher_;
+  WeakRefCountedPtr<MetadataFetcher> fetcher_;
   const Type type_;
   grpc_closure closure_;
 };
 
-EmailFetcher::EmailFetcher(
+MetadataFetcher::MetadataFetcher(
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
     : event_engine_(
           event_engine == nullptr
               ? grpc_event_engine::experimental::GetDefaultEventEngine()
               : std::move(event_engine)) {}
 
-EmailFetcher::~EmailFetcher() = default;
+MetadataFetcher::~MetadataFetcher() = default;
 
-void EmailFetcher::StartEmailFetch() {
+void MetadataFetcher::StartMetadataFetch() {
   MutexLock lock(mu_);
   if (Timestamp::Now() < next_fetch_earliest_time_) {
     return;
@@ -357,12 +356,12 @@ void EmailFetcher::StartEmailFetch() {
     return;  // Metadata fetch already in progress.
   }
   if (!email_.has_value()) {
-    pending->email_request = MakeOrphanable<MetadataRequest>(
-        WeakRef(), MetadataRequest::Type::kEmail);
+    pending->email_request =
+        MakeOrphanable<Request>(WeakRef(), Request::Type::kEmail);
   }
   if (!is_gdu_.has_value()) {
-    pending->universe_domain_request = MakeOrphanable<MetadataRequest>(
-        WeakRef(), MetadataRequest::Type::kUniverseDomain);
+    pending->universe_domain_request =
+        MakeOrphanable<Request>(WeakRef(), Request::Type::kUniverseDomain);
   }
   if (pending->email_request != nullptr) {
     pending->email_request->Start();
@@ -372,8 +371,8 @@ void EmailFetcher::StartEmailFetch() {
   }
 }
 
-void EmailFetcher::Fetch(absl::string_view token,
-                         ClientMetadata& initial_metadata) {
+void MetadataFetcher::Fetch(absl::string_view token,
+                            ClientMetadata& initial_metadata) {
   MutexLock lock(mu_);
   auto* rab_fetcher =
       std::get_if<RefCountedPtr<RegionalAccessBoundaryFetcher>>(&state_);
@@ -382,12 +381,12 @@ void EmailFetcher::Fetch(absl::string_view token,
   (*rab_fetcher)->Fetch(token, initial_metadata);
 }
 
-void EmailFetcher::Orphaned() {
+void MetadataFetcher::Orphaned() {
   MutexLock lock(mu_);
   state_ = RefCountedPtr<RegionalAccessBoundaryFetcher>(nullptr);
 }
 
-void EmailFetcher::OnEmailFetchComplete(absl::string_view email) {
+void MetadataFetcher::OnEmailFetchComplete(absl::string_view email) {
   MutexLock lock(mu_);
   auto* pending = std::get_if<PendingRequests>(&state_);
   if (pending == nullptr) return;
@@ -405,7 +404,7 @@ void EmailFetcher::OnEmailFetchComplete(absl::string_view email) {
   MaybeFinishMetadataFetch();
 }
 
-void EmailFetcher::OnEmailFetchError(grpc_error_handle error) {
+void MetadataFetcher::OnEmailFetchError(grpc_error_handle error) {
   MutexLock lock(mu_);
   auto* pending = std::get_if<PendingRequests>(&state_);
   if (pending == nullptr) return;
@@ -414,7 +413,7 @@ void EmailFetcher::OnEmailFetchError(grpc_error_handle error) {
   MaybeFinishMetadataFetch();
 }
 
-void EmailFetcher::OnUniverseDomainFetchComplete(
+void MetadataFetcher::OnUniverseDomainFetchComplete(
     absl::string_view universe_domain) {
   MutexLock lock(mu_);
   auto* pending = std::get_if<PendingRequests>(&state_);
@@ -431,7 +430,7 @@ void EmailFetcher::OnUniverseDomainFetchComplete(
   MaybeFinishMetadataFetch();
 }
 
-void EmailFetcher::OnUniverseDomainFetchError(grpc_error_handle error) {
+void MetadataFetcher::OnUniverseDomainFetchError(grpc_error_handle error) {
   MutexLock lock(mu_);
   auto* pending = std::get_if<PendingRequests>(&state_);
   if (pending == nullptr) return;
@@ -440,7 +439,7 @@ void EmailFetcher::OnUniverseDomainFetchError(grpc_error_handle error) {
   MaybeFinishMetadataFetch();
 }
 
-void EmailFetcher::MaybeFinishMetadataFetch() {
+void MetadataFetcher::MaybeFinishMetadataFetch() {
   auto* pending = std::get_if<PendingRequests>(&state_);
   if (pending == nullptr) return;
   if (pending->email_request != nullptr ||
@@ -467,13 +466,13 @@ void EmailFetcher::MaybeFinishMetadataFetch() {
     return;
   }
   LOG_EVERY_N_SEC(INFO, 60) << "Regional Access Boundary fetch skipped due "
-                               "to service account email fetch failure: "
+                               "to metadata fetch failure: "
                             << StatusToString(pending->error);
   pending->error = absl::OkStatus();
   next_fetch_earliest_time_ = Timestamp::Now() + backoff_.NextAttemptDelay();
 }
 
-bool EmailFetcher::IsValidEmail(absl::string_view email) {
+bool MetadataFetcher::IsValidEmail(absl::string_view email) {
   size_t at_pos = email.find('@');
   if (at_pos == absl::string_view::npos || at_pos == 0 ||
       at_pos == email.size() - 1) {

@@ -113,17 +113,17 @@ class RegionalAccessBoundaryFetcher::Request final
   grpc_closure closure_;
 };
 
-class EmailFetcher final : public DualRefCounted<EmailFetcher> {
+class MetadataFetcher final : public DualRefCounted<MetadataFetcher> {
  public:
-  explicit EmailFetcher(
+  explicit MetadataFetcher(
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine = nullptr);
 
-  ~EmailFetcher() override;
+  ~MetadataFetcher() override;
 
   static bool IsValidEmail(absl::string_view email);
 
-  void StartEmailFetch();
+  void StartMetadataFetch();
 
   // Wrapper for RAB fetcher.
   void Fetch(absl::string_view token, ClientMetadata& metadata);
@@ -131,11 +131,11 @@ class EmailFetcher final : public DualRefCounted<EmailFetcher> {
   void Orphaned() override;
 
  private:
-  class MetadataRequest;
+  class Request;
 
   struct PendingRequests {
-    OrphanablePtr<MetadataRequest> email_request;
-    OrphanablePtr<MetadataRequest> universe_domain_request;
+    OrphanablePtr<Request> email_request;
+    OrphanablePtr<Request> universe_domain_request;
     grpc_error_handle error;
   };
 

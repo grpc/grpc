@@ -628,7 +628,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CacheSoftExpirationTriggersRefresh) {
   EXPECT_EQ(cached_encoded_locations(), "us-west1");
 }
 
-class EmailFetcherTest : public ::testing::Test {
+class MetadataFetcherTest : public ::testing::Test {
  protected:
   void SetUp() override {
     fuzzing_event_engine_ =
@@ -637,7 +637,7 @@ class EmailFetcherTest : public ::testing::Test {
             fuzzing_event_engine::Actions());
     grpc_timer_manager_set_start_threaded(false);
     grpc_init();
-    email_fetcher_ = MakeRefCounted<EmailFetcher>(fuzzing_event_engine_);
+    metadata_fetcher_ = MakeRefCounted<MetadataFetcher>(fuzzing_event_engine_);
     arena_ = SimpleArenaAllocator()->MakeArena();
     metadata_ = arena_->MakePooled<ClientMetadata>();
     HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -647,7 +647,7 @@ class EmailFetcherTest : public ::testing::Test {
     HttpRequest::SetOverride(nullptr, nullptr, nullptr);
     {
       ExecCtx exec_ctx;
-      email_fetcher_.reset();
+      metadata_fetcher_.reset();
     }
     fuzzing_event_engine_->FuzzingDone();
     fuzzing_event_engine_->TickUntilIdle();
@@ -656,7 +656,7 @@ class EmailFetcherTest : public ::testing::Test {
     grpc_shutdown();
   }
 
-  RefCountedPtr<EmailFetcher> email_fetcher_;
+  RefCountedPtr<MetadataFetcher> metadata_fetcher_;
   RefCountedPtr<Arena> arena_;
   ClientMetadataHandle metadata_;
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
@@ -683,13 +683,13 @@ int httpcli_get_email_success(const grpc_http_request* /*request*/,
   return 1;
 }
 
-TEST_F(EmailFetcherTest, FetchesEmailAndThenRab) {
+TEST_F(MetadataFetcherTest, FetchesEmailAndThenRab) {
   ExecCtx exec_ctx;
   HttpRequest::SetOverride(httpcli_get_email_success, nullptr, nullptr);
-  // Start email fetch
-  email_fetcher_->StartEmailFetch();
-  // Fetch should trigger RAB fetch if email fetch succeeded
-  // We need to wait for email fetch to complete.
+  // Start metadata fetch
+  metadata_fetcher_->StartMetadataFetch();
+  // Fetch should trigger RAB fetch if metadata fetch succeeded
+  // We need to wait for metadata fetch to complete.
   // Since we use ExecCtx::Run in mock, flushing ExecCtx should handle it.
   ExecCtx::Get()->Flush();
   // Now call Fetch. It should allow RAB fetch to proceed.
@@ -697,7 +697,7 @@ TEST_F(EmailFetcherTest, FetchesEmailAndThenRab) {
                     [](absl::string_view, const Slice&) { abort(); });
   metadata_->Append(":authority", Slice::FromStaticString("foo.googleapis.com"),
                     [](absl::string_view, const Slice&) { abort(); });
-  email_fetcher_->Fetch("token", *metadata_);
+  metadata_fetcher_->Fetch("token", *metadata_);
   // RAB fetch should happen (async).
   ExecCtx::Get()->Flush();
   // First fetch won't have metadata (cache miss).
@@ -711,7 +711,7 @@ TEST_F(EmailFetcherTest, FetchesEmailAndThenRab) {
                     [](absl::string_view, const Slice&) { abort(); });
   metadata_->Append(":authority", Slice::FromStaticString("foo.googleapis.com"),
                     [](absl::string_view, const Slice&) { abort(); });
-  email_fetcher_->Fetch("token", *metadata_);
+  metadata_fetcher_->Fetch("token", *metadata_);
   std::string buffer2;
   std::optional<absl::string_view> value2 =
       metadata_->GetStringValue("x-allowed-locations", &buffer2);
@@ -727,14 +727,14 @@ int httpcli_get_email_failure(const grpc_http_request* /*request*/,
   return 1;
 }
 
-TEST_F(EmailFetcherTest, EmailFetchFailureSkipsRab) {
+TEST_F(MetadataFetcherTest, EmailFetchFailureSkipsRab) {
   ExecCtx exec_ctx;
   HttpRequest::SetOverride(httpcli_get_email_failure, nullptr, nullptr);
-  email_fetcher_->StartEmailFetch();
+  metadata_fetcher_->StartMetadataFetch();
   ExecCtx::Get()->Flush();
   metadata_->Append("authorization", Slice::FromStaticString("Bearer token"),
                     [](absl::string_view, const Slice&) { abort(); });
-  email_fetcher_->Fetch("token", *metadata_);
+  metadata_fetcher_->Fetch("token", *metadata_);
   ExecCtx::Get()->Flush();
   std::string buffer;
   std::optional<absl::string_view> value =
@@ -756,34 +756,34 @@ int httpcli_get_email_failure_counted(const grpc_http_request* /*request*/,
   return 1;
 }
 
-TEST_F(EmailFetcherTest, EmailFetchBackoffRespected) {
+TEST_F(MetadataFetcherTest, EmailFetchBackoffRespected) {
   ExecCtx exec_ctx;
   g_mock_get_count = 0;
   HttpRequest::SetOverride(httpcli_get_email_failure_counted, nullptr, nullptr);
   // 1. First failure triggers backoff.
-  email_fetcher_->StartEmailFetch();
+  metadata_fetcher_->StartMetadataFetch();
   ExecCtx::Get()->Flush();
   EXPECT_EQ(g_mock_get_count, 1);
   // 2. Immediate second attempt should be skipped due to backoff.
-  email_fetcher_->StartEmailFetch();
+  metadata_fetcher_->StartMetadataFetch();
   ExecCtx::Get()->Flush();
   EXPECT_EQ(g_mock_get_count, 1);
   // 3. Advance time past initial backoff (1s with jitters, say 2s to be safe).
   fuzzing_event_engine_->TickForDuration(Duration::Seconds(20));
   // 4. Retry should proceed.
-  email_fetcher_->StartEmailFetch();
+  metadata_fetcher_->StartMetadataFetch();
   ExecCtx::Get()->Flush();
   EXPECT_EQ(g_mock_get_count, 2);
 }
 
-TEST_F(EmailFetcherTest, EarlyDestructionDoesNotCrash) {
+TEST_F(MetadataFetcherTest, EarlyDestructionDoesNotCrash) {
   ExecCtx exec_ctx;
   g_stalled_on_done_list.clear();
   HttpRequest::SetOverride(httpcli_get_stalled, nullptr, nullptr);
-  email_fetcher_->StartEmailFetch();
+  metadata_fetcher_->StartMetadataFetch();
   // Do NOT flush ExecCtx. We want the request to be in flight.
   // Now destroy the fetcher.
-  email_fetcher_.reset();
+  metadata_fetcher_.reset();
   // Clean up the stalled requests to avoid leaks and timeouts in shutdown.
   for (grpc_closure* on_done : g_stalled_on_done_list) {
     ExecCtx::Run(DEBUG_LOCATION, on_done, absl::CancelledError("orphaned"));
@@ -807,16 +807,16 @@ int httpcli_get_spiffe_id(const grpc_http_request* /*request*/, const URI& uri,
   return 1;
 }
 
-TEST_F(EmailFetcherTest, InvalidEmailSkipsRab) {
+TEST_F(MetadataFetcherTest, InvalidEmailSkipsRab) {
   ExecCtx exec_ctx;
   HttpRequest::SetOverride(httpcli_get_spiffe_id, nullptr, nullptr);
-  email_fetcher_->StartEmailFetch();
+  metadata_fetcher_->StartMetadataFetch();
   ExecCtx::Get()->Flush();
   metadata_->Append("authorization", Slice::FromStaticString("Bearer token"),
                     [](absl::string_view, const Slice&) { abort(); });
   metadata_->Append(":authority", Slice::FromStaticString("foo.googleapis.com"),
                     [](absl::string_view, const Slice&) { abort(); });
-  email_fetcher_->Fetch("token", *metadata_);
+  metadata_fetcher_->Fetch("token", *metadata_);
   ExecCtx::Get()->Flush();
   std::string buffer;
   std::optional<absl::string_view> value =
@@ -844,30 +844,29 @@ int httpcli_get_email_with_whitespace(const grpc_http_request* /*request*/,
   return 1;
 }
 
-TEST_F(EmailFetcherTest, EmailWithWhitespaceTrimmedAndSucceeds) {
+TEST_F(MetadataFetcherTest, EmailWithWhitespaceTrimmedAndSucceeds) {
   ExecCtx exec_ctx;
   HttpRequest::SetOverride(httpcli_get_email_with_whitespace, nullptr, nullptr);
-  email_fetcher_->StartEmailFetch();
+  metadata_fetcher_->StartMetadataFetch();
   ExecCtx::Get()->Flush();
   metadata_->Append("authorization", Slice::FromStaticString("Bearer token"),
                     [](absl::string_view, const Slice&) { abort(); });
   metadata_->Append(":authority", Slice::FromStaticString("foo.googleapis.com"),
                     [](absl::string_view, const Slice&) { abort(); });
-  email_fetcher_->Fetch("token", *metadata_);
+  metadata_fetcher_->Fetch("token", *metadata_);
   ExecCtx::Get()->Flush();
   // Cache miss on first fetch.
   std::string buffer;
   std::optional<absl::string_view> value =
       metadata_->GetStringValue("x-allowed-locations", &buffer);
   EXPECT_FALSE(value.has_value());
-
   // Verify cache is populated by fetching again (means the trimmed URL worked).
   metadata_ = arena_->MakePooled<ClientMetadata>();
   metadata_->Append("authorization", Slice::FromStaticString("Bearer token"),
                     [](absl::string_view, const Slice&) { abort(); });
   metadata_->Append(":authority", Slice::FromStaticString("foo.googleapis.com"),
                     [](absl::string_view, const Slice&) { abort(); });
-  email_fetcher_->Fetch("token", *metadata_);
+  metadata_fetcher_->Fetch("token", *metadata_);
   std::string buffer2;
   std::optional<absl::string_view> value2 =
       metadata_->GetStringValue("x-allowed-locations", &buffer2);
@@ -893,31 +892,33 @@ int httpcli_get_non_gdu_universe_domain(const grpc_http_request* /*request*/,
   return 1;
 }
 
-TEST_F(EmailFetcherTest, NonGduUniverseDomainFromMdsSkipsRab) {
+TEST_F(MetadataFetcherTest, NonGduUniverseDomainFromMdsSkipsRab) {
   ExecCtx exec_ctx;
   g_mock_get_count = 0;
   HttpRequest::SetOverride(httpcli_get_non_gdu_universe_domain, nullptr,
                            nullptr);
-  email_fetcher_->StartEmailFetch();
+  metadata_fetcher_->StartMetadataFetch();
   ExecCtx::Get()->Flush();
   EXPECT_EQ(g_mock_get_count, 2);
   metadata_->Append("authorization", Slice::FromStaticString("Bearer token"),
                     [](absl::string_view, const Slice&) { abort(); });
   metadata_->Append(":authority", Slice::FromStaticString("foo.googleapis.com"),
                     [](absl::string_view, const Slice&) { abort(); });
-  email_fetcher_->Fetch("token", *metadata_);
+  metadata_fetcher_->Fetch("token", *metadata_);
   ExecCtx::Get()->Flush();
   EXPECT_EQ(g_mock_get_count, 2);
   std::string buffer;
   std::optional<absl::string_view> value =
       metadata_->GetStringValue("x-allowed-locations", &buffer);
   EXPECT_FALSE(value.has_value());
-  // Subsequent StartEmailFetch should not retry MDS for terminal non-GDU.
+  // Subsequent StartMetadataFetch should not retry MDS for terminal non-GDU.
   fuzzing_event_engine_->TickForDuration(Duration::Minutes(5));
-  email_fetcher_->StartEmailFetch();
+  metadata_fetcher_->StartMetadataFetch();
   ExecCtx::Get()->Flush();
   EXPECT_EQ(g_mock_get_count, 2);
 }
+
+int g_mock_email_get_count = 0;
 
 int httpcli_get_universe_domain_500_then_gdu(
     const grpc_http_request* /*request*/, const URI& uri,
@@ -925,6 +926,7 @@ int httpcli_get_universe_domain_500_then_gdu(
     grpc_http_response* response) {
   if (uri.path() ==
       "/computeMetadata/v1/instance/service-accounts/default/email") {
+    g_mock_email_get_count++;
     *response = http_response(200, "foo@bar.com");
   } else if (uri.path() == "/computeMetadata/v1/universe/universe-domain") {
     g_mock_get_count++;
@@ -942,35 +944,83 @@ int httpcli_get_universe_domain_500_then_gdu(
   return 1;
 }
 
-TEST_F(EmailFetcherTest, UniverseDomainFetchErrorRetriesWithBackoff) {
+TEST_F(MetadataFetcherTest, UniverseDomainFetchErrorRetriesWithBackoff) {
   ExecCtx exec_ctx;
   g_mock_get_count = 0;
+  g_mock_email_get_count = 0;
   HttpRequest::SetOverride(httpcli_get_universe_domain_500_then_gdu, nullptr,
                            nullptr);
-  email_fetcher_->StartEmailFetch();
+  metadata_fetcher_->StartMetadataFetch();
   ExecCtx::Get()->Flush();
   EXPECT_EQ(g_mock_get_count, 1);
+  EXPECT_EQ(g_mock_email_get_count, 1);
   // Immediate retry skipped due to backoff.
-  email_fetcher_->StartEmailFetch();
+  metadata_fetcher_->StartMetadataFetch();
   ExecCtx::Get()->Flush();
   EXPECT_EQ(g_mock_get_count, 1);
-  // Advance past backoff and retry; should succeed and enable RAB.
+  EXPECT_EQ(g_mock_email_get_count, 1);
+  // Advance past backoff and retry; should succeed and enable RAB without
+  // re-fetching email.
   fuzzing_event_engine_->TickForDuration(Duration::Seconds(20));
-  email_fetcher_->StartEmailFetch();
+  metadata_fetcher_->StartMetadataFetch();
   ExecCtx::Get()->Flush();
   EXPECT_EQ(g_mock_get_count, 2);
+  EXPECT_EQ(g_mock_email_get_count, 1);
   metadata_->Append("authorization", Slice::FromStaticString("Bearer token"),
                     [](absl::string_view, const Slice&) { abort(); });
   metadata_->Append(":authority", Slice::FromStaticString("foo.googleapis.com"),
                     [](absl::string_view, const Slice&) { abort(); });
-  email_fetcher_->Fetch("token", *metadata_);
+  metadata_fetcher_->Fetch("token", *metadata_);
   ExecCtx::Get()->Flush();
   metadata_ = arena_->MakePooled<ClientMetadata>();
   metadata_->Append("authorization", Slice::FromStaticString("Bearer token"),
                     [](absl::string_view, const Slice&) { abort(); });
   metadata_->Append(":authority", Slice::FromStaticString("foo.googleapis.com"),
                     [](absl::string_view, const Slice&) { abort(); });
-  email_fetcher_->Fetch("token", *metadata_);
+  metadata_fetcher_->Fetch("token", *metadata_);
+  std::string buffer;
+  std::optional<absl::string_view> value =
+      metadata_->GetStringValue("x-allowed-locations", &buffer);
+  EXPECT_THAT(value, ::testing::Optional(absl::string_view("us-west1")));
+}
+
+int httpcli_get_universe_domain_not_found(const grpc_http_request* /*request*/,
+                                          const URI& uri,
+                                          Timestamp /*deadline*/,
+                                          grpc_closure* on_done,
+                                          grpc_http_response* response) {
+  if (uri.path() ==
+      "/computeMetadata/v1/instance/service-accounts/default/email") {
+    *response = http_response(200, "foo@bar.com");
+  } else if (uri.path() == "/computeMetadata/v1/universe/universe-domain") {
+    *response = http_response(404, "Not Found");
+  } else {
+    *response = http_response(
+        200,
+        "{\"encodedLocations\": \"us-west1\", \"locations\": [\"us-west1\"]}");
+  }
+  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
+TEST_F(MetadataFetcherTest, UniverseDomainNotFoundTreatedAsGdu) {
+  ExecCtx exec_ctx;
+  HttpRequest::SetOverride(httpcli_get_universe_domain_not_found, nullptr,
+                           nullptr);
+  metadata_fetcher_->StartMetadataFetch();
+  ExecCtx::Get()->Flush();
+  metadata_->Append("authorization", Slice::FromStaticString("Bearer token"),
+                    [](absl::string_view, const Slice&) { abort(); });
+  metadata_->Append(":authority", Slice::FromStaticString("foo.googleapis.com"),
+                    [](absl::string_view, const Slice&) { abort(); });
+  metadata_fetcher_->Fetch("token", *metadata_);
+  ExecCtx::Get()->Flush();
+  metadata_ = arena_->MakePooled<ClientMetadata>();
+  metadata_->Append("authorization", Slice::FromStaticString("Bearer token"),
+                    [](absl::string_view, const Slice&) { abort(); });
+  metadata_->Append(":authority", Slice::FromStaticString("foo.googleapis.com"),
+                    [](absl::string_view, const Slice&) { abort(); });
+  metadata_fetcher_->Fetch("token", *metadata_);
   std::string buffer;
   std::optional<absl::string_view> value =
       metadata_->GetStringValue("x-allowed-locations", &buffer);
@@ -978,17 +1028,17 @@ TEST_F(EmailFetcherTest, UniverseDomainFetchErrorRetriesWithBackoff) {
 }
 
 TEST(IsValidEmailTest, Valid) {
-  EXPECT_TRUE(EmailFetcher::IsValidEmail("foo@bar.com"));
-  EXPECT_TRUE(EmailFetcher::IsValidEmail("foo@bar.com."));
-  EXPECT_TRUE(EmailFetcher::IsValidEmail("foo@.bar.com"));
-  EXPECT_TRUE(EmailFetcher::IsValidEmail("foo@bar..com"));
+  EXPECT_TRUE(MetadataFetcher::IsValidEmail("foo@bar.com"));
+  EXPECT_TRUE(MetadataFetcher::IsValidEmail("foo@bar.com."));
+  EXPECT_TRUE(MetadataFetcher::IsValidEmail("foo@.bar.com"));
+  EXPECT_TRUE(MetadataFetcher::IsValidEmail("foo@bar..com"));
 }
 
 TEST(IsValidEmailTest, Invalid) {
-  EXPECT_FALSE(EmailFetcher::IsValidEmail("foo@bar"));
-  EXPECT_FALSE(EmailFetcher::IsValidEmail("foo@bar@baz.com"));
-  EXPECT_FALSE(EmailFetcher::IsValidEmail("@bar.com"));
-  EXPECT_FALSE(EmailFetcher::IsValidEmail("foo@bar."));
+  EXPECT_FALSE(MetadataFetcher::IsValidEmail("foo@bar"));
+  EXPECT_FALSE(MetadataFetcher::IsValidEmail("foo@bar@baz.com"));
+  EXPECT_FALSE(MetadataFetcher::IsValidEmail("@bar.com"));
+  EXPECT_FALSE(MetadataFetcher::IsValidEmail("foo@bar."));
 }
 
 }  // namespace
