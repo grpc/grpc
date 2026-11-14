@@ -906,9 +906,13 @@
       )
     endif()
     % endif
-    ## upb from protobuf 33.x requires this flag to compile. See https://github.com/grpc/grpc/issues/41951
+    ## upb from protobuf 33.x and cel-c require this flag to compile. See https://github.com/grpc/grpc/issues/41951
     % if 'upb_' in lib.name:
     target_compile_options(${lib.name} PRIVATE
+      /Zc:preprocessor
+    )
+    % elif any('third_party/cel-c/' in src for src in lib.src):
+    target_compile_options(${lib.name} PUBLIC
       /Zc:preprocessor
     )
     % endif
@@ -1004,8 +1008,9 @@
   if set(grpcxx_libs) & set(tgt.transitive_deps):
     dll_annotations.append("GRPCXX_DLL_IMPORTS")
   %>
-  % if dll_annotations:
+  % if dll_annotations or any('third_party/cel-c/' in src for src in tgt.src):
   if(WIN32 AND MSVC)
+    % if dll_annotations:
     if(BUILD_SHARED_LIBS)
       target_compile_definitions(${tgt.name}
       PRIVATE
@@ -1014,6 +1019,12 @@
     % endfor
       )
     endif()
+    % endif
+    % if any('third_party/cel-c/' in src for src in tgt.src):
+    target_compile_options(${tgt.name} PRIVATE
+      /Zc:preprocessor
+    )
+    % endif
   endif()
   % endif
   target_compile_features(${tgt.name} PUBLIC cxx_std_17)

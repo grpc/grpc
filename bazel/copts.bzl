@@ -66,6 +66,10 @@ GRPC_LLVM_WARNING_FLAGS = [
     "-Wno-unused-result",
     "-Wno-unused-variable",
     "-Wno-unused-but-set-variable",
+
+    # cel-c offenses
+    "-Wno-extern-c-compat",
+    "-Wno-nullability-completeness",
 ]
 
 GRPC_LLVM_WINDOWS_WARNING_FLAGS = GRPC_LLVM_WARNING_FLAGS + [
@@ -106,6 +110,10 @@ GRPC_LLVM_WINDOWS_WARNING_FLAGS = GRPC_LLVM_WARNING_FLAGS + [
 
     # benchmark offenses
     "-Wno-shift-sign-overflow",
+
+    # cel-c offenses
+    "-Wno-nullability-extension",
+    "-Wno-nullable-to-nonnull-conversion",
 
     # Evidently nodiscard is inappropriately pinned as a C++17 feature
     "-Wno-c++17-attribute-extensions",
@@ -173,5 +181,9 @@ GRPC_LLVM_WINDOWS_WARNING_FLAGS = GRPC_LLVM_WARNING_FLAGS + [
 GRPC_DEFAULT_COPTS = select({
     "//:use_strict_warning": GRPC_LLVM_WARNING_FLAGS + ["-DUSE_STRICT_WARNING=1"],
     "//:use_strict_warning_windows": GRPC_LLVM_WINDOWS_WARNING_FLAGS + ["-DUSE_STRICT_WARNING=1"],
+    "//conditions:default": [],
+}) + select({
+    # cel-c headers require the standards-conforming MSVC preprocessor.
+    "@rules_cc//cc/compiler:msvc-cl": ["/Zc:preprocessor"],
     "//conditions:default": [],
 })
