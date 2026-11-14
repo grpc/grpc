@@ -8844,7 +8844,6 @@ grpc_cc_library(
     hdrs = [
         "ext/filters/load_reporting/registered_opencensus_objects.h",
         "ext/filters/load_reporting/server_load_reporting_filter.h",
-        "//:src/cpp/server/load_reporter/constants.h",
     ],
     external_deps = [
         "absl/container:inlined_vector",
@@ -8879,6 +8878,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_public_hdrs",
         "//:grpc_security_base",
+        "//:lb_load_reporter_constants",
         "//:parse_address",
         "//:promise",
         "//:transport_auth_context",
