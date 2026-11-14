@@ -154,7 +154,6 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/flags/usage_config.cc',
     'third_party/abseil-cpp/absl/hash/internal/city.cc',
     'third_party/abseil-cpp/absl/hash/internal/hash.cc',
-    'third_party/abseil-cpp/absl/log/die_if_null.cc',
     'third_party/abseil-cpp/absl/log/globals.cc',
     'third_party/abseil-cpp/absl/log/initialize.cc',
     'third_party/abseil-cpp/absl/log/internal/check_op.cc',
