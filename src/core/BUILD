@@ -367,11 +367,14 @@ grpc_cc_library(
         "server/server_call_tracer_filter.h",
     ],
     external_deps = [
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
     ],
     visibility = ["//bazel:alt_grpc_base_legacy"],
     deps = [
+        "arena",
         "arena_promise",
         "call_finalization",
         "cancel_callback",
@@ -382,11 +385,15 @@ grpc_cc_library(
         "experiments",
         "latent_see",
         "map",
+        "metadata_batch",
         "pipe",
+        "slice",
         "//:call_tracer",
         "//:config",
+        "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",
+        "//:grpc_public_hdrs",
     ],
 )
 

@@ -35,6 +35,14 @@ def clear_server_call_tracer_factory() -> None:
   _register_server_call_tracer_factory(NULL)
 
 
+def register_server_call_hook(object capsule) -> None:
+  """Registers the hook in a "grpc_server_call_hook" PyCapsule, or clears it."""
+  cdef void* hook = NULL
+  if capsule is not None:
+    hook = cpython.PyCapsule_GetPointer(capsule, "grpc_server_call_hook")
+  grpc_server_call_hook_register(<const grpc_server_call_hook*>hook)
+
+
 def maybe_save_server_trace_context(RequestCallEvent event) -> None:
   cdef ServerCallTracerInterface* server_call_tracer
   with _observability.get_plugin() as plugin:
