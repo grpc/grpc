@@ -171,8 +171,14 @@ void Http2ServerTransport::SpawnAddChannelzData(RefCountedPtr<Party> party,
                 .Set("flow_control",
                      self->flow_control_.stats().ChannelzProperties())
                 .Set("tarpit", self->tarpit_manager_.ChannelzProperties()));
-        self->transport_party_->ExportToChannelz("Http2ServerTransport Party",
-                                                 sink);
+        if (GPR_LIKELY(self->transport_party_ != nullptr)) {
+          self->transport_party_->ExportToChannelz("Http2ServerTransport Party",
+                                                   std::move(sink));
+        } else {
+          GRPC_HTTP2_SERVER_DLOG
+              << "Http2ServerTransport::SpawnAddChannelzData: Transport party "
+                 "is closed.";
+        }
         GRPC_HTTP2_SERVER_DLOG
             << "Http2ServerTransport::SpawnAddChannelzData End";
         return Empty{};
