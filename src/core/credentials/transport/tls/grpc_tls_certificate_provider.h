@@ -191,6 +191,7 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   // Users should verify the status retuned to confirm that the update was
   // successful.
   absl::Status UpdateRoot(std::shared_ptr<tsi::RootCertInfo> root_certificates);
+  absl::Status UpdateSpiffeBundleMap(absl::string_view spiffe_bundle_map);
   absl::Status UpdateIdentityKeyCertPair(
       const KeyCertPairsOrSelector& key_cert_pairs_or_selector);
 
