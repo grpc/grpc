@@ -35,7 +35,10 @@
 #define TSI_TEST_SMALL_SERVER_MAX_OUTPUT_PROTECTED_FRAME_SIZE 43
 #define TSI_TEST_DEFAULT_BUFFER_SIZE 4096
 #define TSI_TEST_DEFAULT_PROTECTED_BUFFER_SIZE 16384
-#define TSI_TEST_DEFAULT_CHANNEL_SIZE 32768
+// Sized to fit large post-quantum handshakes (e.g. ML-DSA-87 certificate
+// chains, TLS 1.3 NewSessionTicket messages embedding the client chain, and
+// TSI_TEST_BIG_MESSAGE_SIZE round-trip frames) in the simulated channel buffer.
+#define TSI_TEST_DEFAULT_CHANNEL_SIZE 131072
 #define TSI_TEST_BIG_MESSAGE_SIZE 17000
 #define TSI_TEST_SMALL_MESSAGE_SIZE 10
 #define TSI_TEST_NUM_OF_ARGUMENTS 7
