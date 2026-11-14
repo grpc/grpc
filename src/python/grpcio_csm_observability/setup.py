@@ -24,6 +24,15 @@ sys.path.insert(0, os.path.abspath("."))
 import grpc_version
 import python_version
 
+CLASSIFIERS = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+] + [
+    f"Programming Language :: Python :: {x}"
+    for x in python_version.SUPPORTED_PYTHON_VERSIONS
+]
+
 INSTALL_REQUIRES = (
     "opentelemetry-sdk>=1.25.0",
     "opentelemetry-resourcedetector-gcp>=1.6.0a0",
@@ -33,6 +42,7 @@ INSTALL_REQUIRES = (
 
 if __name__ == "__main__":
     setuptools.setup(
+        classifiers=CLASSIFIERS,
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=INSTALL_REQUIRES,
     )
