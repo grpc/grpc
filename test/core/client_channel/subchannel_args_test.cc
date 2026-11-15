@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+#include <grpc/channel_factory.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
@@ -75,6 +76,14 @@ TEST(MakeSubchannelArgs, StripsOutNoSubchannelArgs) {
       "foo.example.com");
   EXPECT_EQ(args.GetString(GRPC_ARG_NO_SUBCHANNEL_PREFIX "foo"), std::nullopt);
   EXPECT_EQ(args.GetString(GRPC_ARG_NO_SUBCHANNEL_PREFIX "bar"), std::nullopt);
+}
+
+TEST(MakeSubchannelArgs, StripsOutChannelFactory) {
+  ChannelArgs args = Subchannel::MakeSubchannelArgs(
+      ChannelArgs().Set(GRPC_ARG_CHANNEL_FACTORY, "foo"),
+      ChannelArgs().Set(GRPC_ARG_CHANNEL_FACTORY, "bar"), nullptr,
+      "foo.example.com");
+  EXPECT_FALSE(args.Contains(GRPC_ARG_CHANNEL_FACTORY));
 }
 
 }  // namespace

@@ -63,7 +63,6 @@
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_health_status.h"
-#include "src/core/xds/grpc/xds_transport_factory_grpc.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -508,9 +507,7 @@ ChannelArgs CdsLb::UpdateChannelFactory(
     // The xDS resolver always passes the XdsClient to the CDS policy.
     auto* xds_client = args.GetObject<GrpcXdsClient>();
     GRPC_CHECK_NE(xds_client, nullptr);
-    channel_factory_ =
-        xds_client->CreateChannelFactory(XdsTransportFactoryWrapper::TargetMap(
-            grpc_services.begin(), grpc_services.end()));
+    channel_factory_ = xds_client->CreateChannelFactory(grpc_services);
     GRPC_TRACE_LOG(cds_lb, INFO)
         << "[cdslb " << this << "] created channel factory "
         << channel_factory_.get() << " for " << grpc_services.size()

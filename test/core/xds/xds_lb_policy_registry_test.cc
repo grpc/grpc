@@ -583,7 +583,6 @@ class AutoshardingTest : public ::testing::Test {
     return result;
   }
 
-  // Returns an Autosharding policy whose GrpcService has insecure creds.
   // Returns an Autosharding config whose GrpcService has insecure creds.
   static Autosharding MakeAutosharding() {
     Autosharding autosharding;

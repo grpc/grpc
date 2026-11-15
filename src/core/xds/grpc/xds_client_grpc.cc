@@ -391,8 +391,7 @@ grpc_pollset_set* GrpcXdsClient::interested_parties() const {
 }
 
 std::shared_ptr<experimental::ChannelFactory>
-GrpcXdsClient::CreateChannelFactory(
-    XdsTransportFactoryWrapper::TargetMap targets) {
+GrpcXdsClient::CreateChannelFactory(XdsGrpcServiceMap targets) {
   return std::make_shared<XdsTransportFactoryWrapper>(
       DownCast<GrpcXdsTransportFactory*>(transport_factory())
           ->RefAsSubclass<GrpcXdsTransportFactory>(),

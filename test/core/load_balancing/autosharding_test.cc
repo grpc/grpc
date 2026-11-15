@@ -1010,25 +1010,6 @@ TEST_F(AutoShardingTest, EndpointReorderAndRemovalRebuildSliceMap) {
       {}, MakeMetadata("a"));
 }
 
-TEST_F(AutoShardingTest, ChildPoliciesDoNotGetChannelFactory) {
-  ChannelArgs args = MakeChannelArgs().Set("grpc.test.arg", "value");
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
-                        lb_policy()),
-            absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                              MakeMetadata("some_key"));
-  SendAssignment({{"", {0}}}, {EndpointName(kAddresses[0])});
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                              MakeMetadata("a"));
-  // The subchannel gets the other channel args, but not the channel factory,
-  // which is only for the autosharding client.
-  SubchannelState* subchannel = FindSubchannel(
-      kAddresses[0], ChannelArgs().Set("grpc.test.arg", "value"));
-  ASSERT_NE(subchannel, nullptr);
-  EXPECT_TRUE(subchannel->ConnectionRequested());
-  EXPECT_EQ(FindSubchannel(kAddresses[0], args), nullptr);
-}
-
 TEST_F(AutoShardingTest, SynchronousChildStateUpdateDuringResolverUpdate) {
   ChannelArgs args = MakeChannelArgs();
   constexpr absl::string_view kNewAddress = "ipv4:127.0.0.1:443";
@@ -1067,7 +1048,8 @@ TEST_F(AutoShardingTest, SynchronousChildStateUpdateDuringResolverUpdate) {
       ApplyUpdate(BuildUpdate(kNewEndpoints, ConfigBuilder().Build(), args),
                   lb_policy()),
       absl::OkStatus());
-  // host-a reports TRANSIENT_FAILURE, and requests re-resolution.  One of two
+  // host-a reports TRANSIENT_FAILURE, and requests re-resolution.  The policy
+  // reports a new state only once, when UpdateLocked() finishes.  One of two
   // endpoints is in TRANSIENT_FAILURE, so the policy reports CONNECTING and
   // connects to host-b.  The key still goes only to host-a, so the pick fails.
   ExpectReresolutionRequest();
@@ -1081,14 +1063,7 @@ TEST_F(AutoShardingTest, SynchronousChildStateUpdateDuringResolverUpdate) {
   SubchannelState* subchannel_b = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel_b, nullptr);
   EXPECT_TRUE(subchannel_b->ConnectionRequested());
-  // UpdateLocked() reports the same state at the end.
-  picker = ExpectState(GRPC_CHANNEL_CONNECTING);
-  ExpectPickFail(
-      picker.get(),
-      [](const absl::Status& status) {
-        EXPECT_EQ(status, absl::UnavailableError("empty address list"));
-      },
-      {}, MakeMetadata("a"));
+  ExpectQueueEmpty();
 }
 
 TEST_F(AutoShardingTest, OldPickerDoesNotConnectToRemovedEndpoint) {
@@ -1633,7 +1608,7 @@ TEST_F(AutoShardingTest, ProactiveConnectionAttemptChoosesRandomIdleEndpoint) {
     // Use a different channel factory key and subchannel args for each
     // policy, so that each policy has its own stream and subchannels.
     const std::string channel_factory_key = absl::StrCat("key", i);
-    // The policy removes the channel factory from the args of its children.
+    // Subchannel keys do not include the channel factory.
     const ChannelArgs child_args =
         ChannelArgs().Set("grpc.test.policy_index", i);
     ChannelArgs args =
@@ -1919,9 +1894,9 @@ TEST_F(AutoShardingTest, ExitIdleWhileInitialConnectTimerRunsConnectsAtOnce) {
                   lb_policy()),
       absl::OkStatus());
   ExpectState(GRPC_CHANNEL_CONNECTING);
-  // The request restarted the timer, so it does not fire 500ms after the
-  // assignment, but 500ms after the request.
-  IncrementTimeBy(Duration::Milliseconds(499));
+  // The request left the timer running (gRFC A119), so it fires 500ms after
+  // the assignment and tries the other endpoint.
+  IncrementTimeBy(Duration::Milliseconds(199));
   EXPECT_FALSE(subchannels[other]->ConnectionRequested());
   IncrementTimeBy(Duration::Milliseconds(1));
   EXPECT_TRUE(subchannels[other]->ConnectionRequested());

@@ -29,7 +29,7 @@
 #include "src/core/util/useful.h"
 #include "src/core/xds/grpc/certificate_provider_store.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/core/xds/grpc/xds_transport_factory_grpc.h"
+#include "src/core/xds/grpc/xds_server_grpc_interface.h"
 #include "src/core/xds/xds_client/lrs_client.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_transport_factory.h"
@@ -88,7 +88,7 @@ class GrpcXdsClient final : public XdsClient {
   // (gRFC A119).  It gets transports from this client's transport factory,
   // so a channel is shared while references to it exist.
   std::shared_ptr<experimental::ChannelFactory> CreateChannelFactory(
-      XdsTransportFactoryWrapper::TargetMap targets);
+      XdsGrpcServiceMap targets);
 
   CertificateProviderStore& certificate_provider_store() const {
     return *certificate_provider_store_;

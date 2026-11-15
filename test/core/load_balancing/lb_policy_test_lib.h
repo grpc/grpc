@@ -17,6 +17,7 @@
 #ifndef GRPC_TEST_CORE_LOAD_BALANCING_LB_POLICY_TEST_LIB_H
 #define GRPC_TEST_CORE_LOAD_BALANCING_LB_POLICY_TEST_LIB_H
 
+#include <grpc/channel_factory.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -530,8 +531,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       if (test_->subchannel_creation_failures_.count(*address_uri) > 0) {
         return nullptr;
       }
+      // Same as Subchannel::MakeSubchannelArgs().
       SubchannelKey key(
-          address, args.RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX));
+          address, args.Remove(GRPC_ARG_CHANNEL_FACTORY)
+                       .RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX));
       auto it = test_->subchannel_pool_.find(key);
       if (it == test_->subchannel_pool_.end()) {
         it = test_->subchannel_pool_

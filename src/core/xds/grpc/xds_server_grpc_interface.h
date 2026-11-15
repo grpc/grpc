@@ -17,6 +17,7 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_SERVER_GRPC_INTERFACE_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_SERVER_GRPC_INTERFACE_H
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -45,10 +46,11 @@ class GrpcXdsServerInterface : public XdsBootstrap::XdsServerTarget {
   virtual Duration timeout() const = 0;
 };
 
-// Parsed GrpcService protos (gRFC A119).  The key uniquely identifies the
-// contents of the GrpcService proto (GrpcXdsServerTarget::Key()).
+// Parsed GrpcService protos, keyed by the channel factory key (gRFC A119).
+// The key changes whenever any part of the GrpcService proto changes.
 using XdsGrpcServiceMap =
-    std::map<std::string, std::shared_ptr<const GrpcXdsServerInterface>>;
+    std::map<std::string, std::shared_ptr<const GrpcXdsServerInterface>,
+             std::less<>>;
 
 }  // namespace grpc_core
 
