@@ -266,12 +266,6 @@ TEST_F(CdsPriorityEndpointIteratorTest, InvalidWeightsClamped) {
 // Channel factory injection (gRFC A119)
 //
 
-// The channel factory that the recorder LB policy saw in its last update.
-// The recorder runs in the WorkSerializer, which runs the test's updates
-// synchronously, so no lock is needed.
-std::shared_ptr<experimental::ChannelFactory>* g_recorded_channel_factory =
-    new std::shared_ptr<experimental::ChannelFactory>();
-
 constexpr absl::string_view kRecorderLbPolicyName =
     "channel_factory_recorder_test";
 
@@ -284,8 +278,15 @@ class ChannelFactoryRecorderLb final : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kRecorderLbPolicyName; }
 
+  // Points to where the recorder stores the channel factory it saw in its
+  // last update.  Set by the test fixture.  The recorder runs in the
+  // WorkSerializer, which runs the test's updates synchronously, so no lock
+  // is needed.
+  static std::shared_ptr<experimental::ChannelFactory>*
+      recorded_channel_factory;
+
   absl::Status UpdateLocked(UpdateArgs args) override {
-    *g_recorded_channel_factory =
+    *recorded_channel_factory =
         args.args.GetObjectRef<experimental::ChannelFactory>();
     return absl::OkStatus();
   }
@@ -295,6 +296,9 @@ class ChannelFactoryRecorderLb final : public LoadBalancingPolicy {
  private:
   void ShutdownLocked() override {}
 };
+
+std::shared_ptr<experimental::ChannelFactory>*
+    ChannelFactoryRecorderLb::recorded_channel_factory = nullptr;
 
 class ChannelFactoryRecorderLbConfig final
     : public LoadBalancingPolicy::Config {
@@ -330,6 +334,8 @@ class CdsChannelFactoryTest : public LoadBalancingPolicyTest {
     // The outlier_detection child policy needs a collection scope.
     stats_plugin_group_.Finish();
     LoadBalancingPolicyTest::SetUp();
+    ChannelFactoryRecorderLb::recorded_channel_factory =
+        &recorded_channel_factory_;
     auto xds_client = GrpcXdsClient::GetOrCreate(
         "test",
         ChannelArgs().Set(
@@ -342,7 +348,7 @@ class CdsChannelFactoryTest : public LoadBalancingPolicyTest {
   }
 
   void TearDown() override {
-    g_recorded_channel_factory->reset();
+    ChannelFactoryRecorderLb::recorded_channel_factory = nullptr;
     xds_client_.reset();
     LoadBalancingPolicyTest::TearDown();
   }
@@ -422,6 +428,7 @@ class CdsChannelFactoryTest : public LoadBalancingPolicyTest {
   }
 
   RefCountedPtr<GrpcXdsClient> xds_client_;
+  std::shared_ptr<experimental::ChannelFactory> recorded_channel_factory_;
 };
 
 // The factory's channels are tested in xds_transport_grpc_test and
@@ -432,9 +439,9 @@ TEST_F(CdsChannelFactoryTest, ChildGetsChannelFactory) {
                   MakeLeafCluster(MakeGrpcServices(kAutoshardingServiceUri)))
                   .ok());
   ExpectOnlyConnectingUpdates();
-  ASSERT_NE(*g_recorded_channel_factory, nullptr);
+  ASSERT_NE(recorded_channel_factory_, nullptr);
   EXPECT_NE(dynamic_cast<XdsTransportFactoryWrapper*>(
-                g_recorded_channel_factory->get()),
+                recorded_channel_factory_.get()),
             nullptr);
 }
 
@@ -444,7 +451,7 @@ TEST_F(CdsChannelFactoryTest, SameGrpcServicesReuseChannelFactory) {
                   .ok());
   ExpectOnlyConnectingUpdates();
   std::shared_ptr<experimental::ChannelFactory> channel_factory =
-      *g_recorded_channel_factory;
+      recorded_channel_factory_;
   ASSERT_NE(channel_factory, nullptr);
   // New cluster resource with new but equal GrpcService objects, and a
   // different max_concurrent_requests so that CDS processes the update.
@@ -453,7 +460,7 @@ TEST_F(CdsChannelFactoryTest, SameGrpcServicesReuseChannelFactory) {
                                   /*max_concurrent_requests=*/10))
                   .ok());
   ExpectOnlyConnectingUpdates();
-  EXPECT_EQ(*g_recorded_channel_factory, channel_factory);
+  EXPECT_EQ(recorded_channel_factory_, channel_factory);
 }
 
 TEST_F(CdsChannelFactoryTest, ChangedGrpcServicesCreateNewChannelFactory) {
@@ -462,21 +469,21 @@ TEST_F(CdsChannelFactoryTest, ChangedGrpcServicesCreateNewChannelFactory) {
                   .ok());
   ExpectOnlyConnectingUpdates();
   std::shared_ptr<experimental::ChannelFactory> channel_factory =
-      *g_recorded_channel_factory;
+      recorded_channel_factory_;
   ASSERT_NE(channel_factory, nullptr);
   ASSERT_TRUE(
       ApplyLeafClusterUpdate(MakeLeafCluster(MakeGrpcServices(
                                  "dns:///other-autosharding.example.com")))
           .ok());
   ExpectOnlyConnectingUpdates();
-  ASSERT_NE(*g_recorded_channel_factory, nullptr);
-  EXPECT_NE(*g_recorded_channel_factory, channel_factory);
+  ASSERT_NE(recorded_channel_factory_, nullptr);
+  EXPECT_NE(recorded_channel_factory_, channel_factory);
 }
 
 TEST_F(CdsChannelFactoryTest, NoGrpcServicesNoChannelFactory) {
   ASSERT_TRUE(ApplyLeafClusterUpdate(MakeLeafCluster({})).ok());
   ExpectOnlyConnectingUpdates();
-  EXPECT_EQ(*g_recorded_channel_factory, nullptr);
+  EXPECT_EQ(recorded_channel_factory_, nullptr);
 }
 
 TEST_F(CdsChannelFactoryTest, AggregateClusterDoesNotCreateChannelFactory) {
@@ -493,7 +500,7 @@ TEST_F(CdsChannelFactoryTest, AggregateClusterDoesNotCreateChannelFactory) {
                                        "");
   ASSERT_TRUE(ApplyCdsUpdate("aggregate", std::move(xds_config)).ok());
   ExpectOnlyConnectingUpdates();
-  EXPECT_EQ(*g_recorded_channel_factory, nullptr);
+  EXPECT_EQ(recorded_channel_factory_, nullptr);
 }
 
 }  // namespace

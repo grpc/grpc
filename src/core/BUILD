@@ -7061,7 +7061,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "libcrypto",
     ],
     tags = ["nofixdeps"],
     deps = [
@@ -7098,6 +7097,7 @@ grpc_cc_library(
         "xds_http_stateful_session_filter",
         "xds_lb_policy_registry",
         "xds_server_grpc",
+        "xxhash_inline",
         "//:xds_client",
         "@com_google_protobuf//upb/reflection",
     ],

@@ -101,7 +101,7 @@ absl::StatusOr<std::string> ConvertXdsPolicy(
   ValidationErrors::ScopedField field(&errors, ".load_balancing_policy");
   auto registry = GrpcXdsBootstrapBuilder::CreateXdsLbPolicyRegistry();
   XdsGrpcServiceMap grpc_services;
-  auto config = registry.ConvertXdsLbPolicyConfig({context, &grpc_services},
+  auto config = registry.ConvertXdsLbPolicyConfig({context, grpc_services},
                                                   upb_policy, &errors);
   if (!errors.ok()) {
     return errors.status(absl::StatusCode::kInvalidArgument,
@@ -575,7 +575,7 @@ class AutoshardingTest : public ::testing::Test {
             .lb_policy_registry();
     ConvertResult result;
     result.config = registry.ConvertXdsLbPolicyConfig(
-        {context, &result.grpc_services}, upb_policy, &errors);
+        {context, result.grpc_services}, upb_policy, &errors);
     if (!errors.ok()) {
       result.config = errors.status(absl::StatusCode::kInvalidArgument,
                                     "validation errors");
@@ -644,9 +644,10 @@ TEST_F(AutoshardingTest, TrustedXdsServer) {
   ASSERT_TRUE(result.config.ok()) << result.config.status();
   ASSERT_EQ(result.grpc_services.size(), 1);
   const auto& [key, grpc_service] = *result.grpc_services.begin();
-  // The key is the URI and a SHA-256 hash of the full GrpcService.
-  EXPECT_THAT(key, ::testing::MatchesRegex(
-                       "dns:///autosharding\\.example\\.com#[0-9a-f]{64}"));
+  // The key is human-readable and includes a hash of the full GrpcService.
+  EXPECT_THAT(key, ::testing::StartsWith(kAutoshardingServiceUri));
+  EXPECT_THAT(key, ::testing::HasSubstr("channel_creds_type=insecure"));
+  EXPECT_THAT(key, ::testing::HasSubstr(", hash="));
   EXPECT_EQ(grpc_service->server_uri(), kAutoshardingServiceUri);
   ASSERT_NE(grpc_service->channel_creds_config(), nullptr);
   EXPECT_EQ(grpc_service->channel_creds_config()->type(), "insecure");
@@ -727,8 +728,9 @@ TEST_F(AutoshardingTest, UntrustedXdsServerUsesAllowedGrpcService) {
   ASSERT_TRUE(result.config.ok()) << result.config.status();
   ASSERT_EQ(result.grpc_services.size(), 1);
   const auto& [key, grpc_service] = *result.grpc_services.begin();
-  EXPECT_THAT(key, ::testing::MatchesRegex(
-                       "dns:///autosharding\\.example\\.com#[0-9a-f]{64}"));
+  EXPECT_THAT(key, ::testing::StartsWith(kAutoshardingServiceUri));
+  EXPECT_THAT(key, ::testing::HasSubstr("channel_creds_type=google_default"));
+  EXPECT_THAT(key, ::testing::HasSubstr(", hash="));
   EXPECT_EQ(grpc_service->server_uri(), kAutoshardingServiceUri);
   // The creds come from the bootstrap, not from the resource.
   ASSERT_NE(grpc_service->channel_creds_config(), nullptr);
@@ -926,7 +928,7 @@ class FakeGrpcServiceLbPolicyConfigFactory final
       const XdsLbPolicyRegistry::ConvertContext& context,
       absl::string_view /*configuration*/, ValidationErrors* /*errors*/,
       int /*recursion_depth*/) override {
-    (*context.grpc_services)[std::string(kKey)] =
+    context.grpc_services[std::string(kKey)] =
         std::make_shared<GrpcXdsServerTarget>(
             "dns:///fake.example.com", /*channel_creds_config=*/nullptr,
             /*call_creds_configs=*/
@@ -970,7 +972,7 @@ TEST(XdsLbPolicyRegistryTest, ConverterOutputsGrpcServiceMap) {
       std::make_unique<FakeGrpcServiceLbPolicyConfigFactory>());
   ValidationErrors errors;
   XdsGrpcServiceMap grpc_services;
-  auto config = registry.ConvertXdsLbPolicyConfig({context, &grpc_services},
+  auto config = registry.ConvertXdsLbPolicyConfig({context, grpc_services},
                                                   upb_policy, &errors);
   ASSERT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
                                             "validation errors");

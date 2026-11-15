@@ -102,7 +102,6 @@ class TestChannelFactory final
 class AutoshardingEnd2endTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    grpc_init();
     autosharding_server_ =
         std::make_unique<ServerThread<AutoshardingServiceImpl>>("autosharding");
     autosharding_server_->Start();
@@ -127,7 +126,6 @@ class AutoshardingEnd2endTest : public ::testing::Test {
     for (auto& backend : backends_) backend->Shutdown();
     autosharding_server_->Shutdown();
     channel_factory_.reset();
-    grpc_shutdown();
   }
 
   void StartBackends(size_t num_backends) {
@@ -180,7 +178,7 @@ class AutoshardingEnd2endTest : public ::testing::Test {
   Status SendRpc(absl::string_view key) {
     ClientContext context;
     context.AddMetadata(std::string(kKeyHeaderName), std::string(key));
-    context.set_deadline(grpc_timeout_seconds_to_deadline(5));
+    context.set_deadline(grpc_timeout_seconds_to_deadline(5 * grpc_test_slowdown_factor()));
     EchoRequest request;
     request.set_message("hello");
     EchoResponse response;
@@ -247,7 +245,7 @@ TEST_F(AutoshardingEnd2endTest, NewAssignmentMovesTraffic) {
   // The new assignment moves all keys to backend 1.
   autosharding_server_->service().SetAssignment({{"", {0}}}, {BackendName(1)},
                                                 /*generation=*/2);
-  const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
+  const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10 * grpc_test_slowdown_factor());
   while (backends_[1]->service().request_count() == 0) {
     ASSERT_LT(gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline), 0)
         << "traffic did not move to backend 1";
@@ -271,13 +269,13 @@ TEST_F(AutoshardingEnd2endTest, GetStateTryToConnectConnectsWhenIdle) {
   // channel.
   backends_[0]->Shutdown();
   ASSERT_TRUE(WaitForChannelState(GRPC_CHANNEL_IDLE,
-                                  grpc_timeout_seconds_to_deadline(10)));
+                                  grpc_timeout_seconds_to_deadline(10 * grpc_test_slowdown_factor())));
   // GetState(true) asks the LB policy to exit IDLE, which connects to the
   // backend without an RPC.
   backends_[0]->Start();
   EXPECT_EQ(channel_->GetState(/*try_to_connect=*/true), GRPC_CHANNEL_IDLE);
   EXPECT_TRUE(WaitForChannelState(GRPC_CHANNEL_READY,
-                                  grpc_timeout_seconds_to_deadline(10)));
+                                  grpc_timeout_seconds_to_deadline(10 * grpc_test_slowdown_factor())));
   EXPECT_EQ(backends_[0]->service().request_count(), 1u);
 }
 
@@ -286,16 +284,16 @@ TEST_F(AutoshardingEnd2endTest, ReportsConnectingBeforeFirstAssignment) {
   SetNextResolution(ServiceConfig(/*enable_fallback=*/false, "10s"));
   EXPECT_EQ(channel_->GetState(/*try_to_connect=*/true), GRPC_CHANNEL_IDLE);
   ASSERT_TRUE(WaitForChannelState(GRPC_CHANNEL_CONNECTING,
-                                  grpc_timeout_seconds_to_deadline(10)));
+                                  grpc_timeout_seconds_to_deadline(10 * grpc_test_slowdown_factor())));
   // The autosharding server has not sent an assignment, so the channel stays
   // in CONNECTING.
   EXPECT_FALSE(channel_->WaitForStateChange(
-      GRPC_CHANNEL_CONNECTING, grpc_timeout_milliseconds_to_deadline(500)));
+      GRPC_CHANNEL_CONNECTING, grpc_timeout_milliseconds_to_deadline(500 * grpc_test_slowdown_factor())));
   // After the assignment, the policy connects without an RPC.
   autosharding_server_->service().SetAssignment({{"", {0}}}, {BackendName(0)},
                                                 /*generation=*/1);
   EXPECT_TRUE(WaitForChannelState(GRPC_CHANNEL_READY,
-                                  grpc_timeout_seconds_to_deadline(10)));
+                                  grpc_timeout_seconds_to_deadline(10 * grpc_test_slowdown_factor())));
   EXPECT_EQ(backends_[0]->service().request_count(), 0u);
 }
 
@@ -304,7 +302,7 @@ TEST_F(AutoshardingEnd2endTest, ReportsConnectingBeforeFirstAssignment) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

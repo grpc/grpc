@@ -23,10 +23,11 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/status.h>
-#include <grpcpp/support/sync_stream.h>
+#include <grpcpp/support/server_callback.h>
 
 #include <cstdint>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -52,7 +53,7 @@ namespace testing {
 // starts, and every assignment that the test sets after that.
 class AutoshardingServiceImpl
     : public CountedService<
-          google::cloud::autosharding::v1::AutoshardingService::Service> {
+          google::cloud::autosharding::v1::AutoshardingService::CallbackService> {
  public:
   using Request =
       google::cloud::autosharding::v1::WatchShardingAssignmentRequest;
@@ -68,9 +69,10 @@ class AutoshardingServiceImpl
     std::vector<int32_t> endpoint_indices;
   };
 
-  Status WatchShardingAssignment(
-      ServerContext* context,
-      ServerReaderWriter<Response, Request>* stream) override;
+  // Callback-based handler (gRFC A119).  Reads and writes are driven by the
+  // gRPC library, so no per-RPC thread is needed.
+  grpc::ServerBidiReactor<Request, Response>* WatchShardingAssignment(
+      grpc::CallbackServerContext* context) override;
 
   // Called by the server thread before the server starts and before it shuts
   // down.  Shutdown() ends all open streams.
@@ -91,14 +93,17 @@ class AutoshardingServiceImpl
   std::vector<std::string> targets();
 
  private:
+  class Reactor;
+
   grpc_core::Mutex mu_;
-  grpc_core::CondVar cond_;
   bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
   std::string silent_target_ ABSL_GUARDED_BY(mu_);
   // The latest assignment, and a version that increases when it changes.
   std::vector<Response> assignment_ ABSL_GUARDED_BY(mu_);
   uint64_t assignment_version_ ABSL_GUARDED_BY(mu_) = 0;
   std::vector<std::string> targets_ ABSL_GUARDED_BY(mu_);
+  // Active streams.  Each Reactor removes itself in OnDone().
+  std::set<Reactor*> reactors_ ABSL_GUARDED_BY(mu_);
 };
 
 // Runs a server with an insecure listening port on the local IP address.

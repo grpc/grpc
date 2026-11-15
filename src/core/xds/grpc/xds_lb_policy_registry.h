@@ -44,8 +44,8 @@ class XdsLbPolicyRegistry final {
     // Output.  Converters that parse a GrpcService proto add it here,
     // and put the same key in the generated LB policy config, so that the
     // LB policy can ask the channel factory for a channel to that
-    // service.  Must not be null.
-    XdsGrpcServiceMap* grpc_services;
+    // service.
+    XdsGrpcServiceMap& grpc_services;
   };
 
   class ConfigFactory {

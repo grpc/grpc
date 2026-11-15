@@ -89,30 +89,12 @@ std::string GenerateUuid() {
                         absl::Uniform<uint64_t>(bit_gen));
 }
 
-RefCountedPtr<LoadBalancingPolicy::Config> ParsePickFirstConfig() {
-  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>> config =
-      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
-          Json::FromArray(
-              {Json::FromObject({{"pick_first", Json::FromObject({})}})}));
-  GRPC_CHECK(config.ok());
-  return std::move(*config);
-}
-
 // Returns target with the first "%s" token replaced by locality (gRFC A119).
 std::string EffectiveTarget(absl::string_view target,
                             absl::string_view locality) {
   const size_t pos = target.find("%s");
   if (pos == absl::string_view::npos) return std::string(target);
   return absl::StrCat(target.substr(0, pos), locality, target.substr(pos + 2));
-}
-
-// Returns an UNAVAILABLE status with message, followed by the resolution
-// note in parentheses if it is not empty.
-absl::Status UnavailableErrorWithNote(absl::string_view message,
-                                      absl::string_view resolution_note) {
-  if (resolution_note.empty()) return absl::UnavailableError(message);
-  return absl::UnavailableError(
-      absl::StrCat(message, " (", resolution_note, ")"));
 }
 
 RefCountedPtr<XdsTransport> CreateTransportFromChannelFactory(
@@ -352,8 +334,6 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   std::map<std::string, OrphanablePtr<AutoShardingEndpoint>> endpoint_map_;
   EndpointAddressesList endpoints_;
   ChannelArgs args_;
-  // The pick_first config for the child policies.
-  const RefCountedPtr<LoadBalancingPolicy::Config> child_config_;
   // Reused across stream restarts and client recreations (gRFC A119).
   const std::string uuid_;
   std::string effective_target_;
@@ -629,11 +609,18 @@ void AutoshardingLbPolicy::AutoShardingEndpoint::CreateChildPolicy() {
 
 absl::Status
 AutoshardingLbPolicy::AutoShardingEndpoint::UpdateChildPolicyLocked() {
+  // Construct pick_first config.
+  auto config =
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          Json::FromArray(
+              {Json::FromObject({{"pick_first", Json::FromObject({})}})}));
+  GRPC_CHECK(config.ok());
+  // Update child policy.
   LoadBalancingPolicy::UpdateArgs update_args;
   update_args.addresses = std::make_shared<SingleEndpointIterator>(
       autosharding_lb_->endpoints_[index_]);
   update_args.args = autosharding_lb_->args_;
-  update_args.config = autosharding_lb_->child_config_;
+  update_args.config = std::move(*config);
   return child_policy_->UpdateLocked(std::move(update_args));
 }
 
@@ -695,9 +682,7 @@ AutoshardingLbPolicy::SliceMap::SliceMap(
 //
 
 AutoshardingLbPolicy::AutoshardingLbPolicy(Args args)
-    : LoadBalancingPolicy(std::move(args)),
-      child_config_(ParsePickFirstConfig()),
-      uuid_(GenerateUuid()) {
+    : LoadBalancingPolicy(std::move(args)), uuid_(GenerateUuid()) {
   GRPC_TRACE_LOG(autosharding_lb, INFO)
       << "[AS " << this << "] Created with client UUID " << uuid_;
 }
@@ -817,7 +802,11 @@ absl::Status AutoshardingLbPolicy::UpdateLocked(UpdateArgs args) {
   // assignment_, so that the next good update uses them at once (gRFC A119).
   if (endpoints_.empty()) {
     if (status.ok()) {
-      status = UnavailableErrorWithNote("empty address list", resolution_note_);
+      std::string message = "empty address list";
+      if (!resolution_note_.empty()) {
+        absl::StrAppend(&message, " (", resolution_note_, ")");
+      }
+      status = absl::UnavailableError(message);
     }
     resolver_error_ = status;
     UpdateAggregatedConnectivityStateLocked();
@@ -840,8 +829,11 @@ absl::Status AutoshardingLbPolicy::UpdateLocked(UpdateArgs args) {
     channel_factory = args_.GetObject<experimental::ChannelFactory>();
     if (channel_factory == nullptr) {
       client_.reset();
-      resolver_error_ = UnavailableErrorWithNote(
-          "no channel factory in channel args", resolution_note_);
+      std::string message = "no channel factory in channel args";
+      if (!resolution_note_.empty()) {
+        absl::StrAppend(&message, " (", resolution_note_, ")");
+      }
+      resolver_error_ = absl::UnavailableError(message);
       UpdateAggregatedConnectivityStateLocked();
       return resolver_error_;
     }
@@ -997,8 +989,11 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked() {
   // If there is no assignment and fallback is disabled, we cannot route any
   // pick, so report TRANSIENT_FAILURE.
   if (!assignment_.ok() && !config_->enable_fallback()) {
-    absl::Status pick_status = UnavailableErrorWithNote(
-        assignment_.status().message(), resolution_note_);
+    std::string message(assignment_.status().message());
+    if (!resolution_note_.empty()) {
+      absl::StrAppend(&message, " (", resolution_note_, ")");
+    }
+    absl::Status pick_status = absl::UnavailableError(message);
     GRPC_TRACE_LOG(autosharding_lb, INFO)
         << "[AS " << this << "] no assignment and fallback disabled, failing "
         << "picks: " << pick_status;

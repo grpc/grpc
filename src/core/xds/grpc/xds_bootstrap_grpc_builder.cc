@@ -16,7 +16,6 @@
 
 #include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 
-#include <openssl/sha.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -45,6 +44,7 @@
 #include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
+#include "src/core/util/xxhash_inline.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_grpc_service_parser.h"
@@ -56,7 +56,7 @@
 #include "src/core/xds/grpc/xds_http_stateful_session_filter.h"
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
-#include "absl/strings/escaping.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 
 namespace grpc_core {
@@ -378,19 +378,26 @@ class PickFirstLbPolicyConfigFactory final
 };
 
 // Returns the channel factory key for a parsed GrpcService (gRFC A119).
-// The key must change whenever any part of the GrpcService changes, so it
-// uses a hash of GrpcXdsServerTarget::Key().  It does not use Key() itself,
-// because Key() can contain credentials (for example an access token) and
-// the key appears in the LB policy config, which is logged.
+// The non-secret fields are included directly, so the key is human-readable
+// in the LB policy config and logs.  A hash of GrpcXdsServerTarget::Key()
+// distinguishes different secret values (for example call-cred tokens or
+// initial metadata values) without leaking them.
 std::string MakeChannelFactoryKey(const GrpcXdsServerTarget& grpc_service) {
+  std::string key = grpc_service.server_uri();
+  absl::StrAppend(&key, ", channel_creds_type=",
+                  grpc_service.channel_creds_config()->type());
+  for (const auto& call_creds : grpc_service.call_creds_configs()) {
+    absl::StrAppend(&key, ", call_creds_type=", call_creds->type());
+  }
+  absl::StrAppend(&key, ", timeout=", grpc_service.timeout().ToString());
+  for (const auto& [name, value] : grpc_service.initial_metadata()) {
+    absl::StrAppend(&key, ", metadata=", name);
+  }
   const std::string full_key = grpc_service.Key();
-  uint8_t digest[SHA256_DIGEST_LENGTH];
-  SHA256(reinterpret_cast<const uint8_t*>(full_key.data()), full_key.size(),
-         digest);
-  return absl::StrCat(
-      grpc_service.server_uri(), "#",
-      absl::BytesToHexString(absl::string_view(
-          reinterpret_cast<const char*>(digest), sizeof(digest))));
+  absl::StrAppend(&key, ", hash=",
+                  absl::Hex(XXH64(full_key.data(), full_key.size(), 0),
+                            absl::kZeroPad16));
+  return key;
 }
 
 // Converts the Autosharding proto to the autosharding_experimental LB
@@ -427,7 +434,7 @@ class AutoshardingLbPolicyConfigFactory final
         // CDS policy creates from the map.
         std::string key = MakeChannelFactoryKey(*grpc_service);
         config["channelFactoryKey"] = Json::FromString(key);
-        (*context.grpc_services)[std::move(key)] = std::move(grpc_service);
+        context.grpc_services[std::move(key)] = std::move(grpc_service);
       }
     }
     // The LB policy validates the remaining fields when the cluster parser
