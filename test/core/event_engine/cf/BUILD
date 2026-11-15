@@ -39,6 +39,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:gpr_platform",
+        "//:grpc",
         "//src/core:cf_event_engine",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -60,6 +61,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:gpr_platform",
+        "//:grpc",
         "//src/core:cf_event_engine",
         "//test/core/test_util:grpc_test_util",
     ],
