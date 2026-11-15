@@ -130,6 +130,16 @@ cdef extern from "grpc/grpc.h":
   void *grpc_slice_start_ptr "GRPC_SLICE_START_PTR" (grpc_slice s) nogil
   size_t grpc_slice_length "GRPC_SLICE_LENGTH" (grpc_slice s) nogil
 
+  ctypedef struct grpc_slice_buffer:
+    # Only the members read from Cython are declared here.
+    grpc_slice *slices
+    size_t count
+    size_t length
+
+  void grpc_slice_buffer_init(grpc_slice_buffer *sb) nogil
+  void grpc_slice_buffer_destroy(grpc_slice_buffer *sb) nogil
+  void grpc_slice_buffer_add(grpc_slice_buffer *sb, grpc_slice slice) nogil
+
   const int GPR_MS_PER_SEC
   const int GPR_US_PER_SEC
   const int GPR_NS_PER_SEC

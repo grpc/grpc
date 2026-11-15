@@ -187,7 +187,8 @@ cdef class ReceiveMessageOperation(Operation):
     cdef grpc_slice message_slice
     cdef size_t message_slice_length
     cdef list chunks = []
-    cdef size_t total_length
+    cdef grpc_slice_buffer message_slice_buffer
+    cdef size_t i
     cdef size_t offset
     cdef char *dest
     cdef bytes result
@@ -197,29 +198,32 @@ cdef class ReceiveMessageOperation(Operation):
           &message_reader, self._c_message_byte_buffer)
       if message_reader_status:
         if IsPythonZeroCopyEnabled():
-          # When the zero-copy bazel experiment is enabled, copy all slices into 
-          # a single bytes object. This bounds Python objects to O(1) and copies
-          # the payload only once.
-          total_length = grpc_byte_buffer_length(self._c_message_byte_buffer)
-          if total_length > 0:
-            result = PyBytes_FromStringAndSize(NULL, total_length)
+          # When the zero-copy experiment is enabled, gather the slices into a
+          # grpc_slice_buffer (which takes ownership of each slice), then copy
+          # them into a single preallocated bytes object. This creates one
+          # Python object and copies the payload once, regardless of how many
+          # slices the message arrived in.
+          grpc_slice_buffer_init(&message_slice_buffer)
+          while grpc_byte_buffer_reader_next(&message_reader, &message_slice):
+            grpc_slice_buffer_add(&message_slice_buffer, message_slice)
+          if message_slice_buffer.length > 0:
+            # length is the exact total of the buffered slices.
+            result = PyBytes_FromStringAndSize(NULL, message_slice_buffer.length)
             dest = result
             offset = 0
-            while grpc_byte_buffer_reader_next(&message_reader, &message_slice):
+            for i in range(message_slice_buffer.count):
+              # Borrowed from the slice buffer; released by
+              # grpc_slice_buffer_destroy() below.
+              message_slice = message_slice_buffer.slices[i]
               message_slice_length = grpc_slice_length(message_slice)
               if message_slice_length > 0:
-                if offset + message_slice_length > total_length:
-                  raise RuntimeError("Byte buffer length mismatch")
-                memcpy(dest + offset,
-                       grpc_slice_start_ptr(message_slice),
+                memcpy(dest + offset, grpc_slice_start_ptr(message_slice),
                        message_slice_length)
                 offset += message_slice_length
-              grpc_slice_unref(message_slice)
-            if offset < total_length:
-              result = result[:offset]
             self._message = result
           else:
             self._message = b''
+          grpc_slice_buffer_destroy(&message_slice_buffer)
         else:
           while grpc_byte_buffer_reader_next(&message_reader, &message_slice):
             message_slice_length = grpc_slice_length(message_slice)
