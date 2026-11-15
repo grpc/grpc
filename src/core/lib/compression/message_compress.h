@@ -23,6 +23,13 @@
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
 
+#include <cstdint>
+#include <optional>
+
+#include "src/core/lib/slice/slice_buffer.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+
 // compress 'input' to 'output' using 'algorithm'.
 // On success, appends compressed slices to output and returns 1.
 // On failure, appends uncompressed slices to output and returns 0.
@@ -34,5 +41,22 @@ int grpc_msg_compress(grpc_compression_algorithm algorithm,
 // On failure, output is unchanged, and returns 0.
 int grpc_msg_decompress(grpc_compression_algorithm algorithm,
                         grpc_slice_buffer* input, grpc_slice_buffer* output);
+
+namespace grpc_core {
+
+// Compresses 'input' using 'algorithm'.
+// On success, returns a SliceBuffer containing the compressed data.
+// On failure, returns nullopt.
+std::optional<SliceBuffer> MessageCompress(grpc_compression_algorithm algorithm,
+                                           const SliceBuffer& input);
+// Decompresses 'input'.
+// On success, returns a SliceBuffer containing the decompressed data.
+// On failure, returns a non-OK status.
+// Fails if the decompressed data would be larger than max_output_size.
+absl::StatusOr<SliceBuffer> MessageDecompress(
+    grpc_compression_algorithm algorithm, const SliceBuffer& input,
+    std::optional<uint32_t> max_output_size);
+
+}  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_COMPRESSION_MESSAGE_COMPRESS_H

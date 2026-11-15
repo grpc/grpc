@@ -56,9 +56,6 @@
 #include "src/core/server/server.h"
 #include "src/core/server/server_config_selector.h"
 #include "src/core/server/server_config_selector_filter.h"
-#include "src/core/server/xds_channel_stack_modifier.h"
-#include "src/core/service_config/service_config.h"
-#include "src/core/service_config/service_config_impl.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/grpc_check.h"
@@ -344,8 +341,6 @@ class XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
       ABSL_GUARDED_BY(&FetcherState::work_serializer);
 };
 
-namespace {
-
 using FilterInstance =
     std::pair<const XdsHttpFilterFactory*, RefCountedPtr<const FilterConfig>>;
 
@@ -370,8 +365,6 @@ class FilterListBuilder final
   RefCountedPtr<FilterList> filters_;
 };
 
-}  // namespace
-
 // An implementation of ServerConfigSelector that stores parsed xDS filter
 // configs for each route, constructs filter chains for each, and
 // selects the appropriate filter chain for each RPC.
@@ -389,7 +382,7 @@ class XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
   std::unique_ptr<ConnectionState> BuildFilterChains(
       FilterChainBuilder& builder) override;
 
-  absl::StatusOr<CallConfig> GetCallConfig(
+  absl::StatusOr<RefCountedPtr<const FilterChain>> GetCallConfig(
       const ConnectionState* state, grpc_metadata_batch* metadata) override;
 
  private:
@@ -528,6 +521,25 @@ XdsServerConfigFetcher::ListenerWatcher::ListenerWatcher(
       << listening_address_;
 }
 
+// Returns true if the listener address matches the address that the
+// server is actually listening on.
+bool ListenerAddressMatches(absl::string_view listener_address,
+                            absl::string_view server_address) {
+  if (listener_address == server_address) return true;
+  absl::string_view listener_host;
+  absl::string_view listener_port;
+  if (!SplitHostPort(listener_address, &listener_host, &listener_port)) {
+    return false;
+  }
+  absl::string_view server_host;
+  absl::string_view server_port;
+  if (!SplitHostPort(server_address, &server_host, &server_port)) {
+    return false;
+  }
+  if (listener_host != server_host) return false;
+  return listener_port == "0" || listener_port == server_port;
+}
+
 void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
     absl::StatusOr<std::shared_ptr<const XdsListenerResource>> listener,
     RefCountedPtr<ReadDelayHandle> read_delay_handle) {
@@ -555,7 +567,8 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
                                " is not a TCP listener")));
               return;
             }
-            if (tcp_listener->address != self->listening_address_) {
+            if (!ListenerAddressMatches(tcp_listener->address,
+                                        self->listening_address_)) {
               self->OnFatalError(absl::FailedPreconditionError(
                   absl::StrCat("LDS resource ", self->ResourceName(),
                                " address does not match listening address")));
@@ -965,8 +978,7 @@ class XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
     }
   }
 
-  absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
-      std::shared_ptr<ServerConfigSelectorWatcher> watcher) override {
+  void Watch(std::shared_ptr<ServerConfigSelectorWatcher> watcher) override {
     fetcher_state_->work_serializer.Run(
         [self = WeakRefAsSubclass<XdsServerConfigSelectorProvider>(),
          watcher = std::move(watcher)]()
@@ -975,7 +987,6 @@ class XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
               watcher->OnServerConfigSelectorUpdate(self->config_selector_);
               self->watchers_.insert(std::move(watcher));
             });
-    return nullptr;
   }
 
   void CancelWatch(
@@ -1287,11 +1298,10 @@ XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
   return connection_state;
 }
 
-absl::StatusOr<ServerConfigSelector::CallConfig>
+absl::StatusOr<RefCountedPtr<const FilterChain>>
 XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
     XdsServerConfigSelector::GetCallConfig(const ConnectionState* state,
                                            grpc_metadata_batch* metadata) {
-  CallConfig call_config;
   if (metadata->get_pointer(HttpPathMetadata()) == nullptr) {
     return absl::InternalError("no path found");
   }
@@ -1326,25 +1336,16 @@ XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
   auto it = filter_chains.find(&route);
   if (it == filter_chains.end()) {
     // Should never happen.
-    call_config.filter_chain =
-        absl::InternalError("no filter chain found for route");
-  } else {
-    call_config.filter_chain = it->second;
+    return absl::InternalError("no filter chain found for route");
   }
-  return call_config;
+  return it->second;
 }
 
 }  // namespace
 }  // namespace grpc_core
 
-grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create_legacy(
-    grpc_server_xds_status_notifier notifier, const grpc_channel_args* args);
-
 grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
     grpc_server_xds_status_notifier notifier, const grpc_channel_args* args) {
-  if (!grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
-    return grpc_server_config_fetcher_xds_create_legacy(notifier, args);
-  }
   grpc_core::ExecCtx exec_ctx;
   grpc_core::ChannelArgs channel_args = grpc_core::CoreConfiguration::Get()
                                             .channel_args_preconditioning()

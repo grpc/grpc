@@ -21,7 +21,7 @@ import setuptools
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 GRPC_ROOT_ABS_PATH = os.path.join(ROOT_DIR, "../../..")
 ROOT_REL_DIR = os.path.relpath(ROOT_DIR, start=GRPC_ROOT_ABS_PATH)
-HEALTH_PROTO = "src/proto/grpc/health/v1/health.proto"
+HEALTH_PROTO = "third_party/grpc-proto/grpc/health/v1/health.proto"
 LICENSE = "./LICENSE"
 
 

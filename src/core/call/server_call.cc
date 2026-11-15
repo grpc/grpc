@@ -210,10 +210,10 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
               wait_for_initial_metadata_scheduled,
               [this]() { return server_initial_metadata_scheduled_.Wait(); },
               []() { return Empty{}; }),
-          [this, metadata = std::move(metadata)]() mutable -> Poll<Success> {
+          [this, metadata = std::move(metadata)]() mutable -> Poll<StatusFlag> {
             GRPC_CHECK(metadata != nullptr);
-            call_handler_.PushServerTrailingMetadata(std::move(metadata));
-            return Success{};
+            return call_handler_.PushServerTrailingMetadata(
+                std::move(metadata));
           });
     };
   };

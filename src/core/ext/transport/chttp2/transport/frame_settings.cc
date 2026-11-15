@@ -22,7 +22,9 @@
 #include <grpc/support/port_platform.h>
 #include <string.h>
 
+#include <memory>
 #include <string>
+#include <utility>
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
@@ -135,6 +137,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
             t->http2_ztrace_collector.Append(
                 []() { return grpc_core::H2SettingsTrace<false>{true, {}}; });
             *parser->target_settings = *parser->incoming_settings;
+            t->peer_settings_applied = true;
             t->MaybeNotifyStateWatcherOfPeerMaxConcurrentStreamsLocked();
             grpc_error_handle error =
                 grpc_chttp2_increase_num_pending_induced_frames(t);
@@ -145,6 +148,12 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
                                        GRPC_CHTTP2_INITIATE_WRITE_SETTINGS_ACK);
             t->MaybeNotifyOnReceiveSettingsLocked(
                 parser->target_settings->max_concurrent_streams());
+            if (t->pending_security_frame != nullptr &&
+                t->pending_security_frame->Length() > 0) {
+              std::unique_ptr<grpc_core::SliceBuffer> pending =
+                  std::move(t->pending_security_frame);
+              t->WriteSecurityFrameLocked(pending.get());
+            }
           }
           return absl::OkStatus();
         }

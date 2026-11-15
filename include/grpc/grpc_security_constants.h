@@ -46,6 +46,8 @@ extern "C" {
 #define GRPC_SSL_SESSION_REUSED_PROPERTY "ssl_session_reused"
 #define GRPC_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP_PROPERTY_NAME \
   "ssl_negotiated_key_exchange_group"
+#define GRPC_SSL_EXPORTED_KEYING_MATERIAL_PROPERTY_NAME \
+  "ssl_exported_keying_material"
 #define GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME "security_level"
 #define GRPC_PEER_DNS_PROPERTY_NAME "peer_dns"
 #define GRPC_PEER_SPIFFE_ID_PROPERTY_NAME "peer_spiffe_id"
@@ -159,6 +161,8 @@ typedef enum {
   GRPC_TLS_GROUP_X25519_MLKEM768,
   /** secp384r1 ECDH key exchange. */
   GRPC_TLS_GROUP_SECP384R1,
+  /** MLKEM1024 key exchange. Post-quantum cryptography. */
+  GRPC_TLS_GROUP_MLKEM1024,
 } grpc_tls_key_exchange_group;
 
 #ifdef __cplusplus

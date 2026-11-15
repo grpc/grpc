@@ -158,7 +158,7 @@ installed to be able to compile the C/C++ sources.
 > cd cmake
 > md build
 > cd build
-> call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" x64
+> call "%VS170COMNTOOLS%..\..\VC\Auxiliary\Build\vcvarsall.bat" x64
 > cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 ..\..
 > cmake --build .
 ```

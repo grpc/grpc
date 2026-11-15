@@ -26,13 +26,14 @@ from envoy.config.core.v3 import base_pb2 as envoy_dot_config_dot_core_dot_v3_do
 from envoy.config.route.v3 import route_components_pb2 as envoy_dot_config_dot_route_dot_v3_dot_route__components__pb2
 from envoy.type.v3 import percent_pb2 as envoy_dot_type_dot_v3_dot_percent__pb2
 from google.protobuf import duration_pb2 as google_dot_protobuf_dot_duration__pb2
+from google.protobuf import struct_pb2 as google_dot_protobuf_dot_struct__pb2
 from google.protobuf import wrappers_pb2 as google_dot_protobuf_dot_wrappers__pb2
 from envoy.annotations import deprecation_pb2 as envoy_dot_annotations_dot_deprecation__pb2
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n?envoy/extensions/load_balancing_policies/common/v3/common.proto\x12\x32\x65nvoy.extensions.load_balancing_policies.common.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a,envoy/config/route/v3/route_components.proto\x1a\x1b\x65nvoy/type/v3/percent.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a#envoy/annotations/deprecation.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xa4\x07\n\x10LocalityLbConfig\x12v\n\x14zone_aware_lb_config\x18\x01 \x01(\x0b\x32V.envoy.extensions.load_balancing_policies.common.v3.LocalityLbConfig.ZoneAwareLbConfigH\x00\x12\x84\x01\n\x1blocality_weighted_lb_config\x18\x02 \x01(\x0b\x32].envoy.extensions.load_balancing_policies.common.v3.LocalityLbConfig.LocalityWeightedLbConfigH\x00\x1a\xd2\x04\n\x11ZoneAwareLbConfig\x12/\n\x0frouting_enabled\x18\x01 \x01(\x0b\x32\x16.envoy.type.v3.Percent\x12\x36\n\x10min_cluster_size\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.UInt64Value\x12\x1d\n\x15\x66\x61il_traffic_on_panic\x18\x03 \x01(\x08\x12\x32\n\x1d\x66orce_locality_direct_routing\x18\x04 \x01(\x08\x42\x0b\x18\x01\x92\xc7\x86\xd8\x04\x03\x33.0\x12\x7f\n\x10\x66orce_local_zone\x18\x05 \x01(\x0b\x32\x65.envoy.extensions.load_balancing_policies.common.v3.LocalityLbConfig.ZoneAwareLbConfig.ForceLocalZone\x12|\n\x0elocality_basis\x18\x06 \x01(\x0e\x32\x64.envoy.extensions.load_balancing_policies.common.v3.LocalityLbConfig.ZoneAwareLbConfig.LocalityBasis\x1a@\n\x0e\x46orceLocalZone\x12.\n\x08min_size\x18\x01 \x01(\x0b\x32\x1c.google.protobuf.UInt32Value\"@\n\rLocalityBasis\x12\x15\n\x11HEALTHY_HOSTS_NUM\x10\x00\x12\x18\n\x14HEALTHY_HOSTS_WEIGHT\x10\x01\x1a\x1a\n\x18LocalityWeightedLbConfigB \n\x19locality_config_specifier\x12\x03\xf8\x42\x01\"\xb4\x01\n\x0fSlowStartConfig\x12\x34\n\x11slow_start_window\x18\x01 \x01(\x0b\x32\x19.google.protobuf.Duration\x12\x37\n\naggression\x18\x02 \x01(\x0b\x32#.envoy.config.core.v3.RuntimeDouble\x12\x32\n\x12min_weight_percent\x18\x03 \x01(\x0b\x32\x16.envoy.type.v3.Percent\"\xc5\x01\n\x19\x43onsistentHashingLbConfig\x12 \n\x18use_hostname_for_hashing\x18\x01 \x01(\x08\x12\x42\n\x13hash_balance_factor\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.UInt32ValueB\x07\xfa\x42\x04*\x02(d\x12\x42\n\x0bhash_policy\x18\x03 \x03(\x0b\x32-.envoy.config.route.v3.RouteAction.HashPolicyB\xbd\x01\n@io.envoyproxy.envoy.extensions.load_balancing_policies.common.v3B\x0b\x43ommonProtoP\x01Zbgithub.com/envoyproxy/go-control-plane/envoy/extensions/load_balancing_policies/common/v3;commonv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n?envoy/extensions/load_balancing_policies/common/v3/common.proto\x12\x32\x65nvoy.extensions.load_balancing_policies.common.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a,envoy/config/route/v3/route_components.proto\x1a\x1b\x65nvoy/type/v3/percent.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a#envoy/annotations/deprecation.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xa4\x07\n\x10LocalityLbConfig\x12v\n\x14zone_aware_lb_config\x18\x01 \x01(\x0b\x32V.envoy.extensions.load_balancing_policies.common.v3.LocalityLbConfig.ZoneAwareLbConfigH\x00\x12\x84\x01\n\x1blocality_weighted_lb_config\x18\x02 \x01(\x0b\x32].envoy.extensions.load_balancing_policies.common.v3.LocalityLbConfig.LocalityWeightedLbConfigH\x00\x1a\xd2\x04\n\x11ZoneAwareLbConfig\x12/\n\x0frouting_enabled\x18\x01 \x01(\x0b\x32\x16.envoy.type.v3.Percent\x12\x36\n\x10min_cluster_size\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.UInt64Value\x12\x1d\n\x15\x66\x61il_traffic_on_panic\x18\x03 \x01(\x08\x12\x32\n\x1d\x66orce_locality_direct_routing\x18\x04 \x01(\x08\x42\x0b\x18\x01\x92\xc7\x86\xd8\x04\x03\x33.0\x12\x7f\n\x10\x66orce_local_zone\x18\x05 \x01(\x0b\x32\x65.envoy.extensions.load_balancing_policies.common.v3.LocalityLbConfig.ZoneAwareLbConfig.ForceLocalZone\x12|\n\x0elocality_basis\x18\x06 \x01(\x0e\x32\x64.envoy.extensions.load_balancing_policies.common.v3.LocalityLbConfig.ZoneAwareLbConfig.LocalityBasis\x1a@\n\x0e\x46orceLocalZone\x12.\n\x08min_size\x18\x01 \x01(\x0b\x32\x1c.google.protobuf.UInt32Value\"@\n\rLocalityBasis\x12\x15\n\x11HEALTHY_HOSTS_NUM\x10\x00\x12\x18\n\x14HEALTHY_HOSTS_WEIGHT\x10\x01\x1a\x1a\n\x18LocalityWeightedLbConfigB \n\x19locality_config_specifier\x12\x03\xf8\x42\x01\"\xb4\x01\n\x0fSlowStartConfig\x12\x34\n\x11slow_start_window\x18\x01 \x01(\x0b\x32\x19.google.protobuf.Duration\x12\x37\n\naggression\x18\x02 \x01(\x0b\x32#.envoy.config.core.v3.RuntimeDouble\x12\x32\n\x12min_weight_percent\x18\x03 \x01(\x0b\x32\x16.envoy.type.v3.Percent\"\xc5\x01\n\x19\x43onsistentHashingLbConfig\x12 \n\x18use_hostname_for_hashing\x18\x01 \x01(\x08\x12\x42\n\x13hash_balance_factor\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.UInt32ValueB\x07\xfa\x42\x04*\x02(d\x12\x42\n\x0bhash_policy\x18\x03 \x03(\x0b\x32-.envoy.config.route.v3.RouteAction.HashPolicy\"\x99\x01\n\x16OrcaOobReportingConfig\x12\x1d\n\nport_value\x18\x01 \x01(\rB\t\xfa\x42\x06*\x04\x18\xff\xff\x03\x12\x1e\n\tauthority\x18\x02 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x02\xc8\x01\x00\x12@\n\x1ftransport_socket_match_criteria\x18\x03 \x01(\x0b\x32\x17.google.protobuf.StructB\xbd\x01\n@io.envoyproxy.envoy.extensions.load_balancing_policies.common.v3B\x0b\x43ommonProtoP\x01Zbgithub.com/envoyproxy/go-control-plane/envoy/extensions/load_balancing_policies/common/v3;commonv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -46,18 +47,24 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_LOCALITYLBCONFIG'].oneofs_by_name['locality_config_specifier']._serialized_options = b'\370B\001'
   _globals['_CONSISTENTHASHINGLBCONFIG'].fields_by_name['hash_balance_factor']._loaded_options = None
   _globals['_CONSISTENTHASHINGLBCONFIG'].fields_by_name['hash_balance_factor']._serialized_options = b'\372B\004*\002(d'
-  _globals['_LOCALITYLBCONFIG']._serialized_start=385
-  _globals['_LOCALITYLBCONFIG']._serialized_end=1317
-  _globals['_LOCALITYLBCONFIG_ZONEAWARELBCONFIG']._serialized_start=661
-  _globals['_LOCALITYLBCONFIG_ZONEAWARELBCONFIG']._serialized_end=1255
-  _globals['_LOCALITYLBCONFIG_ZONEAWARELBCONFIG_FORCELOCALZONE']._serialized_start=1125
-  _globals['_LOCALITYLBCONFIG_ZONEAWARELBCONFIG_FORCELOCALZONE']._serialized_end=1189
-  _globals['_LOCALITYLBCONFIG_ZONEAWARELBCONFIG_LOCALITYBASIS']._serialized_start=1191
-  _globals['_LOCALITYLBCONFIG_ZONEAWARELBCONFIG_LOCALITYBASIS']._serialized_end=1255
-  _globals['_LOCALITYLBCONFIG_LOCALITYWEIGHTEDLBCONFIG']._serialized_start=1257
-  _globals['_LOCALITYLBCONFIG_LOCALITYWEIGHTEDLBCONFIG']._serialized_end=1283
-  _globals['_SLOWSTARTCONFIG']._serialized_start=1320
-  _globals['_SLOWSTARTCONFIG']._serialized_end=1500
-  _globals['_CONSISTENTHASHINGLBCONFIG']._serialized_start=1503
-  _globals['_CONSISTENTHASHINGLBCONFIG']._serialized_end=1700
+  _globals['_ORCAOOBREPORTINGCONFIG'].fields_by_name['port_value']._loaded_options = None
+  _globals['_ORCAOOBREPORTINGCONFIG'].fields_by_name['port_value']._serialized_options = b'\372B\006*\004\030\377\377\003'
+  _globals['_ORCAOOBREPORTINGCONFIG'].fields_by_name['authority']._loaded_options = None
+  _globals['_ORCAOOBREPORTINGCONFIG'].fields_by_name['authority']._serialized_options = b'\372B\010r\006\300\001\002\310\001\000'
+  _globals['_LOCALITYLBCONFIG']._serialized_start=415
+  _globals['_LOCALITYLBCONFIG']._serialized_end=1347
+  _globals['_LOCALITYLBCONFIG_ZONEAWARELBCONFIG']._serialized_start=691
+  _globals['_LOCALITYLBCONFIG_ZONEAWARELBCONFIG']._serialized_end=1285
+  _globals['_LOCALITYLBCONFIG_ZONEAWARELBCONFIG_FORCELOCALZONE']._serialized_start=1155
+  _globals['_LOCALITYLBCONFIG_ZONEAWARELBCONFIG_FORCELOCALZONE']._serialized_end=1219
+  _globals['_LOCALITYLBCONFIG_ZONEAWARELBCONFIG_LOCALITYBASIS']._serialized_start=1221
+  _globals['_LOCALITYLBCONFIG_ZONEAWARELBCONFIG_LOCALITYBASIS']._serialized_end=1285
+  _globals['_LOCALITYLBCONFIG_LOCALITYWEIGHTEDLBCONFIG']._serialized_start=1287
+  _globals['_LOCALITYLBCONFIG_LOCALITYWEIGHTEDLBCONFIG']._serialized_end=1313
+  _globals['_SLOWSTARTCONFIG']._serialized_start=1350
+  _globals['_SLOWSTARTCONFIG']._serialized_end=1530
+  _globals['_CONSISTENTHASHINGLBCONFIG']._serialized_start=1533
+  _globals['_CONSISTENTHASHINGLBCONFIG']._serialized_end=1730
+  _globals['_ORCAOOBREPORTINGCONFIG']._serialized_start=1733
+  _globals['_ORCAOOBREPORTINGCONFIG']._serialized_end=1886
 # @@protoc_insertion_point(module_scope)

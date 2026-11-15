@@ -32,6 +32,11 @@ UPB_INLINE const upb_MessageDef *envoy_type_matcher_v3_HttpResponseStatusCodeCla
   return upb_DefPool_FindMessageByName(s, "envoy.type.matcher.v3.HttpResponseStatusCodeClassMatchInput");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_type_matcher_v3_HttpResponseLocalReplyMatchInput_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_matcher_v3_status_code_input_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.matcher.v3.HttpResponseLocalReplyMatchInput");
+}
+
 
 #ifdef __cplusplus
 }  /* extern "C" */

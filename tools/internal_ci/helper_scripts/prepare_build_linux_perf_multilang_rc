@@ -33,7 +33,7 @@ gem list bundler
 gem install bundler --no-document
 
 # Allow SSH to Kokoro performance workers without explicit key verification
-gsutil cp gs://grpc-testing-secrets/grpc_kokoro_performance_ssh_keys/id_rsa ~/.ssh
+gcloud storage cp gs://grpc-testing-secrets/grpc_kokoro_performance_ssh_keys/id_rsa ~/.ssh
 echo -e 'Host grpc-kokoro-performance*\n\tStrictHostKeyChecking no' >> ~/.ssh/config
 chmod 600 ~/.ssh/id_rsa ~/.ssh/config
 

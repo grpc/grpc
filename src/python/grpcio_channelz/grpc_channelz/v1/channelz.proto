@@ -115,6 +115,9 @@ message ChannelData {
 
   // The last time a call was started on the channel.
   google.protobuf.Timestamp last_call_started_timestamp = 7;
+
+  // Populated for subchannels only.
+  uint32 max_connections_per_subchannel = 8;
 }
 
 // A trace event is an interesting thing that happened to a channel or
@@ -292,6 +295,14 @@ message SocketData {
   // Socket options set on this socket.  May be absent if 'summary' is set
   // on GetSocketRequest.
   repeated SocketOption option = 13;
+
+  // Populated if a GOAWAY has been received.  The value will be the
+  // HTTP/2 error code from the GOAWAY.
+  google.protobuf.UInt32Value received_goaway_error = 14;
+
+  // The value of MAX_CONCURRENT_STREAMS set by the peer.  Populated on
+  // client side only.
+  uint32 peer_max_concurrent_streams = 15;
 }
 
 // Address represents the address used to create the socket.
@@ -552,7 +563,7 @@ message GetSocketRequest {
   int64 socket_id = 1;
 
   // If true, the response will contain only high level information
-  // that is inexpensive to obtain. Fields thay may be omitted are
+  // that is inexpensive to obtain. Fields that may be omitted are
   // documented.
   bool summary = 2;
 }

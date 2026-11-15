@@ -50,7 +50,7 @@ class GcpAuthenticationFilter
     void SetMaxSize(size_t max_size);
 
     size_t max_size() const {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       return cache_.max_size();
     }
 

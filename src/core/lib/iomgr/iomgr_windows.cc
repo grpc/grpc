@@ -26,8 +26,6 @@
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
-#include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/resolve_address_windows.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_client.h"
@@ -36,7 +34,6 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
 
-extern grpc_tcp_server_vtable grpc_windows_tcp_server_vtable;
 extern grpc_tcp_server_vtable grpc_windows_event_engine_tcp_server_vtable;
 extern grpc_tcp_client_vtable grpc_windows_tcp_client_vtable;
 extern grpc_timer_vtable grpc_generic_timer_vtable;
@@ -63,7 +60,6 @@ static void iomgr_platform_init(void) {
   grpc_iocp_init();
   grpc_pollset_global_init();
   grpc_wsa_socket_flags_init();
-  grpc_core::ResetDNSResolver(std::make_unique<grpc_core::NativeDNSResolver>());
 }
 
 static void iomgr_platform_flush(void) { grpc_iocp_flush(); }
@@ -72,7 +68,6 @@ static void iomgr_platform_shutdown(void) {
   grpc_pollset_global_shutdown();
   grpc_iocp_shutdown();
   winsock_shutdown();
-  grpc_core::ResetDNSResolver(nullptr);  // delete the resolver
 }
 
 static void iomgr_platform_shutdown_background_closure(void) {}
@@ -96,11 +91,7 @@ static grpc_iomgr_platform_vtable vtable = {
 
 void grpc_set_default_iomgr_platform() {
   grpc_set_tcp_client_impl(&grpc_windows_tcp_client_vtable);
-  if (grpc_core::IsEventEngineListenerEnabled()) {
-    grpc_set_tcp_server_impl(&grpc_windows_event_engine_tcp_server_vtable);
-  } else {
-    grpc_set_tcp_server_impl(&grpc_windows_tcp_server_vtable);
-  }
+  grpc_set_tcp_server_impl(&grpc_windows_event_engine_tcp_server_vtable);
   grpc_set_timer_impl(&grpc_generic_timer_vtable);
   grpc_set_pollset_vtable(&grpc_windows_pollset_vtable);
   grpc_set_pollset_set_vtable(&grpc_windows_pollset_set_vtable);

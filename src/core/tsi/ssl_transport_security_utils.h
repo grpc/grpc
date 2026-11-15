@@ -25,6 +25,8 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
+#include <string>
+
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "absl/status/status.h"
@@ -181,6 +183,23 @@ absl::StatusOr<EVP_PKEY*> ParsePemPrivateKey(absl::string_view private_key_pem);
 
 // Safely parses a URI from OpenSSL's GENERAL_NAME to a string representation.
 absl::StatusOr<std::string> ParseUriString(GENERAL_NAME* subject_alt_name);
+
+// Safely parses a DNS name from OpenSSL's GENERAL_NAME to a string
+// representation.
+absl::StatusOr<std::string> ParseDnsString(GENERAL_NAME* subject_alt_name);
+
+// Returns the subject of \a cert in RFC 2253 form.  A certificate with a
+// well-formed but empty subject yields an empty string.
+absl::StatusOr<std::string> X509SubjectRfc2253(X509* cert);
+
+// Returns the principal of \a cert, which must be non-null: its first URI SAN,
+// else its first DNS SAN, else its subject in RFC 2253 form (the same
+// preference order Envoy's ext_authz uses for AttributeContext.Peer.principal).
+// SANs that cannot be decoded, are empty or contain an embedded null byte are
+// skipped.  The subject is only computed if there is no usable SAN.  Returns an
+// error if the subject is needed but cannot be extracted.  A well-formed but
+// empty subject yields an empty string.
+absl::StatusOr<std::string> X509Principal(X509* cert);
 
 // Map grpc_tls_key_exchange_group to string.
 absl::StatusOr<absl::string_view> ConvertKeyExchangeGroupToString(

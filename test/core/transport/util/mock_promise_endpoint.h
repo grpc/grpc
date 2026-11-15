@@ -124,7 +124,7 @@ class MockTelemetryInfo : public grpc_event_engine::experimental::EventEngine::
 struct MockTransportFramingEndpointExtension
     : public TransportFramingEndpointExtension {
   MOCK_METHOD(void, SetSendFrameCallback,
-              (absl::AnyInvocable<void(SliceBuffer*)>), (override));
+              (absl::AnyInvocable<void(SliceBuffer)>), (override));
   MOCK_METHOD(void, ReceiveFrame, (SliceBuffer), (override));
 };
 

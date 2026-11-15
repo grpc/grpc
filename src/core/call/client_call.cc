@@ -261,7 +261,7 @@ Party::WakeupHold ClientCall::StartCall(
     const grpc_op& send_initial_metadata_op) {
   GRPC_LATENT_SEE_SCOPE("ClientCall::StartCall");
   auto cur_state = call_state_.load(std::memory_order_acquire);
-  // TODO(akshitpatel): [PH2][P1]: Might need to invoke
+  // TODO(akshitpatel): [PH2][P2][Client]: Might need to invoke
   // PrepareApplicationMetadata here.
   CToMetadata(send_initial_metadata_op.data.send_initial_metadata.metadata,
               send_initial_metadata_op.data.send_initial_metadata.count,
@@ -487,6 +487,9 @@ char* ClientCall::GetPeer() {
   }
   return gpr_strdup("unknown");
 }
+
+// TODO(b/568493863): Plumb the local address through to the client side.
+char* ClientCall::GetLocalAddress() { return gpr_strdup("unknown"); }
 
 grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
                           grpc_completion_queue* cq, Slice path,

@@ -15,6 +15,7 @@
 #include "envoy/type/v3/percent.upb_minitable.h"
 #include "envoy/type/v3/semantic_version.upb_minitable.h"
 #include "google/protobuf/any.upb_minitable.h"
+#include "google/protobuf/duration.upb_minitable.h"
 #include "google/protobuf/struct.upb_minitable.h"
 #include "google/protobuf/wrappers.upb_minitable.h"
 #include "xds/core/v3/context_params.upb_minitable.h"
@@ -279,6 +280,29 @@ const upb_MiniTable envoy__config__core__v3__RuntimeUInt32_msg_init = {
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000010, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x001000003f00001a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+  })
+};
+
+typedef struct {
+  upb_MiniTableField fields[2];
+} envoy__config__core__v3__RuntimeUInt64_msg_init_Fields;
+
+static const envoy__config__core__v3__RuntimeUInt64_msg_init_Fields envoy_config_core_v3_RuntimeUInt64__fields = {{
+  {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {3, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+}};
+
+const upb_MiniTable envoy__config__core__v3__RuntimeUInt64_msg_init = {
+  &envoy_config_core_v3_RuntimeUInt64__fields.fields[0],
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.RuntimeUInt64",
+#endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001800003f000010, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x000800003f00001a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
 
@@ -565,22 +589,25 @@ const upb_MiniTable envoy__config__core__v3__HeaderMap_msg_init = {
 };
 
 typedef struct {
-  upb_MiniTableField fields[1];
+  upb_MiniTableField fields[2];
 } envoy__config__core__v3__WatchedDirectory_msg_init_Fields;
 
 static const envoy__config__core__v3__WatchedDirectory_msg_init_Fields envoy_config_core_v3_WatchedDirectory__fields = {{
-  {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {1, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 }};
 
 const upb_MiniTable envoy__config__core__v3__WatchedDirectory_msg_init = {
   &envoy_config_core_v3_WatchedDirectory__fields.fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.WatchedDirectory",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x000800003f000010, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
@@ -619,28 +646,30 @@ const upb_MiniTable envoy__config__core__v3__DataSource_msg_init = {
 };
 
 typedef struct {
-  upb_MiniTableField fields[6];
-  upb_MiniTableSubInternal subs[4];
+  upb_MiniTableField fields[7];
+  upb_MiniTableSubInternal subs[5];
 } envoy__config__core__v3__RetryPolicy_msg_init_Fields;
 
 static const envoy__config__core__v3__RetryPolicy_msg_init_Fields envoy_config_core_v3_RetryPolicy__fields = {{
-  {1, UPB_SIZE(12, 32), 64, 18, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(16, 40), 65, UPB_SIZE(16, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(28, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(20, 48), 66, UPB_SIZE(11, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {5, UPB_SIZE(24, 56), 0, UPB_SIZE(9, 12), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, UPB_SIZE(12, 32), 64, UPB_SIZE(21, 22), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 40), 65, UPB_SIZE(19, 21), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(32, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(20, 48), 66, UPB_SIZE(14, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(24, 56), 0, UPB_SIZE(12, 16), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {6, UPB_SIZE(40, 64), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(28, 72), 67, UPB_SIZE(7, 12), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
  },
   {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__BackoffStrategy_msg_init},
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__RetryPolicy__RetryPriority_msg_init},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__RetryPolicy__RetryHostPredicate_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
 }};
 
 const upb_MiniTable envoy__config__core__v3__RetryPolicy_msg_init = {
   &envoy_config_core_v3_RetryPolicy__fields.fields[0],
-  UPB_SIZE(48, 72), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(48, 80), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.RetryPolicy",
 #endif
@@ -829,7 +858,7 @@ const upb_MiniTable envoy__config__core__v3__ControlPlane_msg_init = {
   })
 };
 
-static const upb_MiniTable *messages_layout[30] = {
+static const upb_MiniTable *messages_layout[31] = {
   &envoy__config__core__v3__Locality_msg_init,
   &envoy__config__core__v3__BuildVersion_msg_init,
   &envoy__config__core__v3__Extension_msg_init,
@@ -839,6 +868,7 @@ static const upb_MiniTable *messages_layout[30] = {
   &envoy__config__core__v3__Metadata__FilterMetadataEntry_msg_init,
   &envoy__config__core__v3__Metadata__TypedFilterMetadataEntry_msg_init,
   &envoy__config__core__v3__RuntimeUInt32_msg_init,
+  &envoy__config__core__v3__RuntimeUInt64_msg_init,
   &envoy__config__core__v3__RuntimePercent_msg_init,
   &envoy__config__core__v3__RuntimeDouble_msg_init,
   &envoy__config__core__v3__RuntimeFeatureFlag_msg_init,
@@ -866,7 +896,7 @@ const upb_MiniTableFile envoy_config_core_v3_base_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  30,
+  31,
   0,
   0,
 };

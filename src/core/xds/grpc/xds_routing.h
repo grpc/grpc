@@ -75,7 +75,8 @@ class XdsRouting final {
 
   // Returns the metadata value(s) for the specified key.
   // As special cases, binary headers return a value of std::nullopt, and
-  // "content-type" header returns "application/grpc".
+  // "content-type" header returns "application/grpc". "host" and
+  // ":authority" both return GetAuthorityOrHost().
   static std::optional<absl::string_view> GetHeaderValue(
       grpc_metadata_batch* initial_metadata, absl::string_view header_name,
       std::string* concatenated_value);
@@ -196,32 +197,6 @@ class XdsRouting final {
     absl::StatusOr<RefCountedPtr<const FilterChain>> default_filter_chain_ =
         nullptr;
   };
-
-  // TODO(roth): Remove this struct and the following two methods when
-  // removing the xds_server_filter_chain_per_route experiment.
-  struct GeneratePerHttpFilterConfigsResult {
-    // Map of service config field name to list of elements for that field.
-    std::map<std::string, std::vector<std::string>> per_filter_configs;
-    ChannelArgs args;
-  };
-  // Generates per-HTTP filter configs for a method config.
-  static absl::StatusOr<GeneratePerHttpFilterConfigsResult>
-  GeneratePerHTTPFilterConfigsForMethodConfig(
-      const XdsHttpFilterRegistry& http_filter_registry,
-      const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
-          http_filters,
-      const XdsRouteConfigResource::VirtualHost& vhost,
-      const XdsRouteConfigResource::Route& route,
-      const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
-          cluster_weight,
-      const ChannelArgs& args);
-  // Generates per-HTTP filter configs for the top-level service config.
-  static absl::StatusOr<GeneratePerHttpFilterConfigsResult>
-  GeneratePerHTTPFilterConfigsForServiceConfig(
-      const XdsHttpFilterRegistry& http_filter_registry,
-      const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
-          http_filters,
-      const ChannelArgs& args);
 };
 
 }  // namespace grpc_core

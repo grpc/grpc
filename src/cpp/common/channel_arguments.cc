@@ -26,6 +26,7 @@
 #include <string>
 #include <vector>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/net/socket_mutator.h"
@@ -178,6 +179,12 @@ void ChannelArguments::SetInt(const std::string& key, int value) {
   arg.value.integer = value;
 
   args_.push_back(arg);
+}
+
+void ChannelArguments::SetChildChannelArgs(const ChannelArguments& args) {
+  grpc_channel_args c_args = args.c_channel_args();
+  SetPointerWithVtable(GRPC_ARG_CHILD_CHANNEL_ARGS, &c_args,
+                       grpc_channel_args_arg_vtable());
 }
 
 void ChannelArguments::SetPointer(const std::string& key, void* value) {

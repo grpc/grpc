@@ -44,6 +44,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"  // IWYU pragma: keep
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -1110,16 +1111,16 @@ struct InterceptFinalize<Derived, void (Call::*)(const grpc_call_final_info*,
 };
 
 template <typename Derived>
-absl::enable_if_t<std::is_empty<FilterCallData<Derived>>::value,
-                  FilterCallData<Derived>*>
+std::enable_if_t<std::is_empty<FilterCallData<Derived>>::value,
+                 FilterCallData<Derived>*>
 MakeFilterCall(Derived*) {
   static FilterCallData<Derived> call{nullptr};
   return &call;
 }
 
 template <typename Derived>
-absl::enable_if_t<!std::is_empty<FilterCallData<Derived>>::value,
-                  FilterCallData<Derived>*>
+std::enable_if_t<!std::is_empty<FilterCallData<Derived>>::value,
+                 FilterCallData<Derived>*>
 MakeFilterCall(Derived* derived) {
   return GetContext<Arena>()->ManagedNew<FilterCallData<Derived>>(derived);
 }
@@ -1175,7 +1176,8 @@ MakeFilterCall(Derived* derived) {
 //   failure (in which case the call will be aborted).
 //   useful for cases where the exact metadata returned needs to be customized.
 // It's also acceptable to return a promise that resolves to the
-// relevant return type listed above.
+// relevant return type listed above (except for OnClientToServerHalfClose
+// and OnServerTrailingMetadata, which must be synchronous).
 // Finally, OnFinalize can be added to intercept call finalization.
 // It must have one of the signatures:
 // - static inline const NoInterceptor OnFinalize:
@@ -1286,24 +1288,22 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
       InterActivityLatch<ServerMetadataHandle> server_trailing_metadata;
     };
     auto* pipe_owner = GetContext<Arena>()->ManagedNew<PipeOwner>();
-    if (IsV2NonOwningWakerImplementationEnabled()) {
-      // We need to start polling the initiator for server trailing
-      // metadata immediately, since the v3 interceptor may generate a
-      // failure before any of the other promises resolve.
-      //
-      // Spawn a promise on the initiator's activity to pull server trailing
-      // metadata and pass it to the v2 activity via an inter-activity latch.
-      initiator.SpawnInfallible(
-          "pull_server_trailing_metadata",
-          [initiator = initiator, pipe_owner]() mutable {
-            return Map(
-                initiator.PullServerTrailingMetadata(),
-                [pipe_owner](ServerMetadataHandle metadata) {
-                  pipe_owner->server_trailing_metadata.Set(std::move(metadata));
-                  return Empty{};
-                });
-          });
-    }
+    // We need to start polling the initiator for server trailing
+    // metadata immediately, since the v3 interceptor may generate a
+    // failure before any of the other promises resolve.
+    //
+    // Spawn a promise on the initiator's activity to pull server trailing
+    // metadata and pass it to the v2 activity via an inter-activity latch.
+    initiator.SpawnInfallible(
+        "pull_server_trailing_metadata",
+        [initiator = initiator, pipe_owner]() mutable {
+          return Map(
+              initiator.PullServerTrailingMetadata(),
+              [pipe_owner](ServerMetadataHandle metadata) {
+                pipe_owner->server_trailing_metadata.Set(std::move(metadata));
+                return Empty{};
+              });
+        });
     // Now return a promise that does all the things.
     // The returned promise is wrapped in OnCancel so that, if the v2 stack
     // destroys it before it completes (e.g. the forced-cancellation path in
@@ -1314,14 +1314,7 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
         Race(
             // Get server trailing metadata from the v3 promise via the
             // inter-activity latch.
-            If(
-                IsV2NonOwningWakerImplementationEnabled(),
-                [pipe_owner]() {
-                  return pipe_owner->server_trailing_metadata.Wait();
-                },
-                [initiator = initiator]() mutable {
-                  return initiator.PullServerTrailingMetadata();
-                }),
+            pipe_owner->server_trailing_metadata.Wait(),
             // This promise does the rest of the things, but it will always
             // return pending, because the promise can't actually finish
             // until the initiator returns trailing metadata above.
@@ -1360,23 +1353,28 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                                          [](bool x) { return StatusFlag(x); });
                             });
                       });
-                  call_args.client_to_server_messages->InterceptAndMap(
-                      [initiator, handler,
-                       pipe_owner](MessageHandle message) mutable {
-                        // Step 1: Push the message onto the v3 initiator in
-                        // its activity.
-                        initiator.SpawnPushMessage(std::move(message));
-                        // Step 3: Here in the v2 activity, read the message
-                        // from the inter-activity pipe and return it.
-                        return Map(
-                            pipe_owner->client_to_server_messages.receiver
-                                .Next(),
-                            [](InterActivityPipe<MessageHandle, 1>::NextResult
-                                   message) -> std::optional<MessageHandle> {
-                              if (!message.has_value()) return std::nullopt;
-                              return std::move(*message);
-                            });
-                      });
+                  call_args.client_to_server_messages
+                      ->InterceptAndMapWithHalfClose(
+                          [initiator,
+                           pipe_owner](MessageHandle message) mutable {
+                            // Step 1: Push the message onto the v3 initiator in
+                            // its activity.
+                            initiator.SpawnPushMessage(std::move(message));
+                            // Step 3: Here in the v2 activity, read the message
+                            // from the inter-activity pipe and return it.
+                            return Map(
+                                pipe_owner->client_to_server_messages.receiver
+                                    .Next(),
+                                [](InterActivityPipe<MessageHandle,
+                                                     1>::NextResult message)
+                                    -> std::optional<MessageHandle> {
+                                  if (!message.has_value()) return std::nullopt;
+                                  return std::move(*message);
+                                });
+                          },
+                          [initiator]() mutable {
+                            initiator.SpawnFinishSends();
+                          });
                   // For server initial metadata, we do a similar thing, but
                   // in the opposite direction, and using an inter-activity
                   // latch instead of a pipe:
@@ -1495,8 +1493,42 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                         return Seq(
                             next_promise_factory(std::move(call_args)),
                             [handler](ServerMetadataHandle metadata) mutable {
+                              // Hand the v3 handler its own copy of the
+                              // metadata.
+                              //
+                              // On the client side the v2 stack gives us a
+                              // non-owning alias of
+                              // FilterStackCall::recv_trailing_metadata_:
+                              // ClientCallData::PollTrailingMetadata() wraps
+                              // that batch in a handle with a no-op deleter.
+                              // The v3 call runs in its own party, so pushing
+                              // the alias across lets v2-owned memory escape
+                              // the v2 activity.  That is usually harmless,
+                              // since this arm returns Never and only
+                              // completes once the v3 side pushes the metadata
+                              // back.  But if the v2 stack is cancelled,
+                              // ClientCallData destroys this promise and
+                              // propagates the batch straight up to the
+                              // surface without consulting it; the surface
+                              // then Takes/clears the batch while the v3
+                              // interceptor is still reading it.
+                              //
+                              // Copying keeps the two buffers independent.
+                              // Mutations made by the v3 interceptor still
+                              // come back through the latch, and
+                              // ClientCallData::WakeInsideCombiner() copies
+                              // them into recv_trailing_metadata_ because the
+                              // pointers now differ.  Note we copy rather than
+                              // move: moving would leave the v2 batch empty,
+                              // so the cancellation path above would report an
+                              // empty status instead of the transport's.
+                              ServerMetadataHandle md;
+                              if (metadata != nullptr) {
+                                md = Arena::MakePooled<ServerMetadata>(
+                                    metadata->Copy());
+                              }
                               handler.SpawnPushServerTrailingMetadata(
-                                  std::move(metadata));
+                                  std::move(md));
                               // We return a lambda (promise) here instead of
                               // returning `Pending{}` directly to make this
                               // step safe for subsequent polls. During V2 call
@@ -1523,16 +1555,8 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
           // The v2 promise was destroyed before completing: propagate the
           // cancellation into the v3 call pair so its CallSpine is torn down
           // and the v3 interceptor is notified.
-          if (IsV2NonOwningWakerImplementationEnabled()) {
-            initiator.SpawnCancel(
-                absl::CancelledError("call cancelled by v2 filter stack"));
-          } else {
-            initiator.SpawnInfallible("v2-force-cancel", [initiator]() mutable {
-              initiator.Cancel();
-              return Map(initiator.PullServerTrailingMetadata(),
-                         [](ServerMetadataHandle) { return Empty{}; });
-            });
-          }
+          initiator.SpawnCancel(
+              absl::CancelledError("call cancelled by v2 filter stack"));
         });
   }
 
@@ -1793,6 +1817,8 @@ class BaseCallData : public Activity,
 
     // Start a send_message op.
     void StartOp(CapturedBatch batch);
+    // Client half-close (send_trailing_metadata) received.
+    void HalfClose();
     // Publish the outbound pipe to the filter.
     // This happens when the promise requests to call the next filter: until
     // this occurs messages can't be sent as we don't know the pipe that the
@@ -1843,6 +1869,8 @@ class BaseCallData : public Activity,
       kCancelled,
       // We're done, but we haven't gotten a status yet
       kCancelledButNoStatus,
+      // Cleanly closed after client half-close.
+      kClosed,
     };
     static const char* StateString(State);
 
@@ -1850,6 +1878,7 @@ class BaseCallData : public Activity,
 
     BaseCallData* const base_;
     State state_ = State::kInitial;
+    bool half_close_ = false;
     Interceptor* const interceptor_;
     std::optional<PipeSender<MessageHandle>::PushType> push_;
     std::optional<PipeReceiverNextType<MessageHandle>> next_;
@@ -2286,7 +2315,8 @@ struct BaseCallDataMethods {
 
 // The type of object returned by a filter's Create method.
 template <typename T>
-using CreatedType = typename decltype(T::Create(ChannelArgs(), {}))::value_type;
+using CreatedType = typename decltype(T::Create(
+    ChannelArgs(), ChannelFilter::Args()))::value_type;
 
 template <typename GrpcChannelOrCallElement>
 inline ChannelFilter* ChannelFilterFromElem(GrpcChannelOrCallElement* elem) {
@@ -2348,9 +2378,7 @@ struct ChannelFilterWithFlagsMethods {
     GRPC_CHECK(args->is_last == ((kFlags & kFilterIsLast) != 0));
     auto status =
         F::Create(args->channel_args,
-                  ChannelFilter::Args(args->channel_stack, elem,
-                                      grpc_channel_stack_filter_instance_number,
-                                      args->config));
+                  ChannelFilter::Args(args->channel_stack, args->config));
     if (!status.ok()) {
       new (elem->channel_data) F*(nullptr);
       return status.status();
@@ -2373,9 +2401,9 @@ struct ChannelFilterWithFlagsMethods {
 //       ChannelArgs channel_args, ChannelFilter::Args filter_args);
 // };
 template <typename F, FilterEndpoint kEndpoint, uint8_t kFlags = 0>
-absl::enable_if_t<std::is_base_of<ChannelFilter, F>::value &&
-                      !std::is_base_of<ImplementChannelFilterTag, F>::value,
-                  grpc_channel_filter>
+std::enable_if_t<std::is_base_of<ChannelFilter, F>::value &&
+                     !std::is_base_of<ImplementChannelFilterTag, F>::value,
+                 grpc_channel_filter>
 MakePromiseBasedFilter() {
   using CallData = promise_filter_detail::CallData<kEndpoint>;
 
@@ -2412,8 +2440,8 @@ MakePromiseBasedFilter() {
 }
 
 template <typename F, FilterEndpoint kEndpoint, uint8_t kFlags = 0>
-absl::enable_if_t<std::is_base_of<ImplementChannelFilterTag, F>::value,
-                  grpc_channel_filter>
+std::enable_if_t<std::is_base_of<ImplementChannelFilterTag, F>::value,
+                 grpc_channel_filter>
 MakePromiseBasedFilter() {
   using CallData = promise_filter_detail::CallData<kEndpoint>;
 

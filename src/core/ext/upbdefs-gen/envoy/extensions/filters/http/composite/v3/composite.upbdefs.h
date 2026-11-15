@@ -27,6 +27,16 @@ UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_composite_v3_Comp
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.composite.v3.Composite");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_composite_v3_Composite_NamedFilterChainsEntry_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_http_composite_v3_composite_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.composite.v3.Composite.NamedFilterChainsEntry");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_composite_v3_CompositePerRoute_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_http_composite_v3_composite_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.composite.v3.CompositePerRoute");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_composite_v3_FilterChainConfiguration_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_http_composite_v3_composite_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.composite.v3.FilterChainConfiguration");

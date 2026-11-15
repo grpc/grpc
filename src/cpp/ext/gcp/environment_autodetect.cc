@@ -60,7 +60,7 @@ std::string GetNamespaceName() {
   // Read the root file.
   const char* filename =
       "/var/run/secrets/kubernetes.io/serviceaccount/namespace";
-  auto namespace_name = grpc_core::LoadFile(filename, false);
+  auto namespace_name = grpc_core::LoadFile(filename);
   if (!namespace_name.ok()) {
     GRPC_TRACE_VLOG(environment_autodetect, 2)
         << "Reading file " << filename
@@ -192,7 +192,7 @@ class EnvironmentAutoDetectHelper
   }
 
   void AutoDetect() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     // GKE
     resource_.labels.emplace("project_id", project_id_);
     if (grpc_core::GetEnv("KUBERNETES_SERVICE_HOST").has_value()) {
@@ -257,7 +257,7 @@ class EnvironmentAutoDetectHelper
                 << "\"";
             std::optional<EnvironmentAutoDetect::ResourceType> resource;
             {
-              grpc_core::MutexLock lock(&mu_);
+              grpc_core::MutexLock lock(mu_);
               auto it = attributes_to_fetch_.find(attribute);
               if (it != attributes_to_fetch_.end()) {
                 if (result.ok()) {
@@ -340,7 +340,7 @@ EnvironmentAutoDetect::EnvironmentAutoDetect(std::string project_id)
 void EnvironmentAutoDetect::NotifyOnDone(absl::AnyInvocable<void()> callback) {
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
   {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     // Environment has already been detected
     if (resource_ != nullptr) {
       // Execute on the event engine to avoid deadlocks.
@@ -360,7 +360,7 @@ void EnvironmentAutoDetect::NotifyOnDone(absl::AnyInvocable<void()> callback) {
         [this](EnvironmentAutoDetect::ResourceType resource) {
           std::vector<absl::AnyInvocable<void()>> callbacks;
           {
-            grpc_core::MutexLock lock(&mu_);
+            grpc_core::MutexLock lock(mu_);
             resource_ = std::make_unique<EnvironmentAutoDetect::ResourceType>(
                 std::move(resource));
             callbacks = std::move(callbacks_);

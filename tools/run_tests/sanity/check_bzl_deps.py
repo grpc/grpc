@@ -32,6 +32,7 @@ import requests
 ### Map from bzlmod to submodule
 DEP_MAPS = {
     "abseil-cpp": "abseil-cpp",
+    "autosharding": "autosharding",
     # "boringssl": "boringssl-with-bazel",               # third_party/boringssl-with-bazel is a special branch so they cannot be compared.
     # 'c-ares': 'cares',                                 # third_party/cares is vendored so there is no commit hash.
     "envoy_api": "envoy-api",

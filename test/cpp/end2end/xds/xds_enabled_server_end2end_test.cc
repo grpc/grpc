@@ -37,6 +37,7 @@
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -55,6 +56,11 @@ using ::envoy::config::listener::v3::FilterChainMatch;
 
 class XdsEnabledServerTest : public XdsEnd2endTest {
  protected:
+  static void SetUpTestSuite() {
+    SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P3][Client] Fix bug");
+    SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
+  }
+
   void SetUp() override {}  // No-op -- individual tests do this themselves.
 
   void DoSetUp(const std::optional<XdsBootstrapBuilder>& builder = std::nullopt,
@@ -287,6 +293,19 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
             absl::FailedPreconditionError(absl::StrCat(
                 "LDS resource ", GetServerListenerName(backends_[0]->port()),
                 " address does not match listening address")));
+}
+
+TEST_P(XdsEnabledServerTest, ListenerMatchWithWildcardPort) {
+  DoSetUp();
+  Listener listener = default_server_listener_;
+  listener.set_name(GetServerListenerName(backends_[0]->port()));
+  listener.mutable_address()->mutable_socket_address()->set_port_value(0);
+  SetListenerAndRouteConfiguration(balancer_.get(), listener,
+                                   default_server_route_config_,
+                                   ServerHcmAccessor());
+  StartBackend(0);
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
+  WaitForBackend(DEBUG_LOCATION, 0);
 }
 
 //

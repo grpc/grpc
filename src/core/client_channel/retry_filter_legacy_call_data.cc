@@ -1907,6 +1907,8 @@ void RetryFilter::LegacyCallData::OnRetryTimerLocked(
   if (calld->retry_timer_handle_ != TaskHandle::kInvalid) {
     calld->retry_timer_handle_ = TaskHandle::kInvalid;
     calld->CreateCallAttempt(/*is_transparent_retry=*/false);
+  } else {
+    GRPC_CALL_COMBINER_STOP(calld->call_combiner_, "retry timer cancelled");
   }
   GRPC_CALL_STACK_UNREF(calld->owning_call_, "OnRetryTimer");
 }

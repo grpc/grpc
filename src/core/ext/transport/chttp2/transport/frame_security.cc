@@ -55,8 +55,7 @@ absl::Status grpc_chttp2_security_frame_parser_parse(void* parser,
 absl::Status grpc_chttp2_security_frame_parser_begin_frame(
     grpc_chttp2_security_frame_parser* parser, const uint32_t length,
     const uint32_t max_frame_size) {
-  if (GPR_UNLIKELY(length > max_frame_size &&
-                   grpc_core::IsCustomFrameCheckEnabled())) {
+  if (GPR_UNLIKELY(length > max_frame_size)) {
     return GRPC_ERROR_CREATE(absl::StrCat(
         "gRPC Transport Error : Security frame is larger than the maximum "
         "allowed size : ",

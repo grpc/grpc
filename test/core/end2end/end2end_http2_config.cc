@@ -95,7 +95,7 @@ uint64_t Rand() {
     absl::BitGen gen ABSL_GUARDED_BY(mu);
   };
   static State* const state = new State;
-  MutexLock lock(&state->mu);
+  MutexLock lock(state->mu);
   return absl::Uniform<uint64_t>(state->gen);
 }
 

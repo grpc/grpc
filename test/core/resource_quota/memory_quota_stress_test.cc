@@ -149,7 +149,7 @@ class StressTest {
     // Thread-safe.
     bool RememberReservation(MemoryAllocator::Reservation reservation)
         ABSL_LOCKS_EXCLUDED(mu_) {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       bool was_empty = reservations_.empty();
       reservations_.emplace_back(std::move(reservation));
       return was_empty;
@@ -159,7 +159,7 @@ class StressTest {
     // dropped.
     std::vector<MemoryAllocator::Reservation> ForgetReservations()
         ABSL_LOCKS_EXCLUDED(mu_) {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       return std::move(reservations_);
     }
 

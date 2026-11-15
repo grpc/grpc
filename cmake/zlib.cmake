@@ -23,12 +23,45 @@ if(gRPC_ZLIB_PROVIDER STREQUAL "module")
   if(EXISTS "${ZLIB_ROOT_DIR}/CMakeLists.txt")
     # TODO(jtattermusch): workaround for https://github.com/madler/zlib/issues/218
     include_directories("${ZLIB_ROOT_DIR}")
+
+    # Adopt zlib 1.3.2 options (see third_party/zlib/README-cmake.md):
+    # gRPC only links against the static library, so disable building
+    # unused shared libraries and example test executables.
+    set(ZLIB_BUILD_SHARED OFF CACHE BOOL "Enable building zlib shared library" FORCE)
+    set(ZLIB_BUILD_TESTING OFF CACHE BOOL "Enable Zlib Examples as tests" FORCE)
+    set(ZLIB_BUILD_STATIC ON CACHE BOOL "Enable building zlib static library" FORCE)
+
     add_subdirectory(${ZLIB_ROOT_DIR} third_party/zlib)
 
     if(TARGET zlibstatic)
       set(_gRPC_ZLIB_LIBRARIES zlibstatic)
+      # unistd.h is a POSIX header and does not exist on Windows (MSVC, clang-cl, etc.).
+      if(NOT WIN32)
+        # Workaround for zlib 1.3.2 with out-of-source CMake builds:
+        # 
+        # It's a long-standing issue where zlib's CMakeLists.txt
+        # is broken when it generates `zconf.h` based on host platform.
+        # In short, `#include "zconf.h"` uses quoted includes,
+        # which causes the compiler to pick up the fallback `zconf.h` from
+        # the source tree instead of the one generated from `zconf.h.cmakein`.
+        #
+        # Manually include HAVE_UNISTD_H and HAVE_STDARG_H macro on POSIX
+        # Platforms.
+        #
+        # (see https://github.com/madler/zlib/issues/133 and
+        # https://github.com/madler/zlib/issues/218).
+
+        # To view the difference between pre-included zconf.h vs the generated
+        # one, you can run:
+        # 
+        # > diff third_party/zlib/zconf.h \
+        #    cmake/build/third_party/zlib/zconf.h
+        target_compile_definitions(zlibstatic PRIVATE
+          HAVE_UNISTD_H=1
+          HAVE_STDARG_H=1)
+      endif()
       set(_gRPC_ZLIB_INCLUDE_DIR "${ZLIB_ROOT_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib")
-      if(gRPC_INSTALL AND _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
+      if(gRPC_INSTALL)
         install(TARGETS zlibstatic EXPORT gRPCTargets
           RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
           LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -37,10 +70,6 @@ if(gRPC_ZLIB_PROVIDER STREQUAL "module")
     endif()
   else()
     message(WARNING "gRPC_ZLIB_PROVIDER is \"module\" but ZLIB_ROOT_DIR is wrong")
-  endif()
-  if(gRPC_INSTALL AND NOT _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
-    message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_ZLIB_PROVIDER is \"module\"  and CMake version (${CMAKE_VERSION}) is less than 3.13.")
-    set(gRPC_INSTALL FALSE)
   endif()
 elseif(gRPC_ZLIB_PROVIDER STREQUAL "package")
   # zlib installation directory can be configured by setting ZLIB_ROOT
@@ -51,7 +80,9 @@ elseif(gRPC_ZLIB_PROVIDER STREQUAL "package")
   # See https://cmake.org/cmake/help/v3.6/module/FindZLIB.html
   find_package(ZLIB REQUIRED)
 
-  if(TARGET ZLIB::ZLIB)
+  if(TARGET ZLIB::ZLIBSTATIC)
+    set(_gRPC_ZLIB_LIBRARIES ZLIB::ZLIBSTATIC)
+  elseif(TARGET ZLIB::ZLIB)
     set(_gRPC_ZLIB_LIBRARIES ZLIB::ZLIB)
   else()
     set(_gRPC_ZLIB_LIBRARIES ${ZLIB_LIBRARIES})

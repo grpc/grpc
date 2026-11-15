@@ -163,12 +163,6 @@ void CdsChildNameState::Update(
 
 namespace {
 
-// TODO(roth): Remove this after the 1.63 release.
-bool XdsAggregateClusterBackwardCompatibilityEnabled() {
-  return IsExperimentEnvVarEnabled(
-      "GRPC_XDS_AGGREGATE_CLUSTER_BACKWARD_COMPAT");
-}
-
 constexpr absl::string_view kCds = "cds_experimental";
 
 // Config for this LB policy.
@@ -184,7 +178,7 @@ class CdsLbConfig final : public LoadBalancingPolicy::Config {
 
   absl::string_view name() const override { return kCds; }
 
-  const std::string& cluster() const { return cluster_; }
+  const RefCountedStringValue& cluster() const { return cluster_; }
   bool is_dynamic() const { return is_dynamic_; }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
@@ -197,7 +191,7 @@ class CdsLbConfig final : public LoadBalancingPolicy::Config {
   }
 
  private:
-  std::string cluster_;
+  RefCountedStringValue cluster_;
   bool is_dynamic_ = false;
 };
 
@@ -257,8 +251,7 @@ class CdsLb final : public LoadBalancingPolicy {
 
   Json CreateChildPolicyConfigForLeafCluster(
       const XdsConfig::ClusterConfig& new_cluster,
-      const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config,
-      const XdsClusterResource* aggregate_cluster_resource);
+      const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config);
   Json CreateChildPolicyConfigForAggregateCluster(
       const XdsConfig::ClusterConfig::AggregateConfig& aggregate_config);
 
@@ -319,15 +312,16 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   auto new_config = args.config.TakeAsSubclass<CdsLbConfig>();
   GRPC_TRACE_LOG(cds_lb, INFO)
       << "[cdslb " << this
-      << "] received update: cluster=" << new_config->cluster()
+      << "] received update: cluster=" << new_config->cluster().as_string_view()
       << " is_dynamic=" << new_config->is_dynamic();
   GRPC_CHECK(new_config != nullptr);
   // Cluster name should never change, because we should use a different
   // child name in xds_cluster_manager in that case.
   if (cluster_name_.as_string_view().empty()) {
-    cluster_name_ = RefCountedStringValue(new_config->cluster());
+    cluster_name_ = new_config->cluster();
   } else {
-    GRPC_CHECK_EQ(cluster_name_.as_string_view(), new_config->cluster());
+    GRPC_CHECK_EQ(cluster_name_.as_string_view(),
+                  new_config->cluster().as_string_view());
   }
   // Start dynamic subscription if needed.
   if (new_config->is_dynamic() && subscription_ == nullptr) {
@@ -399,37 +393,6 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
       }
     }
   }
-  // TODO(roth): Remove this after the 1.63 release.
-  const XdsClusterResource* aggregate_cluster_resource = nullptr;
-  static constexpr absl::string_view kArgXdsAggregateClusterName =
-      GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_aggregate_cluster_name";
-  if (XdsAggregateClusterBackwardCompatibilityEnabled()) {
-    if (std::holds_alternative<XdsConfig::ClusterConfig::EndpointConfig>(
-            new_cluster_config->children)) {
-      auto aggregate_cluster = args.args.GetString(kArgXdsAggregateClusterName);
-      if (aggregate_cluster.has_value()) {
-        auto it = new_xds_config->clusters.find(*aggregate_cluster);
-        if (it == new_xds_config->clusters.end()) {
-          // Cluster not present.  This should never happen.
-          absl::Status status = absl::UnavailableError(
-              absl::StrCat("xDS config has no entry for aggregate cluster ",
-                           *aggregate_cluster));
-          ReportTransientFailure(status);
-          return status;
-        }
-        auto& aggregate_cluster_config = it->second;
-        if (!aggregate_cluster_config.ok()) {
-          ReportTransientFailure(aggregate_cluster_config.status());
-          return aggregate_cluster_config.status();
-        }
-        GRPC_CHECK_NE(aggregate_cluster_config->cluster, nullptr);
-        aggregate_cluster_resource = aggregate_cluster_config->cluster.get();
-      }
-    } else {
-      args.args = args.args.Set(kArgXdsAggregateClusterName,
-                                cluster_name_.as_string_view());
-    }
-  }
   // Construct child policy config and update state based on the cluster type.
   Json child_policy_config_json;
   UpdateArgs update_args;
@@ -454,7 +417,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
         update_args.resolution_note = absl::StrJoin(resolution_notes, "; ");
         // Construct child policy config.
         child_policy_config_json = CreateChildPolicyConfigForLeafCluster(
-            *new_cluster_config, endpoint_config, aggregate_cluster_resource);
+            *new_cluster_config, endpoint_config);
         // Pass backend service label to child policy.
         args.args = args.args.Set(GRPC_ARG_BACKEND_SERVICE,
                                   cluster_name_.as_string_view());
@@ -513,22 +476,13 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
 
 Json CdsLb::CreateChildPolicyConfigForLeafCluster(
     const XdsConfig::ClusterConfig& new_cluster,
-    const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config,
-    const XdsClusterResource* aggregate_cluster_resource) {
+    const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config) {
   const auto& cluster_resource = *new_cluster.cluster;
   const bool is_logical_dns =
       std::holds_alternative<XdsClusterResource::LogicalDns>(
           cluster_resource.type);
   // Determine what xDS LB policy to use.
-  Json xds_lb_policy;
-  // TODO(roth): Remove this "if" condition after the 1.63 release.
-  if (XdsAggregateClusterBackwardCompatibilityEnabled() &&
-      aggregate_cluster_resource != nullptr) {
-    xds_lb_policy =
-        Json::FromArray(aggregate_cluster_resource->lb_policy_config);
-  } else {
-    xds_lb_policy = Json::FromArray(new_cluster.cluster->lb_policy_config);
-  }
+  Json xds_lb_policy = Json::FromArray(new_cluster.cluster->lb_policy_config);
   // Wrap it in the priority policy.
   Json::Object priority_children;
   Json::Array priority_priorities;

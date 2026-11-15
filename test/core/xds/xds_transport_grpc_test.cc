@@ -16,6 +16,7 @@
 
 #include "src/core/xds/grpc/xds_transport_grpc.h"
 
+#include <grpc/channel_factory.h>
 #include <grpc/grpc.h>
 
 #include <memory>
@@ -23,13 +24,20 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/client_channel/channel_factory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/surface/call.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/certificate_provider_store.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
+#include "src/core/xds/grpc/xds_transport_factory_grpc.h"
+#include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
@@ -43,15 +51,17 @@ namespace testing {
 namespace {
 
 class FakeStreamingCallEventHandler
-    : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
+    : public XdsTransport::StreamingCall::EventHandler {
  public:
   explicit FakeStreamingCallEventHandler(
-      absl::Notification* on_status_received = nullptr)
-      : on_status_received_(on_status_received) {}
+      absl::Notification* on_status_received = nullptr,
+      absl::Status* status = nullptr)
+      : on_status_received_(on_status_received), status_(status) {}
 
   void OnRequestSent(bool /*ok*/) override {}
   void OnRecvMessage(absl::string_view /*payload*/) override {}
-  void OnStatusReceived(absl::Status /*status*/) override {
+  void OnStatusReceived(absl::Status status) override {
+    if (status_ != nullptr) *status_ = std::move(status);
     if (on_status_received_ != nullptr) {
       on_status_received_->Notify();
     }
@@ -59,6 +69,37 @@ class FakeStreamingCallEventHandler
 
  private:
   absl::Notification* on_status_received_;
+  absl::Status* status_;
+};
+
+// Records the census_context that client call tracers see when they are
+// created for calls to kTracedMethod.  Tracing systems (e.g., OpenTelemetry)
+// use it as the parent of the call's span.
+class ParentCensusContextRecordingStatsPlugin : public FakeStatsPlugin {
+ public:
+  static constexpr absl::string_view kTracedMethod = "/test.Service/Traced";
+
+  ClientCallTracerInterface* GetClientCallTracer(
+      const Slice& path, bool /*registered_method*/,
+      std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
+    if (path.as_string_view() == kTracedMethod) {
+      parent_census_context_ =
+          GetContext<Arena>()->GetContext<census_context>();
+      saw_call_ = true;
+    }
+    return nullptr;
+  }
+
+  bool saw_call() const { return saw_call_; }
+  census_context* parent_census_context() const {
+    return parent_census_context_;
+  }
+
+ private:
+  // Calls are created synchronously by CreateStreamingCall() on the test
+  // thread, so no synchronization is needed.
+  bool saw_call_ = false;
+  census_context* parent_census_context_ = nullptr;
 };
 
 class GrpcXdsTransportTest : public ::testing::Test {
@@ -122,10 +163,8 @@ TEST_F(GrpcXdsTransportTest, DifferingCallCredsSharesChannel) {
   auto transport2 = factory_->GetTransport(target2, &status2);
   ASSERT_TRUE(status2.ok()) << status2.ToString();
   EXPECT_NE(transport1, transport2);
-  auto* grpc_transport1 =
-      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport1.get());
-  auto* grpc_transport2 =
-      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport2.get());
+  auto* grpc_transport1 = DownCast<GrpcXdsTransport*>(transport1.get());
+  auto* grpc_transport2 = DownCast<GrpcXdsTransport*>(transport2.get());
   EXPECT_EQ(grpc_transport1->channel(), grpc_transport2->channel());
 }
 
@@ -147,10 +186,8 @@ TEST_F(GrpcXdsTransportTest, DifferingMetadataSharesChannel) {
   auto transport2 = factory_->GetTransport(target2, &status2);
   ASSERT_TRUE(status2.ok()) << status2.ToString();
   EXPECT_NE(transport1, transport2);
-  auto* grpc_transport1 =
-      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport1.get());
-  auto* grpc_transport2 =
-      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport2.get());
+  auto* grpc_transport1 = DownCast<GrpcXdsTransport*>(transport1.get());
+  auto* grpc_transport2 = DownCast<GrpcXdsTransport*>(transport2.get());
   EXPECT_EQ(grpc_transport1->channel(), grpc_transport2->channel());
 }
 
@@ -172,10 +209,8 @@ TEST_F(GrpcXdsTransportTest, DifferingTimeoutSharesChannel) {
   auto transport2 = factory_->GetTransport(target2, &status2);
   ASSERT_TRUE(status2.ok()) << status2.ToString();
   EXPECT_NE(transport1, transport2);
-  auto* grpc_transport1 =
-      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport1.get());
-  auto* grpc_transport2 =
-      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport2.get());
+  auto* grpc_transport1 = DownCast<GrpcXdsTransport*>(transport1.get());
+  auto* grpc_transport2 = DownCast<GrpcXdsTransport*>(transport2.get());
   EXPECT_EQ(grpc_transport1->channel(), grpc_transport2->channel());
 }
 
@@ -197,10 +232,8 @@ TEST_F(GrpcXdsTransportTest, DifferingServerUriDoesNotShareChannel) {
   auto transport2 = factory_->GetTransport(target2, &status2);
   ASSERT_TRUE(status2.ok()) << status2.ToString();
   EXPECT_NE(transport1, transport2);
-  auto* grpc_transport1 =
-      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport1.get());
-  auto* grpc_transport2 =
-      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport2.get());
+  auto* grpc_transport1 = DownCast<GrpcXdsTransport*>(transport1.get());
+  auto* grpc_transport2 = DownCast<GrpcXdsTransport*>(transport2.get());
   EXPECT_NE(grpc_transport1->channel(), grpc_transport2->channel());
 }
 
@@ -213,15 +246,196 @@ TEST_F(GrpcXdsTransportTest, StreamingCallOrphan) {
   auto transport = factory_->GetTransport(target, &status);
   ASSERT_TRUE(status.ok()) << status.ToString();
   absl::Notification on_status_received;
+  absl::Status call_status;
   auto call = transport->CreateStreamingCall(
       "/test.Service/TestMethod",
-      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received));
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
+                                                      &call_status),
+      XdsTransport::CallOptions().set_wait_for_ready(true));
   ASSERT_NE(call, nullptr);
   exec_ctx.Flush();
   on_status_received.WaitForNotification();
+  // Nothing is listening on server_uri_, but with wait-for-ready enabled,
+  // the call stays queued until the deadline instead of failing when the
+  // connection attempt fails.
+  EXPECT_EQ(call_status.code(), absl::StatusCode::kDeadlineExceeded)
+      << call_status;
   // Orphan the call after status is received. This invokes Orphan(), which
   // cleans up the call and releases the initial reference.
   call.reset();
+}
+
+TEST_F(GrpcXdsTransportTest, StreamingCallWithoutWaitForReadyFails) {
+  ExecCtx exec_ctx;
+  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{}, Duration::Seconds(10));
+  absl::Status status;
+  auto transport = factory_->GetTransport(target, &status);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  absl::Notification on_status_received;
+  absl::Status call_status;
+  auto call = transport->CreateStreamingCall(
+      "/test.Service/TestMethod",
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
+                                                      &call_status));
+  ASSERT_NE(call, nullptr);
+  exec_ctx.Flush();
+  // Nothing is listening on server_uri_, so the call fails as soon as the
+  // connection attempt fails, rather than being queued until the deadline.
+  on_status_received.WaitForNotification();
+  EXPECT_EQ(call_status.code(), absl::StatusCode::kUnavailable) << call_status;
+}
+
+// Tests a unary RPC: the call is created with start_upon_send_message,
+// and the request is sent with the half-close in the same batch.
+TEST_F(GrpcXdsTransportTest, UnaryCall) {
+  ExecCtx exec_ctx;
+  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{{"key1", "val1"}},
+                             Duration::Seconds(10));
+  absl::Status status;
+  auto transport = factory_->GetTransport(target, &status);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  absl::Notification on_status_received;
+  absl::Status call_status;
+  auto call = transport->CreateStreamingCall(
+      "/test.Service/TestMethod",
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
+                                                      &call_status),
+      XdsTransport::CallOptions().set_start_upon_send_message(true));
+  ASSERT_NE(call, nullptr);
+  call->StartRecvMessage();
+  call->SendMessage("request", /*send_half_close=*/true);
+  exec_ctx.Flush();
+  // There is no server listening on this port, so the call fails as soon as
+  // the connection attempt fails.
+  on_status_received.WaitForNotification();
+  EXPECT_EQ(call_status.code(), absl::StatusCode::kUnavailable) << call_status;
+  call.reset();
+}
+
+TEST_F(GrpcXdsTransportTest, UnaryCallWithWaitForReady) {
+  ExecCtx exec_ctx;
+  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{{"key1", "val1"}},
+                             Duration::Seconds(5));
+  absl::Status status;
+  auto transport = factory_->GetTransport(target, &status);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  absl::Notification on_status_received;
+  absl::Status call_status;
+  auto call = transport->CreateStreamingCall(
+      "/test.Service/TestMethod",
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
+                                                      &call_status),
+      XdsTransport::CallOptions()
+          .set_start_upon_send_message(true)
+          .set_wait_for_ready(true));
+  ASSERT_NE(call, nullptr);
+  call->StartRecvMessage();
+  call->SendMessage("request", /*send_half_close=*/true);
+  exec_ctx.Flush();
+  // With wait-for-ready enabled on the deferred initial-metadata batch, the
+  // call stays queued until the deadline.
+  on_status_received.WaitForNotification();
+  EXPECT_EQ(call_status.code(), absl::StatusCode::kDeadlineExceeded)
+      << call_status;
+  call.reset();
+}
+
+// A call created with start_upon_send_message does not send initial metadata
+// if SendMessage() is not called, and can be orphaned before sending a message.
+TEST_F(GrpcXdsTransportTest, UnaryCallOrphanedBeforeSendMessage) {
+  ExecCtx exec_ctx;
+  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{}, Duration::Seconds(1));
+  absl::Status status;
+  auto transport = factory_->GetTransport(target, &status);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  absl::Notification on_status_received;
+  auto call = transport->CreateStreamingCall(
+      "/test.Service/TestMethod",
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received),
+      XdsTransport::CallOptions().set_start_upon_send_message(true));
+  ASSERT_NE(call, nullptr);
+  call.reset();
+  exec_ctx.Flush();
+  on_status_received.WaitForNotification();
+}
+
+// Returns the XdsTransport inside an
+// experimental::ChannelFactory::ChannelHandle.
+XdsTransport* GetXdsTransport(
+    const experimental::ChannelFactory::ChannelHandle& channel) {
+  return DownCast<const ChannelHandleImpl&>(channel).transport().get();
+}
+
+// Starts a streaming call on transport and returns its final status.
+absl::Status RunStreamingCall(XdsTransport& transport) {
+  ExecCtx exec_ctx;
+  absl::Notification on_status_received;
+  absl::Status call_status;
+  auto call = transport.CreateStreamingCall(
+      "/test.Service/TestMethod",
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
+                                                      &call_status));
+  EXPECT_NE(call, nullptr);
+  exec_ctx.Flush();
+  on_status_received.WaitForNotification();
+  call.reset();
+  return call_status;
+}
+
+TEST_F(GrpcXdsTransportTest, WrapperKnownKeyReturnsFactoryTransport) {
+  ExecCtx exec_ctx;
+  auto target = std::make_shared<GrpcXdsServerTarget>(
+      server_uri_, channel_creds_config_,
+      /*call_creds_configs=*/
+      std::vector<RefCountedPtr<const CallCredsConfig>>{},
+      /*initial_metadata=*/std::vector<std::pair<std::string, std::string>>{},
+      Duration::Seconds(10));
+  XdsTransportFactoryWrapper::TargetMap targets;
+  targets.emplace("key1", target);
+  XdsTransportFactoryWrapper wrapper(factory_, std::move(targets));
+  auto channel = wrapper.CreateChannel("key1");
+  ASSERT_NE(channel, nullptr);
+  absl::Status status;
+  auto factory_transport = factory_->GetTransport(*target, &status);
+  ASSERT_TRUE(status.ok()) << status;
+  EXPECT_EQ(GetXdsTransport(*channel), factory_transport.get());
+}
+
+TEST_F(GrpcXdsTransportTest, WrapperTwoKeysSameTargetShareTransport) {
+  ExecCtx exec_ctx;
+  auto target = std::make_shared<GrpcXdsServerTarget>(
+      server_uri_, channel_creds_config_,
+      /*call_creds_configs=*/
+      std::vector<RefCountedPtr<const CallCredsConfig>>{},
+      /*initial_metadata=*/std::vector<std::pair<std::string, std::string>>{},
+      Duration::Seconds(10));
+  XdsTransportFactoryWrapper::TargetMap targets;
+  targets.emplace("key1", target);
+  targets.emplace("key2", target);
+  XdsTransportFactoryWrapper wrapper(factory_, std::move(targets));
+  auto channel1 = wrapper.CreateChannel("key1");
+  auto channel2 = wrapper.CreateChannel("key2");
+  ASSERT_NE(channel1, nullptr);
+  ASSERT_NE(channel2, nullptr);
+  EXPECT_EQ(GetXdsTransport(*channel1), GetXdsTransport(*channel2));
+}
+
+TEST_F(GrpcXdsTransportTest, WrapperUnknownKeyReturnsLameTransport) {
+  ExecCtx exec_ctx;
+  XdsTransportFactoryWrapper wrapper(factory_, /*targets=*/{});
+  auto channel = wrapper.CreateChannel("unknown");
+  ASSERT_NE(channel, nullptr);
+  absl::Status call_status = RunStreamingCall(*GetXdsTransport(*channel));
+  EXPECT_EQ(call_status.code(), absl::StatusCode::kUnavailable) << call_status;
+  EXPECT_EQ(call_status.message(), "channel key not allowed: unknown");
 }
 
 class GrpcXdsServerTargetTest : public ::testing::Test {
@@ -307,6 +521,35 @@ TEST_F(GrpcXdsServerTargetTest, DifferentTimeoutAreNotEqual) {
                               {{"k1", "v1"}}, Duration::Seconds(20));
   EXPECT_NE(target1, target2);
   EXPECT_NE(target1.Key(), target2.Key());
+}
+
+TEST_F(GrpcXdsTransportTest, ParentCensusContextIsSetOnCall) {
+  // Must be registered before the transport creates its channel.
+  auto stats_plugin =
+      std::make_shared<ParentCensusContextRecordingStatsPlugin>();
+  GlobalStatsPluginRegistry::RegisterStatsPlugin(stats_plugin);
+  ExecCtx exec_ctx;
+  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{}, Duration::Seconds(10));
+  absl::Status status;
+  auto transport = factory_->GetTransport(target, &status);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  // The call never dereferences the context, so any non-null pointer will do.
+  int parent_context_storage = 0;
+  auto* parent_context =
+      reinterpret_cast<census_context*>(&parent_context_storage);
+  auto call = transport->CreateStreamingCall(
+      std::string(ParentCensusContextRecordingStatsPlugin::kTracedMethod)
+          .c_str(),
+      std::make_unique<FakeStreamingCallEventHandler>(),
+      XdsTransport::CallOptions()
+          .set_start_upon_send_message(true)
+          .set_parent_census_context(parent_context));
+  ASSERT_NE(call, nullptr);
+  ASSERT_TRUE(stats_plugin->saw_call());
+  EXPECT_EQ(stats_plugin->parent_census_context(), parent_context);
+  call.reset();
 }
 
 }  // namespace

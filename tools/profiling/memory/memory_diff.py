@@ -122,6 +122,13 @@ def _run():
             "build",
             "-c",
             "opt",
+            # TODO(weizheyuan): Upgrade to abseil >= 20260817.0
+            # or replace this flag with
+            # --bazelrc=tools/remote_build/include/absl_copts.bazelrc
+            # once the file is available on master branch.
+            #
+            # Needed for compiling with abseil on Clang < 16 (https://github.com/abseil/abseil-cpp/issues/2073)
+            "--cxxopt=-Wno-invalid-partial-specialization",
             "test/core/memory_usage/memory_usage_test",
         ]
     )

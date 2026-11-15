@@ -93,12 +93,12 @@ class TlsChannelSecurityConnector final
       absl::string_view host, grpc_auth_context* auth_context) override;
 
   tsi_ssl_client_handshaker_factory* ClientHandshakerFactoryForTesting() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     return client_handshaker_factory_;
   };
 
   std::optional<PemKeyCertPairList> KeyCertPairListForTesting() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     if (key_cert_pairs_or_selector_.has_value()) {
       Match(
@@ -112,7 +112,7 @@ class TlsChannelSecurityConnector final
   }
 
   std::shared_ptr<tsi::RootCertInfo> RootCertInfoForTesting() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     return root_cert_info_;
   }
 
@@ -214,12 +214,12 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
   int cmp(const grpc_security_connector* other) const override;
 
   tsi_ssl_server_handshaker_factory* ServerHandshakerFactoryForTesting() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     return server_handshaker_factory_;
   };
 
   std::optional<PemKeyCertPairList> KeyCertPairListForTesting() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     if (key_cert_pairs_or_selector_.has_value()) {
       Match(
@@ -233,7 +233,7 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
   }
 
   std::shared_ptr<tsi::RootCertInfo> RootCertInfoForTesting() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     return root_cert_info_;
   }
 

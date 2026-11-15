@@ -448,36 +448,7 @@ TEST_F(WeightedRoundRobinTest, AppUtilOverCpuUtil) {
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
 }
 
-TEST_F(WeightedRoundRobinTest, WrrCustomMetricDisabledFallback) {
-  const std::array<absl::string_view, 3> kAddresses = {
-      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  std::vector<std::string> metric_names = {"named_metrics.foo"};
-  auto picker = SendInitialUpdateAndWaitForConnected(
-      kAddresses,
-      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
-  ASSERT_NE(picker, nullptr);
-  // Address 0 reports a high named metric "foo", but since feature is disabled,
-  // it should use cpu_utilization (fallback) or app_utilization.
-  // Here we provide
-  // app_utilization=0
-  // cpu_utilization=0.1.
-  // "foo" = 0.9.
-  // If ignored, utilization = 0.1 (cpu).
-  WaitForWeightedRoundRobinPicks(
-      &picker,
-      {{kAddresses[0],
-        MakeBackendMetricData(/*app_utilization=*/0,
-                              /*qps=*/100.0, /*eps=*/0.0,
-                              /*cpu_utilization=*/0.1,
-                              /*mem_utilization=*/0.0, {{"foo", 0.9}})},
-       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
-                                             /*qps=*/100.0, /*eps=*/0.0,
-                                             /*cpu_utilization=*/0.1)}},
-      {{kAddresses[0], 1}, {kAddresses[1], 1}, {kAddresses[2], 1}});
-}
-
 TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledCpuUtilization) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   std::vector<std::string> metric_names = {"cpu_utilization"};
@@ -502,7 +473,6 @@ TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledCpuUtilization) {
 }
 
 TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledMemUtilization) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   std::vector<std::string> metric_names = {"mem_utilization"};
@@ -526,7 +496,6 @@ TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledMemUtilization) {
 }
 
 TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledAppUtilization) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   std::vector<std::string> metric_names = {"application_utilization"};
@@ -546,7 +515,6 @@ TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledAppUtilization) {
 }
 
 TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledNamedMetric) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   std::vector<std::string> metric_names = {"named_metrics.foo"};
@@ -572,7 +540,6 @@ TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledNamedMetric) {
 }
 
 TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledUtilizationMetric) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   std::vector<std::string> metric_names = {"utilization.foo"};
@@ -598,7 +565,6 @@ TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledUtilizationMetric) {
 }
 
 TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledMultipleMetricsMax) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   // Checks that we take the MAX of the specified metrics.
@@ -626,7 +592,6 @@ TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledMultipleMetricsMax) {
 }
 
 TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledFallbackPriority) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   std::vector<std::string> metric_names = {"named_metrics.foo"};
@@ -656,30 +621,6 @@ TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledFallbackPriority) {
                            /*cpu_utilization=*/0.45, /*mem_utilization=*/0.0,
                            {{"foo", 0.0}})}},
       {{kAddresses[0], 1}, {kAddresses[1], 1}, {kAddresses[2], 2}});
-}
-
-// TODO(rishesh): Once the env var guard is removed, this entire test case can
-// be removed, since it will be a duplicate of several existing tests above.
-// Checks that if enabled but no metric names provided, we default to CPU.
-TEST_F(WeightedRoundRobinTest,
-       WrrCustomMetricEnabledNoMetricNamesDefaultsToCpu) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
-  const std::array<absl::string_view, 3> kAddresses = {
-      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  // No metric names provided, should default to CPU utilization.
-  auto picker = SendInitialUpdateAndWaitForConnected(kAddresses);
-  ASSERT_NE(picker, nullptr);
-  // Addr 0: cpu=0.9
-  // Addr 1: cpu=0.1
-  WaitForWeightedRoundRobinPicks(
-      &picker,
-      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
-                                             /*qps=*/100.0, /*eps=*/0.0,
-                                             /*cpu_utilization=*/0.9)},
-       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
-                                             /*qps=*/100.0, /*eps=*/0.0,
-                                             /*cpu_utilization=*/0.1)}},
-      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
 }
 
 TEST_F(WeightedRoundRobinTest, Eps) {
@@ -1380,11 +1321,7 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
               ::testing::Optional(::testing::ElementsAre(
                   // Picker created for first endpoint becoming READY.
                   0,
-                  // Picker update for second endpoint CONNECTING.
-                  0,
                   // Picker update for second endpoint READY.
-                  0, 0,
-                  // Picker update for third endpoint CONNECTING.
                   0, 0,
                   // Picker update for third endpoint READY.
                   0, 0, 0,
@@ -1395,17 +1332,17 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
                   ::testing::DoubleNear(111.111115, 0.000001),
                   ::testing::DoubleNear(333.333344, 0.000001),
                   ::testing::DoubleNear(333.333344, 0.000001))));
-  // RR fallback should trigger for the first 5 updates above, because
+  // RR fallback should trigger for the first 3 updates above, because
   // there are less than two endpoints with valid weights.
   EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kRrFallback, kLabelValues,
                                                   kOptionalLabelValues),
-              ::testing::Optional(5));
+              ::testing::Optional(3));
   // Endpoint-not-yet-usable will be incremented once for every endpoint
   // with weight 0 above.
   EXPECT_THAT(
       stats_plugin->GetUInt64CounterValue(kEndpointWeightNotYetUsable,
                                           kLabelValues, kOptionalLabelValues),
-      ::testing::Optional(10));
+      ::testing::Optional(7));
   // There are no stale endpoint weights so far.
   EXPECT_THAT(stats_plugin->GetUInt64CounterValue(
                   kEndpointWeightStale, kLabelValues, kOptionalLabelValues),

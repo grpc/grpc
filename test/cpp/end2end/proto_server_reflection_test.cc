@@ -17,6 +17,10 @@
 //
 
 #include <grpc/grpc.h>
+#include <grpc/reflection/v1/reflection.grpc.pb.h>
+#include <grpc/reflection/v1/reflection.pb.h>
+#include <grpc/reflection/v1alpha/reflection.grpc.pb.h>
+#include <grpc/reflection/v1alpha/reflection.pb.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -31,10 +35,6 @@
 #include <memory>
 #include <vector>
 
-#include "src/proto/grpc/reflection/v1/reflection.grpc.pb.h"
-#include "src/proto/grpc/reflection/v1/reflection.pb.h"
-#include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
-#include "src/proto/grpc/reflection/v1alpha/reflection.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"

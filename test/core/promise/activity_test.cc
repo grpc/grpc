@@ -44,7 +44,7 @@ class Barrier {
 
   Promise<Result> Wait() {
     return [this]() -> Poll<Result> {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       if (cleared_) {
         return Result{};
       } else {
@@ -54,10 +54,10 @@ class Barrier {
   }
 
   void Clear() {
-    mu_.Lock();
+    mu_.lock();
     cleared_ = true;
     auto wakeup = wait_set_.TakeWakeupSet();
-    mu_.Unlock();
+    mu_.unlock();
     wakeup.Wakeup();
   }
 
@@ -75,7 +75,7 @@ class SingleBarrier {
 
   Promise<Result> Wait() {
     return [this]() -> Poll<Result> {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       if (cleared_) {
         return Result{};
       } else {
@@ -86,10 +86,10 @@ class SingleBarrier {
   }
 
   void Clear() {
-    mu_.Lock();
+    mu_.lock();
     cleared_ = true;
     auto waker = std::move(waker_);
-    mu_.Unlock();
+    mu_.unlock();
     waker.Wakeup();
   }
 

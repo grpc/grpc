@@ -74,10 +74,7 @@ class ActiveConnectionTestPeer {
       NewChttp2ServerListener::ActiveConnection* connection)
       : connection_(connection) {}
 
-  void OnClose() {
-    NewChttp2ServerListener::ActiveConnection::OnClose(connection_,
-                                                       absl::OkStatus());
-  }
+  void OnClose() { connection_->OnClose(); }
 
   NewChttp2ServerListener::ActiveConnection::HandshakingState*
   handshaking_state() {
@@ -163,7 +160,7 @@ class ListenerStateTestPeer {
 
   // Returns the number of connections currently being actively tracked
   size_t ConnectionsSize() {
-    MutexLock lock(&listener_state_->mu_);
+    MutexLock lock(listener_state_->mu_);
     return listener_state_->connections_.size();
   }
 
@@ -176,8 +173,8 @@ namespace {
 class TestMitigationEngine : public MitigationEngine {
  public:
   std::optional<Action> EvaluateIncomingConnection(
-      absl::string_view peer_address) override {
-    if (peer_address == "ipv4:127.0.0.1:12345") {
+      const EvaluateArgs& args) override {
+    if (args.peer_address == "ipv4:127.0.0.1:12345") {
       return Action::kCloseConnection;
     }
     return std::nullopt;
@@ -185,12 +182,12 @@ class TestMitigationEngine : public MitigationEngine {
 
   std::optional<Action> EvaluateIncomingMetadata(
       absl::string_view, absl::string_view,
-      absl::string_view /*peer_address*/) override {
+      const EvaluateArgs& /*args*/) override {
     return std::nullopt;
   }
 
   std::optional<Action> EvaluateAllIncomingMetadata(
-      const grpc_metadata_batch&, absl::string_view /*peer_address*/) override {
+      const grpc_metadata_batch&, const EvaluateArgs& /*args*/) override {
     return std::nullopt;
   }
 };
@@ -358,8 +355,6 @@ TEST_F(Chttp2ActiveConnectionTest, CloseWithoutHandshakeStarting) {
   EXPECT_EQ(
       listener_state_->connection_quota()->TestOnlyActiveIncomingConnections(),
       1);
-  connection->RefAsSubclass<NewChttp2ServerListener::ActiveConnection>()
-      .release();  // Ref for OnClose
   // On close, the connection count should go back to 0.
   ActiveConnectionTestPeer(connection.get()).OnClose();
   EXPECT_EQ(
@@ -412,8 +407,6 @@ TEST_F(Chttp2ActiveConnectionTest, CloseDuringHandshake) {
   EXPECT_EQ(
       listener_state_->connection_quota()->TestOnlyActiveIncomingConnections(),
       1);
-  connection->RefAsSubclass<NewChttp2ServerListener::ActiveConnection>()
-      .release();  // Ref for OnClose
   // On close, the connection count should go back to 0.
   ActiveConnectionTestPeer(connection.get()).OnClose();
   EXPECT_EQ(

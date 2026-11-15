@@ -27,6 +27,10 @@ export CCACHE_NOHASHDIR=true
 # shellcheck disable=SC1091
 source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
+# IMPORTANT! On macOS, tools/internal_ci/macos/grpc_distribtests_python.sh
+# pre-installs the packages below (including cython) with network retries.
+# Keep the versions in sync with that script.
+
 # Needed for building binary distribution wheels -- bdist_wheel
 "${PYTHON}" -m pip install --upgrade pip
 # Pin to a single version to make sure we're building the same artifacts
@@ -41,7 +45,7 @@ then
   # Any installation step is a potential source of breakages,
   # so we are trying to perform as few download-and-install operations
   # as possible.
-  "${PYTHON}" -m pip install --upgrade 'cython==3.1.1'
+  "${PYTHON}" -m pip install --upgrade 'cython==3.2.8'
 fi
 
 # Allow build_ext to build C/C++ files in parallel

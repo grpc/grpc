@@ -101,6 +101,7 @@ class ClientCall final
   grpc_call_stack* call_stack() override { return nullptr; }
 
   char* GetPeer() override;
+  char* GetLocalAddress() override;
 
   bool Completed() final { Crash("unimplemented"); }
   bool failed_before_recv_message() const final {

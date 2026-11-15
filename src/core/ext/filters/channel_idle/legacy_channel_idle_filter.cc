@@ -104,7 +104,7 @@ struct LegacyMaxAgeFilter::Config {
       Mutex mu;
       absl::BitGen bit_gen ABSL_GUARDED_BY(mu);
       double MakeUniformDouble(double min, double max) {
-        MutexLock lock(&mu);
+        MutexLock lock(mu);
         return absl::Uniform(bit_gen, min, max);
       }
     };
@@ -304,14 +304,19 @@ void RegisterLegacyChannelIdleFilters(CoreConfiguration::Builder* builder) {
         return GetClientIdleTimeout(channel_args) != Duration::Infinity();
       });
 
-  builder->channel_init()
-      ->RegisterV2Filter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
-      .FloatToTop()
-      .ExcludeFromMinimalStack()
-      .If([](const ChannelArgs& channel_args) {
-        return LegacyMaxAgeFilter::Config::FromChannelArgs(channel_args)
-            .enable();
-      });
+  auto& max_age_registration =
+      builder->channel_init()
+          ->RegisterV2Filter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
+          .ExcludeFromMinimalStack()
+          .If([](const ChannelArgs& channel_args) {
+            return LegacyMaxAgeFilter::Config::FromChannelArgs(channel_args)
+                .enable();
+          });
+  if (IsFixV3FilterStackServerSideOrderingEnabled()) {
+    max_age_registration.SinkToBottom();
+  } else {
+    max_age_registration.FloatToTop();
+  }
 }
 
 LegacyMaxAgeFilter::LegacyMaxAgeFilter(grpc_channel_stack* channel_stack,

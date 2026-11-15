@@ -151,8 +151,10 @@ declare -A useLanguage=(
   [java]=1
   [node]=1
   [python]=1
+  [python_asyncio]=1
   [ruby]=1
   [rust]=1
+  [php8]=1
 )
 
 # Disable specific languages.
@@ -208,6 +210,13 @@ if [[ -v "useLanguage[python]" ]]; then
   runnerLangArgs+=(-l "python:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
 fi
 
+# python_asyncio
+if [[ -v "useLanguage[python_asyncio]" ]]; then
+  configLangArgs8core+=(-l python_asyncio)
+  configLangArgs32core+=(-l python_asyncio)
+  runnerLangArgs+=(-l "python_asyncio:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
+fi
+
 # ruby
 if [[ -v "useLanguage[ruby]" ]]; then
   configLangArgs8core+=(-l ruby) # 8-core only.
@@ -221,6 +230,14 @@ if [[ -v "useLanguage[rust]" ]]; then
   runnerLangArgs+=(-l "rust:${GRPC_RUST_REPO}:${GRPC_RUST_COMMIT}")
 fi
 
+# php8
+if [[ -v "useLanguage[php8]" ]]; then
+  configLangArgs8core+=(-l php8) # 8-core only.
+  runnerLangArgs+=(-l "php8:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
+  configLangArgs8core+=(-l php8_protobuf_c) # 8-core only.
+  runnerLangArgs+=(-l "php8_protobuf_c:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
+fi
+
 # Disable broken tests by regex.
 # The test disabled here hangs on 8 cores. The result of this test is not
 # displayed on the public dashboard. The test runs and passes on the 30-core
@@ -229,6 +246,7 @@ fi
 # IMPORTANT: Scenario names are case-sensitive.
 declare -a disabledTests8core=(
   cpp_protobuf_async_client_unary_1channel_64wide_128Breq_8MBresp_insecure
+  cpp_protobuf_async_client_unary_1channel_64wide_128Breq_8MBresp_secure
 )
 declare -a disabledTests32core=()
 

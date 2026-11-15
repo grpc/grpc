@@ -48,7 +48,7 @@ class ClientAsyncStreamingInterface {
   /// Request notification of the reading of the initial metadata. Completion
   /// will be notified by \a tag on the associated completion queue.
   /// This call is optional, but if it is used, it cannot be used concurrently
-  /// with or after the \a AsyncReaderInterface::Read method.
+  /// with or after the AsyncReaderInterface::Read method.
   ///
   /// \param[in] tag Tag identifying this request.
   virtual void ReadInitialMetadata(void* tag) = 0;
@@ -61,11 +61,11 @@ class ClientAsyncStreamingInterface {
   ///   * the client side has no more message to send
   ///     (this can be declared implicitly by calling this method, or
   ///     explicitly through an earlier call to the <i>WritesDone</i> method
-  ///     of the class in use, e.g. \a ClientAsyncWriterInterface::WritesDone or
-  ///     \a ClientAsyncReaderWriterInterface::WritesDone).
+  ///     of the class in use, e.g. ClientAsyncWriterInterface::WritesDone or
+  ///     ClientAsyncReaderWriterInterface::WritesDone).
   ///   * there are no more messages to be received from the server (this can
   ///     be known implicitly by the calling code, or explicitly from an
-  ///     earlier call to \a AsyncReaderInterface::Read that yielded a failed
+  ///     earlier call to AsyncReaderInterface::Read that yielded a failed
   ///     result, e.g. cq->Next(&read_tag, &ok) filled in 'ok' with 'false').
   ///
   /// The tag will be returned when either:
@@ -94,7 +94,7 @@ class AsyncReaderInterface {
   /// This is thread-safe with respect to \a Write or \a WritesDone methods. It
   /// should not be called concurrently with other streaming APIs
   /// on the same stream. It is not meaningful to call it concurrently
-  /// with another \a AsyncReaderInterface::Read on the same stream since reads
+  /// with another AsyncReaderInterface::Read on the same stream since reads
   /// on the same stream are delivered in order.
   ///
   /// \param[out] msg Where to eventually store the read message.
@@ -116,7 +116,7 @@ class AsyncWriterInterface {
   /// Only one write may be outstanding at any given time. This means that
   /// after calling Write, one must wait to receive \a tag from the completion
   /// queue BEFORE calling Write again.
-  /// This is thread-safe with respect to \a AsyncReaderInterface::Read
+  /// This is thread-safe with respect to AsyncReaderInterface::Read
   ///
   /// gRPC doesn't take ownership or a reference to \a msg, so it is safe to
   /// to deallocate once Write returns.
@@ -132,7 +132,7 @@ class AsyncWriterInterface {
   /// after calling Write, one must wait to receive \a tag from the completion
   /// queue BEFORE calling Write again.
   /// WriteOptions \a options is used to set the write options of this message.
-  /// This is thread-safe with respect to \a AsyncReaderInterface::Read
+  /// This is thread-safe with respect to AsyncReaderInterface::Read
   ///
   /// gRPC doesn't take ownership or a reference to \a msg, so it is safe to
   /// to deallocate once Write returns.
@@ -221,7 +221,7 @@ class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
     StartCallInternal(tag);
   }
 
-  /// See the \a ClientAsyncStreamingInterface.ReadInitialMetadata
+  /// See the ClientAsyncStreamingInterface::ReadInitialMetadata
   /// method for semantics.
   ///
   /// Side effect:
@@ -248,7 +248,7 @@ class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
     read_ops_.FillOps(&call_);
   }
 
-  /// See the \a ClientAsyncStreamingInterface.Finish method for semantics.
+  /// See the ClientAsyncStreamingInterface::Finish method for semantics.
   ///
   /// Side effect:
   ///   - the \a ClientContext associated with this call is updated with
@@ -313,7 +313,7 @@ class ClientAsyncWriterInterface
       public internal::AsyncWriterInterface<W> {
  public:
   /// Signal the client is done with the writes (half-close the client stream).
-  /// Thread-safe with respect to \a AsyncReaderInterface::Read
+  /// Thread-safe with respect to AsyncReaderInterface::Read
   ///
   /// \param[in] tag The tag identifying the operation.
   virtual void WritesDone(void* tag) = 0;
@@ -372,7 +372,7 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
     StartCallInternal(tag);
   }
 
-  /// See the \a ClientAsyncStreamingInterface.ReadInitialMetadata method for
+  /// See the ClientAsyncStreamingInterface::ReadInitialMetadata method for
   /// semantics.
   ///
   /// Side effect:
@@ -418,7 +418,7 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
     write_ops_.FillOps(&call_);
   }
 
-  /// See the \a ClientAsyncStreamingInterface.Finish method for semantics.
+  /// See the ClientAsyncStreamingInterface::Finish method for semantics.
   ///
   /// Side effect:
   ///   - the \a ClientContext associated with this call is updated with
@@ -488,7 +488,7 @@ class ClientAsyncReaderWriterInterface
       public internal::AsyncReaderInterface<R> {
  public:
   /// Signal the client is done with the writes (half-close the client stream).
-  /// Thread-safe with respect to \a AsyncReaderInterface::Read
+  /// Thread-safe with respect to AsyncReaderInterface::Read
   ///
   /// \param[in] tag The tag identifying the operation.
   virtual void WritesDone(void* tag) = 0;
@@ -544,7 +544,7 @@ class ClientAsyncReaderWriter final
     StartCallInternal(tag);
   }
 
-  /// See the \a ClientAsyncStreamingInterface.ReadInitialMetadata method
+  /// See the ClientAsyncStreamingInterface::ReadInitialMetadata method
   /// for semantics of this method.
   ///
   /// Side effect:
@@ -599,7 +599,7 @@ class ClientAsyncReaderWriter final
     write_ops_.FillOps(&call_);
   }
 
-  /// See the \a ClientAsyncStreamingInterface.Finish method for semantics.
+  /// See the ClientAsyncStreamingInterface::Finish method for semantics.
   /// Side effect
   ///   - the \a ClientContext associated with this call is updated with
   ///     possible initial and trailing metadata sent from the server.
@@ -669,7 +669,7 @@ class ServerAsyncReaderInterface
   /// It is appropriate to call this method when:
   ///   * all messages from the client have been received (either known
   ///     implicitly, or explicitly because a previous
-  ///     \a AsyncReaderInterface::Read operation with a non-ok result,
+  ///     AsyncReaderInterface::Read operation with a non-ok result,
   ///     e.g., cq->Next(&read_tag, &ok) filled in 'ok' with 'false').
   ///
   /// This operation will end when the server has finished sending out initial
@@ -693,7 +693,7 @@ class ServerAsyncReaderInterface
   /// This call is meant to end the call with some error, and can be called at
   /// any point that the server would like to "fail" the call (though note
   /// this shouldn't be called concurrently with any other "sending" call, like
-  /// \a AsyncWriterInterface::Write).
+  /// AsyncWriterInterface::Write).
   ///
   /// This operation will end when the server has finished sending out initial
   /// metadata (if not sent already), and status, or if some failure occurred
@@ -716,7 +716,7 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
  public:
   explicit ServerAsyncReader(grpc::ServerContext* ctx) : call_(), ctx_(ctx) {}
 
-  /// See \a ServerAsyncStreamingInterface::SendInitialMetadata for semantics.
+  /// See ServerAsyncStreamingInterface::SendInitialMetadata for semantics.
   ///
   /// Implicit input parameter:
   ///   - The initial metadata that will be sent to the client from this op will
@@ -740,7 +740,7 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
     read_ops_.FillOps(&call_);
   }
 
-  /// See the \a ServerAsyncReaderInterface.Read method for semantics
+  /// See the ServerAsyncReaderInterface::Read method for semantics
   ///
   /// Side effect:
   ///   - also sends initial metadata if not already sent.
@@ -772,7 +772,7 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
     finish_ops_.FillOps(&call_);
   }
 
-  /// See the \a ServerAsyncReaderInterface.Read method for semantics
+  /// See the ServerAsyncReaderInterface::Read method for semantics
   ///
   /// Side effect:
   ///   - also sends initial metadata if not already sent.
@@ -863,7 +863,7 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
  public:
   explicit ServerAsyncWriter(grpc::ServerContext* ctx) : call_(), ctx_(ctx) {}
 
-  /// See \a ServerAsyncStreamingInterface::SendInitialMetadata for semantics.
+  /// See ServerAsyncStreamingInterface::SendInitialMetadata for semantics.
   ///
   /// Implicit input parameter:
   ///   - The initial metadata that will be sent to the client from this op will
@@ -904,7 +904,7 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
     write_ops_.FillOps(&call_);
   }
 
-  /// See the \a ServerAsyncWriterInterface.WriteAndFinish method for semantics.
+  /// See the ServerAsyncWriterInterface::WriteAndFinish method for semantics.
   ///
   /// Implicit input parameter:
   ///   - the \a ServerContext associated with this call is used
@@ -925,7 +925,7 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
     write_ops_.FillOps(&call_);
   }
 
-  /// See the \a ServerAsyncWriterInterface.Finish method for semantics.
+  /// See the ServerAsyncWriterInterface::Finish method for semantics.
   ///
   /// Implicit input parameter:
   ///   - the \a ServerContext associated with this call is used for sending
@@ -1031,7 +1031,7 @@ class ServerAsyncReaderWriter final
   explicit ServerAsyncReaderWriter(grpc::ServerContext* ctx)
       : call_(), ctx_(ctx) {}
 
-  /// See \a ServerAsyncStreamingInterface::SendInitialMetadata for semantics.
+  /// See ServerAsyncStreamingInterface::SendInitialMetadata for semantics.
   ///
   /// Implicit input parameter:
   ///   - The initial metadata that will be sent to the client from this op will
@@ -1076,7 +1076,7 @@ class ServerAsyncReaderWriter final
     write_ops_.FillOps(&call_);
   }
 
-  /// See the \a ServerAsyncReaderWriterInterface.WriteAndFinish
+  /// See the ServerAsyncReaderWriterInterface::WriteAndFinish
   /// method for semantics.
   ///
   /// Implicit input parameter:
@@ -1098,7 +1098,7 @@ class ServerAsyncReaderWriter final
     write_ops_.FillOps(&call_);
   }
 
-  /// See the \a ServerAsyncReaderWriterInterface.Finish method for semantics.
+  /// See the ServerAsyncReaderWriterInterface::Finish method for semantics.
   ///
   /// Implicit input parameter:
   ///   - the \a ServerContext associated with this call is used for sending

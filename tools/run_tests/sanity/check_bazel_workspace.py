@@ -53,6 +53,7 @@ _GRPC_DEP_NAMES = [
     "io_opencensus_cpp",
     "io_opentelemetry_cpp",
     "envoy_api",
+    "envoy_toolshed",
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
     _BAZEL_COMPDB_DEP_NAME,
@@ -69,11 +70,13 @@ _GRPC_DEP_NAMES = [
     "com_google_libprotobuf_mutator",
     "com_github_cncf_xds",
     "dev_cel",
+    "cel_c",
     "google_cloud_cpp",
     "rules_shell",
     "rules_java",
     "yaml-cpp",
     "grpc_proto",
+    "autosharding",
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
@@ -83,6 +86,7 @@ _GRPC_BAZEL_ONLY_DEPS = [
     "com_google_absl",
     "com_google_fuzztest",
     "io_opencensus_cpp",
+    "envoy_toolshed",
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
     _BAZEL_COMPDB_DEP_NAME,

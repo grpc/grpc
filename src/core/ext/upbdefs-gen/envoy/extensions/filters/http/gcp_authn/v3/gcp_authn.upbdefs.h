@@ -32,6 +32,26 @@ UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_gcp_authn_v3_Audi
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.gcp_authn.v3.Audience");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_http_gcp_authn_v3_gcp_authn_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.gcp_authn.v3.Audience.AccessToken");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_http_gcp_authn_v3_gcp_authn_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.gcp_authn.v3.Audience.BoundJwt");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_http_gcp_authn_v3_gcp_authn_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.gcp_authn.v3.Audience.BoundAccessToken");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_gcp_authn_v3_Audience_IAMAccessToken_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_http_gcp_authn_v3_gcp_authn_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.gcp_authn.v3.Audience.IAMAccessToken");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_http_gcp_authn_v3_gcp_authn_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.gcp_authn.v3.TokenCacheConfig");
@@ -40,6 +60,11 @@ UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_gcp_authn_v3_Toke
 UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_gcp_authn_v3_TokenHeader_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_http_gcp_authn_v3_gcp_authn_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.gcp_authn.v3.TokenHeader");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_gcp_authn_v3_TokenHeader_PreserveExisting_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_http_gcp_authn_v3_gcp_authn_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.gcp_authn.v3.TokenHeader.PreserveExisting");
 }
 
 

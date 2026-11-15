@@ -1,0 +1,67 @@
+//
+// Copyright 2026 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+#ifndef GRPC_SRC_CORE_LOAD_BALANCING_AUTOSHARDING_AUTOSHARDING_H
+#define GRPC_SRC_CORE_LOAD_BALANCING_AUTOSHARDING_AUTOSHARDING_H
+
+#include <string>
+
+#include "src/core/load_balancing/lb_policy.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_args.h"
+#include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/time.h"
+#include "src/core/util/validation_errors.h"
+#include "absl/strings/string_view.h"
+
+namespace grpc_core {
+
+class AutoShardingLbConfig final : public LoadBalancingPolicy::Config {
+ public:
+  AutoShardingLbConfig() = default;
+
+  AutoShardingLbConfig(const AutoShardingLbConfig&) = delete;
+  AutoShardingLbConfig& operator=(const AutoShardingLbConfig&) = delete;
+
+  AutoShardingLbConfig(AutoShardingLbConfig&& other) = delete;
+  AutoShardingLbConfig& operator=(AutoShardingLbConfig&& other) = delete;
+
+  absl::string_view name() const override;
+
+  absl::string_view channel_factory_key() const { return channel_factory_key_; }
+  absl::string_view autosharding_target() const { return autosharding_target_; }
+  absl::string_view key_header_name() const { return key_header_name_; }
+  bool enable_fallback() const { return enable_fallback_; }
+  Duration initial_assignment_timeout() const {
+    return initial_assignment_timeout_;
+  }
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs& args);
+
+  void JsonPostLoad(const Json& json, const JsonArgs& args,
+                    ValidationErrors* errors);
+
+ private:
+  std::string channel_factory_key_;
+  std::string autosharding_target_;
+  std::string key_header_name_;
+  bool enable_fallback_ = false;
+  Duration initial_assignment_timeout_ = Duration::Seconds(60);
+};
+
+}  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_LOAD_BALANCING_AUTOSHARDING_AUTOSHARDING_H

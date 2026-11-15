@@ -101,7 +101,7 @@ TCPConnectHandshaker::TCPConnectHandshaker(grpc_pollset_set* pollset_set)
 void TCPConnectHandshaker::Shutdown(absl::Status /*error*/) {
   // TODO(anramach): After migration to EventEngine, cancel the in-progress
   // TCP connection attempt.
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (!shutdown_) {
     shutdown_ = true;
     // If we are shutting down while connecting, respond back with
@@ -127,7 +127,7 @@ void TCPConnectHandshaker::DoHandshake(
     return;
   }
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     on_handshake_done_ = std::move(on_handshake_done);
   }
   args_ = args;
@@ -135,7 +135,7 @@ void TCPConnectHandshaker::DoHandshake(
       args->args.GetString(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS).value();
   absl::StatusOr<URI> uri = URI::Parse(resolved_address_text);
   if (!uri.ok() || !grpc_parse_uri(*uri, &addr_)) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     FinishLocked(GRPC_ERROR_CREATE(absl::StrCat(
         "Resolved address in invalid format: ", resolved_address_text)));
     return;
@@ -167,7 +167,7 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
   RefCountedPtr<TCPConnectHandshaker> self(
       static_cast<TCPConnectHandshaker*>(arg));
   {
-    MutexLock lock(&self->mu_);
+    MutexLock lock(self->mu_);
     if (!error.ok() || self->shutdown_) {
       if (error.ok()) {
         error = GRPC_ERROR_CREATE("tcp handshaker shutdown");

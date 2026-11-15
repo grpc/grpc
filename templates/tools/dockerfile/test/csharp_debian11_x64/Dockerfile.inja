@@ -16,6 +16,7 @@ FROM debian:11
 
 {% include "../../apt_get_basic.include" %}
 {% include "../../run_tests_python_deps.include" %}
+{% include "../../cmake_bullseye_backports.include" %}
 {% include "../../csharp_deps.include" %}
 {% include "../../csharp_dotnetcli_deps.include" %}
 {% include "../../ccache.include" %}

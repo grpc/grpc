@@ -181,7 +181,7 @@ ExternalAccountCredentials::ExternalFetchRequest::ExternalFetchRequest(
 
 void ExternalAccountCredentials::ExternalFetchRequest::Orphan() {
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     fetch_body_.reset();
   }
   Unref();
@@ -211,7 +211,7 @@ std::string UrlEncode(const absl::string_view s) {
 
 void ExternalAccountCredentials::ExternalFetchRequest::ExchangeToken(
     absl::StatusOr<std::string> subject_token) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (MaybeFailLocked(subject_token.status())) return;
   // Parse URI.
   absl::StatusOr<URI> uri = URI::Parse(options().token_url);
@@ -300,7 +300,7 @@ void ExternalAccountCredentials::ExternalFetchRequest::ExchangeToken(
 
 void ExternalAccountCredentials::ExternalFetchRequest::
     MaybeImpersonateServiceAccount(absl::StatusOr<std::string> response_body) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (MaybeFailLocked(response_body.status())) return;
   // If not doing impersonation, response_body contains oauth token.
   if (options().service_account_impersonation_url.empty()) {
@@ -381,7 +381,7 @@ void ExternalAccountCredentials::ExternalFetchRequest::
 
 void ExternalAccountCredentials::ExternalFetchRequest::
     OnImpersonateServiceAccount(absl::StatusOr<std::string> response_body) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (MaybeFailLocked(response_body.status())) return;
   auto json = JsonParse(*response_body);
   if (!json.ok()) {

@@ -214,7 +214,7 @@ void TracedBufferList::AddNewEntry(int32_t seq_no, int fd, void* arg) {
                                &(new_elem->ts_.info));
   }
   new_elem->last_timestamp_ = new_elem->ts_.sendmsg_time.time;
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (!head_) {
     head_ = tail_ = new_elem;
   } else {
@@ -226,7 +226,7 @@ void TracedBufferList::AddNewEntry(int32_t seq_no, int fd, void* arg) {
 void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
                                         struct cmsghdr* opt_stats,
                                         struct scm_timestamping* tss) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   TracedBuffer* elem = head_;
   TracedBuffer* prev = nullptr;
   while (elem != nullptr) {
@@ -293,7 +293,7 @@ void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
 }
 
 void TracedBufferList::Shutdown(void* remaining, absl::Status shutdown_err) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   while (head_) {
     TracedBuffer* elem = head_;
     g_timestamps_callback(elem->arg_, &(elem->ts_), shutdown_err);

@@ -118,7 +118,7 @@ class OutputBuffers final
       output_buffers_->DestroyReader(id_);
     }
     void FinishEndpointWrite() {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       send_rate_.FinishEndpointWrite();
     }
 
@@ -180,7 +180,7 @@ class OutputBuffers final
       ABSL_LOCKS_EXCLUDED(mu_reader_data_);
 
   void SetMpscProbe(MpscProbe<OutgoingFrame> probe) {
-    MutexLock lock(&mu_reader_data_);
+    MutexLock lock(mu_reader_data_);
     mpsc_probe_ = std::move(probe);
   }
 
@@ -277,12 +277,12 @@ class InputQueue final : public RefCounted<InputQueue> {
 
     ~ReadTicket() {
       if (input_queues_ != nullptr) {
-        completion_->mu.Lock();
+        completion_->mu.lock();
         if (!completion_->ready) {
-          completion_->mu.Unlock();
+          completion_->mu.unlock();
           input_queues_->Cancel(completion_.get());
         } else {
-          completion_->mu.Unlock();
+          completion_->mu.unlock();
         }
       }
     }
@@ -297,12 +297,12 @@ class InputQueue final : public RefCounted<InputQueue> {
 
         ~AwaitPromise() {
           if (input_queues_ != nullptr) {
-            completion_->mu.Lock();
+            completion_->mu.lock();
             if (!completion_->ready) {
-              completion_->mu.Unlock();
+              completion_->mu.unlock();
               input_queues_->Cancel(completion_.get());
             } else {
-              completion_->mu.Unlock();
+              completion_->mu.unlock();
             }
           }
         }
@@ -320,15 +320,15 @@ class InputQueue final : public RefCounted<InputQueue> {
 
         Poll<absl::StatusOr<SliceBuffer>> operator()() {
           DCHECK(completion_ != nullptr);
-          completion_->mu.Lock();
+          completion_->mu.lock();
           if (completion_->ready) {
             auto result = std::move(completion_->result);
-            completion_->mu.Unlock();
+            completion_->mu.unlock();
             input_queues_.reset();
             return std::move(result);
           }
           completion_->waker = GetContext<Activity>()->MakeNonOwningWaker();
-          completion_->mu.Unlock();
+          completion_->mu.unlock();
           return Pending{};
         }
 
@@ -358,7 +358,7 @@ class InputQueue final : public RefCounted<InputQueue> {
   void SetClosed(absl::Status status);
   auto AwaitClosed() {
     return [this]() -> Poll<absl::Status> {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       if (closed_error_.ok()) {
         await_closed_ = GetContext<Activity>()->MakeNonOwningWaker();
         return Pending{};
@@ -389,7 +389,7 @@ class SecureFrameQueue
 
   auto Next() {
     return [this]() -> Poll<SliceBuffer> {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       if (all_frames_.Length() == 0) {
         read_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
         return Pending{};
@@ -401,7 +401,7 @@ class SecureFrameQueue
   }
 
   size_t InstantaneousQueuedBytes() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     return all_frames_.Length();
   }
 

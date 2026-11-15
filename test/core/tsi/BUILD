@@ -84,6 +84,9 @@ grpc_cc_test(
     srcs = ["ssl_transport_security_utils_test.cc"],
     data = [
         "//:etc/roots.pem",
+        "//src/core/tsi/test_creds:multi-domain.pem",
+        "//src/core/tsi/test_creds:server0.pem",
+        "//src/core/tsi/test_creds:server1.pem",
         "//test/core/tsi/test_creds/crl_data:ca.pem",
         "//test/core/tsi/test_creds/crl_data:ca_with_akid.pem",
         "//test/core/tsi/test_creds/crl_data:crl_with_akid.crl",
@@ -156,6 +159,7 @@ grpc_cc_test(
         "//:grpc_security_base",
         "//:tsi_base",
         "//:tsi_ssl_credentials",
+        "//src/core:histogram",
         "//src/core:instrument",
         "//src/core:tls_telemetry",
         "//test/core/test_util:build",

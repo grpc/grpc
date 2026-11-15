@@ -60,12 +60,12 @@ python3 -m grpc_tools.protoc \
     ${PROTO_SOURCE_DIR}/messages.proto \
     ${PROTO_SOURCE_DIR}/empty.proto
 
-HEALTH_PROTO_SOURCE_DIR=src/proto/grpc/health/v1
-HEALTH_PROTO_DEST_DIR=${TOOLS_DIR}/${HEALTH_PROTO_SOURCE_DIR}
+HEALTH_PROTO_SOURCE_DIR=src/python/grpcio_health_checking/grpc_health/v1
+HEALTH_PROTO_DEST_DIR=${TOOLS_DIR}/grpc_health/v1
 mkdir -p ${HEALTH_PROTO_DEST_DIR}
 
 python3 -m grpc_tools.protoc \
-    --proto_path=. \
+    --proto_path=src/python/grpcio_health_checking \
     --python_out=${TOOLS_DIR} \
     --grpc_python_out=${TOOLS_DIR} \
     ${HEALTH_PROTO_SOURCE_DIR}/health.proto

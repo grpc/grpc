@@ -13,6 +13,9 @@
 // limitations under the License.
 //
 
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+
 #include <optional>
 #include <string>
 #include <vector>
@@ -20,7 +23,13 @@
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/extensions/filters/http/ext_proc/v3/processing_mode.pb.h"
 #include "envoy/service/ext_proc/v3/external_processor.pb.h"
+#include "src/core/call/evaluate_args.h"
+#include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/filter/ext_proc/ext_proc_messages.h"
+#include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/transport/auth_context.h"
+#include "test/core/test_util/tls_utils.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -53,15 +62,17 @@ MATCHER_P2(IsHeaderMutation, set_headers_matcher, remove_headers_matcher, "") {
                                        arg.remove_headers, result_listener);
 }
 
-MATCHER_P3(IsBodyMutation, body_matcher, end_of_stream_matcher,
-           end_of_stream_without_message_matcher, "") {
+MATCHER_P4(IsBodyMutation, body_matcher, end_of_stream_matcher,
+           end_of_stream_without_message_matcher, drain_complete_matcher, "") {
   return ::testing::ExplainMatchResult(body_matcher, arg.body,
                                        result_listener) &&
          ::testing::ExplainMatchResult(end_of_stream_matcher, arg.end_of_stream,
                                        result_listener) &&
          ::testing::ExplainMatchResult(end_of_stream_without_message_matcher,
                                        arg.end_of_stream_without_message,
-                                       result_listener);
+                                       result_listener) &&
+         ::testing::ExplainMatchResult(drain_complete_matcher,
+                                       arg.drain_complete, result_listener);
 }
 
 MATCHER_P2(IsRequestHeaders, set_headers_matcher, remove_headers_matcher, "") {
@@ -90,23 +101,25 @@ MATCHER_P2(IsResponseTrailers, set_headers_matcher, remove_headers_matcher,
       arg, result_listener);
 }
 
-MATCHER_P3(IsRequestBody, body_matcher, end_of_stream_matcher,
-           end_of_stream_without_message_matcher, "") {
+MATCHER_P4(IsRequestBody, body_matcher, end_of_stream_matcher,
+           end_of_stream_without_message_matcher, drain_complete_matcher, "") {
   return ::testing::ExplainMatchResult(
-      ::testing::VariantWith<ExtProcResponse::RequestBody>(::testing::Field(
-          &ExtProcResponse::RequestBody::mutation,
-          IsBodyMutation(body_matcher, end_of_stream_matcher,
-                         end_of_stream_without_message_matcher))),
+      ::testing::VariantWith<ExtProcResponse::RequestBody>(
+          ::testing::Field(&ExtProcResponse::RequestBody::mutation,
+                           IsBodyMutation(body_matcher, end_of_stream_matcher,
+                                          end_of_stream_without_message_matcher,
+                                          drain_complete_matcher))),
       arg, result_listener);
 }
 
-MATCHER_P3(IsResponseBody, body_matcher, end_of_stream_matcher,
-           end_of_stream_without_message_matcher, "") {
+MATCHER_P4(IsResponseBody, body_matcher, end_of_stream_matcher,
+           end_of_stream_without_message_matcher, drain_complete_matcher, "") {
   return ::testing::ExplainMatchResult(
-      ::testing::VariantWith<ExtProcResponse::ResponseBody>(::testing::Field(
-          &ExtProcResponse::ResponseBody::mutation,
-          IsBodyMutation(body_matcher, end_of_stream_matcher,
-                         end_of_stream_without_message_matcher))),
+      ::testing::VariantWith<ExtProcResponse::ResponseBody>(
+          ::testing::Field(&ExtProcResponse::ResponseBody::mutation,
+                           IsBodyMutation(body_matcher, end_of_stream_matcher,
+                                          end_of_stream_without_message_matcher,
+                                          drain_complete_matcher))),
       arg, result_listener);
 }
 
@@ -119,9 +132,8 @@ MATCHER_P3(IsImmediateResponse, status_matcher, details_matcher,
                                status_matcher),
               ::testing::Field(&ExtProcResponse::ImmediateResponse::details,
                                details_matcher),
-              ::testing::Field(
-                  &ExtProcResponse::ImmediateResponse::header_mutation,
-                  header_mutation_matcher))),
+              ::testing::Field(&ExtProcResponse::ImmediateResponse::mutation,
+                               header_mutation_matcher))),
       arg, result_listener);
 }
 
@@ -594,6 +606,22 @@ TEST_F(CreateExtProcRequestTest, RequestBodyEndOfStreamWithoutMessage) {
   EXPECT_TRUE(parsed.request_body().end_of_stream_without_message());
 }
 
+TEST_F(CreateExtProcRequestTest,
+       RequestBodyEndOfStreamWithoutMessageIgnoredIfEndOfStreamFalse) {
+  upb::Arena arena;
+  std::string serialized =
+      CreateExtProcClientBodyRequest(arena.ptr(), "", {},
+                                     /*observability_mode=*/false,
+                                     /*processing_mode=*/std::nullopt,
+                                     /*end_of_stream=*/false,
+                                     /*end_of_stream_without_message=*/true)
+          .value();
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_request_body());
+  EXPECT_FALSE(parsed.request_body().end_of_stream());
+  EXPECT_FALSE(parsed.request_body().end_of_stream_without_message());
+}
+
 TEST_F(CreateExtProcRequestTest, RequestBodyObservability) {
   upb::Arena arena;
   std::string serialized =
@@ -627,6 +655,21 @@ TEST_F(CreateExtProcRequestTest, RequestBodyProtocolConfig) {
   EXPECT_EQ(
       parsed.protocol_config().response_body_mode(),
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
+}
+
+TEST_F(CreateExtProcRequestTest, RequestBodyDrainComplete) {
+  upb::Arena arena;
+  std::string serialized =
+      CreateExtProcClientBodyRequest(arena.ptr(), "", {},
+                                     /*observability_mode=*/false,
+                                     /*processing_mode=*/std::nullopt,
+                                     /*end_of_stream=*/false,
+                                     /*end_of_stream_without_message=*/false,
+                                     /*drain_complete=*/true)
+          .value();
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_request_body());
+  EXPECT_TRUE(parsed.request_body().drain_complete());
 }
 
 TEST_F(CreateExtProcRequestTest, ResponseBodyPayloadValid) {
@@ -672,6 +715,19 @@ TEST_F(CreateExtProcRequestTest, ResponseBodyProtocolConfig) {
   EXPECT_EQ(
       parsed.protocol_config().response_body_mode(),
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
+}
+
+TEST_F(CreateExtProcRequestTest, ResponseBodyDrainComplete) {
+  upb::Arena arena;
+  std::string serialized =
+      CreateExtProcServerBodyRequest(arena.ptr(), "", {},
+                                     /*observability_mode=*/false,
+                                     /*processing_mode=*/std::nullopt,
+                                     /*drain_complete=*/true)
+          .value();
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_response_body());
+  EXPECT_TRUE(parsed.response_body().drain_complete());
 }
 
 TEST_F(CreateExtProcRequestTest, AttributesPayload) {
@@ -723,7 +779,9 @@ class CreateExtProcAttributesProtoStructTest : public ::testing::Test {
 TEST_F(CreateExtProcAttributesProtoStructTest, AttributesEmptyRequested) {
   upb::Arena arena;
   grpc_metadata_batch batch;
-  auto* upb_struct = CreateExtProcAttributesProtoStruct(arena.ptr(), {}, batch);
+  EvaluateArgs args(&batch, /*channel_args=*/nullptr);
+  auto* upb_struct =
+      CreateExtProcAttributesProtoStruct(arena.ptr(), {}, args, "");
   EXPECT_EQ(upb_struct, nullptr);
 }
 
@@ -745,8 +803,9 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesAllRecognizedFields) {
       "request.scheme",    "request.method",   "request.referer",
       "request.useragent", "request.time",     "request.id",
       "request.protocol",  "request.query"};
+  EvaluateArgs args(&batch, /*channel_args=*/nullptr);
   auto* upb_struct =
-      CreateExtProcAttributesProtoStruct(arena.ptr(), requested, batch);
+      CreateExtProcAttributesProtoStruct(arena.ptr(), requested, args, "");
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("request.path").string_value(), "/foo/bar");
@@ -770,22 +829,38 @@ TEST_F(CreateExtProcAttributesProtoStructTest,
        AttributesHostFallbackToHostHeader) {
   upb::Arena arena;
   grpc_metadata_batch batch;
-  // No HttpAuthorityMetadata, but has HostMetadata
+  // No HttpAuthorityMetadata, but has HostMetadata.
   batch.Set(HostMetadata(), Slice::FromCopiedString("fallback.host.com"));
-  auto* upb_struct =
-      CreateExtProcAttributesProtoStruct(arena.ptr(), {"request.host"}, batch);
+  EvaluateArgs args(&batch, /*channel_args=*/nullptr);
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(
+      arena.ptr(), {"request.host"}, args, "default.host.com");
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("request.host").string_value(),
             "fallback.host.com");
 }
 
+TEST_F(CreateExtProcAttributesProtoStructTest,
+       AttributesHostFallbackToDefaultAuthority) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  // Neither HttpAuthorityMetadata nor HostMetadata is present.
+  EvaluateArgs args(&batch, /*channel_args=*/nullptr);
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(
+      arena.ptr(), {"request.host"}, args, "default.host.com");
+  ASSERT_NE(upb_struct, nullptr);
+  auto proto = ConvertToProto(upb_struct, arena.ptr());
+  EXPECT_EQ(proto.fields().at("request.host").string_value(),
+            "default.host.com");
+}
+
 TEST_F(CreateExtProcAttributesProtoStructTest, AttributesMethodFallbackToPost) {
   upb::Arena arena;
   grpc_metadata_batch batch;
   // No HttpMethodMetadata
+  EvaluateArgs args(&batch, /*channel_args=*/nullptr);
   auto* upb_struct = CreateExtProcAttributesProtoStruct(
-      arena.ptr(), {"request.method"}, batch);
+      arena.ptr(), {"request.method"}, args, "");
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("request.method").string_value(), "POST");
@@ -798,8 +873,9 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesRequestHeaders) {
                [](absl::string_view, const Slice&) {});
   batch.Append("x-custom2", Slice::FromCopiedString(kVal2),
                [](absl::string_view, const Slice&) {});
+  EvaluateArgs args(&batch, /*channel_args=*/nullptr);
   auto* upb_struct = CreateExtProcAttributesProtoStruct(
-      arena.ptr(), {"request.headers"}, batch);
+      arena.ptr(), {"request.headers"}, args, "");
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   ASSERT_NE(proto.fields().find("request.headers"), proto.fields().end());
@@ -807,6 +883,103 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesRequestHeaders) {
       proto.fields().at("request.headers").struct_value();
   EXPECT_EQ(headers_struct.fields().at("x-custom1").string_value(), kVal1);
   EXPECT_EQ(headers_struct.fields().at("x-custom2").string_value(), kVal2);
+}
+
+TEST_F(CreateExtProcAttributesProtoStructTest,
+       AttributesServerSideConnectionAttributes) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(nullptr);
+  auth_context.add_cstring_property(
+      GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME, "service.example.com");
+  auth_context.add_cstring_property(GRPC_SSL_TLS_VERSION_PROPERTY_NAME,
+                                    "TLSv1.3");
+  EvaluateArgs::PerChannelArgs conn_args(
+      &auth_context, ChannelArgs().Set(GRPC_ARG_ENDPOINT_PEER_ADDRESS,
+                                       "ipv4:192.168.1.100:54321"));
+  std::vector<std::string> requested = {
+      "source.address", "source.port", "connection.requested_server_name",
+      "connection.tls_version", "connection.sha256_peer_certificate_digest"};
+  EvaluateArgs args(&batch, &conn_args);
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(
+      arena.ptr(), requested, args, "",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+  ASSERT_NE(upb_struct, nullptr);
+  auto proto = ConvertToProto(upb_struct, arena.ptr());
+  EXPECT_EQ(proto.fields().at("source.address").string_value(),
+            "192.168.1.100");
+  EXPECT_DOUBLE_EQ(proto.fields().at("source.port").number_value(), 54321.0);
+  EXPECT_EQ(
+      proto.fields().at("connection.requested_server_name").string_value(),
+      "service.example.com");
+  EXPECT_EQ(proto.fields().at("connection.tls_version").string_value(),
+            "TLSv1.3");
+  EXPECT_EQ(proto.fields()
+                .at("connection.sha256_peer_certificate_digest")
+                .string_value(),
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+}
+
+TEST_F(CreateExtProcAttributesProtoStructTest,
+       AttributesClientSideConnectionAttributesNull) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  std::vector<std::string> requested = {
+      "source.address", "source.port", "connection.requested_server_name",
+      "connection.tls_version", "connection.sha256_peer_certificate_digest"};
+  EvaluateArgs args(&batch, /*channel_args=*/nullptr);
+  auto* upb_struct =
+      CreateExtProcAttributesProtoStruct(arena.ptr(), requested, args, "");
+  ASSERT_NE(upb_struct, nullptr);
+  auto proto = ConvertToProto(upb_struct, arena.ptr());
+  EXPECT_TRUE(proto.fields().empty());
+}
+
+TEST_F(CreateExtProcAttributesProtoStructTest,
+       AttributesServerSideEmptyConnectionAttributes) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  std::vector<std::string> requested = {
+      "source.address", "source.port", "connection.requested_server_name",
+      "connection.tls_version", "connection.sha256_peer_certificate_digest"};
+  grpc_auth_context auth_context(nullptr);
+  EvaluateArgs::PerChannelArgs empty_args(&auth_context, ChannelArgs());
+  EvaluateArgs args(&batch, &empty_args);
+  auto* upb_struct =
+      CreateExtProcAttributesProtoStruct(arena.ptr(), requested, args, "");
+  ASSERT_NE(upb_struct, nullptr);
+  auto proto = ConvertToProto(upb_struct, arena.ptr());
+  EXPECT_TRUE(proto.fields().empty());
+}
+
+//
+// ComputeSha256PeerCertificateDigest() tests
+//
+
+TEST(ComputeSha256PeerCertificateDigestTest, NoAuthContext) {
+  EXPECT_EQ(ComputeSha256PeerCertificateDigest(nullptr), "");
+}
+
+TEST(ComputeSha256PeerCertificateDigestTest, NoPeerCertificate) {
+  grpc_auth_context auth_context(nullptr);
+  EXPECT_EQ(ComputeSha256PeerCertificateDigest(&auth_context), "");
+}
+
+TEST(ComputeSha256PeerCertificateDigestTest, InvalidPeerCertificate) {
+  grpc_auth_context auth_context(nullptr);
+  auth_context.add_cstring_property(GRPC_X509_PEM_CERT_PROPERTY_NAME,
+                                    "not a certificate");
+  EXPECT_EQ(ComputeSha256PeerCertificateDigest(&auth_context), "");
+}
+
+TEST(ComputeSha256PeerCertificateDigestTest, ValidPeerCertificate) {
+  std::string cert =
+      testing::GetFileContents("src/core/tsi/test_creds/multi-domain.pem");
+  grpc_auth_context auth_context(nullptr);
+  auth_context.add_cstring_property(GRPC_X509_PEM_CERT_PROPERTY_NAME,
+                                    cert.c_str());
+  EXPECT_EQ(ComputeSha256PeerCertificateDigest(&auth_context),
+            "b6364b63330df8de02a88e7e238ea763b89f18ec5d80d5339b6fbaad5a4b4891");
 }
 
 //
@@ -830,13 +1003,24 @@ TEST_F(ParseExtProcResponseTest, ResponseInvalid) {
             absl::InternalError("Failed to parse ProcessingResponse"));
 }
 
-TEST_F(ParseExtProcResponseTest, RequestDrain) {
+TEST_F(ParseExtProcResponseTest, RequestDrainRequests) {
   upb::Arena arena;
   envoy::service::ext_proc::v3::ProcessingResponse response;
-  response.set_request_drain(true);
+  response.set_request_drain_requests(true);
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_TRUE(parsed->request_drain);
+  EXPECT_TRUE(parsed->request_drain_requests);
+  EXPECT_FALSE(parsed->request_drain_responses);
+}
+
+TEST_F(ParseExtProcResponseTest, RequestDrainResponses) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  response.set_request_drain_responses(true);
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_FALSE(parsed->request_drain_requests);
+  EXPECT_TRUE(parsed->request_drain_responses);
 }
 
 TEST_F(ParseExtProcResponseTest, UnsupportedResponseCaseRequestTrailers) {
@@ -929,7 +1113,9 @@ TEST_F(ParseExtProcResponseTest, RequestHeadersCommonResponseNull) {
   envoy::service::ext_proc::v3::ProcessingResponse response;
   response.mutable_request_headers();
   auto parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(), absl::InternalError("common_response is not set"));
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->response,
+              IsRequestHeaders(::testing::IsEmpty(), ::testing::IsEmpty()));
 }
 
 TEST_F(ParseExtProcResponseTest, ResponseHeadersMutation) {
@@ -989,7 +1175,9 @@ TEST_F(ParseExtProcResponseTest, ResponseHeadersCommonResponseNull) {
   envoy::service::ext_proc::v3::ProcessingResponse response;
   response.mutable_response_headers();
   auto parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(), absl::InternalError("common_response is not set"));
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->response,
+              IsResponseHeaders(::testing::IsEmpty(), ::testing::IsEmpty()));
 }
 
 TEST_F(ParseExtProcResponseTest, RequestBodyMutation) {
@@ -1007,7 +1195,22 @@ TEST_F(ParseExtProcResponseTest, RequestBodyMutation) {
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_THAT(parsed->response,
-              IsRequestBody("test request body", true, false));
+              IsRequestBody("test request body", true, false, false));
+}
+
+TEST_F(ParseExtProcResponseTest, RequestBodyDrainComplete) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  auto* body_response = response.mutable_request_body();
+  auto* common_response = body_response->mutable_response();
+  common_response->set_status(
+      envoy::service::ext_proc::v3::CommonResponse::CONTINUE);
+  auto* body_mutation = common_response->mutable_body_mutation();
+  auto* streamed_response = body_mutation->mutable_streamed_response();
+  streamed_response->set_drain_complete(true);
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->response, IsRequestBody("", false, false, true));
 }
 
 TEST_F(ParseExtProcResponseTest, RequestBodyUnsupportedStatus) {
@@ -1043,7 +1246,7 @@ TEST_F(ParseExtProcResponseTest, RequestBodyCommonResponseNull) {
   envoy::service::ext_proc::v3::ProcessingResponse response;
   response.mutable_request_body();
   auto parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(), absl::InternalError("common_response is not set"));
+  EXPECT_EQ(parsed.status(), absl::InternalError("body_mutation is not set"));
 }
 
 TEST_F(ParseExtProcResponseTest, RequestBodyBodyMutationNull) {
@@ -1085,7 +1288,22 @@ TEST_F(ParseExtProcResponseTest, ResponseBodyMutation) {
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_THAT(parsed->response,
-              IsResponseBody("test response body", false, false));
+              IsResponseBody("test response body", false, false, false));
+}
+
+TEST_F(ParseExtProcResponseTest, ResponseBodyDrainComplete) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  auto* body_response = response.mutable_response_body();
+  auto* common_response = body_response->mutable_response();
+  common_response->set_status(
+      envoy::service::ext_proc::v3::CommonResponse::CONTINUE);
+  auto* body_mutation = common_response->mutable_body_mutation();
+  auto* streamed_response = body_mutation->mutable_streamed_response();
+  streamed_response->set_drain_complete(true);
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->response, IsResponseBody("", false, false, true));
 }
 
 TEST_F(ParseExtProcResponseTest, ResponseBodyEndOfStreamRejected) {
@@ -1115,11 +1333,31 @@ TEST_F(ParseExtProcResponseTest,
       envoy::service::ext_proc::v3::CommonResponse::CONTINUE);
   auto* body_mutation = common_response->mutable_body_mutation();
   auto* streamed_response = body_mutation->mutable_streamed_response();
+  streamed_response->set_end_of_stream(true);
   streamed_response->set_end_of_stream_without_message(true);
   auto parsed = ParseResponse(response);
   EXPECT_EQ(parsed.status(),
             absl::InternalError("end_of_stream / end_of_stream_without_message "
                                 "is not supported for response_body"));
+}
+
+TEST_F(ParseExtProcResponseTest,
+       RequestBodyEndOfStreamWithoutMessageIgnoredIfEndOfStreamFalse) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  auto* body_response = response.mutable_request_body();
+  auto* common_response = body_response->mutable_response();
+  common_response->set_status(
+      envoy::service::ext_proc::v3::CommonResponse::CONTINUE);
+  auto* body_mutation = common_response->mutable_body_mutation();
+  auto* streamed_response = body_mutation->mutable_streamed_response();
+  streamed_response->set_body("test request body");
+  streamed_response->set_end_of_stream(false);
+  streamed_response->set_end_of_stream_without_message(true);
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->response,
+              IsRequestBody("test request body", false, false, false));
 }
 
 TEST_F(ParseExtProcResponseTest, ResponseBodyUnsupportedStatus) {
@@ -1155,7 +1393,7 @@ TEST_F(ParseExtProcResponseTest, ResponseBodyCommonResponseNull) {
   envoy::service::ext_proc::v3::ProcessingResponse response;
   response.mutable_response_body();
   auto parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(), absl::InternalError("common_response is not set"));
+  EXPECT_EQ(parsed.status(), absl::InternalError("body_mutation is not set"));
 }
 
 TEST_F(ParseExtProcResponseTest, ResponseBodyBodyMutationNull) {

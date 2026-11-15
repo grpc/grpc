@@ -18,22 +18,27 @@
 
 #include <grpc/grpc.h>
 
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
+#include <thread>
 #include <utility>
+#include <vector>
 
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/notification.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/xds/xds_transport_fake.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
 
@@ -83,23 +88,31 @@ class XdsStreamingCallPromiseWrapperTest : public ::testing::Test {
     WaitForSingleOwner(std::move(event_engine_));
   }
 
-  void InitStream(bool auto_complete_messages_from_client = true) {
+  using CallOptions = XdsTransport::CallOptions;
+
+  void InitStream(bool auto_complete_messages_from_client = true,
+                  CallOptions options = CallOptions()) {
     transport_factory_->SetAutoCompleteMessagesFromClient(
         auto_complete_messages_from_client);
     absl::Status status;
     transport_ = transport_factory_->GetTransport(*target_, &status);
     ASSERT_TRUE(status.ok()) << status;
     ASSERT_NE(transport_, nullptr);
-    wrapper_ =
-        MakeRefCounted<XdsStreamingCallPromiseWrapper>(*transport_, kMethod);
+    wrapper_ = MakeRefCounted<XdsStreamingCallPromiseWrapper>(*transport_,
+                                                              kMethod, options);
     stream_ = transport_factory_->WaitForStream(*target_, kMethod);
-    ASSERT_NE(stream_, nullptr);
+    if (options.start_upon_send_message) {
+      ASSERT_EQ(stream_, nullptr);
+    } else {
+      ASSERT_NE(stream_, nullptr);
+      EXPECT_EQ(stream_->wait_for_ready(), options.wait_for_ready);
+    }
   }
 
   std::shared_ptr<FuzzingEventEngine> event_engine_;
   RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
   std::unique_ptr<FakeXdsServerTarget> target_;
-  RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
+  RefCountedPtr<XdsTransport> transport_;
   RefCountedPtr<XdsStreamingCallPromiseWrapper> wrapper_;
   RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> stream_;
 };
@@ -207,12 +220,183 @@ TEST_F(XdsStreamingCallPromiseWrapperTest, PullServerTrailingMetadata) {
   EXPECT_EQ(received_status, absl::UnavailableError("unavailable"));
 }
 
+TEST_F(XdsStreamingCallPromiseWrapperTest,
+       PullServerTrailingMetadataAfterStatusReceived) {
+  InitStream();
+  stream_->MaybeSendStatusToClient(absl::UnavailableError("unavailable"));
+  event_engine_->TickUntilIdle();
+  absl::Status received_status = absl::UnknownError("initial");
+  auto activity = MakeActivity(
+      [this, &received_status] {
+        return Map(wrapper_->PullServerTrailingMetadata(),
+                   [&](const absl::Status& status) {
+                     received_status = status;
+                     return absl::OkStatus();
+                   });
+      },
+      InlineWakeupScheduler(),
+      [](const absl::Status& status) { EXPECT_TRUE(status.ok()) << status; });
+  event_engine_->TickUntilIdle();
+  EXPECT_EQ(received_status, absl::UnavailableError("unavailable"));
+}
+
+TEST_F(XdsStreamingCallPromiseWrapperTest, PullMessageAfterStatusReceived) {
+  InitStream();
+  stream_->MaybeSendStatusToClient(absl::OkStatus());
+  event_engine_->TickUntilIdle();
+  std::optional<std::string> received_message;
+  bool pull_completed = false;
+  auto activity = MakeActivity(
+      [this, &received_message, &pull_completed] {
+        return Map(wrapper_->PullMessage(),
+                   [&](const std::optional<std::string>& res) {
+                     received_message = res;
+                     pull_completed = true;
+                     return absl::OkStatus();
+                   });
+      },
+      InlineWakeupScheduler(),
+      [](const absl::Status& status) { EXPECT_TRUE(status.ok()) << status; });
+  event_engine_->TickUntilIdle();
+  EXPECT_TRUE(pull_completed);
+  EXPECT_FALSE(received_message.has_value());
+}
+
+TEST_F(XdsStreamingCallPromiseWrapperTest,
+       PullMessageReturnsMessageReceivedBeforeStatus) {
+  InitStream();
+  // Defer activity wakeups so that both the message and the status are
+  // received before the pending PullMessage() promise is polled again.
+  ::testing::StrictMock<MockCallbackScheduler> scheduler;
+  std::vector<std::function<void()>> wakeups;
+  EXPECT_CALL(scheduler, Schedule(::testing::_))
+      .WillRepeatedly([&wakeups](std::function<void()> wakeup) {
+        wakeups.push_back(std::move(wakeup));
+      });
+  std::optional<std::string> received_message;
+  bool pull_completed = false;
+  auto activity = MakeActivity(
+      [this, &received_message, &pull_completed] {
+        return Map(wrapper_->PullMessage(),
+                   [&](const std::optional<std::string>& res) {
+                     received_message = res;
+                     pull_completed = true;
+                     return absl::OkStatus();
+                   });
+      },
+      UseMockCallbackScheduler{&scheduler},
+      [](const absl::Status& status) { EXPECT_TRUE(status.ok()) << status; });
+  event_engine_->TickUntilIdle();
+  EXPECT_FALSE(pull_completed);
+  stream_->SendMessageToClient(kServerMessage);
+  stream_->MaybeSendStatusToClient(absl::OkStatus());
+  event_engine_->TickUntilIdle();
+  EXPECT_FALSE(pull_completed);
+  ASSERT_FALSE(wakeups.empty());
+  for (auto& wakeup : std::exchange(wakeups, {})) wakeup();
+  EXPECT_TRUE(pull_completed);
+  ASSERT_TRUE(received_message.has_value());
+  EXPECT_EQ(*received_message, kServerMessage);
+}
+
 TEST_F(XdsStreamingCallPromiseWrapperTest, SendHalfClose) {
   InitStream();
   EXPECT_FALSE(stream_->half_closed());
   wrapper_->SendHalfClose();
   event_engine_->TickUntilIdle();
   EXPECT_TRUE(stream_->half_closed());
+}
+
+TEST_F(XdsStreamingCallPromiseWrapperTest, PushMessageWithSendHalfClose) {
+  InitStream();
+  bool send_completed = false;
+  auto activity = MakeActivity(
+      [this, &send_completed] {
+        return Map(
+            wrapper_->PushMessage(kClientMessage, /*send_half_close=*/true),
+            [&](StatusFlag status) {
+              EXPECT_TRUE(status.ok());
+              send_completed = true;
+              return absl::OkStatus();
+            });
+      },
+      InlineWakeupScheduler(),
+      [](const absl::Status& status) { EXPECT_TRUE(status.ok()) << status; });
+  event_engine_->TickUntilIdle();
+  EXPECT_TRUE(send_completed);
+  EXPECT_EQ(stream_->WaitForMessageFromClient(), kClientMessage);
+  EXPECT_TRUE(stream_->half_closed());
+}
+
+TEST_F(XdsStreamingCallPromiseWrapperTest, StartUponSendMessage) {
+  InitStream(/*auto_complete_messages_from_client=*/true,
+             CallOptions().set_start_upon_send_message(true));
+  std::optional<std::string> received_message;
+  auto pull_activity = MakeActivity(
+      [this, &received_message] {
+        return Map(wrapper_->PullMessage(),
+                   [&](const std::optional<std::string>& res) {
+                     received_message = res;
+                     return absl::OkStatus();
+                   });
+      },
+      InlineWakeupScheduler(),
+      [](const absl::Status& status) { EXPECT_TRUE(status.ok()) << status; });
+  event_engine_->TickUntilIdle();
+  EXPECT_EQ(transport_factory_->WaitForStream(*target_, kMethod), nullptr);
+  bool send_completed = false;
+  auto push_activity = MakeActivity(
+      [this, &send_completed] {
+        return Map(
+            wrapper_->PushMessage(kClientMessage, /*send_half_close=*/true),
+            [&](StatusFlag status) {
+              EXPECT_TRUE(status.ok());
+              send_completed = true;
+              return absl::OkStatus();
+            });
+      },
+      InlineWakeupScheduler(),
+      [](const absl::Status& status) { EXPECT_TRUE(status.ok()) << status; });
+  event_engine_->TickUntilIdle();
+  EXPECT_TRUE(send_completed);
+  stream_ = transport_factory_->WaitForStream(*target_, kMethod);
+  ASSERT_NE(stream_, nullptr);
+  EXPECT_FALSE(stream_->wait_for_ready());
+  EXPECT_EQ(stream_->WaitForMessageFromClient(), kClientMessage);
+  EXPECT_TRUE(stream_->half_closed());
+  stream_->SendMessageToClient(kServerMessage);
+  event_engine_->TickUntilIdle();
+  ASSERT_TRUE(received_message.has_value());
+  EXPECT_EQ(*received_message, kServerMessage);
+}
+
+TEST_F(XdsStreamingCallPromiseWrapperTest, ConcurrentStatusAndPullMessage) {
+  constexpr int kIterations = 200;
+  for (int i = 0; i < kIterations; ++i) {
+    InitStream();
+    Notification pull_done;
+    std::optional<std::string> received_message;
+    std::thread t1([&]() {
+      auto activity = MakeActivity(
+          [this, &received_message, &pull_done] {
+            return Map(wrapper_->PullMessage(),
+                       [&](const std::optional<std::string>& res) {
+                         received_message = res;
+                         pull_done.Notify();
+                         return absl::OkStatus();
+                       });
+          },
+          InlineWakeupScheduler(), [](const absl::Status&) {});
+      pull_done.WaitForNotification();
+    });
+    std::thread t2(
+        [&]() { stream_->MaybeSendStatusToClient(absl::OkStatus()); });
+    t1.join();
+    t2.join();
+    EXPECT_FALSE(received_message.has_value());
+    TearDown();
+    SetUp();
+  }
 }
 
 }  // namespace

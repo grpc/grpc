@@ -976,7 +976,7 @@ Server::Server(
 
 Server::~Server() {
   {
-    grpc::internal::ReleasableMutexLock lock(&mu_);
+    grpc::internal::ReleasableMutexLock lock(mu_);
     if (started_ && !shutdown_) {
       lock.Release();
       Shutdown();
@@ -1149,7 +1149,7 @@ void Server::UnrefWithPossibleNotify() {
                        1, std::memory_order_acq_rel) == 1)) {
     // No refs outstanding means that shutdown has been initiated and no more
     // callback requests are outstanding.
-    grpc::internal::MutexLock lock(&mu_);
+    grpc::internal::MutexLock lock(mu_);
     GRPC_CHECK(shutdown_);
     shutdown_done_ = true;
     shutdown_done_cv_.Signal();
@@ -1248,7 +1248,7 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
 }
 
 void Server::ShutdownInternal(gpr_timespec deadline) {
-  grpc::internal::MutexLock lock(&mu_);
+  grpc::internal::MutexLock lock(mu_);
   if (shutdown_) {
     return;
   }
@@ -1328,7 +1328,7 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
 }
 
 void Server::Wait() {
-  grpc::internal::MutexLock lock(&mu_);
+  grpc::internal::MutexLock lock(mu_);
   while (started_ && !shutdown_notified_) {
     shutdown_cv_.Wait(&mu_);
   }
@@ -1374,7 +1374,7 @@ grpc::CompletionQueue* Server::CallbackCQ() {
   }
   // The callback_cq_ wasn't already set, so grab a lock and set it up exactly
   // once for this server.
-  grpc::internal::MutexLock l(&mu_);
+  grpc::internal::MutexLock l(mu_);
   callback_cq = callback_cq_.load(std::memory_order_relaxed);
   if (callback_cq != nullptr) {
     return callback_cq;

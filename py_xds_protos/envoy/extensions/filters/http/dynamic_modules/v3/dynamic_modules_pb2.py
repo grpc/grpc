@@ -24,10 +24,11 @@ _sym_db = _symbol_database.Default()
 
 from envoy.extensions.dynamic_modules.v3 import dynamic_modules_pb2 as envoy_dot_extensions_dot_dynamic__modules_dot_v3_dot_dynamic__modules__pb2
 from google.protobuf import any_pb2 as google_dot_protobuf_dot_any__pb2
+from envoy.annotations import deprecation_pb2 as envoy_dot_annotations_dot_deprecation__pb2
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nFenvoy/extensions/filters/http/dynamic_modules/v3/dynamic_modules.proto\x12\x30\x65nvoy.extensions.filters.http.dynamic_modules.v3\x1a\x39\x65nvoy/extensions/dynamic_modules/v3/dynamic_modules.proto\x1a\x19google/protobuf/any.proto\x1a\x1dudpa/annotations/status.proto\"\xc9\x01\n\x13\x44ynamicModuleFilter\x12W\n\x15\x64ynamic_module_config\x18\x01 \x01(\x0b\x32\x38.envoy.extensions.dynamic_modules.v3.DynamicModuleConfig\x12\x13\n\x0b\x66ilter_name\x18\x02 \x01(\t\x12+\n\rfilter_config\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\x12\x17\n\x0fterminal_filter\x18\x04 \x01(\x08\"\xc2\x01\n\x1b\x44ynamicModuleFilterPerRoute\x12W\n\x15\x64ynamic_module_config\x18\x01 \x01(\x0b\x32\x38.envoy.extensions.dynamic_modules.v3.DynamicModuleConfig\x12\x1d\n\x15per_route_config_name\x18\x02 \x01(\t\x12+\n\rfilter_config\x18\x03 \x01(\x0b\x32\x14.google.protobuf.AnyB\xca\x01\n>io.envoyproxy.envoy.extensions.filters.http.dynamic_modules.v3B\x13\x44ynamicModulesProtoP\x01Zigithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/dynamic_modules/v3;dynamic_modulesv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nFenvoy/extensions/filters/http/dynamic_modules/v3/dynamic_modules.proto\x12\x30\x65nvoy.extensions.filters.http.dynamic_modules.v3\x1a\x39\x65nvoy/extensions/dynamic_modules/v3/dynamic_modules.proto\x1a\x19google/protobuf/any.proto\x1a#envoy/annotations/deprecation.proto\x1a\x1dudpa/annotations/status.proto\"\xc9\x01\n\x13\x44ynamicModuleFilter\x12W\n\x15\x64ynamic_module_config\x18\x01 \x01(\x0b\x32\x38.envoy.extensions.dynamic_modules.v3.DynamicModuleConfig\x12\x13\n\x0b\x66ilter_name\x18\x02 \x01(\t\x12+\n\rfilter_config\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\x12\x17\n\x0fterminal_filter\x18\x04 \x01(\x08\"\xe4\x01\n\x1b\x44ynamicModuleFilterPerRoute\x12W\n\x15\x64ynamic_module_config\x18\x01 \x01(\x0b\x32\x38.envoy.extensions.dynamic_modules.v3.DynamicModuleConfig\x12*\n\x15per_route_config_name\x18\x02 \x01(\tB\x0b\x18\x01\x92\xc7\x86\xd8\x04\x03\x33.0\x12\x13\n\x0b\x66ilter_name\x18\x04 \x01(\t\x12+\n\rfilter_config\x18\x03 \x01(\x0b\x32\x14.google.protobuf.AnyB\xca\x01\n>io.envoyproxy.envoy.extensions.filters.http.dynamic_modules.v3B\x13\x44ynamicModulesProtoP\x01Zigithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/dynamic_modules/v3;dynamic_modulesv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -35,8 +36,10 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'envoy.extensions.filters.ht
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n>io.envoyproxy.envoy.extensions.filters.http.dynamic_modules.v3B\023DynamicModulesProtoP\001Zigithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/dynamic_modules/v3;dynamic_modulesv3\272\200\310\321\006\002\020\002'
-  _globals['_DYNAMICMODULEFILTER']._serialized_start=242
-  _globals['_DYNAMICMODULEFILTER']._serialized_end=443
-  _globals['_DYNAMICMODULEFILTERPERROUTE']._serialized_start=446
-  _globals['_DYNAMICMODULEFILTERPERROUTE']._serialized_end=640
+  _globals['_DYNAMICMODULEFILTERPERROUTE'].fields_by_name['per_route_config_name']._loaded_options = None
+  _globals['_DYNAMICMODULEFILTERPERROUTE'].fields_by_name['per_route_config_name']._serialized_options = b'\030\001\222\307\206\330\004\0033.0'
+  _globals['_DYNAMICMODULEFILTER']._serialized_start=279
+  _globals['_DYNAMICMODULEFILTER']._serialized_end=480
+  _globals['_DYNAMICMODULEFILTERPERROUTE']._serialized_start=483
+  _globals['_DYNAMICMODULEFILTERPERROUTE']._serialized_end=711
 # @@protoc_insertion_point(module_scope)

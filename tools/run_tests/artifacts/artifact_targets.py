@@ -520,7 +520,11 @@ def targets():
             PythonArtifact("windows", "x64", "Python314"),
             PythonArtifact("windows", "x64", "Python315", presubmit=True),
             RubyArtifact("linux", "x86-mingw32", presubmit=True),
-            RubyArtifact("linux", "x64-mingw-ucrt"),
+            # TODO(weizheyuan, asheshvidyut): Properly install gcc-mingw >= 10
+            # (which is required by abseil) and re-enable this test.
+            # RubyArtifact("linux", "x64-mingw-ucrt"),
+            #
+            # See https://github.com/grpc/grpc/issues/43374
             RubyArtifact("linux", "x86_64-linux-gnu", presubmit=True),
             RubyArtifact("linux", "x86_64-linux-musl", presubmit=True),
             RubyArtifact("linux", "x86-linux-gnu"),

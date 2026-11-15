@@ -44,6 +44,7 @@ grpc_compression_options_disable_algorithm_type grpc_compression_options_disable
 grpc_compression_options_is_algorithm_enabled_type grpc_compression_options_is_algorithm_enabled_import;
 grpc_service_account_jwt_access_credentials_create_type grpc_service_account_jwt_access_credentials_create_import;
 grpc_external_account_credentials_create_type grpc_external_account_credentials_create_import;
+grpc_gdch_service_account_credentials_create_type grpc_gdch_service_account_credentials_create_import;
 grpc_google_refresh_token_credentials_create_type grpc_google_refresh_token_credentials_create_import;
 grpc_access_token_credentials_create_type grpc_access_token_credentials_create_import;
 grpc_google_iam_credentials_create_type grpc_google_iam_credentials_create_import;
@@ -108,6 +109,7 @@ grpc_local_server_credentials_create_type grpc_local_server_credentials_create_i
 grpc_tls_credentials_options_set_check_call_host_type grpc_tls_credentials_options_set_check_call_host_import;
 grpc_tls_credentials_options_set_tls_session_key_log_file_path_type grpc_tls_credentials_options_set_tls_session_key_log_file_path_import;
 grpc_tls_credentials_options_set_key_exchange_groups_type grpc_tls_credentials_options_set_key_exchange_groups_import;
+grpc_tls_credentials_options_set_exported_keying_material_options_type grpc_tls_credentials_options_set_exported_keying_material_options_import;
 grpc_metadata_array_init_type grpc_metadata_array_init_import;
 grpc_metadata_array_destroy_type grpc_metadata_array_destroy_import;
 grpc_call_details_init_type grpc_call_details_init_import;
@@ -138,6 +140,7 @@ grpc_channel_create_registered_call_type grpc_channel_create_registered_call_imp
 grpc_call_arena_alloc_type grpc_call_arena_alloc_import;
 grpc_call_start_batch_type grpc_call_start_batch_import;
 grpc_call_get_peer_type grpc_call_get_peer_import;
+grpc_call_get_local_address_type grpc_call_get_local_address_import;
 grpc_census_call_set_context_type grpc_census_call_set_context_import;
 grpc_census_call_get_context_type grpc_census_call_get_context_import;
 grpc_channel_get_target_type grpc_channel_get_target_import;
@@ -148,6 +151,7 @@ grpc_server_credentials_release_type grpc_server_credentials_release_import;
 grpc_channel_create_type grpc_channel_create_import;
 grpc_lame_client_channel_create_type grpc_lame_client_channel_create_import;
 grpc_channel_destroy_type grpc_channel_destroy_import;
+grpc_channel_args_arg_vtable_type grpc_channel_args_arg_vtable_import;
 grpc_call_cancel_type grpc_call_cancel_import;
 grpc_call_cancel_with_status_type grpc_call_cancel_with_status_import;
 grpc_call_failed_before_recv_message_type grpc_call_failed_before_recv_message_import;
@@ -333,6 +337,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_compression_options_is_algorithm_enabled_import = (grpc_compression_options_is_algorithm_enabled_type) GetProcAddress(library, "grpc_compression_options_is_algorithm_enabled");
   grpc_service_account_jwt_access_credentials_create_import = (grpc_service_account_jwt_access_credentials_create_type) GetProcAddress(library, "grpc_service_account_jwt_access_credentials_create");
   grpc_external_account_credentials_create_import = (grpc_external_account_credentials_create_type) GetProcAddress(library, "grpc_external_account_credentials_create");
+  grpc_gdch_service_account_credentials_create_import = (grpc_gdch_service_account_credentials_create_type) GetProcAddress(library, "grpc_gdch_service_account_credentials_create");
   grpc_google_refresh_token_credentials_create_import = (grpc_google_refresh_token_credentials_create_type) GetProcAddress(library, "grpc_google_refresh_token_credentials_create");
   grpc_access_token_credentials_create_import = (grpc_access_token_credentials_create_type) GetProcAddress(library, "grpc_access_token_credentials_create");
   grpc_google_iam_credentials_create_import = (grpc_google_iam_credentials_create_type) GetProcAddress(library, "grpc_google_iam_credentials_create");
@@ -397,6 +402,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_tls_credentials_options_set_check_call_host_import = (grpc_tls_credentials_options_set_check_call_host_type) GetProcAddress(library, "grpc_tls_credentials_options_set_check_call_host");
   grpc_tls_credentials_options_set_tls_session_key_log_file_path_import = (grpc_tls_credentials_options_set_tls_session_key_log_file_path_type) GetProcAddress(library, "grpc_tls_credentials_options_set_tls_session_key_log_file_path");
   grpc_tls_credentials_options_set_key_exchange_groups_import = (grpc_tls_credentials_options_set_key_exchange_groups_type) GetProcAddress(library, "grpc_tls_credentials_options_set_key_exchange_groups");
+  grpc_tls_credentials_options_set_exported_keying_material_options_import = (grpc_tls_credentials_options_set_exported_keying_material_options_type) GetProcAddress(library, "grpc_tls_credentials_options_set_exported_keying_material_options");
   grpc_metadata_array_init_import = (grpc_metadata_array_init_type) GetProcAddress(library, "grpc_metadata_array_init");
   grpc_metadata_array_destroy_import = (grpc_metadata_array_destroy_type) GetProcAddress(library, "grpc_metadata_array_destroy");
   grpc_call_details_init_import = (grpc_call_details_init_type) GetProcAddress(library, "grpc_call_details_init");
@@ -427,6 +433,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_call_arena_alloc_import = (grpc_call_arena_alloc_type) GetProcAddress(library, "grpc_call_arena_alloc");
   grpc_call_start_batch_import = (grpc_call_start_batch_type) GetProcAddress(library, "grpc_call_start_batch");
   grpc_call_get_peer_import = (grpc_call_get_peer_type) GetProcAddress(library, "grpc_call_get_peer");
+  grpc_call_get_local_address_import = (grpc_call_get_local_address_type) GetProcAddress(library, "grpc_call_get_local_address");
   grpc_census_call_set_context_import = (grpc_census_call_set_context_type) GetProcAddress(library, "grpc_census_call_set_context");
   grpc_census_call_get_context_import = (grpc_census_call_get_context_type) GetProcAddress(library, "grpc_census_call_get_context");
   grpc_channel_get_target_import = (grpc_channel_get_target_type) GetProcAddress(library, "grpc_channel_get_target");
@@ -437,6 +444,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_channel_create_import = (grpc_channel_create_type) GetProcAddress(library, "grpc_channel_create");
   grpc_lame_client_channel_create_import = (grpc_lame_client_channel_create_type) GetProcAddress(library, "grpc_lame_client_channel_create");
   grpc_channel_destroy_import = (grpc_channel_destroy_type) GetProcAddress(library, "grpc_channel_destroy");
+  grpc_channel_args_arg_vtable_import = (grpc_channel_args_arg_vtable_type) GetProcAddress(library, "grpc_channel_args_arg_vtable");
   grpc_call_cancel_import = (grpc_call_cancel_type) GetProcAddress(library, "grpc_call_cancel");
   grpc_call_cancel_with_status_import = (grpc_call_cancel_with_status_type) GetProcAddress(library, "grpc_call_cancel_with_status");
   grpc_call_failed_before_recv_message_import = (grpc_call_failed_before_recv_message_type) GetProcAddress(library, "grpc_call_failed_before_recv_message");

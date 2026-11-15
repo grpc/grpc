@@ -30,7 +30,7 @@ from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nZenvoy/extensions/http/custom_response/local_response_policy/v3/local_response_policy.proto\x12>envoy.extensions.http.custom_response.local_response_policy.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a\x35\x65nvoy/config/core/v3/substitution_format_string.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\x9f\x02\n\x13LocalResponsePolicy\x12.\n\x04\x62ody\x18\x01 \x01(\x0b\x32 .envoy.config.core.v3.DataSource\x12\x43\n\x0b\x62ody_format\x18\x02 \x01(\x0b\x32..envoy.config.core.v3.SubstitutionFormatString\x12>\n\x0bstatus_code\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.UInt32ValueB\x0b\xfa\x42\x08*\x06\x10\xd8\x04(\xc8\x01\x12S\n\x17response_headers_to_add\x18\x04 \x03(\x0b\x32\'.envoy.config.core.v3.HeaderValueOptionB\t\xfa\x42\x06\x92\x01\x03\x10\xe8\x07\x42\xf9\x01\nLio.envoyproxy.envoy.extensions.http.custom_response.local_response_policy.v3B\x18LocalResponsePolicyProtoP\x01Z}github.com/envoyproxy/go-control-plane/envoy/extensions/http/custom_response/local_response_policy/v3;local_response_policyv3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nZenvoy/extensions/http/custom_response/local_response_policy/v3/local_response_policy.proto\x12>envoy.extensions.http.custom_response.local_response_policy.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a\x35\x65nvoy/config/core/v3/substitution_format_string.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\x9c\x03\n\x13LocalResponsePolicy\x12.\n\x04\x62ody\x18\x01 \x01(\x0b\x32 .envoy.config.core.v3.DataSource\x12\x43\n\x0b\x62ody_format\x18\x02 \x01(\x0b\x32..envoy.config.core.v3.SubstitutionFormatString\x12>\n\x0bstatus_code\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.UInt32ValueB\x0b\xfa\x42\x08*\x06\x10\xd8\x04(\xc8\x01\x12S\n\x17response_headers_to_add\x18\x04 \x03(\x0b\x32\'.envoy.config.core.v3.HeaderValueOptionB\t\xfa\x42\x06\x92\x01\x03\x10\xe8\x07\x12\x31\n\x1epreserve_response_code_details\x18\x05 \x01(\x08\x42\x07\xfa\x42\x04j\x02\x08\x01H\x00\x12(\n\x15response_code_details\x18\x06 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01H\x00\x42\x1e\n\x1cresponse_code_details_actionB\xf9\x01\nLio.envoyproxy.envoy.extensions.http.custom_response.local_response_policy.v3B\x18LocalResponsePolicyProtoP\x01Z}github.com/envoyproxy/go-control-plane/envoy/extensions/http/custom_response/local_response_policy/v3;local_response_policyv3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -42,6 +42,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_LOCALRESPONSEPOLICY'].fields_by_name['status_code']._serialized_options = b'\372B\010*\006\020\330\004(\310\001'
   _globals['_LOCALRESPONSEPOLICY'].fields_by_name['response_headers_to_add']._loaded_options = None
   _globals['_LOCALRESPONSEPOLICY'].fields_by_name['response_headers_to_add']._serialized_options = b'\372B\006\222\001\003\020\350\007'
+  _globals['_LOCALRESPONSEPOLICY'].fields_by_name['preserve_response_code_details']._loaded_options = None
+  _globals['_LOCALRESPONSEPOLICY'].fields_by_name['preserve_response_code_details']._serialized_options = b'\372B\004j\002\010\001'
+  _globals['_LOCALRESPONSEPOLICY'].fields_by_name['response_code_details']._loaded_options = None
+  _globals['_LOCALRESPONSEPOLICY'].fields_by_name['response_code_details']._serialized_options = b'\372B\004r\002\020\001'
   _globals['_LOCALRESPONSEPOLICY']._serialized_start=368
-  _globals['_LOCALRESPONSEPOLICY']._serialized_end=655
+  _globals['_LOCALRESPONSEPOLICY']._serialized_end=780
 # @@protoc_insertion_point(module_scope)

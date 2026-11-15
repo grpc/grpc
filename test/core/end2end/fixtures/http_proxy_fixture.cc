@@ -47,7 +47,6 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
@@ -592,36 +591,21 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   // Resolve address.
   grpc_resolved_address first_address;
   VLOG(2) << "proxy connecting to backend: " << conn->http_request.path;
-  if (grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
-    auto resolver = conn->proxy->combiner->event_engine->GetDNSResolver(
-        grpc_event_engine::experimental::EventEngine::DNSResolver::
-            ResolverOptions());
-    if (!resolver.ok()) {
-      proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy DNS lookup",
-                              error);
-      return;
-    }
-    auto ee_addresses = grpc_event_engine::experimental::LookupHostnameBlocking(
-        resolver->get(), conn->http_request.path, "80");
-    if (!ee_addresses.ok()) {
-      proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy DNS lookup",
-                              error);
-      return;
-    }
-    GRPC_CHECK(!ee_addresses->empty());
-    first_address = CreateGRPCResolvedAddress(ee_addresses->at(0));
-  } else {
-    absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
-        grpc_core::GetDNSResolver()->LookupHostnameBlocking(
-            conn->http_request.path, "80");
-    if (!addresses_or.ok()) {
-      proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy DNS lookup",
-                              error);
-      return;
-    }
-    GRPC_CHECK(!addresses_or->empty());
-    first_address = addresses_or->at(0);
-  }  // Connect to requested address.
+  auto resolver = conn->proxy->combiner->event_engine->GetDNSResolver(
+      grpc_event_engine::experimental::EventEngine::DNSResolver::
+          ResolverOptions());
+  if (!resolver.ok()) {
+    proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy DNS lookup", error);
+    return;
+  }
+  auto ee_addresses = grpc_event_engine::experimental::LookupHostnameBlocking(
+      resolver->get(), conn->http_request.path, "80");
+  if (!ee_addresses.ok()) {
+    proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy DNS lookup", error);
+    return;
+  }
+  GRPC_CHECK(!ee_addresses->empty());
+  first_address = CreateGRPCResolvedAddress(ee_addresses->at(0));
   // The connection callback inherits our reference to conn.
   const grpc_core::Timestamp deadline =
       grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(10);

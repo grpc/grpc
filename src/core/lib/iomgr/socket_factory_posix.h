@@ -23,7 +23,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 /// The virtual table of grpc_socket_factory
 struct grpc_socket_factory_vtable {

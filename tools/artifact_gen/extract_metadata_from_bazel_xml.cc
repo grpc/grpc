@@ -478,6 +478,47 @@ class ArtifactGen {
     }
   }
 
+  // Rewrite zlib 1.3.2 bazel rule.
+  //
+  // "@zlib//:z" don't directly expose header files since 1.3.2,
+  // but instead have .h files as a part of its private `srcs` list.
+  // The public header files are dynamically generated and copied into
+  // a "zlib/include" folder.
+  //
+  // To work around this for our wrapper langauges , rewrite the BazelRule
+  // object such that headers are directly exposed, and
+  // source files that we don't need are excluded (see kZlibExcludeFiles).
+  void PruneZlib() {
+    constexpr char kZlibTarget[] = "@zlib//:z";
+    // These files are not directly used by gRPC. They're
+    // used for decoding/encoding .gz files and
+    // require an extra pass to generate platform-dependent zconf.h
+    // using autotools. Exclude them to simplify the process.
+    const std::set<absl::string_view> kZlibExcludeFiles = {
+        "gzwrite.c", "gzlib.c", "gzread.c", "gzclose.c"};
+    auto it = rules_.find(kZlibTarget);
+    if (it == rules_.end()) return;
+    auto& zlib_rule = it->second;
+    std::vector<std::string> new_srcs;
+    std::vector<std::string> new_hdrs;
+    for (const auto& src : zlib_rule.srcs) {
+      absl::string_view file_name = src;
+      size_t pos = file_name.rfind("//:");
+      if (pos != absl::string_view::npos) {
+        file_name = file_name.substr(pos + 3);
+      }
+      if (absl::EndsWith(file_name, ".c") &&
+          kZlibExcludeFiles.count(file_name) == 0) {
+        new_srcs.push_back(src);
+      }
+      if (absl::EndsWith(src, ".h")) {
+        new_hdrs.push_back(absl::StrReplaceAll(src, {{"zlib/include/", ""}}));
+      }
+    }
+    zlib_rule.srcs = std::move(new_srcs);
+    zlib_rule.hdrs = std::move(new_hdrs);
+  }
+
   void ExpandUpbProtoLibraryRules() {
     const std::string kGenUpbRoot = "//:src/core/ext/upb-gen/";
     const std::string kGenUpbdefsRoot = "//:src/core/ext/upbdefs-gen/";
@@ -489,6 +530,7 @@ class ArtifactGen {
         {"@@opencensus-proto+", "opencensus_proto"},
         {"@@envoy_api+", "@envoy_api"},
         {"@@grpc-proto+", "@grpc_proto"},
+        {"@@autosharding+", "@autosharding"},
     };
     const std::map<std::string, std::string> kExternalLinks{
         {"@com_google_protobuf//", "src/"},
@@ -499,11 +541,16 @@ class ArtifactGen {
         {"@envoy_api//", ""},
         {"@opencensus_proto//", ""},
         {"@grpc_proto//", ""},
+        {"@autosharding//", ""},
     };
     for (auto& [name, bazel_rule] : rules_) {
+      const bool is_dev_cel_upb = bazel_rule.clazz == "upb_c_proto_library" &&
+                                  (absl::StartsWith(name, "@dev_cel//") ||
+                                   absl::StartsWith(name, "@@cel-spec+"));
       if (bazel_rule.generator_function != "grpc_upb_proto_library" &&
           bazel_rule.generator_function !=
-              "grpc_upb_proto_reflection_library") {
+              "grpc_upb_proto_reflection_library" &&
+          !is_dev_cel_upb) {
         continue;
       }
       CHECK_EQ(bazel_rule.deps.size(), 1u) << bazel_rule;
@@ -557,7 +604,8 @@ class ArtifactGen {
             TryExtractSourceFilePath(proto_src).value();
         std::vector<std::string> extensions;
         std::string root;
-        if (bazel_rule.generator_function == "grpc_upb_proto_library") {
+        if (bazel_rule.generator_function == "grpc_upb_proto_library" ||
+            is_dev_cel_upb) {
           extensions = {".upb.h", ".upb_minitable.h", ".upb_minitable.c"};
           root = kGenUpbRoot;
         } else {
@@ -1045,10 +1093,6 @@ class ArtifactGen {
     if (absl::StartsWith(test, "test/core/promise/benchmark:")) return false;
     // we have trouble with census dependency outside of bazel
     if (absl::StartsWith(test, "test/cpp/ext/filters/census:")) return false;
-    if (absl::StartsWith(test,
-                         "test/core/server:xds_channel_stack_modifier_test")) {
-      return false;
-    }
     if (absl::StartsWith(test, "test/cpp/ext/gcp:")) return false;
     if (absl::StartsWith(test, "test/cpp/ext/filters/logging:")) return false;
     if (absl::StartsWith(test, "test/cpp/interop:observability_interop")) {
@@ -1217,6 +1261,8 @@ class ArtifactGen {
           "@zlib//",
           "third_party/zlib",
       },
+      {"@cel_c//cel-c", "third_party/cel-c/cel-c"},
+      {"@@cel-c+//cel-c", "third_party/cel-c/cel-c"},
   };
   const std::map<std::string, ExternalProtoLibrary> external_proto_libraries_ =
       {{"envoy_api",
@@ -1248,6 +1294,13 @@ class ArtifactGen {
                "third_party/grpc-proto",
                "third_party/grpc-proto/",
            },
+       },
+       {
+           "autosharding",
+           {
+               "third_party/autosharding",
+               "third_party/autosharding/",
+           },
        }};
 };
 
@@ -1259,6 +1312,7 @@ nlohmann::json ExtractMetadataFromBazelXml() {
 
   generator.ExpandUpbProtoLibraryRules();
   generator.PruneUpbExperimentalFeatures();
+  generator.PruneZlib();
 
   generator.PatchGrpcProtoLibraryRules();
   generator.PatchDescriptorUpbProtoLibrary();

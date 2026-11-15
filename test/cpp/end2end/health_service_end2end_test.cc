@@ -17,6 +17,7 @@
 //
 
 #include <grpc/grpc.h>
+#include <grpc/health/v1/health.grpc.pb.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -32,7 +33,6 @@
 #include <vector>
 
 #include "src/core/util/crash.h"
-#include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"

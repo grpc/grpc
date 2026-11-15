@@ -79,7 +79,7 @@ NoDestruct<absl::AnyInvocable<void(XdsHttpFilterRegistry&)>>
 
 void GrpcXdsBootstrapBuilder::SetXdsHttpFilterFactoryInitForTest(
     absl::AnyInvocable<void(XdsHttpFilterRegistry&)> init) {
-  MutexLock lock(g_mu);
+  MutexLock lock(*g_mu);
   *g_http_filter_factory_test_init = std::move(init);
 }
 
@@ -97,10 +97,11 @@ XdsHttpFilterRegistry GrpcXdsBootstrapBuilder::CreateXdsHttpFilterRegistry(
       registry.RegisterFilter(
           std::make_unique<XdsHttpCompositeFilterFactory>());
     }
-    if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT")) {
+    if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT") ||
+        IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_SERVER")) {
       registry.RegisterFilter(std::make_unique<XdsHttpExtProcFilterFactory>());
     }
-    MutexLock lock(g_mu);
+    MutexLock lock(*g_mu);
     if (*g_http_filter_factory_test_init != nullptr) {
       (*g_http_filter_factory_test_init)(registry);
     }
@@ -206,20 +207,18 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory final
       config["errorUtilizationPenalty"] = Json::FromNumber(value);
     }
     // metric_names_for_computing_utilization
-    if (WrrCustomMetricsEnabled()) {
-      size_t size;
-      auto metric_names_for_computing_utilization =
-          envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_metric_names_for_computing_utilization(
-              resource, &size);
-      if (metric_names_for_computing_utilization != nullptr && size != 0) {
-        Json::Array metric_names;
-        for (size_t i = 0; i < size; ++i) {
-          metric_names.emplace_back(Json::FromString(
-              UpbStringToStdString(metric_names_for_computing_utilization[i])));
-        }
-        config["metricNamesForComputingUtilization"] =
-            Json::FromArray(std::move(metric_names));
+    size_t size;
+    auto metric_names_for_computing_utilization =
+        envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_metric_names_for_computing_utilization(
+            resource, &size);
+    if (metric_names_for_computing_utilization != nullptr && size != 0) {
+      Json::Array metric_names;
+      for (size_t i = 0; i < size; ++i) {
+        metric_names.emplace_back(Json::FromString(
+            UpbStringToStdString(metric_names_for_computing_utilization[i])));
       }
+      config["metricNamesForComputingUtilization"] =
+          Json::FromArray(std::move(metric_names));
     }
     return Json::Object{
         {"weighted_round_robin", Json::FromObject(std::move(config))}};
@@ -429,33 +428,6 @@ absl::string_view XdsHttpRouterFilterFactory::OverrideConfigProtoName() const {
 
 void XdsHttpRouterFilterFactory::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_router_v3_Router_getmsgdef(symtab);
-}
-
-std::optional<Json> XdsHttpRouterFilterFactory::GenerateFilterConfig(
-    absl::string_view /*instance_name*/,
-    const XdsResourceType::DecodeContext& context,
-    const XdsExtension& extension, ValidationErrors* errors) const {
-  const absl::string_view* serialized_filter_config =
-      std::get_if<absl::string_view>(&extension.value);
-  if (serialized_filter_config == nullptr) {
-    errors->AddError("could not parse router filter config");
-    return std::nullopt;
-  }
-  if (envoy_extensions_filters_http_router_v3_Router_parse(
-          serialized_filter_config->data(), serialized_filter_config->size(),
-          context.arena) == nullptr) {
-    errors->AddError("could not parse router filter config");
-    return std::nullopt;
-  }
-  return Json();
-}
-
-std::optional<Json> XdsHttpRouterFilterFactory::GenerateFilterConfigOverride(
-    absl::string_view /*instance_name*/,
-    const XdsResourceType::DecodeContext& /*context*/,
-    const XdsExtension& /*extension*/, ValidationErrors* errors) const {
-  errors->AddError("router filter does not support config override");
-  return std::nullopt;
 }
 
 RefCountedPtr<const FilterConfig>

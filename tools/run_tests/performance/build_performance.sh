@@ -55,12 +55,12 @@ do
   "rust")
     tools/run_tests/performance/build_performance_rust.sh
     ;;
-  "php7"|"php7_protobuf_c")
+  "php8"|"php8_protobuf_c")
     if [ -n "$PHP_ALREADY_BUILT" ]; then
       echo "Skipping PHP build as already built by $PHP_ALREADY_BUILT"
     else
       PHP_ALREADY_BUILT=$language
-      tools/run_tests/performance/build_performance_php7.sh
+      tools/run_tests/performance/build_performance_php8.sh
     fi
     ;;
   "csharp")

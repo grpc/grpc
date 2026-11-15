@@ -109,10 +109,14 @@ class Metadata(Collection[MetadatumType]):  # noqa: PLW1641
 
     def __delitem__(self, key: MetadataKey) -> None:
         """``del metadata[<key>]`` deletes the first mapping for <key>."""
-        current_values = self.get_all(key)
-        if not current_values:
+        # get_all() returns the live list stored in _metadata, not a copy,
+        # so mutating it in place here also updates _metadata directly.
+        values = self.get_all(key)
+        if not values:
             raise KeyError(repr(key))
-        self._metadata[key] = current_values[1:]
+        del values[0]
+        if not values:
+            del self._metadata[key]
 
     def delete_all(self, key: MetadataKey) -> None:
         """Delete all mappings for <key>."""

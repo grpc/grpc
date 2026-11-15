@@ -134,14 +134,14 @@ UniqueTypeName GcpAuthenticationFilter::CallCredentialsCache::Type() {
 
 void GcpAuthenticationFilter::CallCredentialsCache::SetMaxSize(
     size_t max_size) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   cache_.SetMaxSize(max_size);
 }
 
 RefCountedPtr<grpc_call_credentials>
 GcpAuthenticationFilter::CallCredentialsCache::Get(
     const std::string& audience) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   return cache_.GetOrInsert(audience, [](const std::string& audience) {
     return MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(audience);
   });

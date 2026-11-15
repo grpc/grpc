@@ -117,7 +117,7 @@ CircuitBreakerCallCounterMap::GetOrCreate(const std::string& cluster,
                                           const std::string& eds_service_name) {
   Key key(cluster, eds_service_name);
   RefCountedPtr<CallCounter> result;
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto it = map_.find(key);
   if (it == map_.end()) {
     it = map_.insert({key, nullptr}).first;
@@ -132,7 +132,7 @@ CircuitBreakerCallCounterMap::GetOrCreate(const std::string& cluster,
 }
 
 CircuitBreakerCallCounterMap::CallCounter::~CallCounter() {
-  MutexLock lock(&g_call_counter_map->mu_);
+  MutexLock lock(g_call_counter_map->mu_);
   auto it = g_call_counter_map->map_.find(key_);
   if (it != g_call_counter_map->map_.end() && it->second == this) {
     g_call_counter_map->map_.erase(it);

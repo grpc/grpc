@@ -411,12 +411,17 @@ TEST(JsonObjectLoader, BooleanFields) {
 // String tests
 //
 
-TEST(JsonObjectLoader, StringFields) {
+template <typename T>
+class StringTest : public ::testing::Test {};
+
+TYPED_TEST_SUITE_P(StringTest);
+
+TYPED_TEST_P(StringTest, StringFields) {
   struct TestStruct {
-    std::string value;
-    std::string optional_value;
-    std::optional<std::string> std_optional_value;
-    std::unique_ptr<std::string> unique_ptr_value;
+    TypeParam value;
+    TypeParam optional_value;
+    std::optional<TypeParam> std_optional_value;
+    std::unique_ptr<TypeParam> unique_ptr_value;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
@@ -475,6 +480,11 @@ TEST(JsonObjectLoader, StringFields) {
             "field:value error:is not a string]")
       << test_struct.status();
 }
+
+REGISTER_TYPED_TEST_SUITE_P(StringTest, StringFields);
+
+using StringTypes = ::testing::Types<std::string, RefCountedStringValue>;
+INSTANTIATE_TYPED_TEST_SUITE_P(My, StringTest, StringTypes);
 
 //
 // Duration tests

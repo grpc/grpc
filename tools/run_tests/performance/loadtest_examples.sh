@@ -42,8 +42,8 @@ example_file() {
         echo "python_asyncio${suffix}"
         return
     fi
-    if [[ "${scenario#php7_protobuf_c_}" != "${scenario}" ]]; then
-        echo "php7_protobuf_c${suffix}"
+    if [[ "${scenario#php8_protobuf_c_}" != "${scenario}" ]]; then
+        echo "php8_protobuf_c${suffix}"
         return
     fi
     echo "${scenario%%_*}${suffix}"
@@ -59,8 +59,8 @@ example_language() {
         echo "python_asyncio"
         return
     fi
-    if [[ "${filename#php7_protobuf_c_}" != "${filename}" ]]; then
-        echo "php7_protobuf_c"
+    if [[ "${filename#php8_protobuf_c_}" != "${filename}" ]]; then
+        echo "php8_protobuf_c"
         return
     fi
     echo "${filename%%_*}"
@@ -73,8 +73,8 @@ scenarios=(
     "go_generic_sync_streaming_ping_pong_secure"
     "java_generic_async_streaming_ping_pong_secure"
     "node_to_node_generic_async_streaming_ping_pong_secure"
-    "php7_protobuf_php_extension_to_cpp_protobuf_sync_unary_ping_pong"
-    "php7_protobuf_c_extension_to_cpp_protobuf_sync_unary_ping_pong"
+    "php8_protobuf_php_extension_to_cpp_protobuf_sync_unary_ping_pong"
+    "php8_protobuf_c_extension_to_cpp_protobuf_sync_unary_ping_pong"
     "python_generic_sync_streaming_ping_pong"
     "python_asyncio_generic_async_streaming_ping_pong"
     "ruby_protobuf_sync_streaming_ping_pong"
@@ -86,8 +86,8 @@ psm_scenarios=(
     "go_protobuf_async_unary_5000rpcs_1KB_psm"
     "java_protobuf_async_unary_5000rpcs_1KB_psm"
     "node_to_node_protobuf_async_unary_5000rpcs_1KB_psm"
-    "php7_protobuf_php_extension_to_cpp_protobuf_async_unary_5000rpcs_1KB_psm"
-    "php7_protobuf_c_extension_to_cpp_protobuf_async_unary_5000rpcs_1KB_psm"
+    "php8_protobuf_php_extension_to_cpp_protobuf_async_unary_5000rpcs_1KB_psm"
+    "php8_protobuf_c_extension_to_cpp_protobuf_async_unary_5000rpcs_1KB_psm"
     "python_protobuf_async_unary_5000rpcs_1KB_psm"
     "python_asyncio_protobuf_async_unary_5000rpcs_1KB_psm"
 )

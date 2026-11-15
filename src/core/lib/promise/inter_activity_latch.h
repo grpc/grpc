@@ -42,7 +42,7 @@ class InterActivityLatch {
   // Produce a promise to wait for this latch.
   auto Wait() {
     return [this]() -> Poll<T> {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       GRPC_TRACE_LOG(promise_primitives, INFO)
           << DebugTag() << "PollWait " << StateString();
       if (value_.has_value()) {
@@ -56,7 +56,7 @@ class InterActivityLatch {
 
   // Set the latch.
   void Set(T value) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     GRPC_TRACE_LOG(promise_primitives, INFO)
         << DebugTag() << "Set " << StateString();
     value_ = std::move(value);
@@ -64,7 +64,7 @@ class InterActivityLatch {
   }
 
   bool IsSet() const ABSL_LOCKS_EXCLUDED(mu_) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     return value_.has_value();
   }
 
@@ -95,7 +95,7 @@ class InterActivityLatch<void> {
   // Produce a promise to wait for this latch.
   auto Wait() {
     return [this]() -> Poll<Empty> {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       GRPC_TRACE_LOG(promise_primitives, INFO)
           << DebugTag() << "PollWait " << StateString();
       if (is_set_) {
@@ -109,7 +109,7 @@ class InterActivityLatch<void> {
 
   // Set the latch.
   void Set() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     GRPC_TRACE_LOG(promise_primitives, INFO)
         << DebugTag() << "Set " << StateString();
     is_set_ = true;
@@ -117,7 +117,7 @@ class InterActivityLatch<void> {
   }
 
   bool IsSet() const ABSL_LOCKS_EXCLUDED(mu_) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     return is_set_;
   }
 

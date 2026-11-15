@@ -59,12 +59,12 @@ class PreStopHookServer {
   }
 
   State GetState() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return state_;
   }
 
   void SetState(State state) {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     state_ = state;
     condition_.SignalAll();
   }
@@ -81,7 +81,7 @@ class PreStopHookServer {
 
  private:
   bool WaitForState(State state, const absl::Duration& timeout) {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     auto deadline = absl::Now() + timeout;
     while (state_ != state && !condition_.WaitWithDeadline(&mu_, deadline)) {
     }
@@ -146,7 +146,7 @@ ServerUnaryReactor* HookServiceImpl::Hook(CallbackServerContext* context,
                                           const Empty* /* request */,
                                           Empty* /* reply */) {
   auto reactor = context->DefaultReactor();
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   pending_requests_.emplace_back(reactor);
   MatchRequestsAndStatuses();
   return reactor;
@@ -157,7 +157,7 @@ ServerUnaryReactor* HookServiceImpl::SetReturnStatus(
     Empty* /* reply */) {
   auto reactor = context->DefaultReactor();
   reactor->Finish(Status::OK);
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   respond_all_status_.emplace(
       static_cast<StatusCode>(request->grpc_code_to_return()),
       request->grpc_status_description());
@@ -170,21 +170,21 @@ ServerUnaryReactor* HookServiceImpl::ClearReturnStatus(
     Empty* /* reply */) {
   auto reactor = context->DefaultReactor();
   reactor->Finish(Status::OK);
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   respond_all_status_.reset();
   MatchRequestsAndStatuses();
   return reactor;
 }
 
 void HookServiceImpl::AddReturnStatus(const Status& status) {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   pending_statuses_.push_back(status);
   MatchRequestsAndStatuses();
 }
 
 bool HookServiceImpl::TestOnlyExpectRequests(size_t expected_requests_count,
                                              const absl::Duration& timeout) {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   auto deadline = absl::Now() + timeout;
   while (pending_requests_.size() < expected_requests_count &&
          !request_var_.WaitWithDeadline(&mu_, deadline)) {
@@ -193,7 +193,7 @@ bool HookServiceImpl::TestOnlyExpectRequests(size_t expected_requests_count,
 }
 
 void HookServiceImpl::Stop() {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   if (!respond_all_status_.has_value()) {
     respond_all_status_.emplace(StatusCode::ABORTED, "Shutting down");
   }

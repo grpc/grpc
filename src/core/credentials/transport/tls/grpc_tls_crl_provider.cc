@@ -56,12 +56,12 @@ absl::StatusOr<std::string> IssuerFromCrl(X509_CRL* crl) {
   if (crl == nullptr) {
     return absl::InvalidArgumentError("crl cannot be null");
   }
-  X509_NAME* issuer = X509_CRL_get_issuer(crl);
+  auto* issuer = X509_CRL_get_issuer(crl);
   if (issuer == nullptr) {
     return absl::InvalidArgumentError("crl cannot have null issuer");
   }
   unsigned char* buf = nullptr;
-  int len = i2d_X509_NAME(issuer, &buf);
+  int len = i2d_X509_NAME(const_cast<X509_NAME*>(issuer), &buf);
   if (len < 0 || buf == nullptr) {
     return absl::InvalidArgumentError("crl cannot have null issuer");
   }
@@ -72,7 +72,7 @@ absl::StatusOr<std::string> IssuerFromCrl(X509_CRL* crl) {
 
 absl::StatusOr<std::shared_ptr<Crl>> ReadCrlFromFile(
     const std::string& crl_path) {
-  absl::StatusOr<Slice> crl_slice = LoadFile(crl_path, false);
+  absl::StatusOr<Slice> crl_slice = LoadFile(crl_path);
   if (!crl_slice.ok()) {
     return crl_slice.status();
   }
@@ -222,7 +222,7 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
   if (!status.ok()) {
     return status;
   }
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (!files_with_errors.empty()) {
     // Need to make sure CRLs we read successfully into new_crls are still
     // in-place updated in crls_.
@@ -245,7 +245,7 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
 
 std::shared_ptr<Crl> DirectoryReloaderCrlProvider::GetCrl(
     const CertificateInfo& certificate_info) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto it = crls_.find(certificate_info.Issuer());
   if (it == crls_.end()) {
     return nullptr;

@@ -69,7 +69,7 @@ class SessionContextRegistry {
  public:
   static uint16_t Register(void (*destroy)(void*)) {
     auto* state = GetState();
-    grpc_core::MutexLock lock(&state->mu);
+    grpc_core::MutexLock lock(state->mu);
     uint16_t id = state->destroy_functions.size();
     GRPC_CHECK_LT(id, std::numeric_limits<uint16_t>::max());
     state->destroy_functions.push_back(destroy);
@@ -81,7 +81,7 @@ class SessionContextRegistry {
     auto* state = GetState();
     void (*destroy)(void*) = nullptr;
     {
-      grpc_core::MutexLock lock(&state->mu);
+      grpc_core::MutexLock lock(state->mu);
       if (id < state->destroy_functions.size()) {
         destroy = state->destroy_functions[id];
       }
@@ -301,7 +301,7 @@ class ServerContextBase::CompletionOp final
 
  private:
   bool CheckCancelledNoPluck() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return finalized_ ? (cancelled_ != 0) : false;
   }
 
@@ -349,7 +349,7 @@ bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
   bool call_cancel = false;
 
   {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     if (done_intercepting_) {
       // We are done intercepting.
       has_tag = has_tag_;
@@ -425,9 +425,6 @@ ServerContextBase::~ServerContextBase() {
   }
   if (default_reactor_used_.load(std::memory_order_relaxed)) {
     reinterpret_cast<Reactor*>(&default_reactor_)->~Reactor();
-  }
-  if (call_metric_recorder_ != nullptr) {
-    call_metric_recorder_->~CallMetricRecorder();
   }
 }
 
@@ -528,6 +525,16 @@ std::string ServerContextBase::peer() const {
   return peer;
 }
 
+std::string ServerContextBase::local_address() const {
+  std::string local_address;
+  if (call_.call) {
+    char* c_local_address = grpc_call_get_local_address(call_.call);
+    local_address = c_local_address;
+    gpr_free(c_local_address);
+  }
+  return local_address;
+}
+
 const struct census_context* ServerContextBase::census_context() const {
   return call_.call == nullptr ? nullptr
                                : grpc_census_call_get_context(call_.call);
@@ -546,8 +553,12 @@ void ServerContextBase::CreateCallMetricRecorder(
   if (call_.call == nullptr) return;
   GRPC_CHECK_EQ(call_metric_recorder_, nullptr);
   grpc_core::Arena* arena = grpc_call_get_arena(call_.call);
+  // The arena owns the BackendMetricState rather than this ServerContext,
+  // because the backend metric filter may still read it via the arena context
+  // after the ServerContext is destroyed (e.g., in a v3 server stack, trailing
+  // metadata filters run after the send-status op has completed).
   auto* backend_metric_state =
-      arena->New<BackendMetricState>(server_metric_recorder);
+      arena->ManagedNew<BackendMetricState>(server_metric_recorder);
   call_metric_recorder_ = backend_metric_state;
   arena->SetContext<grpc_core::BackendMetricProvider>(backend_metric_state);
 }

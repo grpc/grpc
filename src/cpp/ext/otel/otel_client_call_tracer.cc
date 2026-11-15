@@ -339,7 +339,7 @@ void OpenTelemetryPluginImpl::ClientCallTracerInterface::
         ->Record(incoming_bytes, labels, opentelemetry::context::Context{});
   }
   if (parent_->otel_plugin_->client_.call.retry_delay != nullptr) {
-    grpc_core::MutexLock lock(&parent_->mu_);
+    grpc_core::MutexLock lock(parent_->mu_);
     if (--parent_->num_active_attempts_ == 0) {
       parent_->time_at_last_attempt_end_ = absl::Now();
     }
@@ -490,6 +490,13 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::ClientCallTracerInterface(
     }
     span_ = otel_plugin_->tracer_->StartSpan(
         absl::StrCat("Sent.", GetMethodFromPath(path_)), options);
+    // Publish this call's span as its census_context, as the server call
+    // tracer does, so that calls made on behalf of this call (e.g., the
+    // ext_authz and ext_proc side-channel calls made by xDS filters) are
+    // traced as its children.  The span lives as long as this tracer, which
+    // lives as long as the call.
+    arena->SetContext<census_context>(
+        reinterpret_cast<census_context*>(span_.get()));
   }
 }
 
@@ -547,7 +554,7 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::StartNewAttempt(
   bool is_first_attempt = true;
   uint64_t attempt_num;
   {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     if (transparent_retries_ != 0 || retries_ != 0) {
       is_first_attempt = false;
       if (otel_plugin_->client_.call.retry_delay != nullptr &&

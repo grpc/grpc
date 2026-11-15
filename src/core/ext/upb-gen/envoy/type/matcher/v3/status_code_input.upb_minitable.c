@@ -31,16 +31,25 @@ const upb_MiniTable envoy__type__matcher__v3__HttpResponseStatusCodeClassMatchIn
 #endif
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+const upb_MiniTable envoy__type__matcher__v3__HttpResponseLocalReplyMatchInput_msg_init = {
+  NULL,
+  8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.matcher.v3.HttpResponseLocalReplyMatchInput",
+#endif
+};
+
+static const upb_MiniTable *messages_layout[3] = {
   &envoy__type__matcher__v3__HttpResponseStatusCodeMatchInput_msg_init,
   &envoy__type__matcher__v3__HttpResponseStatusCodeClassMatchInput_msg_init,
+  &envoy__type__matcher__v3__HttpResponseLocalReplyMatchInput_msg_init,
 };
 
 const upb_MiniTableFile envoy_type_matcher_v3_status_code_input_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  2,
+  3,
   0,
   0,
 };

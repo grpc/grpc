@@ -129,7 +129,7 @@ bool CertificateVerifier::Verify(TlsCustomVerificationCheckRequest* request,
   GRPC_CHECK_NE(request, nullptr);
   GRPC_CHECK_NE(request->c_request(), nullptr);
   {
-    internal::MutexLock lock(&mu_);
+    internal::MutexLock lock(mu_);
     request_map_.emplace(request->c_request(), std::move(callback));
   }
   grpc_status_code status_code = GRPC_STATUS_OK;
@@ -142,7 +142,7 @@ bool CertificateVerifier::Verify(TlsCustomVerificationCheckRequest* request,
       *sync_status = grpc::Status(static_cast<grpc::StatusCode>(status_code),
                                   error_details);
     }
-    internal::MutexLock lock(&mu_);
+    internal::MutexLock lock(mu_);
     request_map_.erase(request->c_request());
   }
   gpr_free(error_details);
@@ -161,7 +161,7 @@ void CertificateVerifier::AsyncCheckDone(
   auto* self = static_cast<CertificateVerifier*>(callback_arg);
   std::function<void(grpc::Status)> callback;
   {
-    internal::MutexLock lock(&self->mu_);
+    internal::MutexLock lock(self->mu_);
     auto it = self->request_map_.find(request);
     if (it != self->request_map_.end()) {
       callback = std::move(it->second);
@@ -195,7 +195,7 @@ int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
   auto* self = static_cast<ExternalCertificateVerifier*>(user_data);
   TlsCustomVerificationCheckRequest* cpp_request = nullptr;
   {
-    internal::MutexLock lock(&self->mu_);
+    internal::MutexLock lock(self->mu_);
     auto pair = self->request_map_.emplace(
         request, AsyncRequestState(callback, callback_arg, request));
     GRPC_CHECK(pair.second);
@@ -208,7 +208,7 @@ int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
         grpc_tls_on_custom_verification_check_done_cb callback = nullptr;
         void* callback_arg = nullptr;
         {
-          internal::MutexLock lock(&self->mu_);
+          internal::MutexLock lock(self->mu_);
           auto it = self->request_map_.find(request);
           if (it != self->request_map_.end()) {
             callback = it->second.callback;
@@ -230,7 +230,7 @@ int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
       *sync_error_details =
           gpr_strdup(sync_current_verifier_status.error_message().c_str());
     }
-    internal::MutexLock lock(&self->mu_);
+    internal::MutexLock lock(self->mu_);
     self->request_map_.erase(request);
   }
   return is_done;
@@ -241,7 +241,7 @@ void ExternalCertificateVerifier::CancelInCoreExternalVerifier(
   auto* self = static_cast<ExternalCertificateVerifier*>(user_data);
   TlsCustomVerificationCheckRequest* cpp_request = nullptr;
   {
-    internal::MutexLock lock(&self->mu_);
+    internal::MutexLock lock(self->mu_);
     auto it = self->request_map_.find(request);
     if (it != self->request_map_.end()) {
       cpp_request = &it->second.cpp_request;

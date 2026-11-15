@@ -247,7 +247,17 @@ EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
 if BUILD_WITH_STATIC_LIBSTDCXX:
     EXTRA_LINK_ARGS.append("-static-libstdc++")
 
-CC_FILES = [os.path.normpath(cc_file) for cc_file in protoc_lib_deps.CC_FILES]
+
+def _get_cc_files():
+    cc_files = list(protoc_lib_deps.CC_FILES)
+    if "win32" in sys.platform:
+        cc_files += protoc_lib_deps.CC_FILES_WINDOWS_ONLY
+    return [os.path.normpath(cc_file) for cc_file in cc_files]
+
+
+CC_FILES = _get_cc_files()
+
+
 PROTO_FILES = [
     os.path.normpath(proto_file) for proto_file in protoc_lib_deps.PROTO_FILES
 ]
@@ -339,7 +349,6 @@ if __name__ == "__main__":
         install_requires=[
             "protobuf>=7.35.1,<8.0.0",
             "grpcio>={version}".format(version=grpc_version.VERSION),
-            "setuptools>=77.0.1",
         ],
         package_data=package_data(),
         cmdclass={

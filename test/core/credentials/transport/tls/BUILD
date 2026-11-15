@@ -92,6 +92,7 @@ grpc_cc_test(
         "//:grpc_core_credentials_header",
         "//:transport_auth_context",
         "//:tsi_base",
+        "//:tsi_ssl_credentials",
         "//src/core:channel_args",
         "//src/core:grpc_check",
         "//src/core:grpc_tls_credentials",

@@ -27,7 +27,7 @@ from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nCenvoy/extensions/http/injected_credentials/generic/v3/generic.proto\x12\x35\x65nvoy.extensions.http.injected_credentials.generic.v3\x1a\x36\x65nvoy/extensions/transport_sockets/tls/v3/secret.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\x80\x01\n\x07Generic\x12X\n\ncredential\x18\x01 \x01(\x0b\x32:.envoy.extensions.transport_sockets.tls.v3.SdsSecretConfigB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12\x1b\n\x06header\x18\x02 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x42\xc5\x01\nCio.envoyproxy.envoy.extensions.http.injected_credentials.generic.v3B\x0cGenericProtoP\x01Zfgithub.com/envoyproxy/go-control-plane/envoy/extensions/http/injected_credentials/generic/v3;genericv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nCenvoy/extensions/http/injected_credentials/generic/v3/generic.proto\x12\x35\x65nvoy.extensions.http.injected_credentials.generic.v3\x1a\x36\x65nvoy/extensions/transport_sockets/tls/v3/secret.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\x9d\x01\n\x07Generic\x12X\n\ncredential\x18\x01 \x01(\x0b\x32:.envoy.extensions.transport_sockets.tls.v3.SdsSecretConfigB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12\x1b\n\x06header\x18\x02 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x12\x1b\n\x13header_value_prefix\x18\x03 \x01(\tB\xc5\x01\nCio.envoyproxy.envoy.extensions.http.injected_credentials.generic.v3B\x0cGenericProtoP\x01Zfgithub.com/envoyproxy/go-control-plane/envoy/extensions/http/injected_credentials/generic/v3;genericv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -40,5 +40,5 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_GENERIC'].fields_by_name['header']._loaded_options = None
   _globals['_GENERIC'].fields_by_name['header']._serialized_options = b'\372B\010r\006\300\001\001\320\001\001'
   _globals['_GENERIC']._serialized_start=239
-  _globals['_GENERIC']._serialized_end=367
+  _globals['_GENERIC']._serialized_end=396
 # @@protoc_insertion_point(module_scope)

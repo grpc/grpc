@@ -112,7 +112,7 @@ grpc_run_tests_harness_test(
     args = [
         "-l python -c opt",
     ],
-    docker_image_version = "tools/dockerfile/test/python_debian11_default_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/python_debian13_default_x64.current_version",
 )
 
 # C#
@@ -197,7 +197,7 @@ grpc_run_cpp_distribtest_test(
     name = "cpp_distribtest_cmake_aarch64_cross_linux",
     size = "enormous",
     args = ["test/distrib/cpp/run_distrib_test_cmake_aarch64_cross.sh"],
-    docker_image_version = "tools/dockerfile/distribtest/cpp_debian11_aarch64_cross_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/cpp_debian13_aarch64_cross_x64.current_version",
 )
 
 test_suite(
@@ -409,18 +409,18 @@ test_suite(
 # Python distribtests
 
 grpc_run_distribtest_test(
-    name = "distribtest_python_linux_x64_bullseye",
+    name = "distribtest_python_linux_x64_bookworm",
     artifact_deps = [
         "package_python_linux",
     ],
     build_script = "run_distribtest_python_linux.sh",
-    docker_image_version = "tools/dockerfile/distribtest/python_bullseye_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/python_bookworm_x64.current_version",
 )
 
 test_suite(
     name = "python_distribtests_linux",
     tests = [
-        ":distribtest_python_linux_x64_bullseye",
+        ":distribtest_python_linux_x64_bookworm",
     ],
 )
 

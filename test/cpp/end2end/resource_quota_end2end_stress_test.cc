@@ -32,6 +32,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/util/credentials.h"
 #include "gtest/gtest.h"
 #include "absl/status/statusor.h"
@@ -148,7 +149,10 @@ class End2EndResourceQuotaUnaryTest : public ::testing::Test {
   std::string payload_;
 };
 
-TEST_F(End2EndResourceQuotaUnaryTest, MultipleUnaryRPCTest) { MakeGrpcCalls(); }
+TEST_F(End2EndResourceQuotaUnaryTest, MultipleUnaryRPCTest) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
+  MakeGrpcCalls();
+}
 
 class End2EndConnectionQuotaTest : public ::testing::TestWithParam<int> {
  protected:

@@ -235,4 +235,10 @@ std::optional<std::vector<uint64_t>> FakeStatsPlugin::GetHistogramValueByName(
   return GetMetricValueByNameImpl<std::vector<uint64_t>>(name, labels);
 }
 
+std::optional<std::vector<uint64_t>>
+FakeStatsPlugin::GetDoubleHistogramValueByName(
+    absl::string_view name, absl::Span<const absl::string_view> labels) {
+  return GetMetricValueByNameImpl<std::vector<uint64_t>>(name, labels);
+}
+
 }  // namespace grpc_core

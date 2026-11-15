@@ -92,7 +92,7 @@ class AdsServiceImpl
             "%p%s%s", this, debug_label.empty() ? "" : ":", debug_label)) {}
 
   void set_wrap_resources(bool wrap_resources) {
-    grpc_core::MutexLock lock(&ads_mu_);
+    grpc_core::MutexLock lock(ads_mu_);
     wrap_resources_ = wrap_resources;
   }
 
@@ -132,7 +132,7 @@ class AdsServiceImpl
   // Tells the server to ignore requests from the client for a given
   // resource type.
   void IgnoreResourceType(const std::string& type_url) {
-    grpc_core::MutexLock lock(&ads_mu_);
+    grpc_core::MutexLock lock(ads_mu_);
     resource_types_to_ignore_.emplace(type_url);
   }
 
@@ -140,7 +140,7 @@ class AdsServiceImpl
   // set.  The callback is passed the resource type and version.
   void SetCheckVersionCallback(
       std::function<void(absl::string_view, int)> check_version_callback) {
-    grpc_core::MutexLock lock(&ads_mu_);
+    grpc_core::MutexLock lock(ads_mu_);
     check_version_callback_ = std::move(check_version_callback);
   }
 
@@ -148,7 +148,7 @@ class AdsServiceImpl
   // TODO(roth): Consider adding an absl::Notification-based mechanism
   // here to avoid the need for tests to poll the response state.
   std::optional<ResponseState> GetResponseState(const std::string& type_url) {
-    grpc_core::MutexLock lock(&ads_mu_);
+    grpc_core::MutexLock lock(ads_mu_);
     if (resource_type_response_state_[type_url].empty()) {
       return std::nullopt;
     }
@@ -177,24 +177,24 @@ class AdsServiceImpl
 
   // Returns the peer names of clients currently connected to the service.
   std::set<std::string> clients() {
-    grpc_core::MutexLock lock(&clients_mu_);
+    grpc_core::MutexLock lock(clients_mu_);
     return clients_;
   }
 
   void ForceADSFailure(Status status) {
-    grpc_core::MutexLock lock(&ads_mu_);
+    grpc_core::MutexLock lock(ads_mu_);
     forced_ads_failure_ = std::move(status);
   }
 
   void ClearADSFailure() {
-    grpc_core::MutexLock lock(&ads_mu_);
+    grpc_core::MutexLock lock(ads_mu_);
     forced_ads_failure_ = std::nullopt;
   }
 
   using ClientMetadataType = std::multimap<grpc::string_ref, grpc::string_ref>;
   void SetCallCredsCallback(
       absl::AnyInvocable<void(const ClientMetadataType&)> cb) {
-    grpc_core::MutexLock lock(&ads_mu_);
+    grpc_core::MutexLock lock(ads_mu_);
     call_creds_cb_ = std::move(cb);
   }
 
@@ -269,12 +269,12 @@ class AdsServiceImpl
   }
 
   void AddClient(const std::string& client) {
-    grpc_core::MutexLock lock(&clients_mu_);
+    grpc_core::MutexLock lock(clients_mu_);
     clients_.insert(client);
   }
 
   void RemoveClient(const std::string& client) {
-    grpc_core::MutexLock lock(&clients_mu_);
+    grpc_core::MutexLock lock(clients_mu_);
     clients_.erase(client);
   }
 

@@ -92,6 +92,7 @@ EXTERNAL_LINKS = {
     "@envoy_api//": "",
     "@opencensus_proto//": "",
     "@grpc_proto//": "",
+    "@autosharding//": "",
 }
 
 EXTERNAL_PROTO_LIBRARIES = {
@@ -123,6 +124,10 @@ EXTERNAL_PROTO_LIBRARIES = {
         destination="third_party/grpc-proto",
         proto_prefix="third_party/grpc-proto/",
     ),
+    "autosharding": ExternalProtoLibrary(
+        destination="third_party/autosharding",
+        proto_prefix="third_party/autosharding/",
+    ),
 }
 
 # We want to get a list of source files for some external libraries
@@ -138,6 +143,8 @@ EXTERNAL_SOURCE_PREFIXES = {
     "@com_google_protobuf//upb": "third_party/upb/upb",
     "@com_google_protobuf//third_party/utf8_range": "third_party/utf8_range",
     "@zlib//": "third_party/zlib",
+    "@cel_c//cel-c": "third_party/cel-c/cel-c",
+    "@@cel-c+//cel-c": "third_party/cel-c/cel-c",
 }
 
 
@@ -724,6 +731,38 @@ def _prune_upb_experimental_feature_rules(bazel_rules: BuildDict):
         rule["deps"] = [dep for dep in rule["deps"] if _should_include(dep)]
 
 
+# Rewrite zlib 1.3.2 bazel rule.
+#
+# "@zlib//:z" don't directly expose header files since 1.3.2,
+# but instead have .h files as a part of its private `srcs` list.
+# The public header files are dynamically generated and copied into
+# a "zlib/include" folder.
+#
+# To work around this for our wrapper langauges , rewrite the BazelRule
+# object such that headers are directly exposed, and
+# source files that we don't need are excluded (see kZlibExcludeFiles).
+def _prune_zlib_rules(bazel_rules: BuildDict):
+    # @zlib//:zlib is an alias to @zlib//:z
+    ZLIB_TARGET = "@zlib//:z"
+    # These files are not directly used by gRPC. They're
+    # used for decoding/encoding .gz files and
+    # requires an extra pass to generate platform-dependent zconf.h
+    # using autotools. Exclude them to simplify the process.
+    ZLIB_EXCLUDE_FILES = set(["gzwrite.c", "gzlib.c", "gzread.c", "gzclose.c"])
+    zlib_rule = bazel_rules[ZLIB_TARGET]
+    srcs = zlib_rule["srcs"]
+
+    def _should_keep_src(src):
+        file_name = src.split("//:")[-1]
+        return file_name.endswith(".c") and not file_name in ZLIB_EXCLUDE_FILES
+
+    zlib_rule["srcs"] = [src for src in srcs if _should_keep_src(src)]
+    zlib_rule["hdrs"] = [
+        src.replace("zlib/include/", "") for src in srcs if src.endswith(".h")
+    ]
+    return
+
+
 def _expand_upb_proto_library_rules(bazel_rules):
     # Expand the .proto files from UPB proto library rules into the pre-generated
     # upb files.
@@ -731,9 +770,16 @@ def _expand_upb_proto_library_rules(bazel_rules):
     GEN_UPBDEFS_ROOT = "//:src/core/ext/upbdefs-gen/"
     for name, bazel_rule in bazel_rules.items():
         gen_func = bazel_rule.get("generator_function", None)
-        if gen_func in (
-            "grpc_upb_proto_library",
-            "grpc_upb_proto_reflection_library",
+        is_dev_cel_upb = bazel_rule.get("class") == "upb_c_proto_library" and (
+            name.startswith("@dev_cel//") or name.startswith("@@cel-spec+")
+        )
+        if (
+            gen_func
+            in (
+                "grpc_upb_proto_library",
+                "grpc_upb_proto_reflection_library",
+            )
+            or is_dev_cel_upb
         ):
             # get proto dependency
             deps = bazel_rule["deps"]
@@ -760,6 +806,14 @@ def _expand_upb_proto_library_rules(bazel_rules):
             srcs = []
             hdrs = []
             for proto_src in protos:
+                # The descriptor.proto's upb-generated files are already provided
+                # by upb_descriptor_lib (see _patch_descriptor_upb_proto_library).
+                if bazel_rule[
+                    "generator_function"
+                ] == "grpc_upb_proto_library" and proto_src.endswith(
+                    ":descriptor.proto"
+                ):
+                    continue
                 prefix_to_strip = _prefix_to_strip(proto_src)
                 if prefix_to_strip is not None:
                     if not proto_src.startswith(prefix_to_strip):
@@ -784,17 +838,16 @@ def _expand_upb_proto_library_rules(bazel_rules):
                         )
                     )
 
+                is_upb_proto = (
+                    gen_func == "grpc_upb_proto_library" or is_dev_cel_upb
+                )
                 extensions = (
                     # There is no longer a .upb.c extension.
                     [".upb.h", ".upb_minitable.h", ".upb_minitable.c"]
-                    if gen_func == "grpc_upb_proto_library"
+                    if is_upb_proto
                     else [".upbdefs.h", ".upbdefs.c"]
                 )
-                root = (
-                    GEN_UPB_ROOT
-                    if gen_func == "grpc_upb_proto_library"
-                    else GEN_UPBDEFS_ROOT
-                )
+                root = GEN_UPB_ROOT if is_upb_proto else GEN_UPBDEFS_ROOT
                 for ext in extensions:
                     srcs.append(root + proto_src_file.replace(".proto", ext))
                     hdrs.append(root + proto_src_file.replace(".proto", ext))
@@ -826,13 +879,37 @@ def _patch_descriptor_upb_proto_library(bazel_rules):
         bazel_rule["hdrs"].append(
             ":src/core/ext/upb-gen/google/protobuf/descriptor.upb.h"
         )
+        bazel_rule["hdrs"].append(
+            ":src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h"
+        )
+
+    bazel_rule = bazel_rules.get(
+        "@com_google_protobuf//upb/reflection:json_enumvalue_options_upb_proto",
+        None,
+    )
+    if bazel_rule:
+        bazel_rule["srcs"].append(
+            ":src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb_minitable.c"
+        )
+        bazel_rule["hdrs"].append(
+            ":src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb.h"
+        )
 
 
 def _generate_build_metadata(
     build_extra_metadata: BuildDict, bazel_rules: BuildDict
 ) -> BuildDict:
     """Generate build metadata in build.yaml-like format bazel build metadata and build.yaml-specific "extra metadata"."""
-    lib_names = list(build_extra_metadata.keys())
+    lib_names = []
+    for lib_name in build_extra_metadata.keys():
+        bazel_label = _get_bazel_label(lib_name)
+        if bazel_label in bazel_rules:
+            lib_names.append(lib_name)
+        else:
+            print(
+                f'Skipping pre-declared library "{lib_name}" since corresponding '
+                f'label "{bazel_label}" is undefined.'
+            )
     result = {}
 
     for lib_name in lib_names:
@@ -934,7 +1011,7 @@ def _convert_to_build_yaml_like(lib_dict: BuildMetadata) -> BuildYaml:
 
 def _extract_cc_tests(bazel_rules: BuildDict) -> List[str]:
     """Gets list of cc_test tests from bazel rules"""
-    result = []
+    result = set()
     for bazel_rule in list(bazel_rules.values()):
         # Also include cc_binary targets generated by grpc_cc_test
         if bazel_rule["class"] == "cc_test" or (
@@ -946,10 +1023,11 @@ def _extract_cc_tests(bazel_rules: BuildDict) -> List[str]:
             if test_name.endswith("_bin"):
                 test_name = test_name[:-4]
                 # Add the stripped name to bazel_rules so it can be found later
-                bazel_rules[test_name] = bazel_rule
+                if test_name not in bazel_rules:
+                    bazel_rules[test_name] = bazel_rule
             if test_name.startswith("//"):
                 prefixlen = len("//")
-                result.append(test_name[prefixlen:])
+                result.add(test_name[prefixlen:])
     return list(sorted(result))
 
 
@@ -975,9 +1053,6 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
         test
         for test in tests
         if not test.startswith("test/cpp/ext/filters/census:")
-        and not test.startswith(
-            "test/core/server:xds_channel_stack_modifier_test"
-        )
         and not test.startswith("test/cpp/ext/gcp:")
         and not test.startswith("test/cpp/ext/filters/logging:")
         and not test.startswith("test/cpp/interop:observability_interop")
@@ -1265,6 +1340,15 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "upb_descriptor_lib",
     },
+    # NOTE(weizheyuan): This target is only defined since
+    # https://github.com/protocolbuffers/protobuf/commit/8111a7473d97d5b199d074c275ef3d083ef5faa9
+    # and is required to build upb runtime. Preemptively declare it
+    # for forward compatibility.
+    "@com_google_protobuf//upb/reflection:json_enumvalue_options_upb_proto": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_json_enumvalue_options_lib",
+    },
     "@com_google_protobuf//upb/reflection:reflection": {
         "language": "c",
         "build": "all",
@@ -1543,12 +1627,15 @@ for query in _BAZEL_DEPS_QUERIES:
 _expand_upb_proto_library_rules(bazel_rules)
 _prune_upb_experimental_feature_rules(bazel_rules)
 
-
 # Step 1.6: Add explicit protobuf dependency to grpc_proto_library rules
 _patch_grpc_proto_library_rules(bazel_rules)
 
 # Step 1.7: Make sure upb descriptor.proto library uses the pre-generated sources.
 _patch_descriptor_upb_proto_library(bazel_rules)
+
+# Step 1.8: Modify zlib to remove header files dynamically generated by bazel
+_prune_zlib_rules(bazel_rules)
+
 
 # Step 2: Extract the known bazel cc_test tests. While most tests
 # will be buildable with other build systems just fine, some of these tests

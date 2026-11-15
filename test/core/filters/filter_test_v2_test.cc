@@ -1,4 +1,4 @@
-// Copyright 2023 gRPC authors.
+// Copyright 2026 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,34 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Tests for the FilterTestV2 harness using synthetic filters.
+
 #include "test/core/filters/filter_test_v2.h"
 
 #include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/status.h>
 
-#include <functional>
 #include <memory>
-#include <type_traits>
 #include <utility>
 
+#include "src/core/call/message.h"
+#include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
+#include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/transport.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "test/core/filters/filter_matchers.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-using ::testing::_;
-
 namespace grpc_core {
+
 namespace {
+
+using ::testing::_;
 
 class NoOpFilter final : public ChannelFilter {
  public:
@@ -242,8 +250,3 @@ TEST_F(NoOpFilterTest, CanProcessServerToClientMessage) {
 
 }  // namespace
 }  // namespace grpc_core
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}

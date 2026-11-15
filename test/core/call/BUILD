@@ -68,10 +68,13 @@ grpc_fuzz_test(
         "batch_builder",
         "//:call_tracer",
         "//:channelz",
+        "//:debug_location",
         "//:grpc_base",
         "//:promise",
         "//src/core:arena",
+        "//src/core:time",
         "//test/core/call/yodel:yodel_test",
+        "//test/core/end2end:cq_verifier",
     ],
 )
 
@@ -92,6 +95,24 @@ grpc_cc_test(
         "//src/proto/grpc/channelz/v2:promise_upb_proto",
         "//src/proto/grpc/channelz/v2:property_list_upb_proto",
         "@com_google_protobuf//upb/mem",
+    ],
+)
+
+grpc_cc_test(
+    name = "evaluate_args_test",
+    srcs = ["evaluate_args_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_credentials_util",
+        "//:grpc_security_constants",
+        "//:sockaddr_utils",
+        "//src/core:evaluate_args",
+        "//src/core:grpc_authorization_base",
+        "//src/core:resolved_address",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )
 
@@ -231,8 +252,11 @@ grpc_cc_test(
         "//:channelz",
         "//:channelz_property_list_upb",
         "//:channelz_property_list_upbdefs",
+        "//:grpc_status",
+        "//:ref_counted_ptr",
         "//src/core:call_filters",
         "//src/core:channelz_property_list",
+        "//src/core:status_flag",
         "//src/core:upb_utils",
         "//src/proto/grpc/channelz/v2:property_list_cc_proto",
         "//test/core/promise:poll_matcher",

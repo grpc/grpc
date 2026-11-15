@@ -60,6 +60,14 @@ grpc_service_account_jwt_access_credentials_create(const char* json_key,
 GRPCAPI grpc_call_credentials* grpc_external_account_credentials_create(
     const char* json_string, const char* scopes_string);
 
+/** Builds Google Distributed Cloud Hosting Service Account credentials.
+- json_string is the JSON string containing the service account key.
+- audience_string is the intended recipient or service.
+  This API is used for experimental purposes for now and may change in the
+ future. */
+GRPCAPI grpc_call_credentials* grpc_gdch_service_account_credentials_create(
+    const char* json_string, const char* audience_string);
+
 /** Creates an Oauth2 Refresh Token credentials object for connecting to Google.
    May return NULL if the input is invalid.
    WARNING: Do NOT use this credentials to connect to a non-google service as
@@ -1269,6 +1277,27 @@ GRPCAPI void grpc_tls_credentials_options_set_tls_session_key_log_file_path(
 GRPCAPI void grpc_tls_credentials_options_set_key_exchange_groups(
     grpc_tls_credentials_options* options,
     const grpc_tls_key_exchange_group* groups, size_t num_groups);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Sets the label and length used to derive TLS Exported Keying Material (EKM),
+ * as defined in RFC 5705 and RFC 8446 section 7.5.
+ *
+ * \a label is the input used to derive the exported keying material, and must
+ * be non-NULL and non-empty. \a length is the size in bytes of the exported
+ * keying material to derive, and must be greater than 0. Both peers must
+ * configure the same label and length in order to derive the same value.
+ *
+ * gRPC derives the exported keying material without an exporter context, and
+ * the peer must do the same in order to derive a matching value.
+ *
+ * When this is set, the derived value is exposed on the connection's
+ * grpc_auth_context under GRPC_SSL_EXPORTED_KEYING_MATERIAL_PROPERTY_NAME. If
+ * the exported keying material cannot be derived, the handshake fails.
+ */
+GRPCAPI void grpc_tls_credentials_options_set_exported_keying_material_options(
+    grpc_tls_credentials_options* options, const char* label, size_t length);
 
 #ifdef __cplusplus
 }

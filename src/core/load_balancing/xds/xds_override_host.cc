@@ -435,7 +435,7 @@ XdsOverrideHostLb::Picker::PickOverriddenHost(
   RefCountedPtr<SubchannelWrapper> idle_subchannel;
   bool found_connecting = false;
   {
-    MutexLock lock(&policy_->mu_);
+    MutexLock lock(policy_->mu_);
     for (absl::string_view address : absl::StrSplit(cookie_address_list, ',')) {
       auto it = policy_->subchannel_map_.find(address);
       if (it == policy_->subchannel_map_.end()) continue;
@@ -532,7 +532,7 @@ LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(PickArgs args) {
     // Populate the address list in the override host attribute so that
     // the StatefulSession filter can set the cookie.
     if (override_host_attr != nullptr) {
-      MutexLock lock(&wrapper->policy()->mu_);
+      MutexLock lock(wrapper->policy()->mu_);
       wrapper->set_last_used_time();
       override_host_attr->set_actual_address_list(wrapper->address_list());
     }
@@ -612,7 +612,7 @@ void XdsOverrideHostLb::ResetState() {
   {
     // Drop subchannel refs after releasing the lock to avoid deadlock.
     std::vector<RefCountedPtr<SubchannelWrapper>> subchannel_refs_to_drop;
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     subchannel_refs_to_drop.reserve(subchannel_map_.size());
     for (auto& [_, subchannel_entry] : subchannel_map_) {
       subchannel_entry->UnsetSubchannel(&subchannel_refs_to_drop);
@@ -834,7 +834,7 @@ void XdsOverrideHostLb::UpdateAddressMap(
   {
     // Drop subchannel refs after releasing the lock to avoid deadlock.
     std::vector<RefCountedPtr<SubchannelWrapper>> subchannel_refs_to_drop;
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     for (auto it = subchannel_map_.begin(); it != subchannel_map_.end();) {
       if (addresses_for_map.find(it->first) == addresses_for_map.end()) {
         GRPC_TRACE_LOG(xds_override_host_lb, INFO)
@@ -889,7 +889,7 @@ XdsOverrideHostLb::AdoptSubchannel(
     // Drop ref to previously owned subchannel (if any) after releasing
     // the lock.
     RefCountedPtr<SubchannelWrapper> subchannel_ref_to_drop;
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     auto it = subchannel_map_.find(*key);
     if (it != subchannel_map_.end()) {
       wrapper->set_subchannel_entry(it->second);
@@ -919,7 +919,7 @@ void XdsOverrideHostLb::CreateSubchannelForAddress(absl::string_view address) {
   // Step 1.
   ChannelArgs per_endpoint_args;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     auto it = subchannel_map_.find(address);
     // This can happen if the map entry was removed between the time that
     // the picker requested the subchannel creation and the time that we got
@@ -938,7 +938,7 @@ void XdsOverrideHostLb::CreateSubchannelForAddress(absl::string_view address) {
       std::move(subchannel), RefAsSubclass<XdsOverrideHostLb>());
   // Step 3.
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     auto it = subchannel_map_.find(address);
     // This can happen if the map entry was removed between the time that
     // the picker requested the subchannel creation and the time that we got
@@ -960,7 +960,7 @@ void XdsOverrideHostLb::CleanupSubchannels() {
   Duration next_time = connection_idle_timeout_;
   std::vector<RefCountedPtr<SubchannelWrapper>> subchannel_refs_to_drop;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     if (subchannel_map_.empty()) return;
     for (const auto& [address, subchannel_entry] : subchannel_map_) {
       if (subchannel_entry->last_used_time() <= idle_threshold) {
@@ -1050,7 +1050,7 @@ void XdsOverrideHostLb::SubchannelWrapper::Orphaned() {
         self->wrapped_subchannel()->CancelConnectivityStateWatch(
             self->watcher_);
         if (self->subchannel_entry_ != nullptr) {
-          MutexLock lock(&self->policy()->mu_);
+          MutexLock lock(self->policy()->mu_);
           self->subchannel_entry_->OnSubchannelWrapperOrphan(
               self.get(), self->policy()->connection_idle_timeout_);
         }
@@ -1061,7 +1061,7 @@ void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
     grpc_connectivity_state state, absl::Status status) {
   bool update_picker = false;
   if (subchannel_entry_ != nullptr) {
-    MutexLock lock(&policy()->mu_);
+    MutexLock lock(policy()->mu_);
     if (subchannel_entry_->connectivity_state() != state) {
       subchannel_entry_->set_connectivity_state(state);
       update_picker = subchannel_entry_->HasOwnedSubchannel() &&

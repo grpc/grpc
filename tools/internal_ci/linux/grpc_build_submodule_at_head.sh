@@ -60,6 +60,19 @@ fi
 
 if [ "${SUBMODULE_NAME}" == "protobuf" ]
 then
+  # TODO(weizheyuan): Delete this HACK once we upgrade to protobuf 36.
+  #
+  # Force upb codegen for
+  # @com_google_protobuf//upb/reflection:json_enumvalue_options_upb_proto, which is
+  # required to bootstrap compilation of upb runtime.
+  #
+  # The change to BUILD can't be merged to master yet because this target isn't available
+  # in the protobuf we use (35.1), and bazel doesn't allow conditional definition
+  # of targets.
+  #
+  # See also https://github.com/protocolbuffers/protobuf/commit/8111a7473d97d5b199d074c275ef3d083ef5faa9
+  sed -E -i 's/(WELL_KNOWN_PROTO_TARGETS = \[)/\1\n    "json_enumvalue_options",/' BUILD
+
   # update upb
   rm -rf third_party/upb/upb
   cp -r third_party/protobuf/upb third_party/upb

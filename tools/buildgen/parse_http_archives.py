@@ -33,6 +33,7 @@ CANONICAL_TO_APPARENT_NAME_MAPPING = {
     "@@opencensus-proto+": "opencensus_proto",
     "@@envoy_api+": "@envoy_api",
     "@@grpc-proto+": "@grpc_proto",
+    "@@autosharding+": "@autosharding",
 }
 
 

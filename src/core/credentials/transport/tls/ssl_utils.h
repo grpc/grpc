@@ -97,6 +97,8 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     const char* crl_directory,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
     const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
+    std::string exported_keying_material_label,
+    size_t exported_keying_material_length,
     tsi_ssl_client_handshaker_factory** handshaker_factory);
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
@@ -108,6 +110,8 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     const char* crl_directory, bool send_client_ca_list,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
     const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
+    std::string exported_keying_material_label,
+    size_t exported_keying_material_length,
     tsi_ssl_server_handshaker_factory** handshaker_factory);
 
 // Exposed for testing only.
@@ -130,12 +134,11 @@ class DefaultSslRootStore {
   static const tsi_ssl_root_certs_store* GetRootStore();
 
   // Gets the default PEM root certificate.
-  static const char* GetPemRootCerts();
+  static absl::string_view GetPemRootCerts();
 
- protected:
-  // Returns default PEM root certificates in nullptr terminated grpc_slice.
-  // This function is protected instead of private, so that it can be tested.
-  static grpc_slice ComputePemRootCerts();
+  // Returns default PEM root certificates.
+  // DO NOT USE -- exposed for testing purposes only.
+  static Slice ComputePemRootCerts();
 
  private:
   // Construct me not!
@@ -151,7 +154,7 @@ class DefaultSslRootStore {
   static tsi_ssl_root_certs_store* default_root_store_;
 
   // Default PEM root certificates.
-  static grpc_slice default_pem_root_certs_;
+  static Slice default_pem_root_certs_;
 };
 
 // Checks whether `std::vector<PemKeyCertPair>` in the variant is empty, or the

@@ -54,50 +54,50 @@ class FreestandingActivity::Handle final : public Wakeable {
 
   // Activity is going away... drop its reference and sever the connection back.
   void DropActivity() ABSL_LOCKS_EXCLUDED(mu_) {
-    mu_.Lock();
+    mu_.lock();
     GRPC_CHECK_NE(activity_, nullptr);
     activity_ = nullptr;
-    mu_.Unlock();
+    mu_.unlock();
     Unref();
   }
 
   // Activity needs to wake up (if it still exists!) - wake it up, and drop the
   // ref that was kept for this handle.
   void Wakeup(WakeupMask) override ABSL_LOCKS_EXCLUDED(mu_) {
-    mu_.Lock();
+    mu_.lock();
     // Note that activity refcount can drop to zero, but we could win the lock
     // against DropActivity, so we need to only increase activities refcount if
     // it is non-zero.
     if (activity_ && activity_->RefIfNonzero()) {
       FreestandingActivity* activity = activity_;
-      mu_.Unlock();
+      mu_.unlock();
       // Activity still exists and we have a reference: wake it up, which will
       // drop the ref.
       activity->Wakeup(0);
     } else {
       // Could not get the activity - it's either gone or going. No need to wake
       // it up!
-      mu_.Unlock();
+      mu_.unlock();
     }
     // Drop the ref to the handle (we have one ref = one wakeup semantics).
     Unref();
   }
 
   void WakeupAsync(WakeupMask) override ABSL_LOCKS_EXCLUDED(mu_) {
-    mu_.Lock();
+    mu_.lock();
     // Note that activity refcount can drop to zero, but we could win the lock
     // against DropActivity, so we need to only increase activities refcount if
     // it is non-zero.
     if (activity_ && activity_->RefIfNonzero()) {
       FreestandingActivity* activity = activity_;
-      mu_.Unlock();
+      mu_.unlock();
       // Activity still exists and we have a reference: wake it up, which will
       // drop the ref.
       activity->WakeupAsync(0);
     } else {
       // Could not get the activity - it's either gone or going. No need to wake
       // it up!
-      mu_.Unlock();
+      mu_.unlock();
     }
     // Drop the ref to the handle (we have one ref = one wakeup semantics).
     Unref();
@@ -106,7 +106,7 @@ class FreestandingActivity::Handle final : public Wakeable {
   void Drop(WakeupMask) override { Unref(); }
 
   std::string ActivityDebugTag(WakeupMask) const override {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     return activity_ == nullptr ? "<unknown>" : activity_->DebugTag();
   }
 
