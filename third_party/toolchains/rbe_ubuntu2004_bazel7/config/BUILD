@@ -35,7 +35,7 @@ toolchain(
 
 platform(
     name = "platform",
-    parents = ["@platforms//host"],
+    parents = ["@local_config_platform//:host"],
     constraint_values = [
         "@platforms//os:linux",
         "@platforms//cpu:x86_64",
