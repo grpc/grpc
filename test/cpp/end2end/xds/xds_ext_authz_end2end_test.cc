@@ -41,6 +41,7 @@
 #include "envoy/extensions/filters/http/ext_authz/v3/ext_authz.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.pb.h"
+#include "envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
 #include "envoy/service/auth/v3/attribute_context.pb.h"
 #include "envoy/service/auth/v3/external_auth.grpc.pb.h"
@@ -115,6 +116,9 @@ constexpr absl::string_view kDeniedTrailerValue2 = "denied-val-2";
 constexpr absl::string_view kFailureModeAllowedHeader =
     "x-envoy-auth-failure-mode-allowed";
 constexpr absl::string_view kTrue = "true";
+// GrpcService.initial_metadata, sent on the Check call.
+constexpr absl::string_view kInitialMetadataKey = "x-ext-authz-metadata";
+constexpr absl::string_view kInitialMetadataValue = "metadata-val";
 
 // Paths of the EchoTestService methods.
 constexpr absl::string_view kEchoPath = "/grpc.testing.EchoTestService/Echo";
@@ -132,21 +136,33 @@ constexpr char kClientCertPath[] =
 constexpr char kClientKeyPath[] =
     "test/core/tsi/test_creds/spiffe_end2end/client.key";
 
-// A fake ext_authz service that records every CheckRequest it receives.  By
-// default, it allows every request; tests can install their own handler via
+// A fake ext_authz service that records every CheckRequest it receives, along
+// with the peer and the client metadata of the Check call.  By default, it
+// allows every request; tests can install their own handler via
 // SetCheckHandler().
 class FakeExtAuthzService final
     : public envoy::service::auth::v3::Authorization::Service {
  public:
   using CheckHandler = std::function<grpc::Status(CheckResponse*)>;
 
-  grpc::Status Check(grpc::ServerContext* /*context*/,
-                     const CheckRequest* request,
+  // What the service saw of one Check call.
+  struct CheckCall {
+    std::string peer;
+    std::multimap<std::string, std::string> client_metadata;
+  };
+
+  grpc::Status Check(grpc::ServerContext* context, const CheckRequest* request,
                      CheckResponse* response) override {
     CheckHandler handler;
     {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       requests_.push_back(*request);
+      CheckCall& call = calls_.emplace_back();
+      call.peer = context->peer();
+      for (const auto& [key, value] : context->client_metadata()) {
+        call.client_metadata.emplace(std::string(key.data(), key.size()),
+                                     std::string(value.data(), value.size()));
+      }
       handler = check_handler_;
     }
     // The handler runs without holding the lock, since it may block.
@@ -157,19 +173,25 @@ class FakeExtAuthzService final
   }
 
   void SetCheckHandler(CheckHandler handler) {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     check_handler_ = std::move(handler);
   }
 
   std::vector<CheckRequest> requests() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return requests_;
+  }
+
+  std::vector<CheckCall> calls() {
+    grpc_core::MutexLock lock(mu_);
+    return calls_;
   }
 
  private:
   grpc_core::Mutex mu_;
-  std::vector<CheckRequest> requests_ ABSL_GUARDED_BY(&mu_);
-  CheckHandler check_handler_ ABSL_GUARDED_BY(&mu_);
+  std::vector<CheckRequest> requests_ ABSL_GUARDED_BY(mu_);
+  std::vector<CheckCall> calls_ ABSL_GUARDED_BY(mu_);
+  CheckHandler check_handler_ ABSL_GUARDED_BY(mu_);
 };
 
 // A CheckHandler that fails the Check call itself, as opposed to returning a
@@ -295,6 +317,7 @@ class XdsExtAuthzTest : public XdsEnd2endTest {
     HttpFilter* filter0 = hcm.mutable_http_filters(0);
     *hcm.add_http_filters() = *filter0;
     filter0->set_name(kFilterInstanceName);
+    filter0->set_disabled(hcm_filter_disabled_);
     (void)filter0->mutable_typed_config()->PackFrom(ext_authz_config);
     hcm_accessor->Pack(hcm, &listener);
     if (use_tls && GetParam().filter_on_server()) {
@@ -324,9 +347,23 @@ class XdsExtAuthzTest : public XdsEnd2endTest {
                                          : default_route_config_;
   }
 
+  // Sets the ext_authz filter's entry in \a typed_per_filter_config.
+  static void SetExtAuthzOverride(
+      google::protobuf::Map<std::string, google::protobuf::Any>*
+          typed_per_filter_config,
+      const grpc::protobuf::Message& config) {
+    (void)(*typed_per_filter_config)[std::string(kFilterInstanceName)]
+        .PackFrom(config);
+  }
+
   XdsBootstrapBuilder MakeExtAuthzBootstrapBuilder() {
     XdsBootstrapBuilder builder = MakeBootstrapBuilder();
-    builder.SetTrustedXdsServer();
+    if (trusted_xds_server_) {
+      builder.SetTrustedXdsServer();
+    } else {
+      builder.AddAllowedGrpcService(
+          grpc_core::LocalIpUri(ext_authz_server_->port()));
+    }
     std::vector<std::string> fields;
     fields.push_back(absl::StrFormat("        \"certificate_file\": \"%s\"",
                                      kSpiffeServerCertPath));
@@ -339,14 +376,10 @@ class XdsExtAuthzTest : public XdsEnd2endTest {
     return builder;
   }
 
-  // Publishes the ext_authz config, initializes the client, and starts the
-  // backend.  The ordering matters on the server path: the backend is an
-  // xDS-enabled server, so it can only pick up the bootstrap config that
-  // InitClient() publishes if it is started afterwards, and it reports a
-  // serving status once it has received its Listener.
-  void SetExtAuthzListenerAndStart(const ExtAuthz& ext_authz_config,
-                                   const RouteConfiguration& route_config,
-                                   bool use_tls = false) {
+  // Publishes a Listener with the ext_authz config, and \a route_config.
+  void SetExtAuthzListener(const ExtAuthz& ext_authz_config,
+                           const RouteConfiguration& route_config,
+                           bool use_tls = false) {
     Listener listener =
         BuildListenerWithExtAuthzFilter(ext_authz_config, use_tls);
     if (GetParam().filter_on_server()) {
@@ -357,6 +390,17 @@ class XdsExtAuthzTest : public XdsEnd2endTest {
       SetListenerAndRouteConfiguration(balancer_.get(), std::move(listener),
                                        route_config);
     }
+  }
+
+  // Publishes the ext_authz config, initializes the client, and starts the
+  // backend.  The ordering matters on the server path: the backend is an
+  // xDS-enabled server, so it can only pick up the bootstrap config that
+  // InitClient() publishes if it is started afterwards, and it reports a
+  // serving status once it has received its Listener.
+  void SetExtAuthzListenerAndStart(const ExtAuthz& ext_authz_config,
+                                   const RouteConfiguration& route_config,
+                                   bool use_tls = false) {
+    SetExtAuthzListener(ext_authz_config, route_config, use_tls);
     InitClient(
         MakeExtAuthzBootstrapBuilder(), /*lb_expected_authority=*/"",
         /*xds_resource_does_not_exist_timeout_ms=*/0,
@@ -492,6 +536,11 @@ class XdsExtAuthzTest : public XdsEnd2endTest {
 
   grpc_core::testing::ScopedExperimentalEnvVar env_var_;
   std::unique_ptr<ExtAuthzServerThread> ext_authz_server_;
+  // Whether the ext_authz filter is disabled in the HttpConnectionManager.
+  bool hcm_filter_disabled_ = false;
+  // Whether the xDS server is trusted (gRFC A102).  If not, the ext_authz
+  // service is added to the bootstrap's allowed_grpc_services.
+  bool trusted_xds_server_ = true;
 };
 
 // Run with the filter on the client and on a server-side filter chain.
@@ -895,6 +944,161 @@ TEST_P(XdsExtAuthzTest, ExtAuthzFilterDisabledPerRoute) {
     checked_paths.push_back(request.attributes().request().http().path());
   }
   EXPECT_THAT(checked_paths, ElementsAre(kEcho2Path, kEchoPath));
+}
+
+// A filter that is disabled in the HttpConnectionManager is enabled for a
+// route that has a non-disabled override, since the most specific config
+// wins (gRFC A92).
+TEST_P(XdsExtAuthzTest, ExtAuthzHcmDisabledFilterEnabledByRouteOverride) {
+  hcm_filter_disabled_ = true;
+  RouteConfiguration route_config = DefaultRouteConfig();
+  auto* vhost = route_config.mutable_virtual_hosts(0);
+  const envoy::config::route::v3::Route default_route = vhost->routes(0);
+  vhost->clear_routes();
+  // Echo1: the filter is enabled by the route's override.
+  auto* echo1_route = vhost->add_routes();
+  *echo1_route = default_route;
+  echo1_route->mutable_match()->set_path(kEcho1Path);
+  SetExtAuthzOverride(echo1_route->mutable_typed_per_filter_config(),
+                      ExtAuthzPerRoute());
+  // Echo: no override, so the filter stays disabled.
+  *vhost->add_routes() = default_route;
+  SetExtAuthzListenerAndStart(BuildExtAuthzConfig(), route_config);
+  CheckRpcSendOk(DEBUG_LOCATION);
+  EXPECT_THAT(ext_authz_service().requests(), IsEmpty());
+  CheckRpcSendOk(DEBUG_LOCATION, /*times=*/1,
+                 RpcOptions().set_rpc_method(METHOD_ECHO1));
+  auto requests = ext_authz_service().requests();
+  ASSERT_THAT(requests, SizeIs(1));
+  EXPECT_EQ(requests[0].attributes().request().http().path(), kEcho1Path);
+}
+
+// A filter that is disabled for a virtual host is enabled for a route that
+// has a non-disabled override (gRFC A92).
+TEST_P(XdsExtAuthzTest, ExtAuthzVirtualHostDisabledFilterEnabledByRoute) {
+  RouteConfiguration route_config = DefaultRouteConfig();
+  auto* vhost = route_config.mutable_virtual_hosts(0);
+  envoy::config::route::v3::FilterConfig filter_config;
+  (void)filter_config.mutable_config()->PackFrom(ExtAuthzPerRoute());
+  filter_config.set_disabled(true);
+  SetExtAuthzOverride(vhost->mutable_typed_per_filter_config(),
+                      filter_config);
+  const envoy::config::route::v3::Route default_route = vhost->routes(0);
+  vhost->clear_routes();
+  // Echo1: the filter is enabled by the route's override.
+  auto* echo1_route = vhost->add_routes();
+  *echo1_route = default_route;
+  echo1_route->mutable_match()->set_path(kEcho1Path);
+  SetExtAuthzOverride(echo1_route->mutable_typed_per_filter_config(),
+                      ExtAuthzPerRoute());
+  // Echo: no override, so the virtual host's config applies.
+  *vhost->add_routes() = default_route;
+  SetExtAuthzListenerAndStart(BuildExtAuthzConfig(), route_config);
+  CheckRpcSendOk(DEBUG_LOCATION);
+  EXPECT_THAT(ext_authz_service().requests(), IsEmpty());
+  CheckRpcSendOk(DEBUG_LOCATION, /*times=*/1,
+                 RpcOptions().set_rpc_method(METHOD_ECHO1));
+  auto requests = ext_authz_service().requests();
+  ASSERT_THAT(requests, SizeIs(1));
+  EXPECT_EQ(requests[0].attributes().request().http().path(), kEcho1Path);
+}
+
+// A cluster weight's override is more specific than the route's, so it
+// enables a filter that the route disables (gRFC A92).
+TEST_P(XdsExtAuthzTest, ExtAuthzClusterWeightOverrideEnablesFilter) {
+  if (GetParam().filter_on_server()) {
+    GTEST_SKIP() << "server-side routes do not have clusters";
+  }
+  RouteConfiguration route_config = DefaultRouteConfig();
+  auto* route = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  envoy::config::route::v3::FilterConfig filter_config;
+  (void)filter_config.mutable_config()->PackFrom(ExtAuthzPerRoute());
+  filter_config.set_disabled(true);
+  SetExtAuthzOverride(route->mutable_typed_per_filter_config(),
+                      filter_config);
+  auto* weighted_cluster =
+      route->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster->set_name(kDefaultClusterName);
+  weighted_cluster->mutable_weight()->set_value(100);
+  SetExtAuthzOverride(weighted_cluster->mutable_typed_per_filter_config(),
+                      ExtAuthzPerRoute());
+  SetExtAuthzListenerAndStart(BuildExtAuthzConfig(), route_config);
+  CheckRpcSendOk(DEBUG_LOCATION);
+  EXPECT_THAT(ext_authz_service().requests(), SizeIs(1));
+}
+
+// With a trusted xDS server, the initial_metadata in the GrpcService is sent
+// on the Check call (gRFC A102).
+TEST_P(XdsExtAuthzTest, ExtAuthzTrustedXdsServerSendsInitialMetadata) {
+  auto ext_authz_config = BuildExtAuthzConfig();
+  auto* header = ext_authz_config.mutable_grpc_service()->add_initial_metadata();
+  header->set_key(kInitialMetadataKey);
+  header->set_value(kInitialMetadataValue);
+  SetExtAuthzListenerAndStart(ext_authz_config);
+  CheckRpcSendOk(DEBUG_LOCATION);
+  auto calls = ext_authz_service().calls();
+  ASSERT_THAT(calls, SizeIs(1));
+  EXPECT_THAT(calls[0].client_metadata,
+              Contains(Pair(kInitialMetadataKey, kInitialMetadataValue)));
+}
+
+// With an untrusted xDS server, the ext_authz service must be in the
+// bootstrap's allowed_grpc_services, whose credentials are used, and the
+// initial_metadata in the GrpcService is ignored (gRFC A102).
+TEST_P(XdsExtAuthzTest, ExtAuthzUntrustedXdsServerUsesAllowedGrpcServices) {
+  trusted_xds_server_ = false;
+  auto ext_authz_config = BuildExtAuthzConfig();
+  // TLS credentials, which would fail against the plaintext ext_authz
+  // server, so the RPC would be denied if they were used instead of the
+  // insecure credentials from allowed_grpc_services.
+  auto* google_grpc =
+      ext_authz_config.mutable_grpc_service()->mutable_google_grpc();
+  google_grpc->clear_channel_credentials_plugin();
+  envoy::extensions::grpc_service::channel_credentials::tls::v3::TlsCredentials
+      tls_credentials;
+  tls_credentials.mutable_root_certificate_provider()->set_instance_name(
+      "file_plugin");
+  (void)google_grpc->add_channel_credentials_plugin()->PackFrom(
+      tls_credentials);
+  auto* header = ext_authz_config.mutable_grpc_service()->add_initial_metadata();
+  header->set_key(kInitialMetadataKey);
+  header->set_value(kInitialMetadataValue);
+  SetExtAuthzListenerAndStart(ext_authz_config);
+  CheckRpcSendOk(DEBUG_LOCATION);
+  auto calls = ext_authz_service().calls();
+  ASSERT_THAT(calls, SizeIs(1));
+  EXPECT_THAT(calls[0].client_metadata,
+              Not(Contains(Key(kInitialMetadataKey))));
+}
+
+// An LDS update that changes only the timeout and initial_metadata of the
+// GrpcService does not recreate the channel to the ext_authz service (gRFC
+// A92), so the Check calls keep using the same connection.
+TEST_P(XdsExtAuthzTest, ExtAuthzLdsUpdateKeepsSideChannel) {
+  auto ext_authz_config = BuildExtAuthzConfig();
+  auto* header = ext_authz_config.mutable_grpc_service()->add_initial_metadata();
+  header->set_key(kInitialMetadataKey);
+  header->set_value("v1");
+  SetExtAuthzListenerAndStart(ext_authz_config);
+  CheckRpcSendOk(DEBUG_LOCATION);
+  header->set_value("v2");
+  SetProtoDuration(grpc_core::Duration::Seconds(20),
+                   ext_authz_config.mutable_grpc_service()->mutable_timeout());
+  SetExtAuthzListener(ext_authz_config, DefaultRouteConfig());
+  // Send RPCs until one is checked with the new config.  The status of the
+  // RPCs is ignored, since on the server path the update may drain the
+  // data plane connection.
+  const absl::Time deadline =
+      absl::Now() + absl::Seconds(30 * grpc_test_slowdown_factor());
+  while (!::testing::Value(ext_authz_service().calls().back().client_metadata,
+                           Contains(Pair(kInitialMetadataKey, "v2")))) {
+    ASSERT_LT(absl::Now(), deadline) << "timed out waiting for the update";
+    (void)SendRpc();
+  }
+  auto calls = ext_authz_service().calls();
+  for (const auto& call : calls) {
+    EXPECT_EQ(call.peer, calls[0].peer);
+  }
 }
 
 //
