@@ -220,6 +220,7 @@ absl::Status HandleFailure(const ExtAuthzFilter& filter,
                            absl::string_view error_message) {
   filter.RecordFailedRpc();
   if (!config.failure_mode_allow) {
+    filter.RecordDeniedRpc();
     return absl::Status(static_cast<absl::StatusCode>(config.status_on_error),
                         error_message);
   }

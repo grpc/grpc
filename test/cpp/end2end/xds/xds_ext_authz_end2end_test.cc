@@ -982,6 +982,8 @@ TEST_P(XdsExtAuthzTest, ExtAuthzFilterDisabledRpcsMetricWithDenyAtDisable) {
   EXPECT_THAT(ext_authz_service().requests(), IsEmpty());
 }
 
+// Without failure_mode_allow, an RPC whose ext_authz call fails counts as both
+// failed and denied.
 TEST_P(XdsExtAuthzTest, ExtAuthzFailedRpcsMetric) {
   auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
                           .UseDisabledByDefaultMetrics(true)
@@ -993,7 +995,7 @@ TEST_P(XdsExtAuthzTest, ExtAuthzFailedRpcsMetric) {
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::PERMISSION_DENIED,
                       kUnavailableMessage);
   ExpectExtAuthzCounterDeltas(DEBUG_LOCATION, *stats_plugin, before,
-                              {/*allowed=*/0, /*denied=*/0, /*failed=*/1,
+                              {/*allowed=*/0, /*denied=*/1, /*failed=*/1,
                                /*filter_disabled=*/0});
 }
 

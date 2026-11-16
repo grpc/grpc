@@ -1605,6 +1605,8 @@ FILTER_TEST(ExtAuthzFilterTest,
   WaitForAllPendingWork();
 }
 
+// An RPC failed because its ext_authz call failed counts as both failed and
+// denied.
 FILTER_TEST(ExtAuthzFilterTest,
             ExtAuthzClientFailedRpcsMetricWithFailureModeDeny) {
   auto stats_plugin =
@@ -1626,7 +1628,7 @@ FILTER_TEST(ExtAuthzFilterTest,
               Optional(0u));
   EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
                   "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
-              Optional(0u));
+              Optional(1u));
   EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
                   "grpc.client_ext_authz.failed_rpcs", {kServerUri}),
               Optional(1u));
@@ -1670,7 +1672,7 @@ FILTER_TEST(ExtAuthzFilterTest,
 }
 
 // A denied response with a disallowed header is invalid, so the RPC counts as
-// failed rather than denied.
+// failed, and as denied because failure_mode_allow is not set.
 FILTER_TEST(ExtAuthzFilterTest,
             ExtAuthzClientFailedRpcsMetricForDisallowedDeniedResponseHeader) {
   auto stats_plugin =
@@ -1696,6 +1698,86 @@ FILTER_TEST(ExtAuthzFilterTest,
   EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
                   "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
               Optional(0u));
+  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
+                  "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
+              Optional(1u));
+  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
+                  "grpc.client_ext_authz.failed_rpcs", {kServerUri}),
+              Optional(1u));
+  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
+                  "grpc.client_ext_authz.filter_disabled_rpcs", {kServerUri}),
+              Optional(0u));
+  WaitForAllPendingWork();
+}
+
+// An OK response with a disallowed header mutation is invalid, so the RPC
+// counts as failed, and as denied because failure_mode_allow is not set.
+FILTER_TEST(ExtAuthzFilterTest,
+            ExtAuthzClientFailedRpcsMetricForDisallowedOkResponseHeader) {
+  auto stats_plugin =
+      InitWithStatsPlugin(ConfigBuilder()
+                              .SetStatusOnError(kStatusOnError)
+                              .SetHeaderMutationRules(DisallowAllRules(
+                                  /*disallow_is_error=*/true)));
+  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
+  std::optional<CallHandler> backend = GetNextHandler();
+  ASSERT_TRUE(backend.has_value());
+  auto pull = StartPullClientInitialMetadata(*backend);
+  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  ASSERT_NE(check_call, nullptr);
+  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
+  CheckResponse response = MakeOkCheckResponse();
+  AddHeader(response.mutable_ok_response()->add_headers(), kCustomHeaderKey,
+            kCustomHeaderValue);
+  check_call->SendMessageToClient(response.SerializeAsString());
+  check_call->MaybeSendStatusToClient(absl::OkStatus());
+  EXPECT_FALSE(FinishPullClientInitialMetadata(pull).ok());
+  EXPECT_EQ(PullServerTrailingStatus(client),
+            absl::UnavailableError(kForbiddenHeaderMutationErrorMessage));
+  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
+                  "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
+              Optional(0u));
+  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
+                  "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
+              Optional(1u));
+  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
+                  "grpc.client_ext_authz.failed_rpcs", {kServerUri}),
+              Optional(1u));
+  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
+                  "grpc.client_ext_authz.filter_disabled_rpcs", {kServerUri}),
+              Optional(0u));
+  WaitForAllPendingWork();
+}
+
+// A denied response with a disallowed header is invalid, so with
+// failure_mode_allow the RPC is let through and counts as failed and allowed.
+FILTER_TEST(
+    ExtAuthzFilterTest,
+    ExtAuthzClientFailedRpcsMetricForDisallowedDeniedResponseHeaderWithFailureModeAllow) {
+  auto stats_plugin =
+      InitWithStatsPlugin(ConfigBuilder()
+                              .SetFailureModeAllow(true)
+                              .SetHeaderMutationRules(DisallowAllRules(
+                                  /*disallow_is_error=*/true)));
+  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
+  std::optional<CallHandler> backend = GetNextHandler();
+  ASSERT_TRUE(backend.has_value());
+  auto pull = StartPullClientInitialMetadata(*backend);
+  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  ASSERT_NE(check_call, nullptr);
+  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
+  CheckResponse response = MakeDeniedCheckResponse();
+  AddHeader(response.mutable_denied_response()->add_headers(), kCustomHeaderKey,
+            kCustomHeaderValue);
+  check_call->SendMessageToClient(response.SerializeAsString());
+  check_call->MaybeSendStatusToClient(absl::OkStatus());
+  EXPECT_TRUE(FinishPullClientInitialMetadata(pull).ok());
+  PushServerTrailingMetadata(*backend,
+                             ServerMetadataFromStatus(GRPC_STATUS_OK));
+  EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
+  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
+                  "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
+              Optional(1u));
   EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
                   "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
               Optional(0u));
