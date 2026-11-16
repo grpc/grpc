@@ -133,29 +133,29 @@ typedef enum {
 
 UPB_INLINE envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_services_oneofcases
 envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_services_case(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(92, 184), UPB_SIZE(-89, -29), UPB_SIZE(93, 94), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(100, 200), UPB_SIZE(-97, -29), UPB_SIZE(99, 100), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_services_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_services(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(92, 184), UPB_SIZE(-89, -29), UPB_SIZE(93, 94), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(100, 200), UPB_SIZE(-97, -29), UPB_SIZE(99, 100), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__extensions__filters__http__ext_0authz__v3__ExtAuthz_msg_init, &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_grpc_service(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(92, 184), UPB_SIZE(-89, -29), UPB_SIZE(93, 94), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(100, 200), UPB_SIZE(-97, -29), UPB_SIZE(99, 100), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct envoy_config_core_v3_GrpcService* envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_grpc_service(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
   const struct envoy_config_core_v3_GrpcService* default_val = NULL;
   const struct envoy_config_core_v3_GrpcService* ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(92, 184), UPB_SIZE(-89, -29), UPB_SIZE(93, 94), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(100, 200), UPB_SIZE(-97, -29), UPB_SIZE(99, 100), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__GrpcService_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_has_grpc_service(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(92, 184), UPB_SIZE(-89, -29), UPB_SIZE(93, 94), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(100, 200), UPB_SIZE(-97, -29), UPB_SIZE(99, 100), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_failure_mode_allow(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
@@ -171,37 +171,37 @@ UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_failure_mode
   return ret;
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_http_service(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(92, 184), UPB_SIZE(-89, -29), UPB_SIZE(88, 90), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(100, 200), UPB_SIZE(-97, -29), UPB_SIZE(94, 96), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const envoy_extensions_filters_http_ext_authz_v3_HttpService* envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_http_service(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
   const envoy_extensions_filters_http_ext_authz_v3_HttpService* default_val = NULL;
   const envoy_extensions_filters_http_ext_authz_v3_HttpService* ret;
-  const upb_MiniTableField field = {3, UPB_SIZE(92, 184), UPB_SIZE(-89, -29), UPB_SIZE(88, 90), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(100, 200), UPB_SIZE(-97, -29), UPB_SIZE(94, 96), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__ext_0authz__v3__HttpService_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_has_http_service(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(92, 184), UPB_SIZE(-89, -29), UPB_SIZE(88, 90), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(100, 200), UPB_SIZE(-97, -29), UPB_SIZE(94, 96), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_with_request_body(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(20, 64), 64, UPB_SIZE(86, 89), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(20, 64), 64, UPB_SIZE(92, 95), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const envoy_extensions_filters_http_ext_authz_v3_BufferSettings* envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_with_request_body(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
   const envoy_extensions_filters_http_ext_authz_v3_BufferSettings* default_val = NULL;
   const envoy_extensions_filters_http_ext_authz_v3_BufferSettings* ret;
-  const upb_MiniTableField field = {5, UPB_SIZE(20, 64), 64, UPB_SIZE(86, 89), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(20, 64), 64, UPB_SIZE(92, 95), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__ext_0authz__v3__BufferSettings_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_has_with_request_body(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(20, 64), 64, UPB_SIZE(86, 89), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(20, 64), 64, UPB_SIZE(92, 95), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_clear_route_cache(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
@@ -217,20 +217,20 @@ UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_route_
   return ret;
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_status_on_error(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {7, UPB_SIZE(24, 72), 65, UPB_SIZE(81, 85), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(24, 72), 65, UPB_SIZE(87, 91), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct envoy_type_v3_HttpStatus* envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_status_on_error(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
   const struct envoy_type_v3_HttpStatus* default_val = NULL;
   const struct envoy_type_v3_HttpStatus* ret;
-  const upb_MiniTableField field = {7, UPB_SIZE(24, 72), 65, UPB_SIZE(81, 85), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(24, 72), 65, UPB_SIZE(87, 91), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__v3__HttpStatus_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_has_status_on_error(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {7, UPB_SIZE(24, 72), 65, UPB_SIZE(81, 85), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(24, 72), 65, UPB_SIZE(87, 91), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_metadata_context_namespaces(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
@@ -272,20 +272,20 @@ UPB_INLINE upb_Array* _envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_metad
   return arr;
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_filter_enabled(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {9, UPB_SIZE(32, 88), 66, UPB_SIZE(76, 81), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {9, UPB_SIZE(32, 88), 66, UPB_SIZE(82, 87), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct envoy_config_core_v3_RuntimeFractionalPercent* envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_filter_enabled(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
   const struct envoy_config_core_v3_RuntimeFractionalPercent* default_val = NULL;
   const struct envoy_config_core_v3_RuntimeFractionalPercent* ret;
-  const upb_MiniTableField field = {9, UPB_SIZE(32, 88), 66, UPB_SIZE(76, 81), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {9, UPB_SIZE(32, 88), 66, UPB_SIZE(82, 87), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__RuntimeFractionalPercent_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_has_filter_enabled(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {9, UPB_SIZE(32, 88), 66, UPB_SIZE(76, 81), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {9, UPB_SIZE(32, 88), 66, UPB_SIZE(82, 87), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_include_peer_certificate(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
@@ -301,20 +301,20 @@ UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_include_peer
   return ret;
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_deny_at_disable(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {11, UPB_SIZE(36, 96), 67, UPB_SIZE(71, 77), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {11, UPB_SIZE(36, 96), 67, UPB_SIZE(77, 83), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct envoy_config_core_v3_RuntimeFeatureFlag* envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_deny_at_disable(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
   const struct envoy_config_core_v3_RuntimeFeatureFlag* default_val = NULL;
   const struct envoy_config_core_v3_RuntimeFeatureFlag* ret;
-  const upb_MiniTableField field = {11, UPB_SIZE(36, 96), 67, UPB_SIZE(71, 77), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {11, UPB_SIZE(36, 96), 67, UPB_SIZE(77, 83), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__RuntimeFeatureFlag_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_has_deny_at_disable(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {11, UPB_SIZE(36, 96), 67, UPB_SIZE(71, 77), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {11, UPB_SIZE(36, 96), 67, UPB_SIZE(77, 83), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_transport_api_version(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
@@ -330,42 +330,42 @@ UPB_INLINE int32_t envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_transport
   return ret;
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_stat_prefix(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {13, UPB_SIZE(96, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {13, UPB_SIZE(104, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE upb_StringView envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_stat_prefix(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {13, UPB_SIZE(96, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {13, UPB_SIZE(104, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_filter_enabled_metadata(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {14, UPB_SIZE(44, 104), 68, UPB_SIZE(63, 70), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {14, UPB_SIZE(44, 104), 68, UPB_SIZE(69, 76), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct envoy_type_matcher_v3_MetadataMatcher* envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_filter_enabled_metadata(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
   const struct envoy_type_matcher_v3_MetadataMatcher* default_val = NULL;
   const struct envoy_type_matcher_v3_MetadataMatcher* ret;
-  const upb_MiniTableField field = {14, UPB_SIZE(44, 104), 68, UPB_SIZE(63, 70), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {14, UPB_SIZE(44, 104), 68, UPB_SIZE(69, 76), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__MetadataMatcher_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_has_filter_enabled_metadata(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {14, UPB_SIZE(44, 104), 68, UPB_SIZE(63, 70), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {14, UPB_SIZE(44, 104), 68, UPB_SIZE(69, 76), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_bootstrap_metadata_labels_key(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {15, UPB_SIZE(104, 48), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {15, UPB_SIZE(112, 48), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE upb_StringView envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_bootstrap_metadata_labels_key(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {15, UPB_SIZE(104, 48), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {15, UPB_SIZE(112, 48), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -409,20 +409,20 @@ UPB_INLINE upb_Array* _envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_typed
   return arr;
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_allowed_headers(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {17, UPB_SIZE(52, 120), 69, UPB_SIZE(55, 63), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {17, UPB_SIZE(52, 120), 69, UPB_SIZE(61, 69), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct envoy_type_matcher_v3_ListStringMatcher* envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_allowed_headers(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
   const struct envoy_type_matcher_v3_ListStringMatcher* default_val = NULL;
   const struct envoy_type_matcher_v3_ListStringMatcher* ret;
-  const upb_MiniTableField field = {17, UPB_SIZE(52, 120), 69, UPB_SIZE(55, 63), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {17, UPB_SIZE(52, 120), 69, UPB_SIZE(61, 69), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__ListStringMatcher_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_has_allowed_headers(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {17, UPB_SIZE(52, 120), 69, UPB_SIZE(55, 63), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {17, UPB_SIZE(52, 120), 69, UPB_SIZE(61, 69), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_include_tls_session(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
@@ -450,20 +450,20 @@ UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_failure_mode
   return ret;
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_charge_cluster_response_stats(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {20, UPB_SIZE(56, 128), 70, UPB_SIZE(47, 56), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {20, UPB_SIZE(56, 128), 70, UPB_SIZE(53, 62), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_BoolValue* envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_charge_cluster_response_stats(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
   const struct google_protobuf_BoolValue* default_val = NULL;
   const struct google_protobuf_BoolValue* ret;
-  const upb_MiniTableField field = {20, UPB_SIZE(56, 128), 70, UPB_SIZE(47, 56), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {20, UPB_SIZE(56, 128), 70, UPB_SIZE(53, 62), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_has_charge_cluster_response_stats(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {20, UPB_SIZE(56, 128), 70, UPB_SIZE(47, 56), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {20, UPB_SIZE(56, 128), 70, UPB_SIZE(53, 62), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_route_metadata_context_namespaces(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
@@ -567,71 +567,71 @@ UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_validate_mut
   return ret;
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_disallowed_headers(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {25, UPB_SIZE(68, 152), 71, UPB_SIZE(33, 43), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {25, UPB_SIZE(68, 152), 71, UPB_SIZE(39, 49), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct envoy_type_matcher_v3_ListStringMatcher* envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_disallowed_headers(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
   const struct envoy_type_matcher_v3_ListStringMatcher* default_val = NULL;
   const struct envoy_type_matcher_v3_ListStringMatcher* ret;
-  const upb_MiniTableField field = {25, UPB_SIZE(68, 152), 71, UPB_SIZE(33, 43), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {25, UPB_SIZE(68, 152), 71, UPB_SIZE(39, 49), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__ListStringMatcher_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_has_disallowed_headers(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {25, UPB_SIZE(68, 152), 71, UPB_SIZE(33, 43), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {25, UPB_SIZE(68, 152), 71, UPB_SIZE(39, 49), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_decoder_header_mutation_rules(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {26, UPB_SIZE(72, 160), 72, UPB_SIZE(31, 42), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {26, UPB_SIZE(72, 160), 72, UPB_SIZE(37, 48), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct envoy_config_common_mutation_rules_v3_HeaderMutationRules* envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_decoder_header_mutation_rules(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
   const struct envoy_config_common_mutation_rules_v3_HeaderMutationRules* default_val = NULL;
   const struct envoy_config_common_mutation_rules_v3_HeaderMutationRules* ret;
-  const upb_MiniTableField field = {26, UPB_SIZE(72, 160), 72, UPB_SIZE(31, 42), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {26, UPB_SIZE(72, 160), 72, UPB_SIZE(37, 48), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_has_decoder_header_mutation_rules(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {26, UPB_SIZE(72, 160), 72, UPB_SIZE(31, 42), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {26, UPB_SIZE(72, 160), 72, UPB_SIZE(37, 48), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_enable_dynamic_metadata_ingestion(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {27, UPB_SIZE(76, 168), 73, UPB_SIZE(29, 41), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {27, UPB_SIZE(76, 168), 73, UPB_SIZE(35, 47), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_BoolValue* envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_enable_dynamic_metadata_ingestion(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
   const struct google_protobuf_BoolValue* default_val = NULL;
   const struct google_protobuf_BoolValue* ret;
-  const upb_MiniTableField field = {27, UPB_SIZE(76, 168), 73, UPB_SIZE(29, 41), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {27, UPB_SIZE(76, 168), 73, UPB_SIZE(35, 47), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_has_enable_dynamic_metadata_ingestion(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {27, UPB_SIZE(76, 168), 73, UPB_SIZE(29, 41), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {27, UPB_SIZE(76, 168), 73, UPB_SIZE(35, 47), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_filter_metadata(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {28, UPB_SIZE(80, 176), 74, UPB_SIZE(27, 40), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {28, UPB_SIZE(80, 176), 74, UPB_SIZE(33, 46), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_Struct* envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_filter_metadata(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
   const struct google_protobuf_Struct* default_val = NULL;
   const struct google_protobuf_Struct* ret;
-  const upb_MiniTableField field = {28, UPB_SIZE(80, 176), 74, UPB_SIZE(27, 40), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {28, UPB_SIZE(80, 176), 74, UPB_SIZE(33, 46), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Struct_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_has_filter_metadata(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
-  const upb_MiniTableField field = {28, UPB_SIZE(80, 176), 74, UPB_SIZE(27, 40), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {28, UPB_SIZE(80, 176), 74, UPB_SIZE(33, 46), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_emit_filter_state_stats(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
@@ -682,9 +682,64 @@ UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_shadow_mode(
                                     &default_val, &ret);
   return ret;
 }
+UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_emit_client_span(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
+  const upb_MiniTableField field = {33, UPB_SIZE(88, 184), 75, UPB_SIZE(19, 33), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE const struct google_protobuf_BoolValue* envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_emit_client_span(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
+  const struct google_protobuf_BoolValue* default_val = NULL;
+  const struct google_protobuf_BoolValue* ret;
+  const upb_MiniTableField field = {33, UPB_SIZE(88, 184), 75, UPB_SIZE(19, 33), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_has_emit_client_span(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
+  const upb_MiniTableField field = {33, UPB_SIZE(88, 184), 75, UPB_SIZE(19, 33), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_clear_route_cache_headers(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg) {
+  const upb_MiniTableField field = {34, UPB_SIZE(92, 192), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE upb_StringView const* envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_route_cache_headers(const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg,
+                                                  size_t* size) {
+  const upb_MiniTableField field = {34, UPB_SIZE(92, 192), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
+  if (arr) {
+    if (size) *size = arr->UPB_PRIVATE(size);
+    return (upb_StringView const*)upb_Array_DataPtr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+
+//
+UPB_INLINE const upb_Array* _envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_route_cache_headers_upb_array(
+    const envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, size_t* size) {
+  const upb_MiniTableField field = {34, UPB_SIZE(92, 192), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
+  if (size) {
+    *size = arr ? arr->UPB_PRIVATE(size) : 0;
+  }
+  return arr;
+}
+
+UPB_INLINE upb_Array* _envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_clear_route_cache_headers_mutable_upb_array(
+    envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {34, UPB_SIZE(92, 192), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
+                                                       &field, arena);
+  if (size) {
+    *size = arr ? arr->UPB_PRIVATE(size) : 0;
+  }
+  return arr;
+}
 
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_grpc_service(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, struct envoy_config_core_v3_GrpcService* value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(92, 184), UPB_SIZE(-89, -29), UPB_SIZE(93, 94), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(100, 200), UPB_SIZE(-97, -29), UPB_SIZE(99, 100), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__GrpcService_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -702,7 +757,7 @@ UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_failure_
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_http_service(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, envoy_extensions_filters_http_ext_authz_v3_HttpService* value) {
-  const upb_MiniTableField field = {3, UPB_SIZE(92, 184), UPB_SIZE(-89, -29), UPB_SIZE(88, 90), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(100, 200), UPB_SIZE(-97, -29), UPB_SIZE(94, 96), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__ext_0authz__v3__HttpService_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -716,7 +771,7 @@ UPB_INLINE struct envoy_extensions_filters_http_ext_authz_v3_HttpService* envoy_
   return sub;
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_with_request_body(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, envoy_extensions_filters_http_ext_authz_v3_BufferSettings* value) {
-  const upb_MiniTableField field = {5, UPB_SIZE(20, 64), 64, UPB_SIZE(86, 89), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(20, 64), 64, UPB_SIZE(92, 95), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__ext_0authz__v3__BufferSettings_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -734,7 +789,7 @@ UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_clear_ro
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_status_on_error(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, struct envoy_type_v3_HttpStatus* value) {
-  const upb_MiniTableField field = {7, UPB_SIZE(24, 72), 65, UPB_SIZE(81, 85), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(24, 72), 65, UPB_SIZE(87, 91), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__v3__HttpStatus_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -781,7 +836,7 @@ UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_add_metadata
   return true;
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_filter_enabled(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, struct envoy_config_core_v3_RuntimeFractionalPercent* value) {
-  const upb_MiniTableField field = {9, UPB_SIZE(32, 88), 66, UPB_SIZE(76, 81), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {9, UPB_SIZE(32, 88), 66, UPB_SIZE(82, 87), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__RuntimeFractionalPercent_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -799,7 +854,7 @@ UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_include_
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_deny_at_disable(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, struct envoy_config_core_v3_RuntimeFeatureFlag* value) {
-  const upb_MiniTableField field = {11, UPB_SIZE(36, 96), 67, UPB_SIZE(71, 77), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {11, UPB_SIZE(36, 96), 67, UPB_SIZE(77, 83), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__RuntimeFeatureFlag_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -817,11 +872,11 @@ UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_transpor
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_stat_prefix(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, upb_StringView value) {
-  const upb_MiniTableField field = {13, UPB_SIZE(96, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {13, UPB_SIZE(104, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_filter_enabled_metadata(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, struct envoy_type_matcher_v3_MetadataMatcher* value) {
-  const upb_MiniTableField field = {14, UPB_SIZE(44, 104), 68, UPB_SIZE(63, 70), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {14, UPB_SIZE(44, 104), 68, UPB_SIZE(69, 76), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__MetadataMatcher_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -835,7 +890,7 @@ UPB_INLINE struct envoy_type_matcher_v3_MetadataMatcher* envoy_extensions_filter
   return sub;
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_bootstrap_metadata_labels_key(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, upb_StringView value) {
-  const upb_MiniTableField field = {15, UPB_SIZE(104, 48), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {15, UPB_SIZE(112, 48), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE upb_StringView* envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_mutable_typed_metadata_context_namespaces(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg,
@@ -872,7 +927,7 @@ UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_add_typed_me
   return true;
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_allowed_headers(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, struct envoy_type_matcher_v3_ListStringMatcher* value) {
-  const upb_MiniTableField field = {17, UPB_SIZE(52, 120), 69, UPB_SIZE(55, 63), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {17, UPB_SIZE(52, 120), 69, UPB_SIZE(61, 69), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__ListStringMatcher_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -894,7 +949,7 @@ UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_failure_
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_charge_cluster_response_stats(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, struct google_protobuf_BoolValue* value) {
-  const upb_MiniTableField field = {20, UPB_SIZE(56, 128), 70, UPB_SIZE(47, 56), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {20, UPB_SIZE(56, 128), 70, UPB_SIZE(53, 62), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -982,7 +1037,7 @@ UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_validate
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_disallowed_headers(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, struct envoy_type_matcher_v3_ListStringMatcher* value) {
-  const upb_MiniTableField field = {25, UPB_SIZE(68, 152), 71, UPB_SIZE(33, 43), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {25, UPB_SIZE(68, 152), 71, UPB_SIZE(39, 49), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__ListStringMatcher_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -996,7 +1051,7 @@ UPB_INLINE struct envoy_type_matcher_v3_ListStringMatcher* envoy_extensions_filt
   return sub;
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_decoder_header_mutation_rules(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, struct envoy_config_common_mutation_rules_v3_HeaderMutationRules* value) {
-  const upb_MiniTableField field = {26, UPB_SIZE(72, 160), 72, UPB_SIZE(31, 42), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {26, UPB_SIZE(72, 160), 72, UPB_SIZE(37, 48), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -1010,7 +1065,7 @@ UPB_INLINE struct envoy_config_common_mutation_rules_v3_HeaderMutationRules* env
   return sub;
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_enable_dynamic_metadata_ingestion(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, struct google_protobuf_BoolValue* value) {
-  const upb_MiniTableField field = {27, UPB_SIZE(76, 168), 73, UPB_SIZE(29, 41), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {27, UPB_SIZE(76, 168), 73, UPB_SIZE(35, 47), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -1024,7 +1079,7 @@ UPB_INLINE struct google_protobuf_BoolValue* envoy_extensions_filters_http_ext_a
   return sub;
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_filter_metadata(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, struct google_protobuf_Struct* value) {
-  const upb_MiniTableField field = {28, UPB_SIZE(80, 176), 74, UPB_SIZE(27, 40), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {28, UPB_SIZE(80, 176), 74, UPB_SIZE(33, 46), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Struct_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -1052,6 +1107,53 @@ UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_enforce_
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_shadow_mode(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, bool value) {
   const upb_MiniTableField field = {32, 19, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
+}
+UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_emit_client_span(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, struct google_protobuf_BoolValue* value) {
+  const upb_MiniTableField field = {33, UPB_SIZE(88, 184), 75, UPB_SIZE(19, 33), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
+}
+UPB_INLINE struct google_protobuf_BoolValue* envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_mutable_emit_client_span(
+    envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, upb_Arena* arena) {
+  struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_emit_client_span(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_BoolValue*)_upb_Message_New(&google__protobuf__BoolValue_msg_init, arena);
+    if (sub) envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_set_emit_client_span(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE upb_StringView* envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_mutable_clear_route_cache_headers(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg,
+                                              size_t* size) {
+  upb_MiniTableField field = {34, UPB_SIZE(92, 192), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
+  if (arr) {
+    if (size) *size = arr->UPB_PRIVATE(size);
+    return (upb_StringView*)upb_Array_MutableDataPtr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+
+UPB_INLINE upb_StringView* envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_resize_clear_route_cache_headers(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg,
+                                             size_t size,
+                                             upb_Arena* arena) {
+  upb_MiniTableField field = {34, UPB_SIZE(92, 192), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (upb_StringView*)upb_Message_ResizeArrayUninitialized(
+      UPB_UPCAST(msg), &field, size, arena);
+}
+UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_add_clear_route_cache_headers(envoy_extensions_filters_http_ext_authz_v3_ExtAuthz* msg, upb_StringView val,
+                                      upb_Arena* arena) {
+  upb_MiniTableField field = {34, UPB_SIZE(92, 192), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      UPB_UPCAST(msg), &field, arena);
+  if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
+                  arr, arr->UPB_PRIVATE(size) + 1, arena)) {
+    return false;
+  }
+  UPB_PRIVATE(_upb_Array_Set)
+  (arr, arr->UPB_PRIVATE(size) - 1, &val, sizeof(val));
+  return true;
 }
 
 /* envoy.extensions.filters.http.ext_authz.v3.ShadowDecision */
@@ -1989,20 +2091,20 @@ typedef enum {
 
 UPB_INLINE envoy_extensions_filters_http_ext_authz_v3_CheckSettings_service_override_oneofcases
 envoy_extensions_filters_http_ext_authz_v3_CheckSettings_service_override_case(const envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(24, 32), UPB_SIZE(-21, -13), UPB_SIZE(8, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(28, 40), UPB_SIZE(-25, -13), UPB_SIZE(11, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (envoy_extensions_filters_http_ext_authz_v3_CheckSettings_service_override_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_CheckSettings_clear_service_override(envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(24, 32), UPB_SIZE(-21, -13), UPB_SIZE(8, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(28, 40), UPB_SIZE(-25, -13), UPB_SIZE(11, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__extensions__filters__http__ext_0authz__v3__CheckSettings_msg_init, &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_CheckSettings_clear_context_extensions(envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 18, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE size_t envoy_extensions_filters_http_ext_authz_v3_CheckSettings_context_extensions_size(const envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 18, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__ext_0authz__v3__CheckSettings__ContextExtensionsEntry_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   return map ? _upb_Map_Size(map) : 0;
@@ -2010,7 +2112,7 @@ UPB_INLINE size_t envoy_extensions_filters_http_ext_authz_v3_CheckSettings_conte
 
 UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_CheckSettings_context_extensions_get(const envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg,
                                       upb_StringView key, upb_StringView* val) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 18, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__ext_0authz__v3__CheckSettings__ContextExtensionsEntry_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
@@ -2021,7 +2123,7 @@ UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_CheckSettings_context
                                        upb_StringView* key,
                                        upb_StringView* val,
                                        size_t* iter) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 18, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__ext_0authz__v3__CheckSettings__ContextExtensionsEntry_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
@@ -2036,14 +2138,14 @@ UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_CheckSettings_context
 // and ~ a upb_Map for mutable.
 //
 UPB_INLINE const upb_Map* _envoy_extensions_filters_http_ext_authz_v3_CheckSettings_context_extensions_upb_map(envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 18, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__ext_0authz__v3__CheckSettings__ContextExtensionsEntry_msg_init);
   return upb_Message_GetMap(UPB_UPCAST(msg), &field);
 }
 
 UPB_INLINE upb_Map* _envoy_extensions_filters_http_ext_authz_v3_CheckSettings_context_extensions_mutable_upb_map(
     envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg, upb_Arena* a) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 18, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__ext_0authz__v3__CheckSettings__ContextExtensionsEntry_msg_init);
   return _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg), &field,
                                             0, 0, a);
@@ -2061,59 +2163,76 @@ UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_CheckSettings_disable
   return ret;
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_CheckSettings_clear_with_request_body(envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 24), 64, UPB_SIZE(10, 12), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 24), 64, UPB_SIZE(13, 14), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const envoy_extensions_filters_http_ext_authz_v3_BufferSettings* envoy_extensions_filters_http_ext_authz_v3_CheckSettings_with_request_body(const envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg) {
   const envoy_extensions_filters_http_ext_authz_v3_BufferSettings* default_val = NULL;
   const envoy_extensions_filters_http_ext_authz_v3_BufferSettings* ret;
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 24), 64, UPB_SIZE(10, 12), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 24), 64, UPB_SIZE(13, 14), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__ext_0authz__v3__BufferSettings_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_CheckSettings_has_with_request_body(const envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 24), 64, UPB_SIZE(10, 12), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 24), 64, UPB_SIZE(13, 14), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_CheckSettings_clear_grpc_service(envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(24, 32), UPB_SIZE(-21, -13), UPB_SIZE(8, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(28, 40), UPB_SIZE(-25, -13), UPB_SIZE(11, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct envoy_config_core_v3_GrpcService* envoy_extensions_filters_http_ext_authz_v3_CheckSettings_grpc_service(const envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg) {
   const struct envoy_config_core_v3_GrpcService* default_val = NULL;
   const struct envoy_config_core_v3_GrpcService* ret;
-  const upb_MiniTableField field = {4, UPB_SIZE(24, 32), UPB_SIZE(-21, -13), UPB_SIZE(8, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(28, 40), UPB_SIZE(-25, -13), UPB_SIZE(11, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__GrpcService_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_CheckSettings_has_grpc_service(const envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(24, 32), UPB_SIZE(-21, -13), UPB_SIZE(8, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(28, 40), UPB_SIZE(-25, -13), UPB_SIZE(11, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_CheckSettings_clear_http_service(envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(24, 32), UPB_SIZE(-21, -13), UPB_SIZE(6, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(28, 40), UPB_SIZE(-25, -13), UPB_SIZE(9, 12), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const envoy_extensions_filters_http_ext_authz_v3_HttpService* envoy_extensions_filters_http_ext_authz_v3_CheckSettings_http_service(const envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg) {
   const envoy_extensions_filters_http_ext_authz_v3_HttpService* default_val = NULL;
   const envoy_extensions_filters_http_ext_authz_v3_HttpService* ret;
-  const upb_MiniTableField field = {5, UPB_SIZE(24, 32), UPB_SIZE(-21, -13), UPB_SIZE(6, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(28, 40), UPB_SIZE(-25, -13), UPB_SIZE(9, 12), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__ext_0authz__v3__HttpService_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_CheckSettings_has_http_service(const envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(24, 32), UPB_SIZE(-21, -13), UPB_SIZE(6, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(28, 40), UPB_SIZE(-25, -13), UPB_SIZE(9, 12), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_CheckSettings_clear_emit_client_span(envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(20, 32), 65, UPB_SIZE(7, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE const struct google_protobuf_BoolValue* envoy_extensions_filters_http_ext_authz_v3_CheckSettings_emit_client_span(const envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg) {
+  const struct google_protobuf_BoolValue* default_val = NULL;
+  const struct google_protobuf_BoolValue* ret;
+  const upb_MiniTableField field = {6, UPB_SIZE(20, 32), 65, UPB_SIZE(7, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_CheckSettings_has_emit_client_span(const envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(20, 32), 65, UPB_SIZE(7, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_CheckSettings_context_extensions_clear(envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 18, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__ext_0authz__v3__CheckSettings__ContextExtensionsEntry_msg_init);
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return;
@@ -2122,7 +2241,7 @@ UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_CheckSettings_context
 
 UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_CheckSettings_context_extensions_set(envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg, upb_StringView key,
                                       upb_StringView val, upb_Arena* a) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 18, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__ext_0authz__v3__CheckSettings__ContextExtensionsEntry_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, 0, a);
@@ -2131,7 +2250,7 @@ UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_CheckSettings_context
 }
 
 UPB_INLINE bool envoy_extensions_filters_http_ext_authz_v3_CheckSettings_context_extensions_delete(envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg, upb_StringView key) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 18, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__ext_0authz__v3__CheckSettings__ContextExtensionsEntry_msg_init);
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
@@ -2142,7 +2261,7 @@ UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_CheckSettings_set_dis
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_CheckSettings_set_with_request_body(envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg, envoy_extensions_filters_http_ext_authz_v3_BufferSettings* value) {
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 24), 64, UPB_SIZE(10, 12), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 24), 64, UPB_SIZE(13, 14), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__ext_0authz__v3__BufferSettings_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -2156,7 +2275,7 @@ UPB_INLINE struct envoy_extensions_filters_http_ext_authz_v3_BufferSettings* env
   return sub;
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_CheckSettings_set_grpc_service(envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg, struct envoy_config_core_v3_GrpcService* value) {
-  const upb_MiniTableField field = {4, UPB_SIZE(24, 32), UPB_SIZE(-21, -13), UPB_SIZE(8, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(28, 40), UPB_SIZE(-25, -13), UPB_SIZE(11, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__GrpcService_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -2170,7 +2289,7 @@ UPB_INLINE struct envoy_config_core_v3_GrpcService* envoy_extensions_filters_htt
   return sub;
 }
 UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_CheckSettings_set_http_service(envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg, envoy_extensions_filters_http_ext_authz_v3_HttpService* value) {
-  const upb_MiniTableField field = {5, UPB_SIZE(24, 32), UPB_SIZE(-21, -13), UPB_SIZE(6, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(28, 40), UPB_SIZE(-25, -13), UPB_SIZE(9, 12), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__ext_0authz__v3__HttpService_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -2180,6 +2299,20 @@ UPB_INLINE struct envoy_extensions_filters_http_ext_authz_v3_HttpService* envoy_
   if (sub == NULL) {
     sub = (struct envoy_extensions_filters_http_ext_authz_v3_HttpService*)_upb_Message_New(&envoy__extensions__filters__http__ext_0authz__v3__HttpService_msg_init, arena);
     if (sub) envoy_extensions_filters_http_ext_authz_v3_CheckSettings_set_http_service(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_extensions_filters_http_ext_authz_v3_CheckSettings_set_emit_client_span(envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg, struct google_protobuf_BoolValue* value) {
+  const upb_MiniTableField field = {6, UPB_SIZE(20, 32), 65, UPB_SIZE(7, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
+}
+UPB_INLINE struct google_protobuf_BoolValue* envoy_extensions_filters_http_ext_authz_v3_CheckSettings_mutable_emit_client_span(
+    envoy_extensions_filters_http_ext_authz_v3_CheckSettings* msg, upb_Arena* arena) {
+  struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_extensions_filters_http_ext_authz_v3_CheckSettings_emit_client_span(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_BoolValue*)_upb_Message_New(&google__protobuf__BoolValue_msg_init, arena);
+    if (sub) envoy_extensions_filters_http_ext_authz_v3_CheckSettings_set_emit_client_span(msg, sub);
   }
   return sub;
 }
