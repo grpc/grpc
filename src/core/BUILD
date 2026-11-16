@@ -5824,10 +5824,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "ext_authz_messages",
     srcs = [
-        "ext/filters/ext_authz/ext_authz_messages.cc",
+        "filter/ext_authz/ext_authz_messages.cc",
     ],
     hdrs = [
-        "ext/filters/ext_authz/ext_authz_messages.h",
+        "filter/ext_authz/ext_authz_messages.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -5949,10 +5949,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "ext_authz_filter",
     srcs = [
-        "ext/filters/ext_authz/ext_authz_filter.cc",
+        "filter/ext_authz/ext_authz_filter.cc",
     ],
     hdrs = [
-        "ext/filters/ext_authz/ext_authz_filter.h",
+        "filter/ext_authz/ext_authz_filter.h",
     ],
     external_deps = [
         "absl/base:core_headers",

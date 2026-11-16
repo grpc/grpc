@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_FILTERS_EXT_AUTHZ_EXT_AUTHZ_FILTER_H
-#define GRPC_SRC_CORE_EXT_FILTERS_EXT_AUTHZ_EXT_AUTHZ_FILTER_H
+#ifndef GRPC_SRC_CORE_FILTER_EXT_AUTHZ_EXT_AUTHZ_FILTER_H
+#define GRPC_SRC_CORE_FILTER_EXT_AUTHZ_EXT_AUTHZ_FILTER_H
 
 #include <grpc/status.h>
 
@@ -229,4 +229,4 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_FILTERS_EXT_AUTHZ_EXT_AUTHZ_FILTER_H
+#endif  // GRPC_SRC_CORE_FILTER_EXT_AUTHZ_EXT_AUTHZ_FILTER_H

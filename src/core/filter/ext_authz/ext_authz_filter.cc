@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/ext/filters/ext_authz/ext_authz_filter.h"
+#include "src/core/filter/ext_authz/ext_authz_filter.h"
 
 #include <grpc/support/time.h>
 
@@ -29,7 +29,7 @@
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/client_channel_args.h"
-#include "src/core/ext/filters/ext_authz/ext_authz_messages.h"
+#include "src/core/filter/ext_authz/ext_authz_messages.h"
 #include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"

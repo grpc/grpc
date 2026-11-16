@@ -33,7 +33,7 @@
 // CheckRequest/CheckResponse conversion by ext_authz_message_test.cc, and
 // end-to-end wiring by test/cpp/end2end/xds/xds_ext_authz_end2end_test.cc.
 
-#include "src/core/ext/filters/ext_authz/ext_authz_filter.h"
+#include "src/core/filter/ext_authz/ext_authz_filter.h"
 
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>

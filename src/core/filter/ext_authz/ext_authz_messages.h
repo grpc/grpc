@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_FILTERS_EXT_AUTHZ_EXT_AUTHZ_MESSAGES_H
-#define GRPC_SRC_CORE_EXT_FILTERS_EXT_AUTHZ_EXT_AUTHZ_MESSAGES_H
+#ifndef GRPC_SRC_CORE_FILTER_EXT_AUTHZ_EXT_AUTHZ_MESSAGES_H
+#define GRPC_SRC_CORE_FILTER_EXT_AUTHZ_EXT_AUTHZ_MESSAGES_H
 
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
@@ -196,4 +196,4 @@ absl::StatusOr<std::string> CreateExtAuthzRequest(
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_FILTERS_EXT_AUTHZ_EXT_AUTHZ_MESSAGES_H
+#endif  // GRPC_SRC_CORE_FILTER_EXT_AUTHZ_EXT_AUTHZ_MESSAGES_H

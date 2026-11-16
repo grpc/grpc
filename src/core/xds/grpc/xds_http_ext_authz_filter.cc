@@ -27,7 +27,7 @@
 #include "envoy/extensions/filters/http/ext_authz/v3/ext_authz.upbdefs.h"
 #include "envoy/type/v3/http_status.upb.h"
 #include "re2/re2.h"
-#include "src/core/ext/filters/ext_authz/ext_authz_filter.h"
+#include "src/core/filter/ext_authz/ext_authz_filter.h"
 #include "src/core/filter/filter_args.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/down_cast.h"

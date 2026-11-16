@@ -1152,10 +1152,6 @@ src/core/ext/filters/channel_idle/idle_filter_state.cc \
 src/core/ext/filters/channel_idle/idle_filter_state.h \
 src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
 src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h \
-src/core/ext/filters/ext_authz/ext_authz_filter.cc \
-src/core/ext/filters/ext_authz/ext_authz_filter.h \
-src/core/ext/filters/ext_authz/ext_authz_messages.cc \
-src/core/ext/filters/ext_authz/ext_authz_messages.h \
 src/core/ext/filters/fault_injection/AGENTS.md \
 src/core/ext/filters/fault_injection/fault_injection_filter.cc \
 src/core/ext/filters/fault_injection/fault_injection_filter.h \
@@ -2212,6 +2208,10 @@ src/core/filter/auth/client_auth_filter.cc \
 src/core/filter/auth/server_auth_filter.cc \
 src/core/filter/composite/composite_filter.cc \
 src/core/filter/composite/composite_filter.h \
+src/core/filter/ext_authz/ext_authz_filter.cc \
+src/core/filter/ext_authz/ext_authz_filter.h \
+src/core/filter/ext_authz/ext_authz_messages.cc \
+src/core/filter/ext_authz/ext_authz_messages.h \
 src/core/filter/ext_proc/ext_proc_filter.cc \
 src/core/filter/ext_proc/ext_proc_filter.h \
 src/core/filter/ext_proc/ext_proc_messages.cc \

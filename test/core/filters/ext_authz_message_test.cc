@@ -30,7 +30,7 @@
 #include "google/rpc/status.pb.h"
 #include "src/core/call/evaluate_args.h"
 #include "src/core/call/metadata_batch.h"
-#include "src/core/ext/filters/ext_authz/ext_authz_messages.h"
+#include "src/core/filter/ext_authz/ext_authz_messages.h"
 #include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice.h"

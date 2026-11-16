@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/ext/filters/ext_authz/ext_authz_messages.h"
+#include "src/core/filter/ext_authz/ext_authz_messages.h"
 
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
