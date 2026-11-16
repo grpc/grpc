@@ -966,13 +966,16 @@ FILTER_TEST(ExtAuthzFilterTest, OkResponseModifyResponseHeaders) {
           HasMetadataKeyValue(kCustomHeaderKey2, kCustomHeaderValue2))))));
   PushServerTrailingMetadata(*backend,
                              ServerMetadataFromStatus(GRPC_STATUS_OK));
-  EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
+  EXPECT_THAT(PullServerTrailingMetadata(client),
+              IsOkAndHolds(Pointee(AllOf(HasMetadataResult(absl::OkStatus()),
+                                         LacksMetadataKey(kCustomHeaderKey),
+                                         LacksMetadataKey(kCustomHeaderKey2)))));
   WaitForAllPendingWork();
 }
 
-// response_headers_to_add is not applied when the server replies with
-// trailers-only.
-FILTER_TEST(ExtAuthzFilterTest, TrailersOnlySkipsResponseHeaders) {
+// response_headers_to_add is applied to the trailing metadata when the server
+// replies with trailers-only.
+FILTER_TEST(ExtAuthzFilterTest, TrailersOnlyAddsResponseHeadersToTrailers) {
   Init(ConfigBuilder());
   CallInitiator client = StartCall(NewClientMetadata({}, kPath));
   std::optional<CallHandler> backend = GetNextHandler();
@@ -996,8 +999,38 @@ FILTER_TEST(ExtAuthzFilterTest, TrailersOnlySkipsResponseHeaders) {
   PushServerTrailingMetadata(*backend,
                              ServerMetadataFromStatus(GRPC_STATUS_OK));
   EXPECT_THAT(PullServerTrailingMetadata(client),
-              IsOkAndHolds(Pointee(AllOf(HasMetadataResult(absl::OkStatus()),
-                                         LacksMetadataKey(kCustomHeaderKey)))));
+              IsOkAndHolds(Pointee(
+                  AllOf(HasMetadataResult(absl::OkStatus()),
+                        HasMetadataKeyValue(kCustomHeaderKey,
+                                            kCustomHeaderValue)))));
+  WaitForAllPendingWork();
+}
+
+// response_headers_to_add is applied to the trailing metadata when the server
+// sends trailing metadata without any initial metadata.
+FILTER_TEST(ExtAuthzFilterTest,
+            NoServerInitialMetadataAddsResponseHeadersToTrailers) {
+  Init(ConfigBuilder());
+  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
+  std::optional<CallHandler> backend = GetNextHandler();
+  ASSERT_TRUE(backend.has_value());
+  auto pull = StartPullClientInitialMetadata(*backend);
+  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  ASSERT_NE(check_call, nullptr);
+  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
+  CheckResponse response = MakeOkCheckResponse();
+  AddHeader(response.mutable_ok_response()->add_response_headers_to_add(),
+            kCustomHeaderKey, kCustomHeaderValue);
+  check_call->SendMessageToClient(response.SerializeAsString());
+  check_call->MaybeSendStatusToClient(absl::OkStatus());
+  EXPECT_TRUE(FinishPullClientInitialMetadata(pull).ok());
+  PushServerTrailingMetadata(*backend,
+                             ServerMetadataFromStatus(GRPC_STATUS_OK));
+  EXPECT_THAT(PullServerTrailingMetadata(client),
+              IsOkAndHolds(Pointee(
+                  AllOf(HasMetadataResult(absl::OkStatus()),
+                        HasMetadataKeyValue(kCustomHeaderKey,
+                                            kCustomHeaderValue)))));
   WaitForAllPendingWork();
 }
 

@@ -654,6 +654,31 @@ TEST_P(XdsExtAuthzTest, ExtAuthzSuccessWithHeaderMutations) {
               Contains(Pair(kHeaderToRemove, kHeaderToRemoveValue)));
 }
 
+// When the backend replies with trailers-only, response_headers_to_add are
+// added to the trailing metadata instead.
+TEST_P(XdsExtAuthzTest, ExtAuthzTrailersOnlyAddsResponseHeadersToTrailers) {
+  ext_authz_service().SetCheckHandler([](CheckResponse* response) {
+    response->mutable_status()->set_code(GRPC_STATUS_OK);
+    auto* resp_hdr =
+        response->mutable_ok_response()->add_response_headers_to_add();
+    resp_hdr->mutable_header()->set_key(kResponseHeaderKey);
+    resp_hdr->mutable_header()->set_value(kResponseHeaderValue);
+    return grpc::Status::OK;
+  });
+  SetExtAuthzListenerAndStart(BuildExtAuthzConfig());
+  // The backend fails the RPC without sending initial metadata, so the
+  // response is trailers-only.
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get(), RpcOptions().set_server_fail(true));
+  Status status = rpc.GetStatus();
+  EXPECT_EQ(status.error_code(), StatusCode::FAILED_PRECONDITION);
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 1);
+  EXPECT_THAT(rpc.GetServerInitialMetadata(),
+              Not(Contains(Pair(kResponseHeaderKey, kResponseHeaderValue))));
+  EXPECT_THAT(rpc.GetServerTrailingMetadata(),
+              Contains(Pair(kResponseHeaderKey, kResponseHeaderValue)));
+}
+
 TEST_P(XdsExtAuthzTest, ExtAuthzSuccessFailureModeAllow) {
   ext_authz_service().SetCheckHandler(FailCheckCall);
   SetExtAuthzListenerAndStart(BuildExtAuthzConfig(

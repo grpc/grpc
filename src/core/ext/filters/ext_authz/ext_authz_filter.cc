@@ -464,15 +464,23 @@ ArenaPromise<absl::Status> ExtAuthzFilter::Call::OnClientInitialMetadata(
 }
 
 void ExtAuthzFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
-  // If the RPC returned trailers-only, response headers are skipped.
+  // If the RPC returned trailers-only, the response headers are applied to
+  // the trailing metadata instead.
   if (md.get(GrpcTrailersOnly()).value_or(false)) return;
   // Apply the response headers returned by the authorization service.
   if (response_headers_to_add.has_value()) {
     AddHeaders(*response_headers_to_add, md);
+    response_headers_to_add.reset();
   }
 }
 
 void ExtAuthzFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
+  // Response headers that were not applied to the server initial metadata
+  // mean that the RPC is Trailers-Only or the server sent no initial
+  // metadata, so apply them here.
+  if (response_headers_to_add.has_value()) {
+    AddHeaders(*response_headers_to_add, md);
+  }
   // Apply the response trailers returned by the authorization service.
   if (response_trailer_to_add.has_value()) {
     AddHeaders(*response_trailer_to_add, md);
