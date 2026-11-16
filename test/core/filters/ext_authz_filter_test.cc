@@ -1549,7 +1549,8 @@ FILTER_TEST(ExtAuthzFilterTest, ExtAuthzClientDeniedRpcsMetric) {
   WaitForAllPendingWork();
 }
 
-// An RPC let through by a disabled filter counts only as filter-disabled.
+// An RPC let through by a disabled filter counts as allowed and as
+// filter-disabled.
 FILTER_TEST(ExtAuthzFilterTest, ExtAuthzClientFilterDisabledRpcsMetric) {
   auto stats_plugin = InitWithStatsPlugin(
       ConfigBuilder().SetFilterEnabled(/*parts_per_million=*/0));
@@ -1562,7 +1563,7 @@ FILTER_TEST(ExtAuthzFilterTest, ExtAuthzClientFilterDisabledRpcsMetric) {
   EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
   EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
                   "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
-              Optional(0u));
+              Optional(1u));
   EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
                   "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
               Optional(0u));
@@ -1575,7 +1576,7 @@ FILTER_TEST(ExtAuthzFilterTest, ExtAuthzClientFilterDisabledRpcsMetric) {
   WaitForAllPendingWork();
 }
 
-// An RPC failed by deny_at_disable counts only as filter-disabled.
+// An RPC failed by deny_at_disable counts as denied and as filter-disabled.
 FILTER_TEST(ExtAuthzFilterTest,
             ExtAuthzClientFilterDisabledRpcsMetricWithDenyAtDisable) {
   auto stats_plugin =
@@ -1594,7 +1595,7 @@ FILTER_TEST(ExtAuthzFilterTest,
               Optional(0u));
   EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
                   "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
-              Optional(0u));
+              Optional(1u));
   EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
                   "grpc.client_ext_authz.failed_rpcs", {kServerUri}),
               Optional(0u));

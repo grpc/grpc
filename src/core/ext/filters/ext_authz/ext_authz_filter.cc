@@ -302,11 +302,13 @@ ArenaPromise<absl::Status> ExtAuthzFilter::Call::OnClientInitialMetadata(
       filter->RecordFilterDisabledRpc();
       // If the filter is disabled, deny the request if configured to do so.
       if (config.deny_at_disable) {
+        filter->RecordDeniedRpc();
         return Immediate(
             absl::Status(static_cast<absl::StatusCode>(config.status_on_error),
                          "ExtAuthz filter is not enabled"));
       }
       // Otherwise, allow the request to pass through without authorization.
+      filter->RecordAllowedRpc();
       return Immediate(absl::OkStatus());
     }
   }

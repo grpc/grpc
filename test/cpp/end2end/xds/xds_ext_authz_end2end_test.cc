@@ -936,7 +936,7 @@ TEST_P(XdsExtAuthzTest, ExtAuthzDeniedRpcsMetric) {
 }
 
 // With filter_enabled at 0%, RPCs bypass the ext_authz service and count as
-// neither allowed nor denied.
+// allowed and filter-disabled.
 TEST_P(XdsExtAuthzTest, ExtAuthzFilterDisabledRpcsMetric) {
   auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
                           .UseDisabledByDefaultMetrics(true)
@@ -950,9 +950,35 @@ TEST_P(XdsExtAuthzTest, ExtAuthzFilterDisabledRpcsMetric) {
   const ExtAuthzCounters before = GetExtAuthzCounters(*stats_plugin);
   CheckRpcSendOk(DEBUG_LOCATION);
   ExpectExtAuthzCounterDeltas(DEBUG_LOCATION, *stats_plugin, before,
-                              {/*allowed=*/0, /*denied=*/0, /*failed=*/0,
+                              {/*allowed=*/1, /*denied=*/0, /*failed=*/0,
                                /*filter_disabled=*/1});
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 1);
+  EXPECT_THAT(ext_authz_service().requests(), IsEmpty());
+}
+
+// With filter_enabled at 0% and deny_at_disable set, RPCs fail with
+// status_on_error and count as denied and filter-disabled.
+TEST_P(XdsExtAuthzTest, ExtAuthzFilterDisabledRpcsMetricWithDenyAtDisable) {
+  auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
+                          .UseDisabledByDefaultMetrics(true)
+                          .BuildAndRegister();
+  auto ext_authz_config = BuildExtAuthzConfig();
+  auto* default_value =
+      ext_authz_config.mutable_filter_enabled()->mutable_default_value();
+  default_value->set_numerator(0);
+  default_value->set_denominator(envoy::type::v3::FractionalPercent::HUNDRED);
+  ext_authz_config.mutable_deny_at_disable()
+      ->mutable_default_value()
+      ->set_value(true);
+  SetExtAuthzListenerAndStart(ext_authz_config);
+  const ExtAuthzCounters before = GetExtAuthzCounters(*stats_plugin);
+  // The default status_on_error is HTTP 403, i.e., PERMISSION_DENIED.
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::PERMISSION_DENIED,
+                      "ExtAuthz filter is not enabled");
+  ExpectExtAuthzCounterDeltas(DEBUG_LOCATION, *stats_plugin, before,
+                              {/*allowed=*/0, /*denied=*/1, /*failed=*/0,
+                               /*filter_disabled=*/1});
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 0);
   EXPECT_THAT(ext_authz_service().requests(), IsEmpty());
 }
 
