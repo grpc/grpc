@@ -33,6 +33,7 @@
 
 #include "src/core/client_channel/channel_factory.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -1009,6 +1010,12 @@ void AutoShardingLbConfig::JsonPostLoad(const Json&, const JsonArgs&,
 }
 
 void RegisterAutoShardingLbPolicy(CoreConfiguration::Builder* builder) {
+  // TODO(bpawan): Remove this once the feature has proven stable (gRFC A119).
+  // If the policy is not registered, a service config that lists it falls
+  // through to the next policy in its loadBalancingConfig list.
+  if (!IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_ENABLE_AUTOSHARDING_LB")) {
+    return;
+  }
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       std::make_unique<AutoShardingFactory>());
 }
