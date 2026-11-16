@@ -431,10 +431,10 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLO
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/005c18a923f166a793a1c227171398dab883cc5d.tar.gz
-    https://github.com/envoyproxy/data-plane-api/archive/005c18a923f166a793a1c227171398dab883cc5d.tar.gz
-    40ba505a3c8e0d56f10ad5b95c05d54138228ff521cff22393276bb67188dfc3
-    data-plane-api-005c18a923f166a793a1c227171398dab883cc5d
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/0a161d3b6cc400ed14fe35c3e5f95b77fa36376c.tar.gz
+    https://github.com/envoyproxy/data-plane-api/archive/0a161d3b6cc400ed14fe35c3e5f95b77fa36376c.tar.gz
+    6cd4f3ed0f12b4f18780f0a29e38f7f914a73c45d8b70960c7d5ba62b817239b
+    data-plane-api-0a161d3b6cc400ed14fe35c3e5f95b77fa36376c
   )
 endif()
 # Setup external proto library at third_party/googleapis if it doesn't exist
@@ -464,10 +464,10 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate AND g
   # Download the archive via HTTP, validate the checksum, and extract to third_party/protoc-gen-validate.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.tar.gz
-    https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.tar.gz
-    e4718352754df1393b8792b631338aa8562f390e8160783e365454bc11d96328
-    protoc-gen-validate-1.2.1
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.3.3.tar.gz
+    https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.3.3.tar.gz
+    9e47ef41ec0e269a173a94b6766cc4be4e1a1098fcda040b2f0441c51bfb6ae2
+    protoc-gen-validate-1.3.3
   )
 endif()
 # Setup external proto library at third_party/xds if it doesn't exist
