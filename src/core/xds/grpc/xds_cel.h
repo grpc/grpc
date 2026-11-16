@@ -46,7 +46,7 @@ class CelProgram final {
   // - no string() conversions and no string, bytes or list concatenation;
   // - matches() patterns are constant, valid RE2 regexes with a program
   //   size of at most 100.
-  static absl::StatusOr<std::unique_ptr<CelProgram>> Create(
+  static absl::StatusOr<CelProgram> Create(
       const cel_expr_CheckedExpr* checked_expr, ResultType result_type);
 
   // Evaluates the expression, resolving variables via resolver.
@@ -85,7 +85,7 @@ class CelProgram final {
 // (xds.type.v3.CelExtractString in gRFC A106).
 class CelStringExtractor final {
  public:
-  CelStringExtractor(std::unique_ptr<CelProgram> program,
+  CelStringExtractor(CelProgram program,
                      std::optional<std::string> default_value)
       : program_(std::move(program)),
         default_value_(std::move(default_value)) {}
@@ -94,14 +94,13 @@ class CelStringExtractor final {
   // or does not produce a string, returns the default value, if any.
   std::optional<std::string> Extract(
       const cel_VariableResolver& resolver) const {
-    auto result = program_->EvaluateString(resolver);
+    auto result = program_.EvaluateString(resolver);
     if (result.has_value()) return result;
     return default_value_;
   }
 
   bool operator==(const CelStringExtractor& other) const {
-    return *program_ == *other.program_ &&
-           default_value_ == other.default_value_;
+    return program_ == other.program_ && default_value_ == other.default_value_;
   }
   bool operator!=(const CelStringExtractor& other) const {
     return !(*this == other);
@@ -110,7 +109,7 @@ class CelStringExtractor final {
   std::string ToString() const;
 
  private:
-  std::unique_ptr<CelProgram> program_;
+  CelProgram program_;
   std::optional<std::string> default_value_;
 };
 

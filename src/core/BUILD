@@ -7549,6 +7549,8 @@ grpc_cc_library(
         "//:cel_expr_syntax_upb",
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/message",
+        "@com_google_protobuf//upb/message:copy",
         "@com_google_protobuf//upb/reflection",
         "@com_google_protobuf//upb/wire",
     ],

@@ -45,6 +45,8 @@
 #include "src/core/util/upb_utils.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
+#include "upb/message/copy.h"
+#include "upb/message/message.h"
 #include "upb/reflection/def.hpp"
 #include "upb/wire/encode.h"
 #include "absl/functional/function_ref.h"
@@ -73,13 +75,15 @@ absl::Status ValidateResultType(const cel_expr_CheckedExpr* checked_expr,
                                 CelProgram::ResultType result_type) {
   cel_expr_Type* type;
   if (!cel_expr_CheckedExpr_type_map_get(checked_expr, root_id, &type)) {
-    return absl::InternalError("CEL expression has no type for its result");
+    return absl::InvalidArgumentError(
+        "CEL expression has no type for its result");
   }
   switch (result_type) {
     case CelProgram::ResultType::kBool:
       if (!cel_expr_Type_has_primitive(type) ||
           cel_expr_Type_primitive(type) != cel_expr_Type_BOOL) {
-        return absl::InternalError("CEL expression must evaluate to bool");
+        return absl::InvalidArgumentError(
+            "CEL expression must evaluate to bool");
       }
       break;
     case CelProgram::ResultType::kString:
@@ -90,7 +94,8 @@ absl::Status ValidateResultType(const cel_expr_CheckedExpr* checked_expr,
       if (cel_expr_Type_has_dyn(type)) break;
       if (!cel_expr_Type_has_primitive(type) ||
           cel_expr_Type_primitive(type) != cel_expr_Type_STRING) {
-        return absl::InternalError("CEL expression must evaluate to string");
+        return absl::InvalidArgumentError(
+            "CEL expression must evaluate to string");
       }
       break;
   }
@@ -100,24 +105,28 @@ absl::Status ValidateResultType(const cel_expr_CheckedExpr* checked_expr,
 absl::Status ValidateRegex(const cel_expr_Expr* pattern) {
   if (!cel_expr_Expr_has_const_expr(pattern) ||
       !cel_expr_Constant_has_string_value(cel_expr_Expr_const_expr(pattern))) {
-    return absl::InternalError(
+    return absl::InvalidArgumentError(
         "CEL matches() pattern must be a constant string");
   }
   RE2 re(UpbStringToAbsl(
              cel_expr_Constant_string_value(cel_expr_Expr_const_expr(pattern))),
          RE2::Quiet);
   if (!re.ok()) {
-    return absl::InternalError(
+    return absl::InvalidArgumentError(
         absl::StrCat("CEL matches() pattern is invalid: ", re.error()));
   }
   if (re.ProgramSize() > kMaxRegexProgramSize) {
-    return absl::InternalError(
+    return absl::InvalidArgumentError(
         absl::StrCat("CEL matches() pattern program size ", re.ProgramSize(),
                      " exceeds the limit of ", kMaxRegexProgramSize));
   }
   return absl::OkStatus();
 }
 
+// Enforces gRFC A106 "CEL: Runtime Restrictions".  Envoy applies these via
+// cel-cpp runtime options (enable_string_conversion, enable_string_concat,
+// enable_list_concat, regex_max_program_size); cel-c has no such options, so
+// we reject the corresponding calls in the checked AST instead.
 absl::Status ValidateCall(const cel_expr_CheckedExpr* checked_expr, int64_t id,
                           const cel_expr_Expr_Call* call) {
   absl::string_view function =
@@ -125,7 +134,8 @@ absl::Status ValidateCall(const cel_expr_CheckedExpr* checked_expr, int64_t id,
   size_t num_args;
   const cel_expr_Expr* const* args = cel_expr_Expr_Call_args(call, &num_args);
   if (function == "string") {
-    return absl::InternalError("CEL string() conversions are not supported");
+    return absl::InvalidArgumentError(
+        "CEL string() conversions are not supported");
   }
   if (function == "_+_") {
     // Which overload of + this is can only be told from the type-checker's
@@ -139,13 +149,13 @@ absl::Status ValidateCall(const cel_expr_CheckedExpr* checked_expr, int64_t id,
       overloads = cel_expr_Reference_overload_id(reference, &num_overloads);
     }
     if (num_overloads == 0) {
-      return absl::InternalError("CEL expression has no overload for +");
+      return absl::InvalidArgumentError("CEL expression has no overload for +");
     }
     for (size_t i = 0; i < num_overloads; ++i) {
       absl::string_view overload = UpbStringToAbsl(overloads[i]);
       if (overload == "add_string" || overload == "add_bytes" ||
           overload == "add_list") {
-        return absl::InternalError(
+        return absl::InvalidArgumentError(
             "CEL string, bytes and list concatenation are not supported");
       }
     }
@@ -165,11 +175,11 @@ absl::Status ValidateCall(const cel_expr_CheckedExpr* checked_expr, int64_t id,
 absl::Status ValidateCelExpr(const cel_expr_CheckedExpr* checked_expr,
                              CelProgram::ResultType result_type) {
   if (checked_expr == nullptr) {
-    return absl::InternalError("CEL expression not set");
+    return absl::InvalidArgumentError("CEL CheckedExpr not set");
   }
   const cel_expr_Expr* root = cel_expr_CheckedExpr_expr(checked_expr);
   if (root == nullptr) {
-    return absl::InternalError("CEL expression not set");
+    return absl::InvalidArgumentError("CEL CheckedExpr has no expr");
   }
   absl::Status status =
       ValidateResultType(checked_expr, cel_expr_Expr_id(root), result_type);
@@ -189,7 +199,7 @@ absl::Status ValidateCelExpr(const cel_expr_CheckedExpr* checked_expr,
         // here so the resource is NACKed, rather than failing on every
         // evaluation.
         if (name != "request") {
-          return absl::InternalError(
+          return absl::InvalidArgumentError(
               absl::StrCat("CEL variable \"", name, "\" is not supported"));
         }
         break;
@@ -237,7 +247,8 @@ absl::Status ValidateCelExpr(const cel_expr_CheckedExpr* checked_expr,
         break;
       }
       case cel_expr_Expr_expr_kind_comprehension_expr:
-        return absl::InternalError("CEL comprehensions are not supported");
+        return absl::InvalidArgumentError(
+            "CEL comprehensions are not supported");
       case cel_expr_Expr_expr_kind_const_expr:
       case cel_expr_Expr_expr_kind_NOT_SET:
         break;
@@ -254,16 +265,15 @@ absl::Status ValidateCelExpr(const cel_expr_CheckedExpr* checked_expr,
 // fails.
 std::optional<std::string> SerializeForEquality(
     const cel_expr_CheckedExpr* checked_expr, upb_Arena* arena) {
-  // checked_expr is const, so clear source_info on a copy.
-  size_t size;
-  const char* serialized =
-      cel_expr_CheckedExpr_serialize(checked_expr, arena, &size);
-  if (serialized == nullptr) return std::nullopt;
-  cel_expr_CheckedExpr* copy =
-      cel_expr_CheckedExpr_parse(serialized, size, arena);
+  // The shallow clone shares all fields with checked_expr, so clearing
+  // source_info on it does not modify checked_expr.
+  auto* copy = reinterpret_cast<cel_expr_CheckedExpr*>(upb_Message_ShallowClone(
+      reinterpret_cast<const upb_Message*>(checked_expr),
+      &cel__expr__CheckedExpr_msg_init, arena));
   if (copy == nullptr) return std::nullopt;
   cel_expr_CheckedExpr_clear_source_info(copy);
-  serialized = cel_expr_CheckedExpr_serialize_ex(
+  size_t size;
+  const char* serialized = cel_expr_CheckedExpr_serialize_ex(
       copy, kUpb_EncodeOption_Deterministic, arena, &size);
   if (serialized == nullptr) return std::nullopt;
   return std::string(serialized, size);
@@ -358,7 +368,7 @@ void Evaluate(const cel_Program* program, const cel_VariableResolver& resolver,
 
 }  // namespace
 
-absl::StatusOr<std::unique_ptr<CelProgram>> CelProgram::Create(
+absl::StatusOr<CelProgram> CelProgram::Create(
     const cel_expr_CheckedExpr* checked_expr, ResultType result_type) {
   absl::Status validation = ValidateCelExpr(checked_expr, result_type);
   if (!validation.ok()) return validation;
@@ -366,7 +376,7 @@ absl::StatusOr<std::unique_ptr<CelProgram>> CelProgram::Create(
   std::optional<std::string> serialized =
       SerializeForEquality(checked_expr, arena.ptr());
   if (!serialized.has_value()) {
-    return absl::InternalError("failed to serialize CEL expression");
+    return absl::InvalidArgumentError("failed to serialize CEL expression");
   }
   // Convert to a cel-c AST (cel_Arena is upb_Arena) and compile it.  The
   // compiled program copies everything it needs, so the AST and its arena
@@ -374,17 +384,16 @@ absl::StatusOr<std::unique_ptr<CelProgram>> CelProgram::Create(
   CelStatus status;
   AstPtr ast(cel_Ast_FromProto(checked_expr, arena.ptr(), status.get()));
   if (ast == nullptr || !status.ok()) {
-    return absl::InternalError(absl::StrCat(
+    return absl::InvalidArgumentError(absl::StrCat(
         "failed to convert CEL expression: ", status.ToAbsl().message()));
   }
   ProgramPtr program(cel_Runtime_Compile(GetCelRuntime(), ast.get(),
                                          /*opts=*/nullptr, status.get()));
   if (program == nullptr || !status.ok()) {
-    return absl::InternalError(absl::StrCat(
+    return absl::InvalidArgumentError(absl::StrCat(
         "failed to compile CEL expression: ", status.ToAbsl().message()));
   }
-  return std::unique_ptr<CelProgram>(
-      new CelProgram(std::move(*serialized), std::move(program)));
+  return CelProgram(std::move(*serialized), std::move(program));
 }
 
 std::optional<bool> CelProgram::EvaluateBool(
@@ -417,7 +426,7 @@ std::string CelProgram::ToString() const {
 //
 
 std::string CelStringExtractor::ToString() const {
-  return absl::StrCat("CelStringExtractor{", program_->ToString(),
+  return absl::StrCat("CelStringExtractor{", program_.ToString(),
                       default_value_.has_value()
                           ? absl::StrCat(", default_value=", *default_value_)
                           : "",
