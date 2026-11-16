@@ -92,6 +92,22 @@ some configuration as environment variables that can be set.
   channels (mostly due to idleness), so that the next RPC on this channel won't
   fail. Set to 0 to turn off the backup polls.
 
+* GRPC_EXPERIMENTAL_XDS_EXT_AUTHZ_ON_CLIENT, GRPC_EXPERIMENTAL_XDS_EXT_AUTHZ_ON_SERVER
+  Default: false
+  Set to true to enable the experimental xDS external authorization
+  (ext_authz) HTTP filter described in gRFC A92, on gRPC clients and servers
+  respectively. Either variable also enables reading `allowed_grpc_services`
+  from the xDS bootstrap (gRFC A102). Currently, setting either variable
+  enables the filter on both clients and servers.
+
+* GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT, GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_SERVER
+  Default: false
+  Set to true to enable the experimental xDS external processing (ext_proc)
+  HTTP filter described in gRFC A93, on gRPC clients and servers respectively.
+  Either variable also enables reading `allowed_grpc_services` from the xDS
+  bootstrap (gRFC A102). Currently, setting either variable enables the filter
+  on both clients and servers.
+
 * grpc_cfstream
   set to 1 to turn on CFStream experiment. With this experiment gRPC uses CFStream API to make TCP
   connections. The option is only available on iOS platform and when macro GRPC_CFSTREAM is defined.
