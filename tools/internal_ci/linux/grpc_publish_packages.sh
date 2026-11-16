@@ -133,6 +133,7 @@ EOF
 <?xml version="1.0"?>
 <?xml-stylesheet href="/web-assets/build-201807.xsl" type="text/xsl"?>
 <build id='$BUILD_ID' timestamp='$BUILD_TIMESTAMP' version="201807">
+  <script src="/web-assets/xslt-polyfill.min.js" xmlns="http://www.w3.org/1999/xhtml"></script>
   <metadata>
     <project>gRPC</project>
     <repository>https://github.com/grpc/grpc</repository>
@@ -175,6 +176,7 @@ gcloud storage cp "$GCS_INDEX" "$OLD_INDEX"
 <?xml version="1.0"?>
 <?xml-stylesheet href="/web-assets/home.xsl" type="text/xsl"?>
 <packages>
+  <script src="/web-assets/xslt-polyfill.min.js" xmlns="http://www.w3.org/1999/xhtml"></script>
   <builds>
     <build id='$BUILD_ID'
            timestamp='$BUILD_TIMESTAMP'
@@ -184,7 +186,7 @@ gcloud storage cp "$GCS_INDEX" "$OLD_INDEX"
            size='$LOCAL_BUILD_INDEX_SIZE'
            sha256='$LOCAL_BUILD_INDEX_SHA256' />
 EOF
-  tail --lines=+5 "$OLD_INDEX"
+  sed '1,/<builds>/d' "$OLD_INDEX"
 }> "$NEW_INDEX"
 
 
