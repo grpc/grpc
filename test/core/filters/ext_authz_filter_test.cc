@@ -1424,6 +1424,192 @@ FILTER_TEST(ExtAuthzFilterTest, DisallowedMutationsIgnoredOnDeniedResponse) {
   WaitForAllPendingWork();
 }
 
+// With disallow_is_error=true, removing a grpc-* header, which gRPC never
+// allows to be mutated, fails the RPC even when the rules allow everything
+// else.
+FILTER_TEST(ExtAuthzFilterTest, ReservedHeaderRemovalFailsWithDisallowIsError) {
+  HeaderMutationRules rules;
+  rules.disallow_is_error = true;
+  Init(ConfigBuilder()
+           .SetStatusOnError(kStatusOnError)
+           .SetHeaderMutationRules(std::move(rules)));
+  CallInitiator client = StartCall(NewClientMetadata(
+      {{kGrpcCustomHeaderKey, kGrpcCustomHeaderValue}}, kPath));
+  std::optional<CallHandler> backend = GetNextHandler();
+  ASSERT_TRUE(backend.has_value());
+  auto pull = StartPullClientInitialMetadata(*backend);
+  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  ASSERT_NE(check_call, nullptr);
+  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
+  CheckResponse response = MakeOkCheckResponse();
+  response.mutable_ok_response()->add_headers_to_remove(kGrpcCustomHeaderKey);
+  check_call->SendMessageToClient(response.SerializeAsString());
+  check_call->MaybeSendStatusToClient(absl::OkStatus());
+  EXPECT_FALSE(FinishPullClientInitialMetadata(pull).ok());
+  EXPECT_EQ(PullServerTrailingStatus(client),
+            absl::UnavailableError(absl::StrCat("Forbidden header removal: ",
+                                                kGrpcCustomHeaderKey)));
+  WaitForAllPendingWork();
+}
+
+// With disallow_is_error=false, removals of "host" and grpc-* headers are
+// ignored, while other removals are applied.
+FILTER_TEST(ExtAuthzFilterTest,
+            ReservedHeaderRemovalIgnoredWithoutDisallowIsError) {
+  Init(ConfigBuilder().SetHeaderMutationRules(HeaderMutationRules()));
+  CallInitiator client = StartCall(
+      NewClientMetadata({{kHostHeaderKey, kHostHeaderValue},
+                         {kGrpcCustomHeaderKey, kGrpcCustomHeaderValue},
+                         {kCustomHeaderKey, kCustomHeaderValue}},
+                        kPath));
+  std::optional<CallHandler> backend = GetNextHandler();
+  ASSERT_TRUE(backend.has_value());
+  auto pull = StartPullClientInitialMetadata(*backend);
+  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  ASSERT_NE(check_call, nullptr);
+  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
+  CheckResponse response = MakeOkCheckResponse();
+  auto* ok = response.mutable_ok_response();
+  ok->add_headers_to_remove(kHostHeaderKey);
+  ok->add_headers_to_remove(kGrpcCustomHeaderKey);
+  ok->add_headers_to_remove(kCustomHeaderKey);
+  check_call->SendMessageToClient(response.SerializeAsString());
+  check_call->MaybeSendStatusToClient(absl::OkStatus());
+  EXPECT_THAT(
+      FinishPullClientInitialMetadata(pull),
+      IsOkAndHolds(Pointee(AllOf(
+          HasMetadataKeyValue(kHostHeaderKey, kHostHeaderValue),
+          HasMetadataKeyValue(kGrpcCustomHeaderKey, kGrpcCustomHeaderValue),
+          LacksMetadataKey(kCustomHeaderKey)))));
+  PushServerTrailingMetadata(*backend,
+                             ServerMetadataFromStatus(GRPC_STATUS_OK));
+  EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
+  WaitForAllPendingWork();
+}
+
+// A disallowed removal is a violation even if it would be a no-op because the
+// header is not present.
+FILTER_TEST(ExtAuthzFilterTest, DisallowedNoOpRemovalFails) {
+  Init(ConfigBuilder()
+           .SetStatusOnError(kStatusOnError)
+           .SetHeaderMutationRules(
+               DisallowAllRules(/*disallow_is_error=*/true)));
+  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
+  std::optional<CallHandler> backend = GetNextHandler();
+  ASSERT_TRUE(backend.has_value());
+  auto pull = StartPullClientInitialMetadata(*backend);
+  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  ASSERT_NE(check_call, nullptr);
+  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
+  CheckResponse response = MakeOkCheckResponse();
+  response.mutable_ok_response()->add_headers_to_remove(kCustomHeaderKey);
+  check_call->SendMessageToClient(response.SerializeAsString());
+  check_call->MaybeSendStatusToClient(absl::OkStatus());
+  EXPECT_FALSE(FinishPullClientInitialMetadata(pull).ok());
+  EXPECT_EQ(PullServerTrailingStatus(client),
+            absl::UnavailableError(kForbiddenHeaderRemovalErrorMessage));
+  WaitForAllPendingWork();
+}
+
+// A disallowed addition is a violation even if it would be a no-op, as for
+// ADD_IF_ABSENT when the header is already present.
+FILTER_TEST(ExtAuthzFilterTest, DisallowedNoOpAdditionFails) {
+  Init(ConfigBuilder()
+           .SetStatusOnError(kStatusOnError)
+           .SetHeaderMutationRules(
+               DisallowAllRules(/*disallow_is_error=*/true)));
+  CallInitiator client = StartCall(
+      NewClientMetadata({{kCustomHeaderKey, kCustomHeaderValue}}, kPath));
+  std::optional<CallHandler> backend = GetNextHandler();
+  ASSERT_TRUE(backend.has_value());
+  auto pull = StartPullClientInitialMetadata(*backend);
+  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  ASSERT_NE(check_call, nullptr);
+  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
+  CheckResponse response = MakeOkCheckResponse();
+  HeaderValueOption* header = response.mutable_ok_response()->add_headers();
+  AddHeader(header, kCustomHeaderKey, kCustomHeaderValue2);
+  header->set_append_action(HeaderValueOption::ADD_IF_ABSENT);
+  check_call->SendMessageToClient(response.SerializeAsString());
+  check_call->MaybeSendStatusToClient(absl::OkStatus());
+  EXPECT_FALSE(FinishPullClientInitialMetadata(pull).ok());
+  EXPECT_EQ(PullServerTrailingStatus(client),
+            absl::UnavailableError(kForbiddenHeaderMutationErrorMessage));
+  WaitForAllPendingWork();
+}
+
+// An invalid headers_to_remove name makes the response invalid, so the RPC
+// takes the failure path: without failure_mode_allow, it fails with
+// status_on_error and counts as denied and failed.
+FILTER_TEST(ExtAuthzFilterTest, InvalidHeaderToRemoveWithFailureModeDeny) {
+  auto stats_plugin =
+      InitWithStatsPlugin(ConfigBuilder().SetStatusOnError(kStatusOnError));
+  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
+  std::optional<CallHandler> backend = GetNextHandler();
+  ASSERT_TRUE(backend.has_value());
+  auto pull = StartPullClientInitialMetadata(*backend);
+  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  ASSERT_NE(check_call, nullptr);
+  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
+  CheckResponse response = MakeOkCheckResponse();
+  response.mutable_ok_response()->add_headers_to_remove(":path");
+  check_call->SendMessageToClient(response.SerializeAsString());
+  check_call->MaybeSendStatusToClient(absl::OkStatus());
+  EXPECT_FALSE(FinishPullClientInitialMetadata(pull).ok());
+  EXPECT_EQ(PullServerTrailingStatus(client),
+            absl::UnavailableError("Invalid header name to remove: :path"));
+  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
+                  "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
+              Optional(0u));
+  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
+                  "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
+              Optional(1u));
+  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
+                  "grpc.client_ext_authz.failed_rpcs", {kServerUri}),
+              Optional(1u));
+  WaitForAllPendingWork();
+}
+
+// With failure_mode_allow, an invalid headers_to_remove name lets the RPC
+// through without applying any mutation, and it counts as allowed and failed.
+FILTER_TEST(ExtAuthzFilterTest, InvalidHeaderToRemoveWithFailureModeAllow) {
+  auto stats_plugin =
+      InitWithStatsPlugin(ConfigBuilder()
+                              .SetFailureModeAllow(true)
+                              .SetFailureModeAllowHeaderAdd(true));
+  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
+  std::optional<CallHandler> backend = GetNextHandler();
+  ASSERT_TRUE(backend.has_value());
+  auto pull = StartPullClientInitialMetadata(*backend);
+  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  ASSERT_NE(check_call, nullptr);
+  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
+  CheckResponse response = MakeOkCheckResponse();
+  AddHeader(response.mutable_ok_response()->add_headers(), kCustomHeaderKey,
+            kCustomHeaderValue);
+  response.mutable_ok_response()->add_headers_to_remove(":path");
+  check_call->SendMessageToClient(response.SerializeAsString());
+  check_call->MaybeSendStatusToClient(absl::OkStatus());
+  EXPECT_THAT(FinishPullClientInitialMetadata(pull),
+              IsOkAndHolds(Pointee(
+                  AllOf(HasMetadataKeyValue(kFailureModeAllowedHeaderKey,
+                                            kFailureModeAllowedHeaderValue),
+                        LacksMetadataKey(kCustomHeaderKey)))));
+  PushServerTrailingMetadata(*backend,
+                             ServerMetadataFromStatus(GRPC_STATUS_OK));
+  EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
+  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
+                  "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
+              Optional(1u));
+  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
+                  "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
+              Optional(0u));
+  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
+                  "grpc.client_ext_authz.failed_rpcs", {kServerUri}),
+              Optional(1u));
+  WaitForAllPendingWork();
+}
+
 //
 // CheckRequest tests
 //
