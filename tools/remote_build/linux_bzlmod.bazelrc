@@ -18,3 +18,8 @@
 import %workspace%/tools/remote_build/include/test_config_common.bazelrc
 
 build --jobs=200
+
+# The clang 18 in the test Docker image does not enable sized deallocation by
+# default. riegeli (a fuzztest dependency) needs it.
+build --cxxopt=-fsized-deallocation
+build --host_cxxopt=-fsized-deallocation
