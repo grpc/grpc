@@ -1202,6 +1202,7 @@ LIBGRPC_SRC = \
     src/core/filter/composite/composite_filter.cc \
     src/core/filter/ext_proc/ext_proc_filter.cc \
     src/core/filter/ext_proc/ext_proc_messages.cc \
+    src/core/filter/filter_util.cc \
     src/core/filter/fused_filters.cc \
     src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
     src/core/handshaker/handshaker.cc \

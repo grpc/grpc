@@ -37,6 +37,7 @@ See also: [gRPC Core overview](../AGENTS.md)
 *   **`filter_args.h`**: Defines `FilterConfig`, `FilterAndConfig`, `FilterArgs`, `GRPC_ARG_USE_V3_STACK`, and `GRPC_ARG_IS_SERVER_FILTER_STACK`.
 *   **`filter_chain.h`**: Defines `FilterChain` and `FilterChainBuilder`.
 *   **`fused_filters.cc`**: Defines and registers fused filter combinations via `RegisterFusedFilters`.
+*   **`filter_util.{h,cc}`**: Defines `PopulateHeaderMap`, which writes a `grpc_metadata_batch` into an `envoy.config.core.v3.HeaderMap` per gRFC A102 (shared by xDS filters such as `ext_proc`).
 *   **`auth/`**: Implements `ClientAuthFilter` and `ServerAuthFilter` (`auth_filters.h`, `client_auth_filter.cc`, `server_auth_filter.cc`).
 *   **`composite/`**: Implements `CompositeFilter` for xDS matcher-driven filter execution (`composite_filter.{h,cc}`).
 *   **`ext_proc/`**: Implements `ExtProcFilter` for xDS external processing (`ext_proc_filter.{h,cc}`, `ext_proc_messages.{h,cc}`).

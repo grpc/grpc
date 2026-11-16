@@ -490,3 +490,23 @@ grpc_cc_test(
         "@envoy_api//envoy/service/ext_proc/v3:pkg_cc_proto",
     ],
 )
+
+grpc_cc_test(
+    name = "filter_util_test",
+    srcs = ["filter_util_test.cc"],
+    external_deps = [
+        "@com_google_protobuf//upb/mem",
+        "absl/strings",
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:envoy_config_core_upb",
+        "//src/core:filter_util",
+        "//src/core:grpc_matchers",
+        "//src/core:metadata_batch",
+        "//src/core:slice",
+        "//src/core:upb_utils",
+    ],
+)

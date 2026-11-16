@@ -253,6 +253,25 @@ TEST_F(CreateExtProcRequestTest, RequestHeadersOnlyDisallowedSet) {
   EXPECT_FALSE(parsed.request_headers().end_of_stream());
 }
 
+TEST_F(CreateExtProcRequestTest, RequestHeadersBinaryValuesBase64Encoded) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  batch.Append(kKey1, Slice::FromCopiedString(kVal1),
+               [](absl::string_view, const Slice&) {});
+  batch.Append("key2-bin", Slice::FromCopiedString(std::string("\x00\xff", 2)),
+               [](absl::string_view, const Slice&) {});
+  std::string serialized =
+      CreateExtProcClientHeadersRequest(arena.ptr(), &batch, {}, {}, {},
+                                        /*observability_mode=*/false,
+                                        /*processing_mode=*/std::nullopt)
+          .value();
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_request_headers());
+  EXPECT_THAT(parsed.request_headers().headers().headers(),
+              ::testing::ElementsAre(IsHeader(kKey1, kVal1),
+                                     IsHeader("key2-bin", "AP8=")));
+}
+
 TEST_F(CreateExtProcRequestTest, RequestHeadersObservability) {
   upb::Arena arena;
   grpc_metadata_batch batch;
@@ -448,6 +467,26 @@ TEST_F(CreateExtProcRequestTest,
       parsed.response_trailers().trailers().headers(),
       ::testing::ElementsAre(IsHeader(kKey1, kVal1), IsHeader(kKey2, kVal2),
                              IsHeader(kKey3, kVal3)));
+}
+
+TEST_F(CreateExtProcRequestTest, ResponseTrailersBinaryValuesBase64Encoded) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  batch.Append(kKey1, Slice::FromCopiedString(kVal1),
+               [](absl::string_view, const Slice&) {});
+  batch.Append("grpc-status-details-bin", Slice::FromCopiedString("details"),
+               [](absl::string_view, const Slice&) {});
+  std::string serialized =
+      CreateExtProcServerTrailersRequest(arena.ptr(), &batch, {}, {}, {},
+                                         /*observability_mode=*/false,
+                                         /*processing_mode=*/std::nullopt)
+          .value();
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_response_trailers());
+  EXPECT_THAT(parsed.response_trailers().trailers().headers(),
+              ::testing::ElementsAre(
+                  IsHeader(kKey1, kVal1),
+                  IsHeader("grpc-status-details-bin", "ZGV0YWlscw==")));
 }
 
 TEST_F(CreateExtProcRequestTest, ResponseTrailersBothAllowedAndDisallowedSet) {
