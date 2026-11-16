@@ -37,7 +37,7 @@ namespace testing {
 namespace {
 
 constexpr char kAutoshardingEnvVar[] =
-    "GRPC_EXPERIMENTAL_ENABLE_AUTOSHARDING_LB";
+    "GRPC_XDS_EXPERIMENTAL_ENABLE_AUTOSHARDING_LB";
 
 // Parses the JSON form of a loadBalancingConfig array.
 absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>> ParseConfig(

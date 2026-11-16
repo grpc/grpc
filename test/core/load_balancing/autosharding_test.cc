@@ -1317,7 +1317,7 @@ int main(int argc, char** argv) {
   // Set before the core configuration is built, because that is when the
   // policy is registered.
   grpc_core::testing::ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_ENABLE_AUTOSHARDING_LB");
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AUTOSHARDING_LB");
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
   return RUN_ALL_TESTS();

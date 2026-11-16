@@ -1013,7 +1013,8 @@ void RegisterAutoShardingLbPolicy(CoreConfiguration::Builder* builder) {
   // TODO(bpawan): Remove this once the feature has proven stable (gRFC A119).
   // If the policy is not registered, a service config that lists it falls
   // through to the next policy in its loadBalancingConfig list.
-  if (!IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_ENABLE_AUTOSHARDING_LB")) {
+  if (!IsExperimentEnvVarEnabled(
+          "GRPC_XDS_EXPERIMENTAL_ENABLE_AUTOSHARDING_LB")) {
     return;
   }
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
