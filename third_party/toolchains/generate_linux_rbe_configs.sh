@@ -35,7 +35,7 @@ popd
 RBE_CONFIGS_GEN_TOOL_PATH="${TEMP_DIR}/bazel-toolchains/rbe_configs_gen"
 
 # Actions on RBE will run under a dedicated docker image from our collection of testing docker images.
-LINUX_RBE_DOCKERFILE_DIR=tools/dockerfile/test/rbe_ubuntu2004
+LINUX_RBE_DOCKERFILE_DIR=tools/dockerfile/test/rbe_ubuntu2204
 # Use the "current version" of the above dockerfile.
 LINUX_RBE_DOCKER_IMAGE=$(cat ${LINUX_RBE_DOCKERFILE_DIR}.current_version)
 
