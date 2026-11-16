@@ -4255,8 +4255,8 @@ TEST_F(XdsExtAuthzFilterTest, ParsedConfigEquality) {
   EXPECT_NE(*config1, *config4);
 }
 
-// All fields of ExtAuthzPerRoute are ignored, so the override config is
-// always a default config.
+// All fields of ExtAuthzPerRoute are ignored, so there is no override config,
+// but the override must still parse.
 TEST_F(XdsExtAuthzFilterTest, ParseOverrideConfigIgnoresDisabled) {
   envoy::extensions::filters::http::ext_authz::v3::ExtAuthzPerRoute proto;
   proto.set_disabled(true);
@@ -4265,8 +4265,7 @@ TEST_F(XdsExtAuthzFilterTest, ParseOverrideConfigIgnoresDisabled) {
       factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_NE(override_config, nullptr);
-  EXPECT_EQ(*override_config, *MakeRefCounted<ExtAuthzFilter::Config>());
+  EXPECT_EQ(override_config, nullptr);
 }
 
 TEST_F(XdsExtAuthzFilterTest, ParseOverrideConfigIgnoresCheckSettings) {
@@ -4279,8 +4278,7 @@ TEST_F(XdsExtAuthzFilterTest, ParseOverrideConfigIgnoresCheckSettings) {
       factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_NE(override_config, nullptr);
-  EXPECT_EQ(*override_config, *MakeRefCounted<ExtAuthzFilter::Config>());
+  EXPECT_EQ(override_config, nullptr);
 }
 
 TEST_F(XdsExtAuthzFilterTest, ParseOverrideConfigTypedStruct) {

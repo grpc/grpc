@@ -6895,7 +6895,6 @@ grpc_cc_library(
         "experiment_env_var",
         "ext_authz_filter",
         "filter_args",
-        "grpc_check",
         "json",
         "json_writer",
         "protobuf_wrappers_upb",

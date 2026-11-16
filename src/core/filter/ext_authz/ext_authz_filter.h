@@ -85,9 +85,11 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
     // override config).
     std::variant<RefCountedPtr<ExtAuthzChannel>, GrpcXdsServerTarget>
         channel_info;
+    // 100% in parts per million.
+    static constexpr uint32_t kFilterEnabledMax = 1000000;
     // Fractional percent of requests for which the filter is enabled, in parts
-    // per million (capped at 100%). Optional; if unset, the filter is enabled.
-    std::optional<uint32_t> filter_enabled;
+    // per million (capped at 100%). Defaults to 100%.
+    uint32_t filter_enabled = kFilterEnabledMax;
     // Optional; if unset (false), requests are allowed when the filter is
     // disabled. If true, then when the filter is disabled, the request will be
     // failed with a status based on status_on_error.
@@ -116,10 +118,10 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
     // forwarded to the authorization server. An empty list is treated the same
     // as unset. Takes precedence over allowed_headers.
     std::vector<StringMatcher> disallowed_headers;
-    // Optional rules governing header mutations that the authorization service
-    // is allowed to perform on the request headers forwarded upstream.
-    // Validated as described in gRFC A102.
-    std::optional<HeaderMutationRules> decoder_header_mutation_rules;
+    // Rules governing header mutations that the authorization service is
+    // allowed to perform, validated as described in gRFC A102. The default
+    // rules allow every mutation except those that gRPC never allows.
+    HeaderMutationRules decoder_header_mutation_rules;
     // Whether to send the client certificate to the authorization service in
     // the CheckRequest.
     bool include_peer_certificate = false;
@@ -158,8 +160,11 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
     }
 
    private:
-    std::optional<std::vector<XdsHeaderValueOption>> response_headers_to_add;
-    std::optional<std::vector<XdsHeaderValueOption>> response_trailer_to_add;
+    // OkResponse.response_headers_to_add, to be applied to the server initial
+    // metadata, or to the trailing metadata if the RPC is Trailers-Only.
+    std::vector<XdsHeaderValueOption> response_headers_to_add_;
+    // DeniedResponse.headers, to be applied to the trailing metadata.
+    std::vector<XdsHeaderValueOption> response_trailers_to_add_;
     // The serialized CheckResponse received from the authorization service,
     // held until the side-channel call's status is received.
     std::optional<std::string> check_response_;

@@ -21,6 +21,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -56,7 +57,6 @@
 #include "absl/random/distributions.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
@@ -163,9 +163,9 @@ std::string ExtAuthzFilter::Config::ToString() const {
         has_server = true;
       });
   if (has_server) {
-    if (filter_enabled.has_value()) {
+    if (filter_enabled < kFilterEnabledMax) {
       StrAppend(result, ", filter_enabled=");
-      StrAppend(result, std::to_string(*filter_enabled));
+      StrAppend(result, std::to_string(filter_enabled));
     }
     StrAppend(result, ", deny_at_disable=");
     StrAppend(result, deny_at_disable ? "true" : "false");
@@ -177,9 +177,9 @@ std::string ExtAuthzFilter::Config::ToString() const {
     StrAppend(result, std::to_string(static_cast<int>(status_on_error)));
     StrAppend(result, ", include_peer_certificate=");
     StrAppend(result, include_peer_certificate ? "true" : "false");
-    if (decoder_header_mutation_rules.has_value()) {
+    if (!(decoder_header_mutation_rules == HeaderMutationRules())) {
       StrAppend(result, ", decoder_header_mutation_rules=");
-      StrAppend(result, decoder_header_mutation_rules->ToString());
+      StrAppend(result, decoder_header_mutation_rules.ToString());
     }
     if (!allowed_headers.empty()) {
       StrAppend(result, ", allowed_headers=[");
@@ -233,54 +233,44 @@ absl::Status HandleFailure(const ExtAuthzFilter& filter,
 }
 
 // Returns whether the mutation rules allow \a header_name to be mutated.
-// Fails if they don't and they say that's an error.
-absl::StatusOr<bool> IsMutationAllowed(const HeaderMutationRules* rules,
+// Fails if they don't and they say that's an error. Even the default rules
+// never allow certain headers to be mutated (see gRFC A102). (Additions of
+// these headers are already rejected when parsing the CheckResponse, so in
+// practice this affects only removals.)
+absl::StatusOr<bool> IsMutationAllowed(const HeaderMutationRules& rules,
                                        absl::string_view header_name,
                                        absl::string_view mutation_type) {
-  // Even without mutation rules, gRPC never allows certain headers to be
-  // mutated (see gRFC A102), so such mutations are ignored. (Additions of
-  // these headers are already rejected when parsing the CheckResponse, so in
-  // practice this affects only removals.)
-  if (rules == nullptr) {
-    return !absl::StartsWith(header_name, ":") &&
-           !absl::StartsWith(header_name, "grpc-") && header_name != "host";
-  }
-  if (rules->IsMutationAllowed(std::string(header_name))) return true;
-  if (rules->disallow_is_error) {
+  if (rules.IsMutationAllowed(std::string(header_name))) return true;
+  if (rules.disallow_is_error) {
     return absl::InternalError(
         absl::StrCat("Forbidden header ", mutation_type, ": ", header_name));
   }
   return false;
 }
 
-// Returns the headers to add that the mutation rules allow, or an error if
-// one isn't allowed and the rules say that's an error.
-absl::StatusOr<std::vector<XdsHeaderValueOption>> GetAllowedAdditions(
-    const HeaderMutationRules* rules,
-    const std::vector<XdsHeaderValueOption>& headers) {
-  std::vector<XdsHeaderValueOption> allowed_headers;
-  for (const auto& header : headers) {
-    auto allowed = IsMutationAllowed(rules, header.header.first, "mutation");
+// Returns the header additions (XdsHeaderValueOption) or removals (header
+// names) that the mutation rules allow, or an error if one isn't allowed and
+// the rules say that's an error.
+template <typename Mutation>
+absl::StatusOr<std::vector<Mutation>> GetAllowedMutations(
+    const HeaderMutationRules& rules, const std::vector<Mutation>& mutations,
+    absl::string_view mutation_type) {
+  std::vector<Mutation> allowed_mutations;
+  for (const Mutation& mutation : mutations) {
+    absl::string_view header_name;
+    if constexpr (std::is_same_v<Mutation, std::string>) {
+      header_name = mutation;
+    } else {
+      header_name = mutation.header.first;
+    }
+    auto allowed = IsMutationAllowed(rules, header_name, mutation_type);
     if (!allowed.ok()) return allowed.status();
-    if (*allowed) allowed_headers.push_back(header);
+    if (*allowed) allowed_mutations.push_back(mutation);
   }
-  return allowed_headers;
+  return allowed_mutations;
 }
 
-// Returns the headers to remove that the mutation rules allow, or an error if
-// one isn't allowed and the rules say that's an error.
-absl::StatusOr<std::vector<std::string>> GetAllowedRemovals(
-    const HeaderMutationRules* rules, const std::vector<std::string>& headers) {
-  std::vector<std::string> allowed_headers;
-  for (const auto& header : headers) {
-    auto allowed = IsMutationAllowed(rules, header, "removal");
-    if (!allowed.ok()) return allowed.status();
-    if (*allowed) allowed_headers.push_back(header);
-  }
-  return allowed_headers;
-}
-
-// Adds headers that were already checked by GetAllowedAdditions().
+// Adds headers that were already checked by GetAllowedMutations().
 void AddHeaders(const std::vector<XdsHeaderValueOption>& headers,
                 grpc_metadata_batch& md) {
   for (const auto& header : headers) {
@@ -296,10 +286,10 @@ ArenaPromise<absl::Status> ExtAuthzFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ExtAuthzFilter* filter) {
   const auto& config = *filter->config_;
   // Check runtime filter enablement sampling.
-  if (config.filter_enabled.has_value() && *config.filter_enabled < 1000000) {
+  if (config.filter_enabled < Config::kFilterEnabledMax) {
     uint32_t random_number =
-        absl::Uniform<uint32_t>(SharedBitGen(), 0, 1000000);
-    if (random_number >= *config.filter_enabled) {
+        absl::Uniform<uint32_t>(SharedBitGen(), 0, Config::kFilterEnabledMax);
+    if (random_number >= config.filter_enabled) {
       filter->RecordFilterDisabledRpc();
       // If the filter is disabled, deny the request if configured to do so.
       if (config.deny_at_disable) {
@@ -403,66 +393,63 @@ ArenaPromise<absl::Status> ExtAuthzFilter::Call::OnClientInitialMetadata(
           return HandleFailure(*filter, config, md,
                                response.status().message());
         }
-        const HeaderMutationRules* rules =
-            config.decoder_header_mutation_rules.has_value()
-                ? &*config.decoder_header_mutation_rules
-                : nullptr;
-        // Handle non-OK status (denied response).
-        if (response->status_code != GRPC_STATUS_OK) {
-          std::string status_message = "ExtAuthz request is denied";
-          if (!response->status_message.empty()) {
-            absl::StrAppend(&status_message,
-                            ", error message: ", response->status_message);
-          }
-          const auto& denied =
-              std::get<ExtAuthzResponse::DeniedResponse>(response->response);
-          auto trailers = GetAllowedAdditions(rules, denied.headers);
-          if (!trailers.ok()) {
-            return HandleFailure(*filter, config, md,
-                                 trailers.status().message());
-          }
-          // The denied response headers are applied to the trailing
-          // metadata in OnServerTrailingMetadata(), which sees the
-          // metadata synthesized from the status returned below.
-          response_trailer_to_add = std::move(*trailers);
-          filter->RecordDeniedRpc();
-          return absl::Status(static_cast<absl::StatusCode>(denied.status),
-                              status_message);
-        }
-        // Handle OK response.
-        const auto& ok_resp =
-            std::get<ExtAuthzResponse::OkResponse>(response->response);
-        // Check all of the mutations before applying any of them, so
-        // that none of them are applied if any of them fails.
-        auto additions =
-            GetAllowedAdditions(rules, ok_resp.header_mutation.set_headers);
-        if (!additions.ok()) {
-          return HandleFailure(*filter, config, md,
-                               additions.status().message());
-        }
-        auto removals =
-            GetAllowedRemovals(rules, ok_resp.header_mutation.remove_headers);
-        if (!removals.ok()) {
-          return HandleFailure(*filter, config, md,
-                               removals.status().message());
-        }
-        auto response_headers =
-            GetAllowedAdditions(rules, ok_resp.response_headers_to_add);
-        if (!response_headers.ok()) {
-          return HandleFailure(*filter, config, md,
-                               response_headers.status().message());
-        }
-        // Apply the request header mutations. Header additions should be
-        // applied before header removals.
-        AddHeaders(*additions, md);
-        for (const auto& header : *removals) {
-          md.Remove(absl::string_view(header));
-        }
-        // Store any response headers to inject into server initial
-        // metadata later.
-        response_headers_to_add = std::move(*response_headers);
-        filter->RecordAllowedRpc();
-        return absl::OkStatus();
+        const HeaderMutationRules& rules = config.decoder_header_mutation_rules;
+        return Match(
+            response->response,
+            [&](const ExtAuthzResponse::DeniedResponse& denied)
+                -> absl::Status {
+              auto trailers =
+                  GetAllowedMutations(rules, denied.headers, "mutation");
+              if (!trailers.ok()) {
+                return HandleFailure(*filter, config, md,
+                                     trailers.status().message());
+              }
+              // The denied response headers are applied to the trailing
+              // metadata in OnServerTrailingMetadata(), which sees the
+              // metadata synthesized from the status returned below.
+              response_trailers_to_add_ = std::move(*trailers);
+              filter->RecordDeniedRpc();
+              std::string status_message = "ExtAuthz request is denied";
+              if (!response->status_message.empty()) {
+                absl::StrAppend(&status_message, ", error message: ",
+                                response->status_message);
+              }
+              return absl::Status(static_cast<absl::StatusCode>(denied.status),
+                                  status_message);
+            },
+            [&](const ExtAuthzResponse::OkResponse& ok_resp) -> absl::Status {
+              // Check all of the mutations before applying any of them, so
+              // that none of them are applied if any of them fails.
+              auto additions = GetAllowedMutations(
+                  rules, ok_resp.header_mutation.set_headers, "mutation");
+              if (!additions.ok()) {
+                return HandleFailure(*filter, config, md,
+                                     additions.status().message());
+              }
+              auto removals = GetAllowedMutations(
+                  rules, ok_resp.header_mutation.remove_headers, "removal");
+              if (!removals.ok()) {
+                return HandleFailure(*filter, config, md,
+                                     removals.status().message());
+              }
+              auto response_headers = GetAllowedMutations(
+                  rules, ok_resp.response_headers_to_add, "mutation");
+              if (!response_headers.ok()) {
+                return HandleFailure(*filter, config, md,
+                                     response_headers.status().message());
+              }
+              // Apply the request header mutations. Header additions should
+              // be applied before header removals.
+              AddHeaders(*additions, md);
+              for (const auto& header : *removals) {
+                md.Remove(absl::string_view(header));
+              }
+              // Store any response headers to inject into server initial
+              // metadata later.
+              response_headers_to_add_ = std::move(*response_headers);
+              filter->RecordAllowedRpc();
+              return absl::OkStatus();
+            });
       });
 }
 
@@ -471,23 +458,17 @@ void ExtAuthzFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
   // the trailing metadata instead.
   if (md.get(GrpcTrailersOnly()).value_or(false)) return;
   // Apply the response headers returned by the authorization service.
-  if (response_headers_to_add.has_value()) {
-    AddHeaders(*response_headers_to_add, md);
-    response_headers_to_add.reset();
-  }
+  AddHeaders(response_headers_to_add_, md);
+  response_headers_to_add_.clear();
 }
 
 void ExtAuthzFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
   // Response headers that were not applied to the server initial metadata
   // mean that the RPC is Trailers-Only or the server sent no initial
   // metadata, so apply them here.
-  if (response_headers_to_add.has_value()) {
-    AddHeaders(*response_headers_to_add, md);
-  }
+  AddHeaders(response_headers_to_add_, md);
   // Apply the response trailers returned by the authorization service.
-  if (response_trailer_to_add.has_value()) {
-    AddHeaders(*response_trailer_to_add, md);
-  }
+  AddHeaders(response_trailers_to_add_, md);
 }
 
 //
@@ -512,12 +493,10 @@ absl::StatusOr<std::unique_ptr<ExtAuthzFilter>> ExtAuthzFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
   // Get filter config.
   if (filter_args.config() == nullptr) {
-    return absl::InternalError("ext_authz: filter config not set");
+    return absl::InvalidArgumentError("ext_authz filter config is missing");
   }
   if (filter_args.config()->type() != Config::Type()) {
-    return absl::InternalError(
-        absl::StrCat("wrong config type passed to ext_authz filter: ",
-                     filter_args.config()->type().name()));
+    return absl::InternalError("ext_authz filter config has wrong type");
   }
   auto config = filter_args.config().TakeAsSubclass<const Config>();
   return std::unique_ptr<ExtAuthzFilter>(

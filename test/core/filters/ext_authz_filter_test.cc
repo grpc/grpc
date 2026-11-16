@@ -134,10 +134,10 @@ constexpr char kDeniedNoMessageErrorMessage[] = "ExtAuthz request is denied";
 constexpr char kDisabledErrorMessage[] = "ExtAuthz filter is not enabled";
 constexpr char kChannelUnavailableErrorMessage[] =
     "ext_authz channel or transport not available";
-constexpr char kFilterConfigNotSetErrorMessage[] =
-    "ext_authz: filter config not set";
+constexpr char kFilterConfigMissingErrorMessage[] =
+    "ext_authz filter config is missing";
 constexpr char kWrongConfigTypeErrorMessage[] =
-    "wrong config type passed to ext_authz filter: other_filter_config";
+    "ext_authz filter config has wrong type";
 constexpr char kNoResponseErrorMessage[] = "No response message received";
 constexpr char kParseErrorMessage[] = "Failed to parse CheckResponse";
 constexpr char kForbiddenHeaderMutationErrorMessage[] =
@@ -494,7 +494,7 @@ class ExtAuthzFilterTest : public FilterTest {
 
 FILTER_TEST(ExtAuthzFilterTest, CreateFailsWithoutConfig) {
   EXPECT_EQ(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), nullptr),
-            absl::InternalError(kFilterConfigNotSetErrorMessage));
+            absl::InvalidArgumentError(kFilterConfigMissingErrorMessage));
 }
 
 FILTER_TEST(ExtAuthzFilterTest, CreateFailsWithWrongConfigType) {

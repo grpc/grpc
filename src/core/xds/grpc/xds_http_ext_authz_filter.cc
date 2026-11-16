@@ -31,7 +31,6 @@
 #include "src/core/filter/filter_args.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/down_cast.h"
-#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/blackboard.h"
@@ -213,27 +212,22 @@ XdsHttpExtAuthzFilterFactory::ParseOverrideConfig(
     errors->AddError("could not parse ext_authz filter override config");
     return nullptr;
   }
-  return MakeRefCounted<ExtAuthzFilter::Config>();
+  // All fields of ExtAuthzPerRoute are ignored (gRFC A92), so there is no
+  // override config. Per-route disabling uses the generic disabled field of
+  // FilterConfig, which the route config parser handles.
+  return nullptr;
 }
 
 RefCountedPtr<const FilterConfig> XdsHttpExtAuthzFilterFactory::MergeConfigs(
     RefCountedPtr<const FilterConfig> top_level_config,
-    RefCountedPtr<const FilterConfig> virtual_host_override_config,
-    RefCountedPtr<const FilterConfig> route_override_config,
-    RefCountedPtr<const FilterConfig> cluster_weight_override_config,
+    RefCountedPtr<const FilterConfig> /*virtual_host_override_config*/,
+    RefCountedPtr<const FilterConfig> /*route_override_config*/,
+    RefCountedPtr<const FilterConfig> /*cluster_weight_override_config*/,
     XdsTransportFactory& transport_factory, Blackboard& blackboard) const {
-  // Find the most specific override config.
-  const FilterConfig* override_config = nullptr;
-  if (cluster_weight_override_config != nullptr) {
-    override_config = cluster_weight_override_config.get();
-  } else if (route_override_config != nullptr) {
-    override_config = route_override_config.get();
-  } else if (virtual_host_override_config != nullptr) {
-    override_config = virtual_host_override_config.get();
-  }
-  if (override_config != nullptr) {
-    GRPC_CHECK_EQ(override_config->type(), ExtAuthzFilter::Config::Type());
-  }
+  // All fields of ExtAuthzPerRoute are ignored (gRFC A92), so the overrides
+  // are too, and the config comes from the top-level config alone. This is
+  // where the authorization service target is resolved to a channel shared
+  // via the blackboard, which is reused across xDS updates.
   const auto& top_config =
       DownCast<const ExtAuthzFilter::Config&>(*top_level_config);
   auto config = MakeRefCounted<ExtAuthzFilter::Config>();
@@ -246,23 +240,18 @@ RefCountedPtr<const FilterConfig> XdsHttpExtAuthzFilterFactory::MergeConfigs(
   config->status_on_error = top_config.status_on_error;
   config->allowed_headers = top_config.allowed_headers;
   config->disallowed_headers = top_config.disallowed_headers;
-  if (top_config.decoder_header_mutation_rules.has_value()) {
-    HeaderMutationRules rules;
-    rules.disallow_all = top_config.decoder_header_mutation_rules->disallow_all;
-    rules.disallow_is_error =
-        top_config.decoder_header_mutation_rules->disallow_is_error;
-    if (top_config.decoder_header_mutation_rules->allow_expression != nullptr) {
-      rules.allow_expression =
-          std::make_unique<RE2>(top_config.decoder_header_mutation_rules
-                                    ->allow_expression->pattern());
-    }
-    if (top_config.decoder_header_mutation_rules->disallow_expression !=
-        nullptr) {
-      rules.disallow_expression =
-          std::make_unique<RE2>(top_config.decoder_header_mutation_rules
-                                    ->disallow_expression->pattern());
-    }
-    config->decoder_header_mutation_rules = std::move(rules);
+  const HeaderMutationRules& top_rules =
+      top_config.decoder_header_mutation_rules;
+  config->decoder_header_mutation_rules.disallow_all = top_rules.disallow_all;
+  config->decoder_header_mutation_rules.disallow_is_error =
+      top_rules.disallow_is_error;
+  if (top_rules.allow_expression != nullptr) {
+    config->decoder_header_mutation_rules.allow_expression =
+        std::make_unique<RE2>(top_rules.allow_expression->pattern());
+  }
+  if (top_rules.disallow_expression != nullptr) {
+    config->decoder_header_mutation_rules.disallow_expression =
+        std::make_unique<RE2>(top_rules.disallow_expression->pattern());
   }
   config->include_peer_certificate = top_config.include_peer_certificate;
   // Blackboard handling
@@ -272,6 +261,10 @@ RefCountedPtr<const FilterConfig> XdsHttpExtAuthzFilterFactory::MergeConfigs(
     std::string key = target->Key();
     config->channel_info =
         blackboard.GetOrSet<ExtAuthzFilter::ExtAuthzChannel>(key, [&]() {
+          // GetTransport() requires a status, but it is ignored: if creating
+          // the channel fails, the returned transport is still usable, and
+          // each Check call on it fails, which the filter handles like any
+          // other failed Check call.
           absl::Status status;
           auto transport = transport_factory.GetTransport(*target, &status);
           return MakeRefCounted<ExtAuthzFilter::ExtAuthzChannel>(
