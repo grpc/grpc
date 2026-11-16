@@ -42,6 +42,7 @@
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -798,6 +799,24 @@ TEST(GetUrlEncodedPemPeerCertificateTest,
               ::testing::StrEq("aZ9*-._%0D%0A%7E%3A%25"));
 }
 
+// An empty PEM property is treated the same as no peer certificate.
+TEST(GetUrlEncodedPemPeerCertificateTest, EmptyPeerCertificate) {
+  grpc_auth_context auth_context(/*chained=*/nullptr);
+  auth_context.add_cstring_property(GRPC_X509_PEM_CERT_PROPERTY_NAME, "");
+  EXPECT_THAT(GetUrlEncodedPemPeerCertificate(&auth_context),
+              ::testing::IsEmpty());
+}
+
+// Every character in Envoy's unreserved set is left as is, and a space is
+// encoded as "%20" rather than "+".
+TEST(UrlEncodeTest, UnreservedCharactersAndSpace) {
+  constexpr absl::string_view kUnreserved =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789*-._";
+  EXPECT_EQ(UrlEncode(kUnreserved), kUnreserved);
+  EXPECT_EQ(UrlEncode("a b+c"), "a%20b%2Bc");
+  EXPECT_EQ(UrlEncode(""), "");
+}
+
 //
 // ExtAuthzResponse::Parse() tests
 //
@@ -1159,6 +1178,195 @@ TEST_F(ParseExtAuthzResponseTest, DeniedResponsePreservesStatus) {
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_THAT(parsed->status_code, ::testing::Eq(GRPC_STATUS_UNAUTHENTICATED));
   EXPECT_THAT(parsed->status_message, ::testing::StrEq(kUnauthenticatedRpc));
+  EXPECT_THAT(parsed->response,
+              IsDeniedResponse(::testing::Eq(GRPC_STATUS_PERMISSION_DENIED),
+                               ::testing::IsEmpty()));
+}
+
+// Per gRFC A102, raw_value is used when both raw_value and value are set.
+TEST_F(ParseExtAuthzResponseTest, RawValuePreferredOverValue) {
+  CheckResponse response;
+  response.mutable_status()->set_code(GRPC_STATUS_OK);
+  auto* header = response.mutable_ok_response()->add_headers();
+  header->mutable_header()->set_key(std::string(kKey1));
+  header->mutable_header()->set_value(std::string(kVal1));
+  header->mutable_header()->set_raw_value(std::string(kVal2));
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(
+      parsed->response,
+      IsOkResponse(
+          IsHeaderMutation(
+              ::testing::ElementsAre(IsHeaderValueOption(
+                  kKey1, kVal2,
+                  XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd)),
+              ::testing::IsEmpty()),
+          ::testing::IsEmpty()));
+}
+
+// Since raw_value is preferred, an invalid raw_value is an error even if
+// value is valid.
+TEST_F(ParseExtAuthzResponseTest, InvalidRawValueFailsEvenIfValueIsValid) {
+  CheckResponse response;
+  response.mutable_status()->set_code(GRPC_STATUS_OK);
+  auto* header = response.mutable_ok_response()->add_headers();
+  header->mutable_header()->set_key(std::string(kKey1));
+  header->mutable_header()->set_value(std::string(kVal1));
+  header->mutable_header()->set_raw_value("\x01");
+  auto parsed = ParseResponse(response);
+  EXPECT_EQ(parsed.status(),
+            absl::InternalError("Failed to parse XdsHeaderValueOption: "
+                                "[field:header.raw_value "
+                                "error:Illegal header value]"));
+}
+
+// When raw_value is unset, the value of a binary header is read from value,
+// and it is base64-decoded too.
+TEST_F(ParseExtAuthzResponseTest, BinaryHeaderFromValueField) {
+  CheckResponse response;
+  response.mutable_status()->set_code(GRPC_STATUS_OK);
+  *response.mutable_ok_response()->add_headers() =
+      CreateHeaderValueOption(kCustomBinKey, kCustomBinValBase64);
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(
+      parsed->response,
+      IsOkResponse(
+          IsHeaderMutation(
+              ::testing::ElementsAre(IsHeaderValueOption(
+                  kCustomBinKey, kCustomBinVal,
+                  XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd)),
+              ::testing::IsEmpty()),
+          ::testing::IsEmpty()));
+}
+
+TEST_F(ParseExtAuthzResponseTest, BinaryHeaderInvalidBase64Fails) {
+  CheckResponse response;
+  response.mutable_status()->set_code(GRPC_STATUS_OK);
+  *response.mutable_ok_response()->add_headers() =
+      CreateRawHeaderValueOption(kCustomBinKey, "not base64!");
+  auto parsed = ParseResponse(response);
+  EXPECT_EQ(parsed.status(),
+            absl::InternalError("Failed to parse XdsHeaderValueOption: "
+                                "[field:header.raw_value "
+                                "error:invalid base64]"));
+}
+
+// Header keys must be valid gRPC header names (gRFC A102).
+TEST_F(ParseExtAuthzResponseTest, InvalidHeaderKeysFail) {
+  struct TestCase {
+    std::string key;
+    std::string expected_error;
+  };
+  for (const TestCase& test_case : {
+           TestCase{"", "Metadata keys cannot be zero length"},
+           TestCase{"Key1", "Illegal header key"},
+           TestCase{"key 1", "Illegal header key"},
+           TestCase{":authority", "header \":authority\" not allowed"},
+           TestCase{"grpc-timeout", "header \"grpc-timeout\" not allowed"},
+           TestCase{std::string(16385, 'a'), "longer than 16384 bytes"},
+       }) {
+    CheckResponse response;
+    response.mutable_status()->set_code(GRPC_STATUS_OK);
+    *response.mutable_ok_response()->add_headers() =
+        CreateHeaderValueOption(test_case.key, kVal1);
+    auto parsed = ParseResponse(response);
+    EXPECT_EQ(parsed.status(),
+              absl::InternalError(absl::StrCat(
+                  "Failed to parse XdsHeaderValueOption: [field:header.key "
+                  "error:",
+                  test_case.expected_error, "]")))
+        << test_case.key.substr(0, 20);
+  }
+}
+
+// Non-binary header values must be valid gRPC header values and no longer
+// than 16384 bytes (gRFC A102).
+TEST_F(ParseExtAuthzResponseTest, InvalidHeaderValuesFail) {
+  struct TestCase {
+    std::string value;
+    std::string expected_error;
+  };
+  for (const TestCase& test_case : {
+           TestCase{"\x01", "Illegal header value"},
+           TestCase{"a\nb", "Illegal header value"},
+           TestCase{std::string(16385, 'a'), "longer than 16384 bytes"},
+       }) {
+    CheckResponse response;
+    response.mutable_status()->set_code(GRPC_STATUS_OK);
+    *response.mutable_ok_response()->add_headers() =
+        CreateRawHeaderValueOption(kKey1, test_case.value);
+    auto parsed = ParseResponse(response);
+    EXPECT_EQ(parsed.status(),
+              absl::InternalError(absl::StrCat(
+                  "Failed to parse XdsHeaderValueOption: "
+                  "[field:header.raw_value error:",
+                  test_case.expected_error, "]")))
+        << test_case.value.substr(0, 20);
+  }
+}
+
+// headers_to_remove entries must be valid gRPC header names.
+TEST_F(ParseExtAuthzResponseTest, InvalidHeaderNamesToRemoveFail) {
+  for (absl::string_view key : {"", "Key1", ":path"}) {
+    CheckResponse response;
+    response.mutable_status()->set_code(GRPC_STATUS_OK);
+    response.mutable_ok_response()->add_headers_to_remove(std::string(key));
+    auto parsed = ParseResponse(response);
+    EXPECT_EQ(parsed.status(),
+              absl::InvalidArgumentError(
+                  absl::StrCat("Invalid header name to remove: ", key)))
+        << key;
+  }
+}
+
+// Removals of valid header names that gRPC never allows to be mutated, such
+// as "host" and grpc-* headers, are not rejected by the parser; the filter
+// handles them according to the header mutation rules.
+TEST_F(ParseExtAuthzResponseTest, ProtectedHeaderNamesToRemoveAreParsed) {
+  CheckResponse response;
+  response.mutable_status()->set_code(GRPC_STATUS_OK);
+  response.mutable_ok_response()->add_headers_to_remove("host");
+  response.mutable_ok_response()->add_headers_to_remove("grpc-timeout");
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->response,
+              IsOkResponse(IsHeaderMutation(::testing::IsEmpty(),
+                                            ::testing::ElementsAre(
+                                                "host", "grpc-timeout")),
+                           ::testing::IsEmpty()));
+}
+
+// gRFC A92 does not use error_response, so with an OK status it is ignored
+// and the RPC is allowed with no mutations.
+TEST_F(ParseExtAuthzResponseTest, ErrorResponseIgnoredWithOkStatus) {
+  CheckResponse response;
+  response.mutable_status()->set_code(GRPC_STATUS_OK);
+  auto* error_response = response.mutable_error_response();
+  error_response->mutable_status()->set_code(envoy::type::v3::Unauthorized);
+  *error_response->add_headers() =
+      CreateHeaderValueOption(kDenyReasonHeaderKey, kDenyReasonHeaderVal);
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->status_code, ::testing::Eq(GRPC_STATUS_OK));
+  EXPECT_THAT(
+      parsed->response,
+      IsOkResponse(IsHeaderMutation(::testing::IsEmpty(), ::testing::IsEmpty()),
+                   ::testing::IsEmpty()));
+}
+
+// gRFC A92 does not use error_response, so with a non-OK status it is
+// ignored and the RPC is denied with the default status and no headers.
+TEST_F(ParseExtAuthzResponseTest, ErrorResponseIgnoredWithNonOkStatus) {
+  CheckResponse response;
+  response.mutable_status()->set_code(GRPC_STATUS_UNAVAILABLE);
+  auto* error_response = response.mutable_error_response();
+  error_response->mutable_status()->set_code(envoy::type::v3::Unauthorized);
+  *error_response->add_headers() =
+      CreateHeaderValueOption(kDenyReasonHeaderKey, kDenyReasonHeaderVal);
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->status_code, ::testing::Eq(GRPC_STATUS_UNAVAILABLE));
   EXPECT_THAT(parsed->response,
               IsDeniedResponse(::testing::Eq(GRPC_STATUS_PERMISSION_DENIED),
                                ::testing::IsEmpty()));
