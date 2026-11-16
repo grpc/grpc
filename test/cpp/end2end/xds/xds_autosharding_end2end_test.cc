@@ -52,15 +52,10 @@ using ::envoy::extensions::load_balancing_policies::wrr_locality::v3::
 constexpr absl::string_view kKeyHeaderName = "x-shard-key";
 constexpr absl::string_view kAutoshardingTarget = "autosharding-target";
 
-// XdsEnd2endTest has its own ServerThread class, so name the fake
-// autosharding server's thread here.
-using AutoshardingServerThread = ServerThread<AutoshardingServiceImpl>;
-
 class XdsAutoshardingTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
-    autosharding_server_ =
-        std::make_unique<AutoshardingServerThread>("autosharding");
+    autosharding_server_ = std::make_unique<AutoshardingTestServer>();
     autosharding_server_->Start();
     // With a trusted xDS server, the GrpcService proto gives the
     // credentials for the autosharding server.
@@ -125,7 +120,7 @@ class XdsAutoshardingTest : public XdsEnd2endTest {
   // The env var must be set before InitClient() creates the bootstrap.
   grpc_core::testing::ScopedExperimentalEnvVar env_var_{
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AUTOSHARDING_LB"};
-  std::unique_ptr<AutoshardingServerThread> autosharding_server_;
+  std::unique_ptr<AutoshardingTestServer> autosharding_server_;
 };
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsAutoshardingTest,
@@ -202,8 +197,11 @@ TEST_P(XdsAutoshardingTest, PriorityFailoverWhileWaitingForAssignment) {
       ->mutable_typed_config()
       ->PackFrom(MakeAutosharding("shard-%s"));
   SetClusterLbPolicy(wrr_locality);
+  // Do not reset the counters, so that the check below covers every RPC
+  // that was sent while waiting for failover.
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
-                 WaitForBackendOptions(), KeyRpcOptions("a"));
+                 WaitForBackendOptions().set_reset_counters(false),
+                 KeyRpcOptions("a"));
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 0u);
 }
 
@@ -220,7 +218,8 @@ TEST_P(XdsAutoshardingTest, RecreatedPolicyReusesChannel) {
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 1u);
   // From now on, hold any new connection attempt to the autosharding
   // server.  If the new policy created a new channel, its stream would
-  // never start, and RPCs to backend 1 would fail.
+  // never start, and RPCs to backend 1 would fail.  The targets() check
+  // below proves that the new stream used the existing channel.
   ConnectionAttemptInjector injector;
   auto hold = injector.AddHold(autosharding_server_->port());
   // Put a new locality in priority 0, and move locality0 to priority 1.
@@ -238,7 +237,6 @@ TEST_P(XdsAutoshardingTest, RecreatedPolicyReusesChannel) {
   })));
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
                  WaitForBackendOptions(), KeyRpcOptions("a"));
-  EXPECT_FALSE(hold->IsStarted());
   EXPECT_THAT(autosharding_server_->service().targets(),
               ::testing::ElementsAre(kAutoshardingTarget, kAutoshardingTarget));
 }

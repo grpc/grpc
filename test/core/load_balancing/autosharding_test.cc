@@ -155,6 +155,12 @@ class AutoShardingTest : public LoadBalancingPolicyTest {
   static constexpr absl::string_view kKeyHeaderName = "x-slice-key";
   static constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"};
+  // Must match kInitialConnectDelay in
+  // src/core/load_balancing/autosharding/autosharding.cc.
+  static constexpr Duration kInitialConnectDelay = Duration::Milliseconds(500);
+  // The initial assignment timeout that ConfigBuilder sets by default.
+  static constexpr Duration kDefaultInitialAssignmentTimeout =
+      Duration::Seconds(1);
 
   class ConfigBuilder {
    public:
@@ -163,7 +169,7 @@ class AutoShardingTest : public LoadBalancingPolicyTest {
       SetAutoshardingTarget("my_autosharding_target");
       SetKeyHeaderName(std::string(kKeyHeaderName));
       SetEnableFallback(false);
-      SetInitialAssignmentTimeout(Duration::Seconds(1));
+      SetInitialAssignmentTimeout(kDefaultInitialAssignmentTimeout);
     }
 
     ConfigBuilder& SetChannelFactoryKey(std::string channel_factory_key) {
@@ -266,6 +272,45 @@ class AutoShardingTest : public LoadBalancingPolicyTest {
     return index;
   }
 
+  // Creates a subchannel for each address in addresses, so that the test can
+  // check for connection requests before the policy uses the subchannels.
+  std::vector<SubchannelState*> CreateSubchannels(
+      absl::Span<const absl::string_view> addresses,
+      const ChannelArgs& args = ChannelArgs()) {
+    std::vector<SubchannelState*> subchannels;
+    subchannels.reserve(addresses.size());
+    for (absl::string_view address : addresses) {
+      subchannels.push_back(CreateSubchannel(address, args));
+    }
+    return subchannels;
+  }
+
+  // Expects that no subchannel in subchannels has a connection request.
+  static void ExpectNoConnectionRequested(
+      absl::Span<SubchannelState* const> subchannels,
+      SourceLocation location = SourceLocation()) {
+    for (size_t i = 0; i < subchannels.size(); ++i) {
+      EXPECT_FALSE(subchannels[i]->ConnectionRequested())
+          << "index " << i << " at " << location.file() << ":"
+          << location.line();
+    }
+  }
+
+  // Applies an update with kAddresses and the default config, and sends an
+  // assignment that routes keys before "m" to kAddresses[0] and the rest to
+  // kAddresses[1].  The caller checks the state that the policy reports for
+  // the assignment.
+  void ApplyUpdateAndAssignBothEndpoints() {
+    EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(),
+                                      MakeChannelArgs()),
+                          lb_policy()),
+              absl::OkStatus());
+    ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+                                MakeMetadata("some_key"));
+    SendAssignment({{"m", {0}}, {"", {1}}},
+                   {EndpointName(kAddresses[0]), EndpointName(kAddresses[1])});
+  }
+
   // Replaces the LB policy with a new one that reports to a new helper.
   void RecreateLbPolicy() {
     ExecCtx exec_ctx;
@@ -356,15 +401,17 @@ TEST_F(AutoShardingTest, ReportsConnectingUntilFirstResult) {
             absl::OkStatus());
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                               MakeMetadata("some_key"));
-  // The state does not change while the policy waits for the result, and no
-  // subchannel is created, even for a request to exit IDLE.
-  IncrementTimeBy(Duration::Milliseconds(500));
-  ExitIdle();
+  // The state does not change while the policy waits for the result, even
+  // after the initial connect delay, and no subchannel is created.  The
+  // ExitIdleBeforeFirstResultConnectsWhenResultArrives test covers a request
+  // to exit IDLE in this phase.
+  IncrementTimeBy(kInitialConnectDelay);
   ExpectQueueEmpty();
   for (absl::string_view address : kAddresses) {
     EXPECT_EQ(FindSubchannel(address), nullptr);
   }
-  // The first result ends the wait.
+  // The first result ends the wait, and a pick connects to the assigned
+  // endpoint.
   SendAssignment({{"", {0}}}, {EndpointName(kAddresses[0])});
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                               MakeMetadata("a"));
@@ -374,10 +421,7 @@ TEST_F(AutoShardingTest, ReportsConnectingUntilFirstResult) {
 }
 
 TEST_F(AutoShardingTest, SliceUsesFallbackPoolWhenAllEndpointsFail) {
-  std::array<SubchannelState*, 2> subchannels;
-  for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i]);
-  }
+  std::vector<SubchannelState*> subchannels = CreateSubchannels(kAddresses);
   EXPECT_EQ(
       ApplyUpdate(BuildUpdate(kAddresses,
                               ConfigBuilder().SetEnableFallback(true).Build(),
@@ -509,7 +553,7 @@ TEST_F(AutoShardingTest, FallbackDisabledQueuesPicksUntilAssignmentTimeout) {
                               MakeMetadata("some_key"));
   // When the initial assignment timer fires without an assignment, picks
   // fail, because fallback is disabled.
-  IncrementTimeBy(Duration::Seconds(2));
+  IncrementTimeBy(kDefaultInitialAssignmentTimeout * 2);
   const absl::Status kTimeout = absl::UnavailableError(
       "timed out waiting for initial assignment from autosharding server");
   auto picker = ExpectState(GRPC_CHANNEL_TRANSIENT_FAILURE, kTimeout);
@@ -540,6 +584,13 @@ TEST_F(AutoShardingTest, StreamFailureFailsPicksWhenFallbackDisabled) {
       picker.get(),
       [kError](const absl::Status& status) { EXPECT_EQ(status, kError); },
       /*call_attributes=*/{}, MakeMetadata("some_key"));
+  // The policy has no usable result, so it does not start the initial
+  // connect timer, and it does not connect after the initial connect delay.
+  // Stay below the 1s initial backoff of the stream retry.
+  IncrementTimeBy(kInitialConnectDelay + Duration::Milliseconds(1));
+  for (absl::string_view address : kAddresses) {
+    EXPECT_EQ(FindSubchannel(address), nullptr);
+  }
 }
 
 TEST_F(AutoShardingTest, ResolutionNotePropagatedOnFallbackDisabled) {
@@ -549,7 +600,7 @@ TEST_F(AutoShardingTest, ResolutionNotePropagatedOnFallbackDisabled) {
   EXPECT_EQ(ApplyUpdate(std::move(update), lb_policy()), absl::OkStatus());
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                               MakeMetadata("some_key"));
-  IncrementTimeBy(Duration::Seconds(2));
+  IncrementTimeBy(kDefaultInitialAssignmentTimeout * 2);
   const absl::Status kTimeout = absl::UnavailableError(
       "timed out waiting for initial assignment from autosharding server "
       "(DNS resolution note)");
@@ -830,7 +881,15 @@ TEST_F(AutoShardingTest,
   auto stream2 = WaitForStream();
   ASSERT_NE(stream2, nullptr);
   EXPECT_NE(stream2, stream);
+  // The bad resolver state ended the initial connection behavior, so the
+  // policy reports IDLE (not CONNECTING), and it does not connect after the
+  // initial connect delay.  Stay below the initial assignment timeout of the
+  // new client.
   picker = ExpectState(GRPC_CHANNEL_IDLE);
+  IncrementTimeBy(kInitialConnectDelay + Duration::Milliseconds(1));
+  for (absl::string_view address : kAddresses) {
+    EXPECT_EQ(FindSubchannel(address), nullptr);
+  }
   ExpectPickFail(
       picker.get(),
       [](const absl::Status& status) {
@@ -920,7 +979,7 @@ TEST_F(AutoShardingTest, InitialAssignmentTimeoutUsesFallbackWhenEnabled) {
     EXPECT_EQ(FindSubchannel(address), nullptr);
   }
   // When the initial assignment timer fires, picks use the fallback pool.
-  IncrementTimeBy(Duration::Seconds(2));
+  IncrementTimeBy(kDefaultInitialAssignmentTimeout * 2);
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                               MakeMetadata("some_key"));
   SubchannelState* subchannel = nullptr;
@@ -1010,7 +1069,8 @@ TEST_F(AutoShardingTest, EndpointReorderAndRemovalRebuildSliceMap) {
       {}, MakeMetadata("a"));
 }
 
-TEST_F(AutoShardingTest, SynchronousChildStateUpdateDuringResolverUpdate) {
+TEST_F(AutoShardingTest,
+       SynchronousChildStateUpdateDuringResolverUpdateReportsStateOnce) {
   ChannelArgs args = MakeChannelArgs();
   constexpr absl::string_view kNewAddress = "ipv4:127.0.0.1:443";
   // host-b is first in the address list.  host-a is second.
@@ -1063,7 +1123,6 @@ TEST_F(AutoShardingTest, SynchronousChildStateUpdateDuringResolverUpdate) {
   SubchannelState* subchannel_b = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel_b, nullptr);
   EXPECT_TRUE(subchannel_b->ConnectionRequested());
-  ExpectQueueEmpty();
 }
 
 TEST_F(AutoShardingTest, OldPickerDoesNotConnectToRemovedEndpoint) {
@@ -1245,7 +1304,14 @@ TEST_F(AutoShardingTest, EmptyEndpointListKeepsClientAndAssignment) {
             absl::OkStatus());
   EXPECT_EQ(factory_->num_create_channels(), 1);
   EXPECT_EQ(WaitForStream(), stream);
+  // The bad resolver state ended the initial connection behavior, so the
+  // policy reports IDLE (not CONNECTING), and it does not connect after the
+  // initial connect delay.
   picker = ExpectState(GRPC_CHANNEL_IDLE);
+  IncrementTimeBy(kInitialConnectDelay + Duration::Milliseconds(1));
+  for (absl::string_view address : kAddresses) {
+    EXPECT_EQ(FindSubchannel(address), nullptr);
+  }
   ExpectPickFail(
       picker.get(),
       [](const absl::Status& status) {
@@ -1599,11 +1665,14 @@ TEST_F(AutoShardingTest, ProactiveConnectionAttemptChoosesRandomIdleEndpoint) {
       kAddresses[0], kAddresses[1], "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   // Each policy routes all keys to kFourAddresses[0].  When that endpoint
   // fails, the policy triggers a connection attempt on one of the other
-  // endpoints.  Run this with many policies, and check that more than one
-  // endpoint is chosen.
-  constexpr int kNumPolicies = 20;
+  // endpoints.  Run this with new policies until more than one endpoint is
+  // chosen.
+  // The policy chooses uniformly among 3 IDLE endpoints, so the chance that
+  // all kMaxTries policies choose the same endpoint is 3 * (1/3)^kMaxTries,
+  // or about 8.6e-10 for 20 tries.
+  constexpr int kMaxTries = 20;
   std::set<absl::string_view> chosen_addresses;
-  for (int i = 0; i < kNumPolicies; ++i) {
+  for (int i = 0; i < kMaxTries; ++i) {
     if (i > 0) RecreateLbPolicy();
     // Use a different channel factory key and subchannel args for each
     // policy, so that each policy has its own stream and subchannels.
@@ -1613,10 +1682,8 @@ TEST_F(AutoShardingTest, ProactiveConnectionAttemptChoosesRandomIdleEndpoint) {
         ChannelArgs().Set("grpc.test.policy_index", i);
     ChannelArgs args =
         child_args.SetObject<experimental::ChannelFactory>(factory_);
-    std::array<SubchannelState*, 4> subchannels;
-    for (size_t j = 0; j < subchannels.size(); ++j) {
-      subchannels[j] = CreateSubchannel(kFourAddresses[j], child_args);
-    }
+    std::vector<SubchannelState*> subchannels =
+        CreateSubchannels(kFourAddresses, child_args);
     EXPECT_EQ(
         ApplyUpdate(BuildUpdate(kFourAddresses,
                                 ConfigBuilder()
@@ -1637,9 +1704,7 @@ TEST_F(AutoShardingTest, ProactiveConnectionAttemptChoosesRandomIdleEndpoint) {
                                 MakeMetadata("a"));
     // While an endpoint is CONNECTING, the policy does not trigger another
     // connection attempt.
-    for (size_t j = 1; j < subchannels.size(); ++j) {
-      EXPECT_FALSE(subchannels[j]->ConnectionRequested()) << "index " << j;
-    }
+    ExpectNoConnectionRequested(absl::MakeConstSpan(subchannels).subspan(1));
     subchannels[0]->SetConnectivityState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
         absl::UnavailableError("connection attempt failed"));
@@ -1655,35 +1720,21 @@ TEST_F(AutoShardingTest, ProactiveConnectionAttemptChoosesRandomIdleEndpoint) {
         },
         {}, MakeMetadata("a"));
     // The policy triggers a connection attempt on exactly one IDLE endpoint.
-    SubchannelState* chosen = nullptr;
-    for (size_t j = 1; j < subchannels.size(); ++j) {
-      if (subchannels[j]->ConnectionRequested()) {
-        ASSERT_EQ(chosen, nullptr) << "index " << j;
-        chosen = subchannels[j];
-        chosen_addresses.insert(kFourAddresses[j]);
-      }
-    }
-    ASSERT_NE(chosen, nullptr);
-    chosen->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+    std::optional<size_t> chosen =
+        OnlyConnectionRequested(absl::MakeConstSpan(subchannels).subspan(1));
+    ASSERT_TRUE(chosen.has_value());
+    const size_t chosen_index = *chosen + 1;
+    chosen_addresses.insert(kFourAddresses[chosen_index]);
+    subchannels[chosen_index]->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
     ExpectState(GRPC_CHANNEL_CONNECTING);
+    if (chosen_addresses.size() > 1) break;
   }
   EXPECT_GT(chosen_addresses.size(), 1u);
 }
 
 TEST_F(AutoShardingTest, ExitIdleInIdleTriggersOneConnectionAttempt) {
-  ChannelArgs args = MakeChannelArgs();
-  std::array<SubchannelState*, 2> subchannels;
-  for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i]);
-  }
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
-                        lb_policy()),
-            absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                              MakeMetadata("some_key"));
-  // Keys before "m" go to kAddresses[0], and the rest go to kAddresses[1].
-  SendAssignment({{"m", {0}}, {"", {1}}},
-                 {EndpointName(kAddresses[0]), EndpointName(kAddresses[1])});
+  std::vector<SubchannelState*> subchannels = CreateSubchannels(kAddresses);
+  ApplyUpdateAndAssignBothEndpoints();
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                               MakeMetadata("a"));
   EXPECT_TRUE(subchannels[0]->ConnectionRequested());
@@ -1699,9 +1750,7 @@ TEST_F(AutoShardingTest, ExitIdleInIdleTriggersOneConnectionAttempt) {
   subchannels[0]->SetConnectivityState(GRPC_CHANNEL_IDLE);
   ExpectReresolutionRequest();
   ExpectState(GRPC_CHANNEL_IDLE);
-  for (SubchannelState* subchannel : subchannels) {
-    EXPECT_FALSE(subchannel->ConnectionRequested());
-  }
+  ExpectNoConnectionRequested(subchannels);
   // In IDLE, a request to exit IDLE triggers a connection attempt on exactly
   // one endpoint.
   ExitIdle();
@@ -1712,19 +1761,8 @@ TEST_F(AutoShardingTest, ExitIdleInIdleTriggersOneConnectionAttempt) {
 }
 
 TEST_F(AutoShardingTest, ExitIdleInConnectingOrReadyDoesNothing) {
-  ChannelArgs args = MakeChannelArgs();
-  std::array<SubchannelState*, 2> subchannels;
-  for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i]);
-  }
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
-                        lb_policy()),
-            absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                              MakeMetadata("some_key"));
-  // Keys before "m" go to kAddresses[0], and the rest go to kAddresses[1].
-  SendAssignment({{"m", {0}}, {"", {1}}},
-                 {EndpointName(kAddresses[0]), EndpointName(kAddresses[1])});
+  std::vector<SubchannelState*> subchannels = CreateSubchannels(kAddresses);
+  ApplyUpdateAndAssignBothEndpoints();
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                               MakeMetadata("a"));
   EXPECT_TRUE(subchannels[0]->ConnectionRequested());
@@ -1742,57 +1780,36 @@ TEST_F(AutoShardingTest, ExitIdleInConnectingOrReadyDoesNothing) {
   // is IDLE.
   ExitIdle();
   EXPECT_FALSE(subchannels[1]->ConnectionRequested());
-  ExpectQueueEmpty();
 }
 
 TEST_F(AutoShardingTest, InitialConnectTimerConnectsWithoutPicks) {
-  ChannelArgs args = MakeChannelArgs();
-  std::array<SubchannelState*, 2> subchannels;
-  for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i]);
-  }
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
-                        lb_policy()),
-            absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                              MakeMetadata("some_key"));
-  SendAssignment({{"m", {0}}, {"", {1}}},
-                 {EndpointName(kAddresses[0]), EndpointName(kAddresses[1])});
+  std::vector<SubchannelState*> subchannels = CreateSubchannels(kAddresses);
+  ApplyUpdateAndAssignBothEndpoints();
   // All endpoints are IDLE, but no endpoint has left IDLE yet, so the policy
   // reports CONNECTING.  A pick would trigger a connection attempt, so this
   // test does not pick.
   ExpectState(GRPC_CHANNEL_CONNECTING);
-  IncrementTimeBy(Duration::Milliseconds(499));
-  for (SubchannelState* subchannel : subchannels) {
-    EXPECT_FALSE(subchannel->ConnectionRequested());
-  }
-  // 500ms after the assignment, the timer triggers one connection attempt.
+  IncrementTimeBy(kInitialConnectDelay - Duration::Milliseconds(1));
+  ExpectNoConnectionRequested(subchannels);
+  // kInitialConnectDelay after the assignment, the timer triggers one
+  // connection attempt.
   IncrementTimeBy(Duration::Milliseconds(1));
   std::optional<size_t> chosen = OnlyConnectionRequested(subchannels);
   ASSERT_TRUE(chosen.has_value());
   subchannels[*chosen]->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   ExpectState(GRPC_CHANNEL_CONNECTING);
   // The endpoint left IDLE, so the timer is cancelled.
-  IncrementTimeBy(Duration::Seconds(1));
+  IncrementTimeBy(kInitialConnectDelay * 2);
   EXPECT_FALSE(subchannels[1 - *chosen]->ConnectionRequested());
-  ExpectQueueEmpty();
 }
 
-TEST_F(AutoShardingTest, InitialConnectTimerRestartsWhenEndpointIsRemoved) {
+TEST_F(AutoShardingTest,
+       InitialConnectTimerRetriesWhenChosenEndpointIsRemoved) {
   ChannelArgs args = MakeChannelArgs();
-  std::array<SubchannelState*, 2> subchannels;
-  for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i]);
-  }
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
-                        lb_policy()),
-            absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                              MakeMetadata("some_key"));
-  SendAssignment({{"m", {0}}, {"", {1}}},
-                 {EndpointName(kAddresses[0]), EndpointName(kAddresses[1])});
+  std::vector<SubchannelState*> subchannels = CreateSubchannels(kAddresses);
+  ApplyUpdateAndAssignBothEndpoints();
   ExpectState(GRPC_CHANNEL_CONNECTING);
-  IncrementTimeBy(Duration::Milliseconds(500));
+  IncrementTimeBy(kInitialConnectDelay);
   std::optional<size_t> chosen = OnlyConnectionRequested(subchannels);
   ASSERT_TRUE(chosen.has_value());
   const size_t other = 1 - *chosen;
@@ -1803,9 +1820,9 @@ TEST_F(AutoShardingTest, InitialConnectTimerRestartsWhenEndpointIsRemoved) {
                   lb_policy()),
       absl::OkStatus());
   ExpectState(GRPC_CHANNEL_CONNECTING);
-  // The timer restarted when it fired, so 500ms later it tries the other
-  // endpoint.
-  IncrementTimeBy(Duration::Milliseconds(499));
+  // The timer restarted when it fired, so kInitialConnectDelay later it tries
+  // the other endpoint.
+  IncrementTimeBy(kInitialConnectDelay - Duration::Milliseconds(1));
   EXPECT_FALSE(subchannels[other]->ConnectionRequested());
   IncrementTimeBy(Duration::Milliseconds(1));
   EXPECT_TRUE(subchannels[other]->ConnectionRequested());
@@ -1814,19 +1831,8 @@ TEST_F(AutoShardingTest, InitialConnectTimerRestartsWhenEndpointIsRemoved) {
 }
 
 TEST_F(AutoShardingTest, PickConnectionClearsInitialConnect) {
-  ChannelArgs args = MakeChannelArgs();
-  std::array<SubchannelState*, 2> subchannels;
-  for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i]);
-  }
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
-                        lb_policy()),
-            absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                              MakeMetadata("some_key"));
-  // Keys before "m" go to kAddresses[0], and the rest go to kAddresses[1].
-  SendAssignment({{"m", {0}}, {"", {1}}},
-                 {EndpointName(kAddresses[0]), EndpointName(kAddresses[1])});
+  std::vector<SubchannelState*> subchannels = CreateSubchannels(kAddresses);
+  ApplyUpdateAndAssignBothEndpoints();
   // A pick triggers the first connection attempt.
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                               MakeMetadata("a"));
@@ -1835,17 +1841,13 @@ TEST_F(AutoShardingTest, PickConnectionClearsInitialConnect) {
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                               MakeMetadata("a"));
   // The endpoint left IDLE, so the timer does not trigger an attempt.
-  IncrementTimeBy(Duration::Seconds(1));
+  IncrementTimeBy(kInitialConnectDelay * 2);
   EXPECT_FALSE(subchannels[1]->ConnectionRequested());
-  ExpectQueueEmpty();
 }
 
 TEST_F(AutoShardingTest, ExitIdleBeforeFirstResultConnectsWhenResultArrives) {
   ChannelArgs args = MakeChannelArgs();
-  std::array<SubchannelState*, 2> subchannels;
-  for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i]);
-  }
+  std::vector<SubchannelState*> subchannels = CreateSubchannels(kAddresses);
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
                         lb_policy()),
             absl::OkStatus());
@@ -1853,9 +1855,7 @@ TEST_F(AutoShardingTest, ExitIdleBeforeFirstResultConnectsWhenResultArrives) {
                               MakeMetadata("some_key"));
   ExitIdle();
   ExpectQueueEmpty();
-  for (SubchannelState* subchannel : subchannels) {
-    EXPECT_FALSE(subchannel->ConnectionRequested());
-  }
+  ExpectNoConnectionRequested(subchannels);
   // When the first result arrives, the policy connects at once, without
   // waiting for the timer.
   SendAssignment({{"m", {0}}, {"", {1}}},
@@ -1867,22 +1867,15 @@ TEST_F(AutoShardingTest, ExitIdleBeforeFirstResultConnectsWhenResultArrives) {
   ExpectState(GRPC_CHANNEL_CONNECTING);
 }
 
-TEST_F(AutoShardingTest, ExitIdleWhileInitialConnectTimerRunsConnectsAtOnce) {
+TEST_F(AutoShardingTest,
+       ExitIdleDuringInitialConnectConnectsAtOnceAndKeepsTimer) {
   ChannelArgs args = MakeChannelArgs();
-  std::array<SubchannelState*, 2> subchannels;
-  for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i]);
-  }
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
-                        lb_policy()),
-            absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                              MakeMetadata("some_key"));
-  SendAssignment({{"m", {0}}, {"", {1}}},
-                 {EndpointName(kAddresses[0]), EndpointName(kAddresses[1])});
+  std::vector<SubchannelState*> subchannels = CreateSubchannels(kAddresses);
+  ApplyUpdateAndAssignBothEndpoints();
   ExpectState(GRPC_CHANNEL_CONNECTING);
   // While the timer runs, a request to exit IDLE connects at once.
-  IncrementTimeBy(Duration::Milliseconds(300));
+  const Duration kExitIdleTime = Duration::Milliseconds(300);
+  IncrementTimeBy(kExitIdleTime);
   ExitIdle();
   std::optional<size_t> chosen = OnlyConnectionRequested(subchannels);
   ASSERT_TRUE(chosen.has_value());
@@ -1894,9 +1887,10 @@ TEST_F(AutoShardingTest, ExitIdleWhileInitialConnectTimerRunsConnectsAtOnce) {
                   lb_policy()),
       absl::OkStatus());
   ExpectState(GRPC_CHANNEL_CONNECTING);
-  // The request left the timer running (gRFC A119), so it fires 500ms after
-  // the assignment and tries the other endpoint.
-  IncrementTimeBy(Duration::Milliseconds(199));
+  // The request left the timer running (gRFC A119), so it fires
+  // kInitialConnectDelay after the assignment and tries the other endpoint.
+  IncrementTimeBy(kInitialConnectDelay - kExitIdleTime -
+                  Duration::Milliseconds(1));
   EXPECT_FALSE(subchannels[other]->ConnectionRequested());
   IncrementTimeBy(Duration::Milliseconds(1));
   EXPECT_TRUE(subchannels[other]->ConnectionRequested());
@@ -1904,21 +1898,13 @@ TEST_F(AutoShardingTest, ExitIdleWhileInitialConnectTimerRunsConnectsAtOnce) {
   ExpectState(GRPC_CHANNEL_CONNECTING);
 }
 
-TEST_F(AutoShardingTest, ShutdownWhileInitialConnectTimerPending) {
-  ChannelArgs args = MakeChannelArgs();
-  std::array<SubchannelState*, 2> subchannels;
-  for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i]);
-  }
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
-                        lb_policy()),
-            absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                              MakeMetadata("some_key"));
-  SendAssignment({{"m", {0}}, {"", {1}}},
-                 {EndpointName(kAddresses[0]), EndpointName(kAddresses[1])});
+TEST_F(AutoShardingTest, ShutdownCancelsInitialConnectTimer) {
+  std::vector<SubchannelState*> subchannels = CreateSubchannels(kAddresses);
+  ApplyUpdateAndAssignBothEndpoints();
   ExpectState(GRPC_CHANNEL_CONNECTING);
-  // Shut down the policy while the initial connect timer is pending.
+  // Shut down the policy while the initial connect timer is pending.  The
+  // main value of this test is that ASAN catches a timer callback that runs
+  // after the policy is destroyed.
   {
     ExecCtx exec_ctx;
     DrainPendingWork();
@@ -1926,128 +1912,14 @@ TEST_F(AutoShardingTest, ShutdownWhileInitialConnectTimerPending) {
     lb_policy_.reset();
   }
   // The timer was cancelled, so it does not trigger a connection attempt.
-  IncrementTimeBy(Duration::Seconds(1));
-  for (SubchannelState* subchannel : subchannels) {
-    EXPECT_FALSE(subchannel->ConnectionRequested());
-  }
+  IncrementTimeBy(kInitialConnectDelay * 2);
+  ExpectNoConnectionRequested(subchannels);
 }
 
-TEST_F(AutoShardingTest, EmptyEndpointListClearsInitialConnect) {
-  std::array<SubchannelState*, 2> subchannels;
-  for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i]);
-  }
+TEST_F(AutoShardingTest,
+       StreamFailureWithFallbackEnabledStartsInitialConnectTimer) {
   ChannelArgs args = MakeChannelArgs();
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
-                        lb_policy()),
-            absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                              MakeMetadata("some_key"));
-  SendAssignment({{"m", {0}}, {"", {1}}},
-                 {EndpointName(kAddresses[0]), EndpointName(kAddresses[1])});
-  ExpectState(GRPC_CHANNEL_CONNECTING);
-  // The initial connect timer is running.  An empty address list reports
-  // TRANSIENT_FAILURE, which clears initial_connect_pending and cancels the
-  // timer.
-  const std::vector<absl::string_view> kNoAddresses;
-  const absl::Status kError = absl::UnavailableError("empty address list");
-  EXPECT_EQ(
-      ApplyUpdate(BuildUpdate(kNoAddresses, ConfigBuilder().Build(), args),
-                  lb_policy()),
-      kError);
-  ExpectTransientFailureUpdate(kError);
-  // After the policy recovers, it reports IDLE (not CONNECTING), and the
-  // timer does not trigger a connection attempt.
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
-                        lb_policy()),
-            absl::OkStatus());
-  ExpectState(GRPC_CHANNEL_IDLE);
-  IncrementTimeBy(Duration::Seconds(1));
-  for (SubchannelState* subchannel : subchannels) {
-    EXPECT_FALSE(subchannel->ConnectionRequested());
-  }
-  ExpectQueueEmpty();
-}
-
-TEST_F(AutoShardingTest, NoChannelFactoryClearsInitialConnect) {
-  std::array<SubchannelState*, 2> subchannels;
-  for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i]);
-  }
-  ChannelArgs args = MakeChannelArgs();
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
-                        lb_policy()),
-            absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                              MakeMetadata("some_key"));
-  SendAssignment({{"m", {0}}, {"", {1}}},
-                 {EndpointName(kAddresses[0]), EndpointName(kAddresses[1])});
-  ExpectState(GRPC_CHANNEL_CONNECTING);
-  // The initial connect timer is running.  A target change without a channel
-  // factory reports TRANSIENT_FAILURE, which clears initial_connect_pending
-  // and cancels the timer.
-  const absl::Status kError =
-      absl::UnavailableError("no channel factory in channel args");
-  EXPECT_EQ(
-      ApplyUpdate(
-          BuildUpdate(
-              kAddresses,
-              ConfigBuilder().SetAutoshardingTarget("other_target").Build()),
-          lb_policy()),
-      kError);
-  ExpectTransientFailureUpdate(kError);
-  // After the policy recovers with the kept assignment, it reports IDLE (not
-  // CONNECTING), and the timer does not trigger a connection attempt.  The
-  // new client has a long initial assignment timeout, so that its timer does
-  // not fire in this test.
-  EXPECT_EQ(
-      ApplyUpdate(
-          BuildUpdate(kAddresses,
-                      ConfigBuilder()
-                          .SetInitialAssignmentTimeout(Duration::Seconds(10))
-                          .Build(),
-                      args),
-          lb_policy()),
-      absl::OkStatus());
-  ExpectState(GRPC_CHANNEL_IDLE);
-  IncrementTimeBy(Duration::Seconds(1));
-  for (SubchannelState* subchannel : subchannels) {
-    EXPECT_FALSE(subchannel->ConnectionRequested());
-  }
-  ExpectQueueEmpty();
-}
-
-TEST_F(AutoShardingTest, ErrorWithFallbackDisabledDoesNotStartTimer) {
-  ChannelArgs args = MakeChannelArgs();
-  std::array<SubchannelState*, 2> subchannels;
-  for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i]);
-  }
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
-                        lb_policy()),
-            absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                              MakeMetadata("some_key"));
-  auto stream = WaitForStream();
-  ASSERT_NE(stream, nullptr);
-  stream->MaybeSendStatusToClient(absl::UnavailableError("stream failed"));
-  const absl::Status kError = absl::UnavailableError(
-      "stream to autosharding server failed: UNAVAILABLE: stream failed");
-  ExpectTransientFailureUpdate(kError);
-  // The error is not usable, so the policy does not start the timer.
-  IncrementTimeBy(Duration::Milliseconds(500));
-  for (SubchannelState* subchannel : subchannels) {
-    EXPECT_FALSE(subchannel->ConnectionRequested());
-  }
-  ExpectQueueEmpty();
-}
-
-TEST_F(AutoShardingTest, ErrorWithFallbackEnabledStartsTimer) {
-  ChannelArgs args = MakeChannelArgs();
-  std::array<SubchannelState*, 2> subchannels;
-  for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i]);
-  }
+  std::vector<SubchannelState*> subchannels = CreateSubchannels(kAddresses);
   EXPECT_EQ(
       ApplyUpdate(
           BuildUpdate(kAddresses,
@@ -2059,13 +1931,12 @@ TEST_F(AutoShardingTest, ErrorWithFallbackEnabledStartsTimer) {
   auto stream = WaitForStream();
   ASSERT_NE(stream, nullptr);
   stream->MaybeSendStatusToClient(absl::UnavailableError("stream failed"));
-  // With fallback enabled, the error is usable.  No endpoint has left IDLE,
-  // so the policy reports CONNECTING and starts the timer.
+  // With fallback enabled, the stream failure is a usable result.  No
+  // endpoint has left IDLE, so the policy reports CONNECTING and starts the
+  // initial connect timer.
   ExpectState(GRPC_CHANNEL_CONNECTING);
-  IncrementTimeBy(Duration::Milliseconds(499));
-  for (SubchannelState* subchannel : subchannels) {
-    EXPECT_FALSE(subchannel->ConnectionRequested());
-  }
+  IncrementTimeBy(kInitialConnectDelay - Duration::Milliseconds(1));
+  ExpectNoConnectionRequested(subchannels);
   IncrementTimeBy(Duration::Milliseconds(1));
   std::optional<size_t> chosen = OnlyConnectionRequested(subchannels);
   ASSERT_TRUE(chosen.has_value());

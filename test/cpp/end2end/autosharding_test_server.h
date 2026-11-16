@@ -17,32 +17,22 @@
 #ifndef GRPC_TEST_CPP_END2END_AUTOSHARDING_TEST_SERVER_H
 #define GRPC_TEST_CPP_END2END_AUTOSHARDING_TEST_SERVER_H
 
-#include <grpc/support/time.h>
-#include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include <grpcpp/support/status.h>
 #include <grpcpp/support/server_callback.h>
+#include <grpcpp/support/status.h>
 
 #include <cstdint>
 #include <memory>
 #include <set>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "proto/autosharding/v1/autosharding.grpc.pb.h"
 #include "proto/autosharding/v1/autosharding.pb.h"
-#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
-#include "test/core/test_util/port.h"
-#include "test/core/test_util/resolve_localhost_ip46.h"
-#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace testing {
@@ -52,8 +42,8 @@ namespace testing {
 // Each WatchShardingAssignment stream gets the latest assignment when it
 // starts, and every assignment that the test sets after that.
 class AutoshardingServiceImpl
-    : public CountedService<
-          google::cloud::autosharding::v1::AutoshardingService::CallbackService> {
+    : public CountedService<google::cloud::autosharding::v1::
+                                AutoshardingService::CallbackService> {
  public:
   using Request =
       google::cloud::autosharding::v1::WatchShardingAssignmentRequest;
@@ -74,8 +64,8 @@ class AutoshardingServiceImpl
   grpc::ServerBidiReactor<Request, Response>* WatchShardingAssignment(
       grpc::CallbackServerContext* context) override;
 
-  // Called by the server thread before the server starts and before it shuts
-  // down.  Shutdown() ends all open streams.
+  // Called by AutoshardingTestServer before the server starts and before it
+  // shuts down.  Shutdown() ends all open streams.
   void Start();
   void Shutdown();
 
@@ -106,44 +96,25 @@ class AutoshardingServiceImpl
   std::set<Reactor*> reactors_ ABSL_GUARDED_BY(mu_);
 };
 
-// Runs a server with an insecure listening port on the local IP address.
-// ServiceImpl must have Start() and Shutdown() methods.
-template <typename ServiceImpl>
-class ServerThread {
+// Runs the fake AutoshardingServiceImpl on an insecure listening port on
+// the local IP address.  The name differs from XdsEnd2endTest::ServerThread
+// so that xDS tests can use this class.
+class AutoshardingTestServer {
  public:
-  explicit ServerThread(absl::string_view type)
-      : type_(type), port_(grpc_pick_unused_port_or_die()) {}
-
-  ~ServerThread() { Shutdown(); }
+  AutoshardingTestServer();
+  ~AutoshardingTestServer() { Shutdown(); }
 
   // Starts the server.  After Shutdown(), Start() restarts it on the same
   // port.
-  void Start() {
-    LOG(INFO) << "starting " << type_ << " server on port " << port_;
-    service_.Start();
-    ServerBuilder builder;
-    builder.AddListeningPort(grpc_core::LocalIpAndPort(port_),
-                             InsecureServerCredentials());
-    builder.RegisterService(&service_);
-    server_ = builder.BuildAndStart();
-    GRPC_CHECK(server_ != nullptr);
-  }
-
-  void Shutdown() {
-    if (server_ == nullptr) return;
-    LOG(INFO) << "shutting down " << type_ << " server on port " << port_;
-    service_.Shutdown();
-    server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
-    server_.reset();
-  }
+  void Start();
+  void Shutdown();
 
   int port() const { return port_; }
-  ServiceImpl& service() { return service_; }
+  AutoshardingServiceImpl& service() { return service_; }
 
  private:
-  const std::string type_;
   const int port_;
-  ServiceImpl service_;
+  AutoshardingServiceImpl service_;
   std::unique_ptr<Server> server_;
 };
 

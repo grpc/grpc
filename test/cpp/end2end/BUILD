@@ -947,7 +947,6 @@ grpc_cc_test(
     name = "autosharding_end2end_test",
     srcs = ["autosharding_end2end_test.cc"],
     external_deps = [
-        "absl/log",
         "absl/status",
         "absl/strings",
         "absl/strings:str_format",

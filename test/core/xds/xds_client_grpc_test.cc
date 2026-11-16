@@ -134,18 +134,12 @@ TEST(GrpcXdsClient, CreateChannelFactory) {
   auto channel_factory =
       (*xds_client)->CreateChannelFactory(std::move(targets));
   ASSERT_NE(channel_factory, nullptr);
-  auto handle1 = channel_factory->CreateChannel(kKey);
-  ASSERT_NE(handle1, nullptr);
-  EXPECT_FALSE(GetTransport(*handle1)->channel()->IsLame());
-  EXPECT_EQ(GetTransport(*handle1)->channel()->target(), kTargetUri);
-  // While handle1 is alive, the key gets the same transport.
-  auto handle2 = channel_factory->CreateChannel(kKey);
-  ASSERT_NE(handle2, nullptr);
-  EXPECT_EQ(GetTransport(*handle1), GetTransport(*handle2));
-  // An unknown key gets a lame channel.
-  auto handle3 = channel_factory->CreateChannel("unknown");
-  ASSERT_NE(handle3, nullptr);
-  EXPECT_TRUE(GetTransport(*handle3)->channel()->IsLame());
+  // Transport sharing and unknown keys are covered in
+  // xds_transport_grpc_test.  This test checks only the wiring.
+  auto handle = channel_factory->CreateChannel(kKey);
+  ASSERT_NE(handle, nullptr);
+  EXPECT_FALSE(GetTransport(*handle)->channel()->IsLame());
+  EXPECT_EQ(GetTransport(*handle)->channel()->target(), kTargetUri);
 }
 
 }  // namespace

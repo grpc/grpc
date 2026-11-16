@@ -25,6 +25,7 @@
 #include <grpc/grpc.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -88,27 +89,54 @@ using ::xds::type::v3::TypedStruct;
 
 // Uses XdsLbPolicyRegistry to convert
 // envoy::config::cluster::v3::LoadBalancingPolicy to gRPC's JSON form.
-absl::StatusOr<std::string> ConvertXdsPolicy(
-    const LoadBalancingPolicyProto& policy) {
+// - If registry is null, uses the default registry.
+// - If xds_client is non-null, the DecodeContext uses its bootstrap and
+//   its first xDS server.
+// - If grpc_services is non-null, it gets the GrpcServices that the
+//   converters add.
+absl::StatusOr<Json::Array> ConvertXdsPolicyToArray(
+    const LoadBalancingPolicyProto& policy,
+    const XdsLbPolicyRegistry* registry = nullptr,
+    XdsClient* xds_client = nullptr,
+    XdsGrpcServiceMap* grpc_services = nullptr) {
   std::string serialized_policy = policy.SerializeAsString();
   upb::Arena arena;
   upb::DefPool def_pool;
-  XdsResourceType::DecodeContext context = {nullptr, GrpcXdsServer(),
-                                            def_pool.ptr(), arena.ptr()};
+  GrpcXdsServer default_server;
+  const XdsBootstrap::XdsServer& server =
+      xds_client == nullptr ? default_server
+                            : *xds_client->bootstrap().servers().front();
+  XdsResourceType::DecodeContext context = {xds_client, server, def_pool.ptr(),
+                                            arena.ptr()};
   auto* upb_policy = envoy_config_cluster_v3_LoadBalancingPolicy_parse(
       serialized_policy.data(), serialized_policy.size(), arena.ptr());
   ValidationErrors errors;
   ValidationErrors::ScopedField field(&errors, ".load_balancing_policy");
-  auto registry = GrpcXdsBootstrapBuilder::CreateXdsLbPolicyRegistry();
-  XdsGrpcServiceMap grpc_services;
-  auto config = registry.ConvertXdsLbPolicyConfig({context, grpc_services},
-                                                  upb_policy, &errors);
+  std::optional<XdsLbPolicyRegistry> default_registry;
+  if (registry == nullptr) {
+    default_registry.emplace(
+        GrpcXdsBootstrapBuilder::CreateXdsLbPolicyRegistry());
+    registry = &*default_registry;
+  }
+  XdsGrpcServiceMap unused_grpc_services;
+  if (grpc_services == nullptr) grpc_services = &unused_grpc_services;
+  auto config = registry->ConvertXdsLbPolicyConfig({context, *grpc_services},
+                                                   upb_policy, &errors);
   if (!errors.ok()) {
     return errors.status(absl::StatusCode::kInvalidArgument,
                          "validation errors");
   }
-  EXPECT_EQ(config.size(), 1);
-  return JsonDump(Json{config[0]});
+  return config;
+}
+
+// Like ConvertXdsPolicyToArray(), but expects exactly one policy and
+// returns it as a JSON string.
+absl::StatusOr<std::string> ConvertXdsPolicy(
+    const LoadBalancingPolicyProto& policy) {
+  auto config = ConvertXdsPolicyToArray(policy);
+  if (!config.ok()) return config.status();
+  EXPECT_EQ(config->size(), 1);
+  return JsonDump(Json{(*config)[0]});
 }
 
 // A gRPC LB policy factory for a custom policy.  None of the methods
@@ -560,26 +588,12 @@ class AutoshardingTest : public ::testing::Test {
   }
 
   ConvertResult Convert(const LoadBalancingPolicyProto& policy) {
-    std::string serialized_policy = policy.SerializeAsString();
-    upb::Arena arena;
-    upb::DefPool def_pool;
-    XdsResourceType::DecodeContext context = {
-        xds_client_.get(), *xds_client_->bootstrap().servers().front(),
-        def_pool.ptr(), arena.ptr()};
-    auto* upb_policy = envoy_config_cluster_v3_LoadBalancingPolicy_parse(
-        serialized_policy.data(), serialized_policy.size(), arena.ptr());
-    ValidationErrors errors;
-    ValidationErrors::ScopedField field(&errors, ".load_balancing_policy");
-    const auto& registry =
-        DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
-            .lb_policy_registry();
     ConvertResult result;
-    result.config = registry.ConvertXdsLbPolicyConfig(
-        {context, result.grpc_services}, upb_policy, &errors);
-    if (!errors.ok()) {
-      result.config = errors.status(absl::StatusCode::kInvalidArgument,
-                                    "validation errors");
-    }
+    result.config = ConvertXdsPolicyToArray(
+        policy,
+        &DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
+             .lb_policy_registry(),
+        xds_client_.get(), &result.grpc_services);
     return result;
   }
 
@@ -637,7 +651,7 @@ class AutoshardingTest : public ::testing::Test {
   RefCountedPtr<XdsClient> xds_client_;
 };
 
-TEST_F(AutoshardingTest, TrustedXdsServer) {
+TEST_F(AutoshardingTest, TrustedXdsServerUsesResourceGrpcService) {
   ScopedExperimentalEnvVar env_var(kAutoshardingEnvVar);
   CreateXdsClient("", /*trusted_xds_server=*/true);
   auto result = Convert(MakePolicy(MakeAutosharding()));
@@ -739,49 +753,49 @@ TEST_F(AutoshardingTest, UntrustedXdsServerUsesAllowedGrpcService) {
             ExpectedAutoshardingJson(key));
 }
 
+// This tests that we pass along errors that are generated by
+// ParseXdsGrpcService().  An exhaustive list of error cases caught by
+// ParseXdsGrpcService() are covered in xds_common_types_test.
 TEST_F(AutoshardingTest, UntrustedXdsServerAndGrpcServiceNotAllowed) {
   ScopedExperimentalEnvVar env_var(kAutoshardingEnvVar);
   CreateXdsClient("", /*trusted_xds_server=*/false);
   auto result = Convert(MakePolicy(MakeAutosharding()));
-  EXPECT_EQ(result.config.status(),
-            absl::InvalidArgumentError(
-                "validation errors: [field:load_balancing_policy.policies[0]"
-                ".typed_extension_config.typed_config.value["
-                "envoy.extensions.load_balancing_policies.autosharding.v3."
-                "Autosharding].grpc_service.google_grpc.target_uri "
-                "error:service not present in \"allowed_grpc_services\" in "
-                "bootstrap config]"));
+  EXPECT_EQ(result.config.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.config.status().message(),
+            "validation errors: [field:load_balancing_policy.policies[0]"
+            ".typed_extension_config.typed_config.value["
+            "envoy.extensions.load_balancing_policies.autosharding.v3."
+            "Autosharding].grpc_service.google_grpc.target_uri "
+            "error:service not present in \"allowed_grpc_services\" in "
+            "bootstrap config]")
+      << result.config.status();
   EXPECT_THAT(result.grpc_services, ::testing::IsEmpty());
 }
 
 TEST_F(AutoshardingTest, MissingGrpcService) {
   ScopedExperimentalEnvVar env_var(kAutoshardingEnvVar);
   CreateXdsClient("", /*trusted_xds_server=*/true);
-  Autosharding autosharding;
-  autosharding.set_autosharding_target("target");
-  autosharding.set_key_header_name("x-shard-key");
-  LoadBalancingPolicyProto policy;
-  policy.add_policies()
-      ->mutable_typed_extension_config()
-      ->mutable_typed_config()
-      ->PackFrom(autosharding);
-  auto result = Convert(policy);
-  EXPECT_EQ(result.config.status(),
-            absl::InvalidArgumentError(
-                "validation errors: [field:load_balancing_policy.policies[0]"
-                ".typed_extension_config.typed_config.value["
-                "envoy.extensions.load_balancing_policies.autosharding.v3."
-                "Autosharding].grpc_service error:field not set]"));
+  Autosharding autosharding = MakeAutosharding();
+  autosharding.clear_grpc_service();
+  auto result = Convert(MakePolicy(autosharding));
+  EXPECT_EQ(result.config.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.config.status().message(),
+            "validation errors: [field:load_balancing_policy.policies[0]"
+            ".typed_extension_config.typed_config.value["
+            "envoy.extensions.load_balancing_policies.autosharding.v3."
+            "Autosharding].grpc_service error:field not set]")
+      << result.config.status();
   EXPECT_THAT(result.grpc_services, ::testing::IsEmpty());
 }
 
 TEST_F(AutoshardingTest, RejectedWithoutEnvVar) {
   CreateXdsClient("", /*trusted_xds_server=*/true);
   auto result = Convert(MakePolicy(MakeAutosharding()));
-  EXPECT_EQ(result.config.status(),
-            absl::InvalidArgumentError(
-                "validation errors: [field:load_balancing_policy "
-                "error:no supported load balancing policy config found]"));
+  EXPECT_EQ(result.config.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.config.status().message(),
+            "validation errors: [field:load_balancing_policy "
+            "error:no supported load balancing policy config found]")
+      << result.config.status();
   EXPECT_THAT(result.grpc_services, ::testing::IsEmpty());
 }
 
@@ -960,26 +974,16 @@ TEST(XdsLbPolicyRegistryTest, ConverterOutputsGrpcServiceMap) {
       ->mutable_typed_extension_config()
       ->mutable_typed_config()
       ->PackFrom(wrr_locality);
-  std::string serialized_policy = policy.SerializeAsString();
-  upb::Arena arena;
-  upb::DefPool def_pool;
-  XdsResourceType::DecodeContext context = {nullptr, GrpcXdsServer(),
-                                            def_pool.ptr(), arena.ptr()};
-  auto* upb_policy = envoy_config_cluster_v3_LoadBalancingPolicy_parse(
-      serialized_policy.data(), serialized_policy.size(), arena.ptr());
   auto registry = GrpcXdsBootstrapBuilder::CreateXdsLbPolicyRegistry();
   registry.RegisterFactory(
       std::make_unique<FakeGrpcServiceLbPolicyConfigFactory>());
-  ValidationErrors errors;
   XdsGrpcServiceMap grpc_services;
-  auto config = registry.ConvertXdsLbPolicyConfig({context, grpc_services},
-                                                  upb_policy, &errors);
-  ASSERT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
-                                            "validation errors");
-  ASSERT_EQ(config.size(), 1);
-  EXPECT_EQ(JsonDump(Json{config[0]}),
-            "{\"xds_wrr_locality_experimental\":{\"childPolicy\":["
-            "{\"fake_policy\":{\"channelFactoryKey\":\"fake_key\"}}]}}");
+  auto config = ConvertXdsPolicyToArray(policy, &registry,
+                                        /*xds_client=*/nullptr, &grpc_services);
+  ASSERT_TRUE(config.ok()) << config.status();
+  EXPECT_EQ(JsonDump(Json::FromArray(*config)),
+            "[{\"xds_wrr_locality_experimental\":{\"childPolicy\":["
+            "{\"fake_policy\":{\"channelFactoryKey\":\"fake_key\"}}]}}]");
   EXPECT_THAT(grpc_services,
               ::testing::ElementsAre(::testing::Pair(
                   "fake_key", ::testing::Pointee(::testing::Property(

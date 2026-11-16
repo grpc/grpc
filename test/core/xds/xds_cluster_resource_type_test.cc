@@ -855,9 +855,14 @@ TEST_F(LbPolicyTest, LoadBalancingPolicyField) {
             "\"childPolicy\":[{\"round_robin\":{}}]}}]");
 }
 
+constexpr char kAutoshardingEnvVar[] =
+    "GRPC_XDS_EXPERIMENTAL_ENABLE_AUTOSHARDING_LB";
+
+// The conversion of the Autosharding policy to JSON is covered in
+// xds_lb_policy_registry_test.  This test checks that the cluster parser
+// fills lb_policy_grpc_services.
 TEST_F(LbPolicyTest, AutoshardingPolicyFillsGrpcServiceMap) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AUTOSHARDING_LB");
+  ScopedExperimentalEnvVar env_var(kAutoshardingEnvVar);
   // Create the bootstrap after setting the env var, so that its xDS LB
   // policy registry has the Autosharding converter.
   auto xds_client = MakeXdsClient(/*trusted_xds_server=*/true);
@@ -887,59 +892,17 @@ TEST_F(LbPolicyTest, AutoshardingPolicyFillsGrpcServiceMap) {
   auto decode_result =
       resource_type->Decode(decode_context, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   ASSERT_EQ(resource.lb_policy_grpc_services.size(), 1);
   const auto& [key, grpc_service] = *resource.lb_policy_grpc_services.begin();
   EXPECT_EQ(grpc_service->server_uri(), "dns:///autosharding.example.com");
-  EXPECT_EQ(JsonDump(Json::FromArray(resource.lb_policy_config)),
-            JsonDump(Json::FromArray({Json::FromObject(
-                {{"autosharding_experimental",
-                  Json::FromObject({
-                      {"channelFactoryKey", Json::FromString(key)},
-                      {"autoshardingTarget", Json::FromString("target")},
-                      {"keyHeaderName", Json::FromString("x-shard-key")},
-                      {"enableFallback", Json::FromBool(false)},
-                  })}})})));
-}
-
-// The converter leaves field validation to the LB policy config parser,
-// which the cluster parser runs on the generated config.
-TEST_F(LbPolicyTest, AutoshardingPolicyInvalidKeyHeaderName) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AUTOSHARDING_LB");
-  auto xds_client = MakeXdsClient(/*trusted_xds_server=*/true);
-  XdsResourceType::DecodeContext decode_context = {
-      xds_client.get(), *xds_client->bootstrap().servers().front(),
-      upb_def_pool_.ptr(), upb_arena_.ptr()};
-  Autosharding autosharding;
-  auto* google_grpc =
-      autosharding.mutable_grpc_service()->mutable_google_grpc();
-  google_grpc->set_target_uri("dns:///autosharding.example.com");
-  google_grpc->add_channel_credentials_plugin()->PackFrom(
-      InsecureCredentials());
-  autosharding.set_autosharding_target("target");
-  autosharding.set_key_header_name("Bad Key");
-  Cluster cluster;
-  cluster.set_name("foo");
-  cluster.set_type(cluster.EDS);
-  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
-  cluster.mutable_load_balancing_policy()
-      ->add_policies()
-      ->mutable_typed_extension_config()
-      ->mutable_typed_config()
-      ->PackFrom(autosharding);
-  std::string serialized_resource;
-  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(decode_context, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status(),
-            absl::InvalidArgumentError(
-                "errors validating Cluster resource: ["
-                "field:load_balancing_policy error:errors validating "
-                "autosharding LB policy config: ["
-                "field:keyHeaderName error:Illegal header key]]"));
+  // The LB policy config refers to the map entry by its key.
+  EXPECT_THAT(JsonDump(Json::FromArray(resource.lb_policy_config)),
+              ::testing::HasSubstr(absl::StrCat(
+                  "\"channelFactoryKey\":", JsonDump(Json::FromString(key)))));
 }
 
 // This tests that we're passing along errors from XdsLbPolicyRegistry.

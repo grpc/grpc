@@ -78,6 +78,8 @@ TEST(MakeSubchannelArgs, StripsOutNoSubchannelArgs) {
   EXPECT_EQ(args.GetString(GRPC_ARG_NO_SUBCHANNEL_PREFIX "bar"), std::nullopt);
 }
 
+// MakeSubchannelArgs() removes the arg by key, so a string value is enough.
+// A pointer arg would split subchannel pooling and keep the factory alive.
 TEST(MakeSubchannelArgs, StripsOutChannelFactory) {
   ChannelArgs args = Subchannel::MakeSubchannelArgs(
       ChannelArgs().Set(GRPC_ARG_CHANNEL_FACTORY, "foo"),

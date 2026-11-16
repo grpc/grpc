@@ -16,7 +16,17 @@
 
 #include "test/cpp/end2end/autosharding_test_server.h"
 
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server_builder.h>
+
+#include <utility>
+
+#include "src/core/util/grpc_check.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/test_config.h"
 #include "absl/log/log.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace testing {
@@ -34,8 +44,8 @@ class AutoshardingServiceImpl::Reactor final
     service_->IncreaseRequestCount();
     grpc_core::MutexLock lock(service_->mu_);
     if (service_->shutdown_) {
-      MaybeFinishLocked(grpc::Status(grpc::StatusCode::UNAVAILABLE,
-                                     "server shutdown"));
+      MaybeFinishLocked(
+          grpc::Status(grpc::StatusCode::UNAVAILABLE, "server shutdown"));
       return;
     }
     service_->reactors_.insert(this);
@@ -189,6 +199,32 @@ void AutoshardingServiceImpl::SetSilentTarget(std::string target) {
 std::vector<std::string> AutoshardingServiceImpl::targets() {
   grpc_core::MutexLock lock(mu_);
   return targets_;
+}
+
+//
+// AutoshardingTestServer
+//
+
+AutoshardingTestServer::AutoshardingTestServer()
+    : port_(grpc_pick_unused_port_or_die()) {}
+
+void AutoshardingTestServer::Start() {
+  LOG(INFO) << "starting autosharding server on port " << port_;
+  service_.Start();
+  ServerBuilder builder;
+  builder.AddListeningPort(grpc_core::LocalIpAndPort(port_),
+                           InsecureServerCredentials());
+  builder.RegisterService(&service_);
+  server_ = builder.BuildAndStart();
+  GRPC_CHECK(server_ != nullptr);
+}
+
+void AutoshardingTestServer::Shutdown() {
+  if (server_ == nullptr) return;
+  LOG(INFO) << "shutting down autosharding server on port " << port_;
+  service_.Shutdown();
+  server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
+  server_.reset();
 }
 
 }  // namespace testing

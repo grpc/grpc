@@ -403,12 +403,7 @@ absl::Status RunStreamingCall(XdsTransport& transport) {
 
 TEST_F(GrpcXdsTransportTest, WrapperKnownKeyReturnsFactoryTransport) {
   ExecCtx exec_ctx;
-  auto target = std::make_shared<GrpcXdsServerTarget>(
-      server_uri_, channel_creds_config_,
-      /*call_creds_configs=*/
-      std::vector<RefCountedPtr<const CallCredsConfig>>{},
-      /*initial_metadata=*/std::vector<std::pair<std::string, std::string>>{},
-      Duration::Seconds(10));
+  auto target = MakeTarget(server_uri_);
   XdsTransportFactoryWrapper::TargetMap targets;
   targets.emplace("key1", target);
   XdsTransportFactoryWrapper wrapper(factory_, std::move(targets));
@@ -422,12 +417,7 @@ TEST_F(GrpcXdsTransportTest, WrapperKnownKeyReturnsFactoryTransport) {
 
 TEST_F(GrpcXdsTransportTest, WrapperTwoKeysSameTargetShareTransport) {
   ExecCtx exec_ctx;
-  auto target = std::make_shared<GrpcXdsServerTarget>(
-      server_uri_, channel_creds_config_,
-      /*call_creds_configs=*/
-      std::vector<RefCountedPtr<const CallCredsConfig>>{},
-      /*initial_metadata=*/std::vector<std::pair<std::string, std::string>>{},
-      Duration::Seconds(10));
+  auto target = MakeTarget(server_uri_);
   XdsTransportFactoryWrapper::TargetMap targets;
   targets.emplace("key1", target);
   targets.emplace("key2", target);
@@ -449,7 +439,8 @@ TEST_F(GrpcXdsTransportTest, WrapperUnknownKeyReturnsLameTransport) {
   EXPECT_EQ(call_status.message(), "channel key not allowed: unknown");
 }
 
-TEST_F(GrpcXdsTransportTest, WrapperSameKeyWhileHandlesAliveSharesTransport) {
+TEST_F(GrpcXdsTransportTest,
+       WrapperSharesTransportWhileHandlesAliveThenRecreates) {
   ExecCtx exec_ctx;
   XdsTransportFactoryWrapper::TargetMap targets;
   targets.emplace("key1", MakeTarget(server_uri_));
@@ -458,30 +449,22 @@ TEST_F(GrpcXdsTransportTest, WrapperSameKeyWhileHandlesAliveSharesTransport) {
   auto channel2 = wrapper.CreateChannel("key1");
   ASSERT_NE(channel1, nullptr);
   ASSERT_NE(channel2, nullptr);
+  // While the handles are alive, the key gets the same transport.
   EXPECT_EQ(GetXdsTransport(*channel1), GetXdsTransport(*channel2));
-}
-
-TEST_F(GrpcXdsTransportTest, WrapperCreatesNewTransportAfterHandlesReleased) {
-  ExecCtx exec_ctx;
-  XdsTransportFactoryWrapper::TargetMap targets;
-  targets.emplace("key1", MakeTarget(server_uri_));
-  XdsTransportFactoryWrapper wrapper(factory_, std::move(targets));
-  auto channel1 = wrapper.CreateChannel("key1");
-  auto channel2 = wrapper.CreateChannel("key1");
-  ASSERT_NE(channel1, nullptr);
-  ASSERT_NE(channel2, nullptr);
   // Keep the old transport's memory alive, so that a new transport
   // cannot get the same address.
   WeakRefCountedPtr<XdsTransport> old_transport =
       GetXdsTransport(*channel1)->WeakRef();
   channel1.reset();
   channel2.reset();
+  // After all handles are released, the key gets a new transport.
   auto channel3 = wrapper.CreateChannel("key1");
   ASSERT_NE(channel3, nullptr);
   EXPECT_NE(GetXdsTransport(*channel3), old_transport.get());
 }
 
-TEST_F(GrpcXdsTransportTest, WrapperDifferentTargetsUseDifferentTransports) {
+TEST_F(GrpcXdsTransportTest,
+       WrapperTwoKeysDifferentTargetsUseDifferentTransports) {
   ExecCtx exec_ctx;
   XdsTransportFactoryWrapper::TargetMap targets;
   targets.emplace("key1", MakeTarget(server_uri_));

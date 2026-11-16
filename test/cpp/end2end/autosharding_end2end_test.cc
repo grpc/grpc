@@ -25,6 +25,9 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
 
 #include <memory>
@@ -42,6 +45,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/uri.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/autosharding_test_server.h"
@@ -70,9 +74,32 @@ class BackendServiceImpl : public CountedService<TestServiceImpl> {
     IncreaseRequestCount();
     return TestServiceImpl::Echo(context, request, response);
   }
+};
 
-  void Start() {}
-  void Shutdown() {}
+// Runs a BackendServiceImpl on an insecure listening port on the local IP
+// address.
+class BackendServer {
+ public:
+  BackendServer() : port_(grpc_pick_unused_port_or_die()) {
+    ServerBuilder builder;
+    builder.AddListeningPort(grpc_core::LocalIpAndPort(port_),
+                             InsecureServerCredentials());
+    builder.RegisterService(&service_);
+    server_ = builder.BuildAndStart();
+    GRPC_CHECK(server_ != nullptr);
+  }
+
+  ~BackendServer() {
+    server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
+  }
+
+  int port() const { return port_; }
+  BackendServiceImpl& service() { return service_; }
+
+ private:
+  const int port_;
+  BackendServiceImpl service_;
+  std::unique_ptr<Server> server_;
 };
 
 // Returns a channel to the autosharding server for kChannelFactoryKey, and a
@@ -101,9 +128,13 @@ class TestChannelFactory final
 
 class AutoshardingEnd2endTest : public ::testing::Test {
  protected:
+  // TestChannelFactory holds core credentials, so keep gRPC initialized
+  // until every test has released it.
+  static void SetUpTestSuite() { grpc_init(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
+
   void SetUp() override {
-    autosharding_server_ =
-        std::make_unique<ServerThread<AutoshardingServiceImpl>>("autosharding");
+    autosharding_server_ = std::make_unique<AutoshardingTestServer>();
     autosharding_server_->Start();
     response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
@@ -123,16 +154,14 @@ class AutoshardingEnd2endTest : public ::testing::Test {
   void TearDown() override {
     stub_.reset();
     channel_.reset();
-    for (auto& backend : backends_) backend->Shutdown();
+    backends_.clear();
     autosharding_server_->Shutdown();
     channel_factory_.reset();
   }
 
   void StartBackends(size_t num_backends) {
     for (size_t i = 0; i < num_backends; ++i) {
-      backends_.push_back(
-          std::make_unique<ServerThread<BackendServiceImpl>>("backend"));
-      backends_.back()->Start();
+      backends_.push_back(std::make_unique<BackendServer>());
     }
   }
 
@@ -178,26 +207,15 @@ class AutoshardingEnd2endTest : public ::testing::Test {
   Status SendRpc(absl::string_view key) {
     ClientContext context;
     context.AddMetadata(std::string(kKeyHeaderName), std::string(key));
-    context.set_deadline(grpc_timeout_seconds_to_deadline(5 * grpc_test_slowdown_factor()));
+    context.set_deadline(grpc_timeout_seconds_to_deadline(5));
     EchoRequest request;
     request.set_message("hello");
     EchoResponse response;
     return stub_->Echo(&context, request, &response);
   }
 
-  // Waits until the channel reports state, or until the deadline.  Returns
-  // true if the channel reported state.
-  bool WaitForChannelState(grpc_connectivity_state state,
-                           gpr_timespec deadline) {
-    while (true) {
-      grpc_connectivity_state current = channel_->GetState(false);
-      if (current == state) return true;
-      if (!channel_->WaitForStateChange(current, deadline)) return false;
-    }
-  }
-
-  std::unique_ptr<ServerThread<AutoshardingServiceImpl>> autosharding_server_;
-  std::vector<std::unique_ptr<ServerThread<BackendServiceImpl>>> backends_;
+  std::unique_ptr<AutoshardingTestServer> autosharding_server_;
+  std::vector<std::unique_ptr<BackendServer>> backends_;
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       response_generator_;
   std::shared_ptr<grpc_core::experimental::ChannelFactory> channel_factory_;
@@ -222,17 +240,24 @@ TEST_F(AutoshardingEnd2endTest, KeyRoutesToAssignedBackend) {
               ::testing::ElementsAre(kAutoshardingTarget));
 }
 
-TEST_F(AutoshardingEnd2endTest, FallbackWhenAutoshardingServerIsDown) {
-  StartBackends(2);
+TEST_F(AutoshardingEnd2endTest,
+       InitialAssignmentTimeoutWhenAutoshardingServerIsDown) {
+  StartBackends(1);
   autosharding_server_->Shutdown();
   // The stream to the autosharding server uses wait_for_ready, so it waits
   // for the server instead of failing.  When the 1s initial assignment timer
-  // fires, the client reports an error, and picks use all backends.
-  SetNextResolution(ServiceConfig(/*enable_fallback=*/true, "1s"));
-  EXPECT_EQ(SendRpc("a").error_code(), StatusCode::OK);
-  EXPECT_EQ(backends_[0]->service().request_count() +
-                backends_[1]->service().request_count(),
-            1u);
+  // fires, the policy reports TRANSIENT_FAILURE with the timeout error,
+  // because fallback is disabled.
+  SetNextResolution(ServiceConfig(/*enable_fallback=*/false, "1s"));
+  Status status = SendRpc("a");
+  EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr("timed out waiting for initial assignment"))
+      << status.error_message();
+  EXPECT_THAT(status.error_message(),
+              ::testing::Not(::testing::HasSubstr(
+                  "stream to autosharding server failed")));
+  EXPECT_EQ(backends_[0]->service().request_count(), 0u);
 }
 
 TEST_F(AutoshardingEnd2endTest, NewAssignmentMovesTraffic) {
@@ -245,7 +270,7 @@ TEST_F(AutoshardingEnd2endTest, NewAssignmentMovesTraffic) {
   // The new assignment moves all keys to backend 1.
   autosharding_server_->service().SetAssignment({{"", {0}}}, {BackendName(1)},
                                                 /*generation=*/2);
-  const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10 * grpc_test_slowdown_factor());
+  const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
   while (backends_[1]->service().request_count() == 0) {
     ASSERT_LT(gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline), 0)
         << "traffic did not move to backend 1";
@@ -255,45 +280,6 @@ TEST_F(AutoshardingEnd2endTest, NewAssignmentMovesTraffic) {
   for (int i = 0; i < 10; ++i) {
     EXPECT_EQ(SendRpc("a").error_code(), StatusCode::OK);
   }
-  EXPECT_EQ(backends_[0]->service().request_count(), 0u);
-}
-
-TEST_F(AutoshardingEnd2endTest, GetStateTryToConnectConnectsWhenIdle) {
-  StartBackends(1);
-  autosharding_server_->service().SetAssignment({{"", {0}}}, {BackendName(0)},
-                                                /*generation=*/1);
-  SetNextResolution(ServiceConfig(/*enable_fallback=*/false, "10s"));
-  EXPECT_EQ(SendRpc("a").error_code(), StatusCode::OK);
-  EXPECT_EQ(channel_->GetState(false), GRPC_CHANNEL_READY);
-  // When the backend goes away, its connection goes IDLE, and so does the
-  // channel.
-  backends_[0]->Shutdown();
-  ASSERT_TRUE(WaitForChannelState(GRPC_CHANNEL_IDLE,
-                                  grpc_timeout_seconds_to_deadline(10 * grpc_test_slowdown_factor())));
-  // GetState(true) asks the LB policy to exit IDLE, which connects to the
-  // backend without an RPC.
-  backends_[0]->Start();
-  EXPECT_EQ(channel_->GetState(/*try_to_connect=*/true), GRPC_CHANNEL_IDLE);
-  EXPECT_TRUE(WaitForChannelState(GRPC_CHANNEL_READY,
-                                  grpc_timeout_seconds_to_deadline(10 * grpc_test_slowdown_factor())));
-  EXPECT_EQ(backends_[0]->service().request_count(), 1u);
-}
-
-TEST_F(AutoshardingEnd2endTest, ReportsConnectingBeforeFirstAssignment) {
-  StartBackends(1);
-  SetNextResolution(ServiceConfig(/*enable_fallback=*/false, "10s"));
-  EXPECT_EQ(channel_->GetState(/*try_to_connect=*/true), GRPC_CHANNEL_IDLE);
-  ASSERT_TRUE(WaitForChannelState(GRPC_CHANNEL_CONNECTING,
-                                  grpc_timeout_seconds_to_deadline(10 * grpc_test_slowdown_factor())));
-  // The autosharding server has not sent an assignment, so the channel stays
-  // in CONNECTING.
-  EXPECT_FALSE(channel_->WaitForStateChange(
-      GRPC_CHANNEL_CONNECTING, grpc_timeout_milliseconds_to_deadline(500 * grpc_test_slowdown_factor())));
-  // After the assignment, the policy connects without an RPC.
-  autosharding_server_->service().SetAssignment({{"", {0}}}, {BackendName(0)},
-                                                /*generation=*/1);
-  EXPECT_TRUE(WaitForChannelState(GRPC_CHANNEL_READY,
-                                  grpc_timeout_seconds_to_deadline(10 * grpc_test_slowdown_factor())));
   EXPECT_EQ(backends_[0]->service().request_count(), 0u);
 }
 

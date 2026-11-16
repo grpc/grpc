@@ -347,19 +347,20 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   RefCountedPtr<SliceMap> slice_map_;
   RefCountedPtr<AutoShardingLbConfig> config_;
   std::string resolution_note_;
-  // Set when the latest resolver update is a bad resolver state (empty
-  // address list or missing channel factory).  While set, the policy reports
-  // TRANSIENT_FAILURE, but keeps assignment_ for the next good update
-  // (gRFC A119).
+  // Set when the latest resolver update has no addresses or no channel
+  // factory.  While set, the policy reports TRANSIENT_FAILURE.  assignment_
+  // is not cleared, so the next good resolver update can route with it at
+  // once instead of waiting for the server again (gRFC A119).
   absl::Status resolver_error_;
   // The state most recently reported to the channel.
   grpc_connectivity_state current_state_ = GRPC_CHANNEL_IDLE;
   // Until kDone, the policy reports CONNECTING instead of IDLE (gRFC A119).
   InitialConnectState initial_connect_state_ =
       InitialConnectState::kWaitingForFirstResult;
-  // Set only in state kWaitingForEndpointToLeaveIdle.  The state never goes
-  // back from kDone, so the timer never restarts after it is cancelled, and
-  // a callback that runs after a cancellation sees no handle.
+  // Has a value only in state kWaitingForEndpointToLeaveIdle.  Only
+  // ClearInitialConnectLocked() cancels the timer, and it moves to kDone,
+  // which is final.  So a callback that runs after Cancel() fails sees no
+  // handle and does nothing.
   std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       initial_connect_timer_handle_;
   // While set, UpdateAggregatedConnectivityStateLocked() does nothing.  A

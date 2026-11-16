@@ -434,17 +434,6 @@ class CdsChannelFactoryTest : public LoadBalancingPolicyTest {
 // The factory's channels are tested in xds_transport_grpc_test and
 // xds_client_grpc_test.  This test does not create channels, because real
 // channels do not work with the FuzzingEventEngine.
-TEST_F(CdsChannelFactoryTest, ChildGetsChannelFactory) {
-  ASSERT_TRUE(ApplyLeafClusterUpdate(
-                  MakeLeafCluster(MakeGrpcServices(kAutoshardingServiceUri)))
-                  .ok());
-  ExpectOnlyConnectingUpdates();
-  ASSERT_NE(recorded_channel_factory_, nullptr);
-  EXPECT_NE(dynamic_cast<XdsTransportFactoryWrapper*>(
-                recorded_channel_factory_.get()),
-            nullptr);
-}
-
 TEST_F(CdsChannelFactoryTest, SameGrpcServicesReuseChannelFactory) {
   ASSERT_TRUE(ApplyLeafClusterUpdate(
                   MakeLeafCluster(MakeGrpcServices(kAutoshardingServiceUri)))
@@ -453,6 +442,8 @@ TEST_F(CdsChannelFactoryTest, SameGrpcServicesReuseChannelFactory) {
   std::shared_ptr<experimental::ChannelFactory> channel_factory =
       recorded_channel_factory_;
   ASSERT_NE(channel_factory, nullptr);
+  EXPECT_NE(dynamic_cast<XdsTransportFactoryWrapper*>(channel_factory.get()),
+            nullptr);
   // New cluster resource with new but equal GrpcService objects, and a
   // different max_concurrent_requests so that CDS processes the update.
   ASSERT_TRUE(ApplyLeafClusterUpdate(
@@ -478,6 +469,19 @@ TEST_F(CdsChannelFactoryTest, ChangedGrpcServicesCreateNewChannelFactory) {
   ExpectOnlyConnectingUpdates();
   ASSERT_NE(recorded_channel_factory_, nullptr);
   EXPECT_NE(recorded_channel_factory_, channel_factory);
+}
+
+TEST_F(CdsChannelFactoryTest, RemovedGrpcServicesClearChannelFactory) {
+  ASSERT_TRUE(ApplyLeafClusterUpdate(
+                  MakeLeafCluster(MakeGrpcServices(kAutoshardingServiceUri)))
+                  .ok());
+  ExpectOnlyConnectingUpdates();
+  ASSERT_NE(recorded_channel_factory_, nullptr);
+  // The new cluster resource has no GrpcServices, so the child must not
+  // get a channel factory.
+  ASSERT_TRUE(ApplyLeafClusterUpdate(MakeLeafCluster({})).ok());
+  ExpectOnlyConnectingUpdates();
+  EXPECT_EQ(recorded_channel_factory_, nullptr);
 }
 
 TEST_F(CdsChannelFactoryTest, NoGrpcServicesNoChannelFactory) {
