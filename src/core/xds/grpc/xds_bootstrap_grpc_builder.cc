@@ -394,9 +394,9 @@ std::string MakeChannelFactoryKey(const GrpcXdsServerTarget& grpc_service) {
     absl::StrAppend(&key, ", metadata=", name);
   }
   const std::string full_key = grpc_service.Key();
-  absl::StrAppend(&key, ", hash=",
-                  absl::Hex(XXH64(full_key.data(), full_key.size(), 0),
-                            absl::kZeroPad16));
+  absl::StrAppend(
+      &key, ", hash=",
+      absl::Hex(XXH64(full_key.data(), full_key.size(), 0), absl::kZeroPad16));
   return key;
 }
 
