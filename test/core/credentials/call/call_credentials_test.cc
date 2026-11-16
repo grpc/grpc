@@ -5178,7 +5178,8 @@ int compute_engine_non_gdu_httpcli_get_override(
   return 1;
 }
 
-TEST_F(CredentialsTest, TestComputeEngineCredsWithNonGduUniverseDomainSkipsRab) {
+TEST_F(CredentialsTest,
+       TestComputeEngineCredsWithNonGduUniverseDomainSkipsRab) {
   ExecCtx exec_ctx;
   std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
   grpc_call_credentials* creds =

@@ -151,8 +151,7 @@ class MetadataFetcher final : public DualRefCounted<MetadataFetcher> {
   std::optional<std::string> email_ ABSL_GUARDED_BY(&mu_);
   std::optional<bool> is_gdu_ ABSL_GUARDED_BY(&mu_);
   // Either pending metadata requests or an RAB fetcher.
-  std::variant<PendingRequests,
-               RefCountedPtr<RegionalAccessBoundaryFetcher>>
+  std::variant<PendingRequests, RefCountedPtr<RegionalAccessBoundaryFetcher>>
       state_ ABSL_GUARDED_BY(&mu_);
   BackOff backoff_ ABSL_GUARDED_BY(&mu_) =
       BackOff(BackOff::Options()
