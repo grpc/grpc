@@ -524,6 +524,24 @@ grpc_cc_test(
 )
 
 grpc_fuzz_test(
+    name = "ext_authz_message_fuzzer",
+    srcs = ["ext_authz_message_fuzzer.cc"],
+    external_deps = [
+        "absl/strings",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//:grpc",
+        "//src/core:ext_authz_messages",
+        "//src/core:metadata_batch",
+        "//src/core:slice",
+        "@envoy_api//envoy/service/auth/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_fuzz_test(
     name = "ext_authz_filter_test",
     srcs = ["ext_authz_filter_test.cc"],
     external_deps = [
