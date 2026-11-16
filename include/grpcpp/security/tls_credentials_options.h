@@ -157,9 +157,12 @@ class TlsCredentialsOptions {
   void set_exported_keying_material_options(const std::string& label,
                                             size_t length);
 
-  // Sets the list of signature algorithms that will be negotiated during the
-  // TLS handshake, in order of preference. If not set, a default list will be
-  // used.
+  // EXPERIMENTAL: Sets the list of signature algorithms that will be negotiated
+  // during the TLS handshake, in order of preference. If not set, a default
+  // list will be used. This will allow setting the post-quantum ML-DSA
+  // algorithms which should be considered experimental until the associated
+  // RFC, https://datatracker.ietf.org/doc/html/draft-ietf-tls-mldsa, is fully
+  // approved.
   void set_signature_algorithms(
       const std::vector<grpc_tls_signature_algorithm>& signature_algorithms);
 
