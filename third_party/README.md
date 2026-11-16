@@ -113,7 +113,6 @@ git commit -m "update submodule boringssl-with-bazel with origin/master-with-baz
 Before running `generate_projects`, you need to complete the following preparations.
 
 1. Update the Protobuf Version
-  - Modify `third_party/protobuf.patch` with the current version.
   - Update the `protobuf_version` field in `build_handwritten.yaml`.
 
 2. Run Build Scripts
