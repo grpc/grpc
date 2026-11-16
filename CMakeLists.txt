@@ -8930,7 +8930,7 @@ add_executable(autosharding_assignment_test
   ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.h
   src/cpp/client/global_callback_hook.cc
   src/cpp/util/status.cc
-  test/core/load_balancing/autosharding_assignment_test.cc
+  test/core/load_balancing/autosharding/autosharding_assignment_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -8997,7 +8997,7 @@ add_executable(autosharding_client_test
   src/cpp/util/status.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  test/core/load_balancing/autosharding_client_test.cc
+  test/core/load_balancing/autosharding/autosharding_client_test.cc
   test/core/xds/xds_transport_fake.cc
 )
 if(WIN32 AND MSVC)
@@ -9049,7 +9049,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(autosharding_config_test
-  test/core/load_balancing/autosharding_config_test.cc
+  test/core/load_balancing/autosharding/autosharding_config_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9190,7 +9190,7 @@ add_executable(autosharding_test
   src/cpp/util/status.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  test/core/load_balancing/autosharding_test.cc
+  test/core/load_balancing/autosharding/autosharding_test.cc
   test/core/xds/xds_transport_fake.cc
 )
 if(WIN32 AND MSVC)
