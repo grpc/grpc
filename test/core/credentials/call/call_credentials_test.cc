@@ -4741,10 +4741,9 @@ TEST_F(ExternalAccountCredentialsTest, NonGduUniverseDomainInOptionsSkipsRab) {
       options, std::vector<std::string>(), event_engine_);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
-  HttpRequest::SetOverride(
-      httpcli_get_should_not_be_called,
-      external_account_creds_httpcli_post_success,
-      httpcli_put_should_not_be_called);
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           external_account_creds_httpcli_post_success,
+                           httpcli_put_should_not_be_called);
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme,
                                 kGoogleTestAuthority, kTestPath);
   event_engine_->TickUntilIdle();
@@ -4807,7 +4806,8 @@ TEST_F(ExternalAccountCredentialsTest, CreateFromJsonWithUniverseDomain) {
       "token_type\":\"subject_token_type\",\"token_url\":\"https://foo.com:"
       "5555/token\",\"credential_source\":{\"url\":\"https://foo.com:5555/"
       "generate_subject_token_format_json\"},\"workforce_pool_user_project\":"
-      "\"workforce_pool_user_project\",\"universe_domain\":\"apis-tpclp.goog\"}";
+      "\"workforce_pool_user_project\",\"universe_domain\":\"apis-tpclp."
+      "goog\"}";
   auto non_gdu_json = JsonParse(non_gdu_json_str);
   ASSERT_TRUE(non_gdu_json.ok());
   auto non_gdu_creds = ExternalAccountCredentials::Create(
