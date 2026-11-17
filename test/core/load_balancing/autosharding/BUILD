@@ -156,6 +156,7 @@ grpc_cc_test(
         "//src/core:lb_policy_registry",
         "//src/core:time",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 
@@ -197,6 +198,7 @@ grpc_cc_test(
         "//src/core:time",
         "//test/core/load_balancing:lb_policy_test_lib",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
         "//test/core/xds:xds_transport_fake",
     ],
 )
