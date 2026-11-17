@@ -8374,6 +8374,7 @@ grpc_cc_library(
         "channel_args",
         "connectivity_state",
         "delegating_helper",
+        "experiment_env_var",
         "grpc_check",
         "grpc_lb_policy_pick_first",
         "json",
