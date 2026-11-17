@@ -1201,8 +1201,9 @@ cdef class AioServer:
         # Ensures the serving task (coroutine) exits.
         try:
             await self._serving_task
-        except _RequestCallError:
-            pass
+        except Exception:
+            if self._crash_exception is None:
+                _LOGGER.exception('Serving task failed during shutdown')
 
     async def shutdown(self, grace):
         """Gracefully shutdown the Core server.

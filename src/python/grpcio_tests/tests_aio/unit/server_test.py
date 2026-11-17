@@ -871,10 +871,10 @@ class TestServer(AioTestBase):
 
         # setUp() already runs a server; ignore its loops.
         preexisting_loops = _running_call_handler_loops()
-
+        generic_handler = _GenericHandler()
         server = aio.server()
         port = server.add_insecure_port("[::]:0")
-        server.add_generic_rpc_handlers((_GenericHandler(),))
+        server.add_generic_rpc_handlers((generic_handler,))
         server.add_registered_method_handlers(
             "test",
             {
@@ -883,10 +883,8 @@ class TestServer(AioTestBase):
             },
         )
         await server.start()
-
         server_loops = _running_call_handler_loops() - preexisting_loops
         self.assertEqual(3, len(server_loops))
-
         # Make the next accepted RPC crash its _call_handler_loop: the loop
         # schedules each RPC with loop.create_task(..., name="rpc_task").
         loop = asyncio.get_running_loop()
@@ -899,9 +897,14 @@ class TestServer(AioTestBase):
                 raise injected_error
             return original_create_task(coro, *args, **kwargs)
 
-        loop.create_task = failing_create_task
-        try:
-            async with aio.insecure_channel("localhost:%d" % port) as channel:
+        async with aio.insecure_channel("localhost:%d" % port) as channel:
+            # keep an RPC in-flight across the crash
+            in_flight_call = channel.unary_unary(_BLOCK_FOREVER)(_REQUEST)
+            await asyncio.wait_for(
+                generic_handler.wait_for_call(), test_constants.SHORT_TIMEOUT
+            )
+            loop.create_task = failing_create_task
+            try:
                 # The accepted call is never handled; dropping its RPCState
                 # releases the Core call, so the client sees an error.
                 with self.assertRaises(aio.AioRpcError):
@@ -911,30 +914,30 @@ class TestServer(AioTestBase):
                         )(_REQUEST),
                         test_constants.SHORT_TIMEOUT,
                     )
-        finally:
-            del loop.create_task
-
-        # The serving task crashed, so the server reports the crash. Use an
-        # outer wait_for rather than wait_for_termination(timeout=...): on
-        # timeout the latter re-raises the crash exception, which would hide
-        # a server that hangs in the finally block.
-        with self.assertRaises(RuntimeError) as exception_ctx:
-            await asyncio.wait_for(
-                server.wait_for_termination(),
-                test_constants.SHORT_TIMEOUT,
-            )
-        self.assertIs(injected_error, exception_ctx.exception)
-
+            finally:
+                del loop.create_task
+            # The serving task crashed, so the server reports the crash. Use an
+            # outer wait_for rather than wait_for_termination(timeout=...): on
+            # timeout the latter re-raises the crash exception, which would hide
+            # a server that hangs in the finally block.
+            with self.assertRaises(RuntimeError) as exception_ctx:
+                await asyncio.wait_for(
+                    server.wait_for_termination(),
+                    test_constants.SHORT_TIMEOUT,
+                )
+            self.assertIs(injected_error, exception_ctx.exception)
+            # The crash triggered shutdown cancelled the in-flight RPC
+            with self.assertRaises(aio.AioRpcError):
+                await asyncio.wait_for(
+                    in_flight_call,
+                    test_constants.SHORT_TIMEOUT,
+                )
         crashed = [t for t in server_loops if t.done() and not t.cancelled()]
         cancelled = [t for t in server_loops if t.cancelled()]
         self.assertEqual(1, len(crashed))
         self.assertIs(injected_error, crashed[0].exception())
         # Without the finally block these would still be pending.
         self.assertEqual(2, len(cancelled))
-
-        # The crash-triggered shutdown re-raises the crash before destroying
-        # the Core server, so finish the shutdown explicitly.
-        await server.stop(None)
 
     async def test_method_name_decoding(self):
         recorded_methods = []
