@@ -740,7 +740,6 @@ TEST_P(EdsTest, IgnoresDuplicateUpdates) {
 // Unit tests for XdsEndpointResourceType have exhaustive tests for all
 // of the invalid cases.
 TEST_P(EdsTest, NacksInvalidResource) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   EdsResourceArgs args({
       {"locality0", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 1},
   });

@@ -28,6 +28,7 @@
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -60,8 +61,7 @@ TEST(AutoShardingConfigTest, ValidConfig) {
   EXPECT_EQ(autosharding_config->channel_factory_key(), "sharding_service");
   EXPECT_EQ(autosharding_config->autosharding_target(),
             "my_autosharding_target");
-  EXPECT_EQ(autosharding_config->key_header_name().as_string_view(),
-            "x-slice-key");
+  EXPECT_EQ(autosharding_config->key_header_name(), "x-slice-key");
   // The optional fields get their default values.
   EXPECT_FALSE(autosharding_config->enable_fallback());
   EXPECT_EQ(autosharding_config->initial_assignment_timeout(),
@@ -87,8 +87,7 @@ TEST(AutoShardingConfigTest, ValidConfigWithOptionalFields) {
   EXPECT_EQ(autosharding_config->channel_factory_key(), "sharding_service");
   EXPECT_EQ(autosharding_config->autosharding_target(),
             "my_autosharding_target");
-  EXPECT_EQ(autosharding_config->key_header_name().as_string_view(),
-            "x-slice-key");
+  EXPECT_EQ(autosharding_config->key_header_name(), "x-slice-key");
   EXPECT_TRUE(autosharding_config->enable_fallback());
   EXPECT_EQ(autosharding_config->initial_assignment_timeout(),
             Duration::Seconds(10));
@@ -106,7 +105,6 @@ TEST(AutoShardingConfigTest, InvalidTypes) {
       "  }\n"
       "}]\n";
   auto config = ParseConfig(lb_config_json);
-  ASSERT_FALSE(config.ok());
   EXPECT_EQ(config.status(),
             absl::InvalidArgumentError(
                 "errors validating autosharding LB policy config: "
@@ -124,7 +122,6 @@ TEST(AutoShardingConfigTest, FieldsNotPresent) {
       "  }\n"
       "}]\n";
   auto config = ParseConfig(lb_config_json);
-  ASSERT_FALSE(config.ok());
   EXPECT_EQ(config.status(),
             absl::InvalidArgumentError(
                 "errors validating autosharding LB policy config: "
@@ -143,13 +140,46 @@ TEST(AutoShardingConfigTest, EmptyFields) {
       "  }\n"
       "}]\n";
   auto config = ParseConfig(lb_config_json);
-  ASSERT_FALSE(config.ok());
   EXPECT_EQ(config.status(),
             absl::InvalidArgumentError(
                 "errors validating autosharding LB policy config: "
                 "[field:autoshardingTarget error:must be non-empty; "
                 "field:channelFactoryKey error:must be non-empty; "
                 "field:keyHeaderName error:must be non-empty]"));
+}
+
+absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+ParseConfigWithKeyHeaderName(absl::string_view key_header_name) {
+  return ParseConfig(
+      absl::StrCat("[{\"autosharding_experimental\":{"
+                   "\"channelFactoryKey\": \"sharding_service\","
+                   "\"autoshardingTarget\": \"my_autosharding_target\","
+                   "\"keyHeaderName\": \"",
+                   key_header_name, "\"}}]"));
+}
+
+TEST(AutoShardingConfigTest, UppercaseKeyHeaderName) {
+  auto config = ParseConfigWithKeyHeaderName("X-Slice-Key");
+  EXPECT_EQ(config.status(),
+            absl::InvalidArgumentError(
+                "errors validating autosharding LB policy config: "
+                "[field:keyHeaderName error:Illegal header key]"));
+}
+
+TEST(AutoShardingConfigTest, PseudoHeaderKeyHeaderName) {
+  auto config = ParseConfigWithKeyHeaderName(":method");
+  EXPECT_EQ(config.status(),
+            absl::InvalidArgumentError(
+                "errors validating autosharding LB policy config: "
+                "[field:keyHeaderName error:Illegal header key]"));
+}
+
+TEST(AutoShardingConfigTest, KeyHeaderNameWithSpace) {
+  auto config = ParseConfigWithKeyHeaderName("x y");
+  EXPECT_EQ(config.status(),
+            absl::InvalidArgumentError(
+                "errors validating autosharding LB policy config: "
+                "[field:keyHeaderName error:Illegal header key]"));
 }
 
 TEST(AutoShardingConfigTest, ZeroInitialAssignmentTimeout) {
@@ -163,7 +193,6 @@ TEST(AutoShardingConfigTest, ZeroInitialAssignmentTimeout) {
       "  }\n"
       "}]\n";
   auto config = ParseConfig(lb_config_json);
-  ASSERT_FALSE(config.ok());
   EXPECT_EQ(config.status(),
             absl::InvalidArgumentError(
                 "errors validating autosharding LB policy config: "
@@ -182,7 +211,6 @@ TEST(AutoShardingConfigTest, NegativeInitialAssignmentTimeout) {
       "  }\n"
       "}]\n";
   auto config = ParseConfig(lb_config_json);
-  ASSERT_FALSE(config.ok());
   EXPECT_EQ(config.status(),
             absl::InvalidArgumentError(
                 "errors validating autosharding LB policy config: "
