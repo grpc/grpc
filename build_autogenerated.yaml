@@ -6574,7 +6574,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/scoped_env_var.h
   src:
   - test/core/load_balancing/autosharding_config_test.cc
   deps:
@@ -6589,6 +6590,7 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/load_balancing/lb_policy_test_lib.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/xds/xds_transport_fake.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
