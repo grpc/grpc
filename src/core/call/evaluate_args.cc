@@ -15,7 +15,6 @@
 #include "src/core/call/evaluate_args.h"
 
 #include <grpc/grpc_security_constants.h>
-#include <string.h>
 
 #include <optional>
 #include <vector>
@@ -54,15 +53,16 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
     VLOG(2) << "Failed to split " << uri->path() << " into host and port.";
     return address;
   }
-  if (!absl::SimpleAtoi(port_view, &address.port)) {
-    VLOG(2) << "Port " << port_view << " is out of range or null.";
+  if (port_view.empty()) {
+    VLOG(2) << "Port is empty.";
+  } else if (!absl::SimpleAtoi(port_view, &address.port)) {
+    VLOG(2) << "Port " << port_view << " is out of range.";
   }
   address.address_str = std::string(host_view);
   auto resolved_address = StringToSockaddr(uri->path());
   if (!resolved_address.ok()) {
     VLOG(2) << "Address \"" << uri->path()
             << "\" is not IPv4/IPv6. Error: " << resolved_address.status();
-    memset(&address.address, 0, sizeof(address.address));
   } else {
     address.address = *resolved_address;
   }
