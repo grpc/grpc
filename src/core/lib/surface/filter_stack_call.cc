@@ -368,8 +368,8 @@ void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
     }
     auto* call_tracer = arena()->GetContext<ClientCallTracer>();
     if (call_tracer != nullptr) {
-      call_tracer->RecordEnd(absl::Status(static_cast<absl::StatusCode>(status),
-                                          absl::string_view(status_details)));
+      call_tracer->RecordEnd(
+          absl::Status(static_cast<absl::StatusCode>(status), status_details));
     }
     *final_op_.client.status_details =
         grpc_slice_from_cpp_string(std::move(status_details));
