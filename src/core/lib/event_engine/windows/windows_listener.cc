@@ -57,6 +57,8 @@ void WindowsEventEngineListener::SinglePortSocketListener::
     io_state_.reset();
     return;
   }
+  // The port listener's io_state_ is io_state_, whose mutex is held.
+  io_state_->port_listener->io_state_->mu.AssertHeld();
   io_state_->port_listener->OnAcceptCallbackLocked();
 }
 
