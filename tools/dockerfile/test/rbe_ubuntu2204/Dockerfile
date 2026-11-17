@@ -19,7 +19,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 RUN echo "Etc/UTC" > /etc/timezone
 
-RUN apt-get update && apt-get install -y build-essential curl git time wget zip && apt-get clean
+RUN apt-get update && apt-get install -y build-essential cmake curl git ninja-build time wget zip && apt-get clean
 
 #====================
 # run_tests.py python dependencies
@@ -64,6 +64,37 @@ RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-19 100 && 
     ln -s /usr/bin/clang++-19 /usr/local/bin/clang++ && \
     ln -s /usr/bin/lld-19 /usr/local/bin/lld && \
     ln -s /usr/bin/llvm-symbolizer-19 /usr/local/bin/llvm-symbolizer
+
+# Build MSan and TSan instrumented libc++ and libc++abi from source.
+# MemorySanitizer requires that all linked C++ code, including the standard C++ library
+# and its low-level ABI routines, are instrumented with MSan to prevent false positives.
+# See https://github.com/google/sanitizers/wiki/MemorySanitizerLibcxxHowTo#instrumented-libc
+ARG LLVM_VERSION="19.1.7"
+RUN git clone --depth 1 --branch llvmorg-${LLVM_VERSION} https://github.com/llvm/llvm-project.git /llvm-project
+
+# Build MSan-instrumented libc++ in a dedicated build folder to avoid OOM
+RUN cmake -G Ninja -S /llvm-project/runtimes -B /build-libcxx-msan \
+      -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi" \
+      -DLIBCXXABI_USE_LLVM_UNWINDER=OFF \
+      -DCMAKE_C_COMPILER=clang-19 \
+      -DCMAKE_CXX_COMPILER=clang++-19 \
+      -DLLVM_USE_SANITIZER=Memory \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=/usr/local/libcxx-msan \
+  && ninja -C /build-libcxx-msan install-cxx install-cxxabi \
+  && rm -rf /build-libcxx-msan
+
+# Build TSan-instrumented libc++ in a dedicated build folder to avoid OOM
+RUN cmake -G Ninja -S /llvm-project/runtimes -B /build-libcxx-tsan \
+      -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi" \
+      -DLIBCXXABI_USE_LLVM_UNWINDER=OFF \
+      -DCMAKE_C_COMPILER=clang-19 \
+      -DCMAKE_CXX_COMPILER=clang++-19 \
+      -DLLVM_USE_SANITIZER=Thread \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=/usr/local/libcxx-tsan \
+  && ninja -C /build-libcxx-tsan install-cxx install-cxxabi \
+  && rm -rf /build-libcxx-tsan /llvm-project
 
 ENV ASAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer
 ENV CC=/usr/local/bin/clang
