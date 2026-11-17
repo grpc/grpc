@@ -1,0 +1,93 @@
+diff --git a/google/cloud/opentelemetry/internal/monitored_resource.cc b/google/cloud/opentelemetry/internal/monitored_resource.cc
+--- a/google/cloud/opentelemetry/internal/monitored_resource.cc
++++ b/google/cloud/opentelemetry/internal/monitored_resource.cc
+@@ -20,7 +20,11 @@
+ #include "absl/types/variant.h"
+ #include <opentelemetry/common/attribute_value.h>
+ #include <opentelemetry/sdk/resource/resource.h>
+-#include <opentelemetry/sdk/resource/semantic_conventions.h>
++#include <opentelemetry/semconv/incubating/cloud_attributes.h>
++#include <opentelemetry/semconv/incubating/faas_attributes.h>
++#include <opentelemetry/semconv/incubating/host_attributes.h>
++#include <opentelemetry/semconv/incubating/k8s_attributes.h>
++#include <opentelemetry/semconv/incubating/service_attributes.h>
+ #include <algorithm>
+ #include <numeric>
+ #include <unordered_map>
+@@ -31,7 +35,13 @@
+ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
+ namespace {
+ 
+-namespace sc = opentelemetry::sdk::resource::SemanticConventions;
++namespace sc {
++using namespace opentelemetry::semconv::cloud;
++using namespace opentelemetry::semconv::faas;
++using namespace opentelemetry::semconv::host;
++using namespace opentelemetry::semconv::k8s;
++using namespace opentelemetry::semconv::service;
++}  // namespace sc
+ 
+ struct AsStringVisitor {
+   template <typename T>
+diff --git a/google/cloud/opentelemetry/internal/resource_detector_impl.cc b/google/cloud/opentelemetry/internal/resource_detector_impl.cc
+--- a/google/cloud/opentelemetry/internal/resource_detector_impl.cc
++++ b/google/cloud/opentelemetry/internal/resource_detector_impl.cc
+@@ -23,7 +23,10 @@
+ #include "absl/strings/match.h"
+ #include <nlohmann/json.hpp>
+ #include <opentelemetry/sdk/resource/resource.h>
+-#include <opentelemetry/sdk/resource/semantic_conventions.h>
++#include <opentelemetry/semconv/incubating/cloud_attributes.h>
++#include <opentelemetry/semconv/incubating/faas_attributes.h>
++#include <opentelemetry/semconv/incubating/host_attributes.h>
++#include <opentelemetry/semconv/incubating/k8s_attributes.h>
+ 
+ namespace google {
+ namespace cloud {
+@@ -31,7 +34,12 @@
+ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
+ namespace {
+ 
+-namespace sc = opentelemetry::sdk::resource::SemanticConventions;
++namespace sc {
++using namespace opentelemetry::semconv::cloud;
++using namespace opentelemetry::semconv::faas;
++using namespace opentelemetry::semconv::host;
++using namespace opentelemetry::semconv::k8s;
++}  // namespace sc
+ 
+ // The metadata server returns fully qualified names. (e.g. a zone may be
+ // "projects/p/zones/us-central1-a"). Return the IDs only.
+diff --git a/google/cloud/opentelemetry/internal/time_series.cc b/google/cloud/opentelemetry/internal/time_series.cc
+--- a/google/cloud/opentelemetry/internal/time_series.cc
++++ b/google/cloud/opentelemetry/internal/time_series.cc
+@@ -20,7 +20,7 @@
+ #include <opentelemetry/common/attribute_value.h>
+ #include <opentelemetry/sdk/metrics/data/metric_data.h>
+ #include <opentelemetry/sdk/metrics/export/metric_producer.h>
+-#include <opentelemetry/sdk/resource/semantic_conventions.h>
++#include <opentelemetry/semconv/incubating/service_attributes.h>
+ #include <cctype>
+ 
+ namespace google {
+@@ -29,7 +29,7 @@
+ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
+ namespace {
+ 
+-namespace sc = opentelemetry::sdk::resource::SemanticConventions;
++namespace sc = opentelemetry::semconv::service;
+ 
+ google::protobuf::Timestamp ToProtoTimestamp(
+     opentelemetry::common::SystemTimestamp ts) {
+@@ -229,6 +229,11 @@
+               opentelemetry::sdk::metrics::DropPointData const&) {
+             return absl::nullopt;
+           }
++          absl::optional<google::monitoring::v3::TimeSeries> operator()(
++              opentelemetry::sdk::metrics::
++                  Base2ExponentialHistogramPointData const&) {
++            return absl::nullopt;
++          }
+         };
+         auto ts = absl::visit(Visitor{metric_data}, pda.point_data);
+         if (!ts) continue;

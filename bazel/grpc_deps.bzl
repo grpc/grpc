@@ -425,6 +425,10 @@ def grpc_deps():
     if "io_opentelemetry_cpp" not in native.existing_rules():
         http_archive(
             name = "io_opentelemetry_cpp",
+            patch_args = ["-p1"],
+            patches = [
+                "@com_github_grpc_grpc//bazel:opentelemetry_cpp_cstdint.patch",
+            ],
             sha256 = "7fbb09d86d92b0b7e1aa0dc483a279192fe95d2a8bf7acf9f8399c59475c918b",
             strip_prefix = "opentelemetry-cpp-eb92442e9cacc3ecd20b481cb256471f03b70cf6",
             urls = [
@@ -513,6 +517,10 @@ def grpc_module_deps():
     if "google_cloud_cpp" not in native.existing_rules():
         http_archive(
             name = "google_cloud_cpp",
+            patch_args = ["-p1"],
+            patches = [
+                "@com_github_grpc_grpc//bazel:google_cloud_cpp_opentelemetry.patch",
+            ],
             sha256 = "81ea28cf9e5bb032d356b0187409f30b1035f8ea5b530675ea248c8a6c0070aa",
             strip_prefix = "google-cloud-cpp-2.35.0",
             urls = [

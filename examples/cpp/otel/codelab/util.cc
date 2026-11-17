@@ -16,13 +16,6 @@
 //
 //
 
-// Explicitly define HAVE_ABSEIL to avoid conflict with OTel's Abseil
-// version. Refer
-// https://github.com/open-telemetry/opentelemetry-cpp/issues/1042.
-#ifndef HAVE_ABSEIL
-#define HAVE_ABSEIL
-#endif
-
 #include <grpcpp/grpcpp.h>
 
 #include "opentelemetry/sdk/metrics/view/instrument_selector_factory.h"
@@ -64,7 +57,6 @@ void AddLatencyView(opentelemetry::sdk::metrics::MeterProvider* provider,
       opentelemetry::sdk::metrics::MeterSelectorFactory::Create(
           "grpc-c++", grpc::Version(), ""),
       opentelemetry::sdk::metrics::ViewFactory::Create(
-          name, "", unit,
-          opentelemetry::sdk::metrics::AggregationType::kHistogram,
+          name, "", opentelemetry::sdk::metrics::AggregationType::kHistogram,
           std::move(histogram_config)));
 }

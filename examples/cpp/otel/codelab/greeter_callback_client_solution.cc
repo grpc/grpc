@@ -16,13 +16,6 @@
  *
  */
 
-// Explicitly define HAVE_ABSEIL to avoid conflict with OTel's Abseil
-// version. Refer
-// https://github.com/open-telemetry/opentelemetry-cpp/issues/1042.
-#ifndef HAVE_ABSEIL
-#define HAVE_ABSEIL
-#endif
-
 #include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/grpcpp.h>
 

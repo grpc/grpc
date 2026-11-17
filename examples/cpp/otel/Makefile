@@ -26,7 +26,7 @@ OPENTELEMETRY_LINK_LIBS = -lopentelemetry_metrics -lopentelemetry_exporter_prome
 HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
 SYSTEM ?= $(HOST_SYSTEM)
 CXX = g++
-CPPFLAGS += `pkg-config --cflags protobuf grpc absl_flags absl_flags_parse`
+CPPFLAGS += `pkg-config --cflags protobuf grpc grpcpp_otel_plugin absl_flags absl_flags_parse`
 CXXFLAGS += -std=c++17
 ifeq ($(SYSTEM),Darwin)
 LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++ grpcpp_otel_plugin absl_flags absl_flags_parse absl_log_initialize $(PROTOBUF_ABSL_DEPS)` \
