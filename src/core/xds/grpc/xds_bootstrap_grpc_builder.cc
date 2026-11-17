@@ -37,6 +37,7 @@
 #include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "src/core/config/experiment_env_var.h"
+#include "src/core/load_balancing/autosharding/autosharding.h"
 #include "src/core/load_balancing/weighted_round_robin/weighted_round_robin.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
@@ -44,7 +45,6 @@
 #include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
-#include "src/core/util/xxhash_inline.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_grpc_service_parser.h"
@@ -127,9 +127,9 @@ class RoundRobinLbPolicyConfigFactory final
  public:
   Json::Object ConvertXdsLbPolicyConfig(
       const XdsLbPolicyRegistry* /*registry*/,
-      const XdsLbPolicyRegistry::ConvertContext& /*context*/,
-      absl::string_view /*configuration*/, ValidationErrors* /*errors*/,
-      int /*recursion_depth*/) override {
+      const XdsResourceType::DecodeContext& /*context*/,
+      absl::string_view /*configuration*/, XdsGrpcServiceMap& /*grpc_services*/,
+      ValidationErrors* /*errors*/, int /*recursion_depth*/) override {
     return Json::Object{{"round_robin", Json::FromObject({})}};
   }
 
@@ -145,13 +145,12 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory final
  public:
   Json::Object ConvertXdsLbPolicyConfig(
       const XdsLbPolicyRegistry* /*registry*/,
-      const XdsLbPolicyRegistry::ConvertContext& context,
-      absl::string_view configuration, ValidationErrors* errors,
-      int /*recursion_depth*/) override {
+      const XdsResourceType::DecodeContext& context,
+      absl::string_view configuration, XdsGrpcServiceMap& /*grpc_services*/,
+      ValidationErrors* errors, int /*recursion_depth*/) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_parse(
-            configuration.data(), configuration.size(),
-            context.decode_context.arena);
+            configuration.data(), configuration.size(), context.arena);
     if (resource == nullptr) {
       errors->AddError(
           "can't decode ClientSideWeightedRoundRobin LB policy config");
@@ -245,13 +244,12 @@ class RingHashLbPolicyConfigFactory final
  public:
   Json::Object ConvertXdsLbPolicyConfig(
       const XdsLbPolicyRegistry* /*registry*/,
-      const XdsLbPolicyRegistry::ConvertContext& context,
-      absl::string_view configuration, ValidationErrors* errors,
-      int /*recursion_depth*/) override {
+      const XdsResourceType::DecodeContext& context,
+      absl::string_view configuration, XdsGrpcServiceMap& /*grpc_services*/,
+      ValidationErrors* errors, int /*recursion_depth*/) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_parse(
-            configuration.data(), configuration.size(),
-            context.decode_context.arena);
+            configuration.data(), configuration.size(), context.arena);
     if (resource == nullptr) {
       errors->AddError("can't decode RingHash LB policy config");
       return {};
@@ -309,13 +307,12 @@ class WrrLocalityLbPolicyConfigFactory final
  public:
   Json::Object ConvertXdsLbPolicyConfig(
       const XdsLbPolicyRegistry* registry,
-      const XdsLbPolicyRegistry::ConvertContext& context,
-      absl::string_view configuration, ValidationErrors* errors,
-      int recursion_depth) override {
+      const XdsResourceType::DecodeContext& context,
+      absl::string_view configuration, XdsGrpcServiceMap& grpc_services,
+      ValidationErrors* errors, int recursion_depth) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_parse(
-            configuration.data(), configuration.size(),
-            context.decode_context.arena);
+            configuration.data(), configuration.size(), context.arena);
     if (resource == nullptr) {
       errors->AddError("can't decode WrrLocality LB policy config");
       return {};
@@ -329,7 +326,8 @@ class WrrLocalityLbPolicyConfigFactory final
       return {};
     }
     auto child_policy = registry->ConvertXdsLbPolicyConfig(
-        context, endpoint_picking_policy, errors, recursion_depth + 1);
+        context, endpoint_picking_policy, grpc_services, errors,
+        recursion_depth + 1);
     return Json::Object{
         {"xds_wrr_locality_experimental",
          Json::FromObject(
@@ -349,13 +347,12 @@ class PickFirstLbPolicyConfigFactory final
  public:
   Json::Object ConvertXdsLbPolicyConfig(
       const XdsLbPolicyRegistry* /*registry*/,
-      const XdsLbPolicyRegistry::ConvertContext& context,
-      absl::string_view configuration, ValidationErrors* errors,
-      int /*recursion_depth*/) override {
+      const XdsResourceType::DecodeContext& context,
+      absl::string_view configuration, XdsGrpcServiceMap& /*grpc_services*/,
+      ValidationErrors* errors, int /*recursion_depth*/) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst_parse(
-            configuration.data(), configuration.size(),
-            context.decode_context.arena);
+            configuration.data(), configuration.size(), context.arena);
     if (resource == nullptr) {
       errors->AddError("can't decode PickFirst LB policy config");
       return {};
@@ -377,29 +374,6 @@ class PickFirstLbPolicyConfigFactory final
   }
 };
 
-// Returns the channel factory key for a parsed GrpcService (gRFC A119).
-// The non-secret fields are included directly, so the key is human-readable
-// in the LB policy config and logs.  A hash of GrpcXdsServerTarget::Key()
-// distinguishes different secret values (for example call-cred tokens or
-// initial metadata values) without leaking them.
-std::string MakeChannelFactoryKey(const GrpcXdsServerTarget& grpc_service) {
-  std::string key = grpc_service.server_uri();
-  absl::StrAppend(&key, ", channel_creds_type=",
-                  grpc_service.channel_creds_config()->type());
-  for (const auto& call_creds : grpc_service.call_creds_configs()) {
-    absl::StrAppend(&key, ", call_creds_type=", call_creds->type());
-  }
-  absl::StrAppend(&key, ", timeout=", grpc_service.timeout().ToString());
-  for (const auto& [name, value] : grpc_service.initial_metadata()) {
-    absl::StrAppend(&key, ", metadata=", name);
-  }
-  const std::string full_key = grpc_service.Key();
-  absl::StrAppend(
-      &key, ", hash=",
-      absl::Hex(XXH64(full_key.data(), full_key.size(), 0), absl::kZeroPad16));
-  return key;
-}
-
 // Converts the Autosharding proto to the autosharding_experimental LB
 // policy config (gRFC A119).
 class AutoshardingLbPolicyConfigFactory final
@@ -407,13 +381,12 @@ class AutoshardingLbPolicyConfigFactory final
  public:
   Json::Object ConvertXdsLbPolicyConfig(
       const XdsLbPolicyRegistry* /*registry*/,
-      const XdsLbPolicyRegistry::ConvertContext& context,
-      absl::string_view configuration, ValidationErrors* errors,
-      int /*recursion_depth*/) override {
+      const XdsResourceType::DecodeContext& context,
+      absl::string_view configuration, XdsGrpcServiceMap& grpc_services,
+      ValidationErrors* errors, int /*recursion_depth*/) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding_parse(
-            configuration.data(), configuration.size(),
-            context.decode_context.arena);
+            configuration.data(), configuration.size(), context.arena);
     if (resource == nullptr) {
       errors->AddError("can't decode Autosharding LB policy config");
       return {};
@@ -422,19 +395,19 @@ class AutoshardingLbPolicyConfigFactory final
     // grpc_service
     {
       ValidationErrors::ScopedField field(errors, ".grpc_service");
-      const size_t original_error_size = errors->size();
-      auto grpc_service = std::make_shared<
-          GrpcXdsServerTarget>(ParseXdsGrpcService(
-          context.decode_context,
+      const auto* grpc_service_proto =
           envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding_grpc_service(
-              resource),
-          errors));
-      if (errors->size() == original_error_size) {
+              resource);
+      if (grpc_service_proto == nullptr) {
+        errors->AddError("field not set");
+      } else {
+        auto grpc_service = std::make_shared<GrpcXdsServerTarget>(
+            ParseXdsGrpcService(context, grpc_service_proto, errors));
         // The LB policy passes the key to the channel factory that the
         // CDS policy creates from the map.
-        std::string key = MakeChannelFactoryKey(*grpc_service);
+        std::string key = grpc_service->Key();
         config["channelFactoryKey"] = Json::FromString(key);
-        context.grpc_services[std::move(key)] = std::move(grpc_service);
+        grpc_services[std::move(key)] = std::move(grpc_service);
       }
     }
     // The LB policy validates the remaining fields when the cluster parser
@@ -485,7 +458,7 @@ XdsLbPolicyRegistry GrpcXdsBootstrapBuilder::CreateXdsLbPolicyRegistry() {
   registry.RegisterFactory(
       std::make_unique<WrrLocalityLbPolicyConfigFactory>());
   registry.RegisterFactory(std::make_unique<PickFirstLbPolicyConfigFactory>());
-  if (XdsAutoshardingLbEnabled()) {
+  if (AutoshardingLbEnabled()) {
     registry.RegisterFactory(
         std::make_unique<AutoshardingLbPolicyConfigFactory>());
   }

@@ -17,7 +17,6 @@
 #ifndef GRPC_TEST_CORE_LOAD_BALANCING_LB_POLICY_TEST_LIB_H
 #define GRPC_TEST_CORE_LOAD_BALANCING_LB_POLICY_TEST_LIB_H
 
-#include <grpc/channel_factory.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -41,6 +40,7 @@
 #include <vector>
 
 #include "src/core/client_channel/client_channel_internal.h"
+#include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/config/core_configuration.h"
@@ -526,17 +526,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         const ChannelArgs& /*per_address_args*/,
         const ChannelArgs& args) override {
       // TODO(roth): Need to use per_address_args here.
-      auto address_uri = grpc_sockaddr_to_uri(&address);
-      GRPC_CHECK(address_uri.ok());
-      if (test_->subchannel_creation_failures_.count(*address_uri) > 0) {
-        return nullptr;
-      }
-      // Same as Subchannel::MakeSubchannelArgs().
-      SubchannelKey key(
-          address, args.Remove(GRPC_ARG_CHANNEL_FACTORY)
-                       .RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX));
+      SubchannelKey key(address, MakeSubchannelArgs(args, ChannelArgs()));
       auto it = test_->subchannel_pool_.find(key);
       if (it == test_->subchannel_pool_.end()) {
+        auto address_uri = grpc_sockaddr_to_uri(&address);
+        GRPC_CHECK(address_uri.ok());
         it = test_->subchannel_pool_
                  .emplace(std::piecewise_construct, std::forward_as_tuple(key),
                           std::forward_as_tuple(std::move(*address_uri), test_))
@@ -1313,10 +1307,20 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         });
   }
 
+  // Returns the args of the subchannel that the channel creates for
+  // channel_args and per_address_args.
+  static ChannelArgs MakeSubchannelArgs(const ChannelArgs& channel_args,
+                                        const ChannelArgs& per_address_args) {
+    return Subchannel::MakeSubchannelArgs(channel_args, per_address_args,
+                                          /*subchannel_pool=*/nullptr,
+                                          /*channel_default_authority=*/"");
+  }
+
   // Returns the entry in the subchannel pool, or null if not present.
   SubchannelState* FindSubchannel(absl::string_view address,
                                   const ChannelArgs& args = ChannelArgs()) {
-    SubchannelKey key(MakeAddress(address), args);
+    SubchannelKey key(MakeAddress(address),
+                      MakeSubchannelArgs(args, ChannelArgs()));
     SubchannelState* subchannel = nullptr;
     TickUntil([&]() {
       auto it = subchannel_pool_.find(key);
@@ -1334,18 +1338,13 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // pool, or by being created by another LB policy in this channel).
   SubchannelState* CreateSubchannel(absl::string_view address,
                                     const ChannelArgs& args = ChannelArgs()) {
-    SubchannelKey key(MakeAddress(address), args);
+    SubchannelKey key(MakeAddress(address),
+                      MakeSubchannelArgs(args, ChannelArgs()));
     auto it = subchannel_pool_
                   .emplace(std::piecewise_construct, std::forward_as_tuple(key),
                            std::forward_as_tuple(address, this))
                   .first;
     return &it->second;
-  }
-
-  // Makes the helper fail to create a subchannel for address_uri, as the
-  // channel does when, for example, it cannot create a security connector.
-  void FailSubchannelCreation(absl::string_view address_uri) {
-    subchannel_creation_failures_.emplace(address_uri);
   }
 
   // Ticks fuzzing_ee_ until either predicate() returns true or fuzzing_ee_
@@ -1393,8 +1392,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   std::shared_ptr<WorkSerializer> work_serializer_;
   FakeHelper* helper_ = nullptr;
   std::map<SubchannelKey, SubchannelState> subchannel_pool_;
-  // Addresses for which the helper fails to create a subchannel.
-  std::set<std::string> subchannel_creation_failures_;
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
   const absl::string_view lb_policy_name_;
   const ChannelArgs channel_args_;

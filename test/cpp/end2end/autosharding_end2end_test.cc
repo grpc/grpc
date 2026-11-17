@@ -20,7 +20,6 @@
 #include <grpc/channel_factory.h>
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
-#include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -47,6 +46,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/autosharding_test_server.h"
 #include "test/cpp/end2end/counted_service.h"
@@ -57,6 +57,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 namespace grpc {
 namespace testing {
@@ -227,8 +228,8 @@ TEST_F(AutoshardingEnd2endTest, KeyRoutesToAssignedBackend) {
   StartBackends(2);
   // Keys before "m" go to backend 0, and the rest go to backend 1.
   autosharding_server_->service().SetAssignment(
-      {{"m", {0}}, {"", {1}}}, {BackendName(0), BackendName(1)},
-      /*generation=*/1);
+      std::string(kAutoshardingTarget), {{"m", {0}}, {"", {1}}},
+      {BackendName(0), BackendName(1)}, /*generation=*/1);
   SetNextResolution(ServiceConfig(/*enable_fallback=*/false, "10s"));
   EXPECT_EQ(SendRpc("a").error_code(), StatusCode::OK);
   EXPECT_EQ(backends_[0]->service().request_count(), 1u);
@@ -262,18 +263,19 @@ TEST_F(AutoshardingEnd2endTest,
 
 TEST_F(AutoshardingEnd2endTest, NewAssignmentMovesTraffic) {
   StartBackends(2);
-  autosharding_server_->service().SetAssignment({{"", {0}}}, {BackendName(0)},
-                                                /*generation=*/1);
+  autosharding_server_->service().SetAssignment(
+      std::string(kAutoshardingTarget), {{"", {0}}}, {BackendName(0)},
+      /*generation=*/1);
   SetNextResolution(ServiceConfig(/*enable_fallback=*/false, "10s"));
   EXPECT_EQ(SendRpc("a").error_code(), StatusCode::OK);
   EXPECT_EQ(backends_[0]->service().request_count(), 1u);
   // The new assignment moves all keys to backend 1.
-  autosharding_server_->service().SetAssignment({{"", {0}}}, {BackendName(1)},
-                                                /*generation=*/2);
-  const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
+  autosharding_server_->service().SetAssignment(
+      std::string(kAutoshardingTarget), {{"", {0}}}, {BackendName(1)},
+      /*generation=*/2);
+  const absl::Time deadline = absl::Now() + absl::Seconds(10);
   while (backends_[1]->service().request_count() == 0) {
-    ASSERT_LT(gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline), 0)
-        << "traffic did not move to backend 1";
+    ASSERT_LT(absl::Now(), deadline) << "traffic did not move to backend 1";
     EXPECT_EQ(SendRpc("a").error_code(), StatusCode::OK);
   }
   backends_[0]->service().ResetCounters();
@@ -288,6 +290,10 @@ TEST_F(AutoshardingEnd2endTest, NewAssignmentMovesTraffic) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  // Set before the core configuration is built, because that is when the
+  // LB policies are registered.
+  grpc_core::testing::ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AUTOSHARDING_LB");
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

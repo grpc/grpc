@@ -82,10 +82,9 @@ std::string XdsClusterResource::ToString() const {
   if (!lb_policy_grpc_services.empty()) {
     StrAppend(result, ", lb_policy_grpc_services=[");
     bool is_first = true;
-    // Print only the URI.  The key can contain credentials.
     for (const auto& [key, grpc_service] : lb_policy_grpc_services) {
       if (!is_first) StrAppend(result, ", ");
-      StrAppend(result, grpc_service->server_uri());
+      StrAppend(result, key);
       is_first = false;
     }
     StrAppend(result, "]");

@@ -6590,6 +6590,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/autosharding_test_server.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
@@ -28264,7 +28265,6 @@ targets:
   headers:
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/autosharding_test_server.h
-  - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
@@ -28338,7 +28338,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.proto
-  - third_party/envoy-api/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
   - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
@@ -28407,7 +28406,6 @@ targets:
   - third_party/xds/xds/type/v3/range.proto
   - third_party/xds/xds/type/v3/typed_struct.proto
   - test/cpp/end2end/autosharding_test_server.cc
-  - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_autosharding_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -31253,7 +31251,6 @@ targets:
   - third_party/envoy-api/envoy/config/route/v3/route.proto
   - third_party/envoy-api/envoy/config/route/v3/route_components.proto
   - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
-  - third_party/envoy-api/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.proto
   - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.proto

@@ -23,6 +23,7 @@
 #include <grpcpp/support/status.h>
 
 #include <cstdint>
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
@@ -39,8 +40,9 @@ namespace testing {
 
 // A fake AutoshardingService (gRFC A119) that sends scripted assignments.
 //
-// Each WatchShardingAssignment stream gets the latest assignment when it
-// starts, and every assignment that the test sets after that.
+// Each WatchShardingAssignment stream gets the latest assignment for its
+// target when it starts, and every assignment that the test sets for that
+// target after that.
 class AutoshardingServiceImpl
     : public CountedService<google::cloud::autosharding::v1::
                                 AutoshardingService::CallbackService> {
@@ -69,29 +71,38 @@ class AutoshardingServiceImpl
   void Start();
   void Shutdown();
 
-  // Sends an assignment, as one chunk followed by its metadata, on every
-  // open stream and on every stream that starts later.
-  void SetAssignment(const std::vector<Slice>& slices,
+  // Sets the assignment for target.  Every open and future stream for target
+  // gets it, as one chunk followed by its metadata.
+  void SetAssignment(const std::string& target,
+                     const std::vector<Slice>& slices,
                      const std::vector<std::string>& endpoint_names,
                      int64_t generation);
-
-  // Streams whose InitialClientConfig target is target do not get any
-  // assignment.  They still read the requests of the client.
-  void SetSilentTarget(std::string target);
 
   // Returns the target of the InitialClientConfig of each stream.
   std::vector<std::string> targets();
 
+  // Returns the peer address of each stream.  Each connection has a
+  // different source port, so streams on the same connection have the same
+  // peer.
+  std::set<std::string> clients();
+
  private:
   class Reactor;
 
+  // The latest assignment for a target, and a version that increases when
+  // it changes.
+  struct Assignment {
+    std::vector<Response> responses;
+    uint64_t version = 0;
+  };
+
   grpc_core::Mutex mu_;
   bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
-  std::string silent_target_ ABSL_GUARDED_BY(mu_);
-  // The latest assignment, and a version that increases when it changes.
-  std::vector<Response> assignment_ ABSL_GUARDED_BY(mu_);
-  uint64_t assignment_version_ ABSL_GUARDED_BY(mu_) = 0;
+  // Assignments, keyed by target.
+  std::map<std::string, Assignment> assignments_ ABSL_GUARDED_BY(mu_);
+  uint64_t last_assignment_version_ ABSL_GUARDED_BY(mu_) = 0;
   std::vector<std::string> targets_ ABSL_GUARDED_BY(mu_);
+  std::set<std::string> clients_ ABSL_GUARDED_BY(mu_);
   // Active streams.  Each Reactor removes itself in OnDone().
   std::set<Reactor*> reactors_ ABSL_GUARDED_BY(mu_);
 };

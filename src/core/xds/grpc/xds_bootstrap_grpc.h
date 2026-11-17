@@ -42,7 +42,6 @@ namespace grpc_core {
 
 bool XdsExtProcOnClientEnabled();
 bool XdsExtProcOnServerEnabled();
-bool XdsAutoshardingLbEnabled();
 
 class GrpcXdsBootstrapBuilder;
 

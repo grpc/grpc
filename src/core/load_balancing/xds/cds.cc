@@ -48,6 +48,7 @@
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
@@ -63,6 +64,7 @@
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_health_status.h"
+#include "src/core/xds/grpc/xds_transport_factory_grpc.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -507,7 +509,12 @@ ChannelArgs CdsLb::UpdateChannelFactory(
     // The xDS resolver always passes the XdsClient to the CDS policy.
     auto* xds_client = args.GetObject<GrpcXdsClient>();
     GRPC_CHECK_NE(xds_client, nullptr);
-    channel_factory_ = xds_client->CreateChannelFactory(grpc_services);
+    // The channel factory gets transports from the XdsClient's transport
+    // factory, so channels are shared with other xDS users.
+    channel_factory_ = std::make_shared<XdsTransportFactoryWrapper>(
+        DownCast<GrpcXdsTransportFactory*>(xds_client->transport_factory())
+            ->RefAsSubclass<GrpcXdsTransportFactory>(),
+        grpc_services);
     GRPC_TRACE_LOG(cds_lb, INFO)
         << "[cdslb " << this << "] created channel factory "
         << channel_factory_.get() << " for " << grpc_services.size()

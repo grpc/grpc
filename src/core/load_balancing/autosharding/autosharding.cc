@@ -27,7 +27,6 @@
 #include <cstdint>
 #include <map>
 #include <memory>
-#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -61,7 +60,6 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/shared_bit_gen.h"
-#include "src/core/util/time.h"
 #include "src/core/util/uuid_v4.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/xds_client/xds_transport.h"
@@ -79,10 +77,6 @@ namespace grpc_core {
 namespace {
 
 constexpr absl::string_view kAutoSharding = "autosharding_experimental";
-
-// Delay before the policy triggers a connection attempt while no endpoint
-// has left IDLE (gRFC A119).
-constexpr Duration kInitialConnectDelay = Duration::Milliseconds(500);
 
 std::string GenerateUuid() {
   SharedBitGen bit_gen;
@@ -125,7 +119,6 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   absl::string_view name() const override { return kAutoSharding; }
 
   absl::Status UpdateLocked(UpdateArgs args) override;
-  void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
  private:
@@ -280,18 +273,6 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
     std::string resolution_note_;
   };
 
-  // Initial connection behavior (gRFC A119).
-  enum class InitialConnectState {
-    // No result from client_ yet.
-    kWaitingForFirstResult,
-    // No result from client_ yet, and a request to exit IDLE arrived.
-    kWaitingForFirstResultExitIdleSeen,
-    // A usable result arrived, and initial_connect_timer_handle_ is running.
-    kWaitingForEndpointToLeaveIdle,
-    // An endpoint left IDLE, or the policy reported TRANSIENT_FAILURE.
-    kDone,
-  };
-
   ~AutoshardingLbPolicy() override;
 
   void ShutdownLocked() override;
@@ -299,28 +280,6 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   // Updates the aggregate policy's connectivity state based on the
   // number of endpoints in each state, creating a new picker.
   void UpdateAggregatedConnectivityStateLocked();
-
-  // Reports state and picker to the channel, and stores state in
-  // current_state_.
-  void UpdateStateLocked(grpc_connectivity_state state,
-                         const absl::Status& status,
-                         RefCountedPtr<SubchannelPicker> picker);
-
-  // Triggers a connection attempt on an IDLE endpoint chosen at random,
-  // unless an endpoint is already CONNECTING (gRFC A119).
-  void ConnectToRandomIdleEndpointLocked();
-
-  // Initial connection behavior (gRFC A119).
-  // Called on the first result from the client.  Starts the initial connect
-  // timer if the result is usable.
-  void MaybeStartInitialConnectLocked();
-  // Starts initial_connect_timer_handle_ while the state is
-  // kWaitingForEndpointToLeaveIdle.
-  void StartInitialConnectTimerLocked();
-  // Called when initial_connect_timer_handle_ fires.
-  void OnInitialConnectTimerLocked();
-  // Sets the state to kDone and cancels initial_connect_timer_handle_.
-  void ClearInitialConnectLocked();
 
   // Creates (or recreates) client_.
   void CreateAutoshardingClientLocked(
@@ -348,22 +307,6 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   RefCountedPtr<SliceMap> slice_map_;
   RefCountedPtr<AutoShardingLbConfig> config_;
   std::string resolution_note_;
-  // Set when the latest resolver update has no addresses or no channel
-  // factory.  While set, the policy reports TRANSIENT_FAILURE.  assignment_
-  // is not cleared, so the next good resolver update can route with it at
-  // once instead of waiting for the server again (gRFC A119).
-  absl::Status resolver_error_;
-  // The state most recently reported to the channel.
-  grpc_connectivity_state current_state_ = GRPC_CHANNEL_IDLE;
-  // Until kDone, the policy reports CONNECTING instead of IDLE (gRFC A119).
-  InitialConnectState initial_connect_state_ =
-      InitialConnectState::kWaitingForFirstResult;
-  // Has a value only in state kWaitingForEndpointToLeaveIdle.  Only
-  // ClearInitialConnectLocked() cancels the timer, and it moves to kDone,
-  // which is final.  So a callback that runs after Cancel() fails sees no
-  // handle and does nothing.
-  std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-      initial_connect_timer_handle_;
   // While set, UpdateAggregatedConnectivityStateLocked() does nothing.  A
   // child policy can report a new state synchronously while UpdateLocked()
   // updates it, before endpoint_map_ and slice_map_ are consistent.
@@ -645,8 +588,7 @@ void AutoshardingLbPolicy::AutoShardingEndpoint::OnStateUpdate(
   status_ = status;
   picker_ = std::move(picker);
   if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    autosharding_lb_->last_failure_ = absl::UnavailableError(
-        absl::StrCat("no reachable endpoints; last error: ", status.message()));
+    autosharding_lb_->last_failure_ = status;
   }
   // Update the aggregated connectivity state.
   autosharding_lb_->UpdateAggregatedConnectivityStateLocked();
@@ -697,34 +639,10 @@ AutoshardingLbPolicy::~AutoshardingLbPolicy() {
 void AutoshardingLbPolicy::ShutdownLocked() {
   GRPC_TRACE_LOG(autosharding_lb, INFO) << "[AS " << this << "] Shutting down";
   shutdown_ = true;
-  ClearInitialConnectLocked();
   client_.reset();
   endpoint_map_.clear();
   slice_map_.reset();
   assignment_ = nullptr;
-}
-
-void AutoshardingLbPolicy::ExitIdleLocked() {
-  // Same as ring_hash in gRFC A117 (gRFC A119).
-  switch (initial_connect_state_) {
-    case InitialConnectState::kWaitingForFirstResult:
-      // Connect when the first usable result arrives.
-      initial_connect_state_ =
-          InitialConnectState::kWaitingForFirstResultExitIdleSeen;
-      break;
-    case InitialConnectState::kWaitingForFirstResultExitIdleSeen:
-      break;
-    case InitialConnectState::kWaitingForEndpointToLeaveIdle:
-      // Connect now.  Leave the timer running, in case the endpoint is
-      // removed before it reports a new state.
-      ConnectToRandomIdleEndpointLocked();
-      break;
-    case InitialConnectState::kDone:
-      if (current_state_ == GRPC_CHANNEL_IDLE) {
-        ConnectToRandomIdleEndpointLocked();
-      }
-      break;
-  }
 }
 
 void AutoshardingLbPolicy::ResetBackoffLocked() {
@@ -748,7 +666,6 @@ absl::Status AutoshardingLbPolicy::UpdateLocked(UpdateArgs args) {
   auto new_config = args.config.TakeAsSubclass<AutoShardingLbConfig>();
   // Update resolution note.
   resolution_note_ = std::move(args.resolution_note);
-  resolver_error_ = absl::OkStatus();
   // Update endpoint list.
   absl::Status status;
   if (!args.addresses.ok()) {
@@ -800,6 +717,36 @@ absl::Status AutoshardingLbPolicy::UpdateLocked(UpdateArgs args) {
           "errors from children: [", absl::StrJoin(errors, "; "), "]"));
     }
   }
+  // Locality attribute changes can alter effective_target_ without changing
+  // config_, which also requires recreating client_ (gRFC A119).
+  std::string new_effective_target = EffectiveTarget(
+      new_config->autosharding_target(),
+      args_.GetString(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD).value_or(""));
+  const bool create_client =
+      client_ == nullptr ||
+      new_config->channel_factory_key() != config_->channel_factory_key() ||
+      new_effective_target != effective_target_;
+  config_ = std::move(new_config);
+  if (create_client) {
+    effective_target_ = std::move(new_effective_target);
+    // If we need a new client but there is no channel factory, close client_
+    // and fail with a bad resolver state, regardless of enable_fallback.  Keep
+    // assignment_ for the next good update (gRFC A119).
+    auto* channel_factory = args_.GetObject<experimental::ChannelFactory>();
+    if (channel_factory == nullptr) {
+      client_.reset();
+      std::string message = "no channel factory in channel args";
+      if (!resolution_note_.empty()) {
+        absl::StrAppend(&message, " (", resolution_note_, ")");
+      }
+      status = absl::UnavailableError(message);
+      channel_control_helper()->UpdateState(
+          GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+          MakeRefCounted<TransientFailurePicker>(status));
+      return status;
+    }
+    CreateAutoshardingClientLocked(*channel_factory);
+  }
   // If the address list is empty, report TRANSIENT_FAILURE.  Keep client_ and
   // assignment_, so that the next good update uses them at once (gRFC A119).
   if (endpoints_.empty()) {
@@ -810,40 +757,10 @@ absl::Status AutoshardingLbPolicy::UpdateLocked(UpdateArgs args) {
       }
       status = absl::UnavailableError(message);
     }
-    resolver_error_ = status;
-    UpdateAggregatedConnectivityStateLocked();
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+        MakeRefCounted<TransientFailurePicker>(status));
     return status;
-  }
-  // Locality attribute changes can alter effective_target_ without changing
-  // config_, which also requires recreating client_ (gRFC A119).
-  std::string new_effective_target = EffectiveTarget(
-      new_config->autosharding_target(),
-      args_.GetString(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD).value_or(""));
-  const bool create_client =
-      client_ == nullptr ||
-      new_config->channel_factory_key() != config_->channel_factory_key() ||
-      new_effective_target != effective_target_;
-  // If we need a new client but there is no channel factory, close client_
-  // and fail with a bad resolver state, regardless of enable_fallback.  Keep
-  // assignment_ for the next good update (gRFC A119).
-  experimental::ChannelFactory* channel_factory = nullptr;
-  if (create_client) {
-    channel_factory = args_.GetObject<experimental::ChannelFactory>();
-    if (channel_factory == nullptr) {
-      client_.reset();
-      std::string message = "no channel factory in channel args";
-      if (!resolution_note_.empty()) {
-        absl::StrAppend(&message, " (", resolution_note_, ")");
-      }
-      resolver_error_ = absl::UnavailableError(message);
-      UpdateAggregatedConnectivityStateLocked();
-      return resolver_error_;
-    }
-  }
-  config_ = std::move(new_config);
-  if (create_client) {
-    effective_target_ = std::move(new_effective_target);
-    CreateAutoshardingClientLocked(*channel_factory);
   }
   // Return a new picker.
   UpdateAggregatedConnectivityStateLocked();
@@ -889,75 +806,9 @@ void AutoshardingLbPolicy::OnAssignmentReceivedLocked(
   // (gRFC A119).  The test transport cannot order these events, so no unit
   // test covers this check.
   if (shutdown_ || client.get() != client_.get()) return;
-  const bool first_result = assignment_.ok() && *assignment_ == nullptr;
   assignment_ = std::move(result);
   UpdateSliceMapLocked();
-  if (first_result) MaybeStartInitialConnectLocked();
   UpdateAggregatedConnectivityStateLocked();
-}
-
-void AutoshardingLbPolicy::MaybeStartInitialConnectLocked() {
-  if (initial_connect_state_ != InitialConnectState::kWaitingForFirstResult &&
-      initial_connect_state_ !=
-          InitialConnectState::kWaitingForFirstResultExitIdleSeen) {
-    return;
-  }
-  // A result is usable if it is a valid assignment, or if fallback is
-  // enabled.
-  if (!assignment_.ok() && !config_->enable_fallback()) return;
-  const bool exit_idle_seen =
-      initial_connect_state_ ==
-      InitialConnectState::kWaitingForFirstResultExitIdleSeen;
-  initial_connect_state_ = InitialConnectState::kWaitingForEndpointToLeaveIdle;
-  if (exit_idle_seen) ConnectToRandomIdleEndpointLocked();
-  StartInitialConnectTimerLocked();
-}
-
-void AutoshardingLbPolicy::StartInitialConnectTimerLocked() {
-  // A connection attempt can report a child state change synchronously,
-  // which can end the initial connection behavior.
-  if (initial_connect_state_ !=
-      InitialConnectState::kWaitingForEndpointToLeaveIdle) {
-    return;
-  }
-  GRPC_CHECK(!initial_connect_timer_handle_.has_value());
-  GRPC_TRACE_LOG(autosharding_lb, INFO)
-      << "[AS " << this << "] starting initial connect timer for "
-      << kInitialConnectDelay.millis() << "ms";
-  initial_connect_timer_handle_ =
-      channel_control_helper()->GetEventEngine()->RunAfter(
-          kInitialConnectDelay,
-          [self = RefAsSubclass<AutoshardingLbPolicy>(
-               DEBUG_LOCATION, "InitialConnectTimer")]() mutable {
-            ExecCtx exec_ctx;
-            AutoshardingLbPolicy* self_ptr = self.get();
-            self_ptr->work_serializer()->Run(
-                [self = std::move(self)]() {
-                  self->OnInitialConnectTimerLocked();
-                },
-                DEBUG_LOCATION);
-          });
-}
-
-void AutoshardingLbPolicy::OnInitialConnectTimerLocked() {
-  // If the timer was cancelled after it fired, do nothing.
-  if (!initial_connect_timer_handle_.has_value()) return;
-  initial_connect_timer_handle_.reset();
-  GRPC_TRACE_LOG(autosharding_lb, INFO)
-      << "[AS " << this << "] initial connect timer fired";
-  // Restart the timer, in case the endpoint is removed before it reports a
-  // new state.
-  ConnectToRandomIdleEndpointLocked();
-  StartInitialConnectTimerLocked();
-}
-
-void AutoshardingLbPolicy::ClearInitialConnectLocked() {
-  initial_connect_state_ = InitialConnectState::kDone;
-  if (initial_connect_timer_handle_.has_value()) {
-    channel_control_helper()->GetEventEngine()->Cancel(
-        *initial_connect_timer_handle_);
-    initial_connect_timer_handle_.reset();
-  }
 }
 
 void AutoshardingLbPolicy::UpdateSliceMapLocked() {
@@ -969,23 +820,20 @@ void AutoshardingLbPolicy::UpdateSliceMapLocked() {
 void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked() {
   // UpdateLocked() reports the new state when it finishes.
   if (update_in_progress_) return;
-  // A bad resolver state fails all picks (gRFC A119).
-  if (!resolver_error_.ok()) {
-    ClearInitialConnectLocked();
-    UpdateStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE, resolver_error_,
-                      MakeRefCounted<TransientFailurePicker>(resolver_error_));
-    return;
-  }
-  // Nothing to report until UpdateLocked() has set endpoints_ and config_.
-  if (endpoints_.empty() || config_ == nullptr) return;
-  // Until the client reports its first result, report CONNECTING and queue
-  // all picks.  CONNECTING (not IDLE) lets a priority parent fail over if
-  // the result does not arrive in time (gRFC A119).
+  // On a bad resolver state (an empty address list or no channel factory),
+  // UpdateLocked() reports TRANSIENT_FAILURE, which fails all picks until
+  // the next resolver update (gRFC A119).
+  if (endpoint_map_.empty() || client_ == nullptr) return;
+  // Until the client reports its first result, report IDLE and queue all
+  // picks (gRFC A119).
+  // TODO(bpawan): The gRFC may change this to report CONNECTING while waiting
+  // for the first result (https://github.com/grpc/proposal/pull/551).  Update
+  // this when the gRFC decides.
   // TODO(bpawan): Set delay_type to "autosharding_assignment_pending" per
   // gRFC A121 once it is supported in C++.
   if (assignment_.ok() && *assignment_ == nullptr) {
-    UpdateStateLocked(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                      MakeRefCounted<QueuePicker>(nullptr));
+    channel_control_helper()->UpdateState(GRPC_CHANNEL_IDLE, absl::OkStatus(),
+                                          MakeRefCounted<QueuePicker>(nullptr));
     return;
   }
   // If there is no assignment and fallback is disabled, we cannot route any
@@ -999,9 +847,9 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked() {
     GRPC_TRACE_LOG(autosharding_lb, INFO)
         << "[AS " << this << "] no assignment and fallback disabled, failing "
         << "picks: " << pick_status;
-    ClearInitialConnectLocked();
-    UpdateStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE, pick_status,
-                      MakeRefCounted<TransientFailurePicker>(pick_status));
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE, pick_status,
+        MakeRefCounted<TransientFailurePicker>(pick_status));
     return;
   }
   // Count the number of endpoints in each state.
@@ -1009,6 +857,7 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked() {
   size_t num_connecting = 0;
   size_t num_ready = 0;
   size_t num_transient_failure = 0;
+  AutoShardingEndpoint* idle_endpoint = nullptr;
   for (const auto& [_, endpoint] : endpoint_map_) {
     switch (endpoint->connectivity_state()) {
       case GRPC_CHANNEL_READY:
@@ -1016,6 +865,7 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked() {
         break;
       case GRPC_CHANNEL_IDLE:
         ++num_idle;
+        if (idle_endpoint == nullptr) idle_endpoint = endpoint.get();
         break;
       case GRPC_CHANNEL_CONNECTING:
         ++num_connecting;
@@ -1026,12 +876,6 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked() {
       default:
         Crash("child policy should never report SHUTDOWN");
     }
-  }
-  // Once an endpoint has left IDLE, the aggregated state can no longer be
-  // IDLE (gRFC A119).
-  if (initial_connect_state_ != InitialConnectState::kDone &&
-      num_idle != endpoint_map_.size()) {
-    ClearInitialConnectLocked();
   }
   // The overall aggregation rules here are the same as those used by the
   // ring_hash LB policy (gRFC A42):
@@ -1058,12 +902,6 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked() {
   } else {
     state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   }
-  // While no endpoint has left IDLE, report CONNECTING instead of IDLE, and
-  // do not trigger connection attempts (gRFC A119).
-  const bool initial_connect =
-      state == GRPC_CHANNEL_IDLE &&
-      initial_connect_state_ != InitialConnectState::kDone;
-  if (initial_connect) state = GRPC_CHANNEL_CONNECTING;
   GRPC_TRACE_LOG(autosharding_lb, INFO)
       << "[AS " << this << "] setting connectivity state to "
       << ConnectivityStateName(state) << " (num_idle=" << num_idle
@@ -1075,51 +913,25 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked() {
   const absl::Status status = state == GRPC_CHANNEL_TRANSIENT_FAILURE
                                   ? last_failure_
                                   : absl::OkStatus();
-  UpdateStateLocked(
+  channel_control_helper()->UpdateState(
       state, status,
       MakeRefCounted<Picker>(RefAsSubclass<AutoshardingLbPolicy>(
                                  DEBUG_LOCATION, "AutoShardingPicker"),
                              slice_map_));
-  // If in TRANSIENT_FAILURE or CONNECTING, trigger a connection attempt on
-  // an IDLE endpoint to prevent premature failover when used as a child of
-  // the priority policy (same as ring_hash).
-  if (!initial_connect && (state == GRPC_CHANNEL_CONNECTING ||
-                           state == GRPC_CHANNEL_TRANSIENT_FAILURE)) {
-    ConnectToRandomIdleEndpointLocked();
+  // If in TRANSIENT_FAILURE or CONNECTING without a CONNECTING endpoint,
+  // trigger a connection attempt on an IDLE endpoint to prevent premature
+  // failover when used as a child of the priority policy (same as ring_hash).
+  if ((state == GRPC_CHANNEL_CONNECTING ||
+       state == GRPC_CHANNEL_TRANSIENT_FAILURE) &&
+      num_connecting == 0 && idle_endpoint != nullptr) {
+    GRPC_TRACE_LOG(autosharding_lb, INFO)
+        << "[AS " << this
+        << "] triggering internal connection attempt for endpoint "
+        << idle_endpoint << " ("
+        << endpoints_[idle_endpoint->index()].ToString() << ") (index "
+        << idle_endpoint->index() << " of " << endpoints_.size() << ")";
+    idle_endpoint->RequestConnectionLocked();
   }
-}
-
-void AutoshardingLbPolicy::UpdateStateLocked(
-    grpc_connectivity_state state, const absl::Status& status,
-    RefCountedPtr<SubchannelPicker> picker) {
-  current_state_ = state;
-  channel_control_helper()->UpdateState(state, status, std::move(picker));
-}
-
-void AutoshardingLbPolicy::ConnectToRandomIdleEndpointLocked() {
-  std::vector<AutoShardingEndpoint*> idle_endpoints;
-  for (const auto& [_, endpoint] : endpoint_map_) {
-    switch (endpoint->connectivity_state()) {
-      case GRPC_CHANNEL_CONNECTING:
-        return;
-      case GRPC_CHANNEL_IDLE:
-        idle_endpoints.push_back(endpoint.get());
-        break;
-      default:
-        break;
-    }
-  }
-  if (idle_endpoints.empty()) return;
-  // Choose the endpoint at random, so that many clients that connect at the
-  // same time spread their load across the endpoints (gRFC A117).
-  AutoShardingEndpoint* endpoint = idle_endpoints[absl::Uniform<size_t>(
-      SharedBitGen(), 0, idle_endpoints.size())];
-  GRPC_TRACE_LOG(autosharding_lb, INFO)
-      << "[AS " << this << "] triggering internal connection attempt for "
-      << "endpoint " << endpoint << " ("
-      << endpoints_[endpoint->index()].ToString() << ") (index "
-      << endpoint->index() << " of " << endpoints_.size() << ")";
-  endpoint->RequestConnectionLocked();
 }
 
 //
@@ -1203,14 +1015,15 @@ void AutoShardingLbConfig::JsonPostLoad(const Json&, const JsonArgs&,
   }
 }
 
+bool AutoshardingLbEnabled() {
+  return IsExperimentEnvVarEnabled(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AUTOSHARDING_LB");
+}
+
 void RegisterAutoShardingLbPolicy(CoreConfiguration::Builder* builder) {
-  // TODO(bpawan): Remove this once the feature has proven stable (gRFC A119).
   // If the policy is not registered, a service config that lists it falls
   // through to the next policy in its loadBalancingConfig list.
-  if (!IsExperimentEnvVarEnabled(
-          "GRPC_XDS_EXPERIMENTAL_ENABLE_AUTOSHARDING_LB")) {
-    return;
-  }
+  if (!AutoshardingLbEnabled()) return;
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       std::make_unique<AutoShardingFactory>());
 }

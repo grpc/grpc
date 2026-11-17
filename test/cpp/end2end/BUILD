@@ -950,6 +950,7 @@ grpc_cc_test(
         "absl/status",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/time",
         "gtest",
     ],
     tags = [
@@ -978,6 +979,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 

@@ -40883,10 +40883,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/ads.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/ads.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/ads.pb.h
@@ -41156,7 +41152,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.pb.h
     ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.h
     test/cpp/end2end/autosharding_test_server.cc
-    test/cpp/end2end/connection_attempt_injector.cc
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds/xds_autosharding_end2end_test.cc
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -50421,10 +50416,6 @@ add_executable(xds_lb_policy_registry_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/scoped_route.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/scoped_route.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/scoped_route.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.pb.h

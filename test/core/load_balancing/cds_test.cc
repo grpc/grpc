@@ -373,7 +373,7 @@ class CdsChannelFactoryTest : public LoadBalancingPolicyTest {
   // Returns an EDS cluster that uses the recorder policy for endpoint
   // picking.  max_concurrent_requests lets a test change the cluster
   // without changing the GrpcServices.
-  static std::shared_ptr<XdsClusterResource> MakeLeafCluster(
+  static std::shared_ptr<const XdsClusterResource> MakeLeafCluster(
       XdsGrpcServiceMap grpc_services,
       uint32_t max_concurrent_requests = 1024) {
     auto cluster = std::make_shared<XdsClusterResource>();
@@ -414,7 +414,7 @@ class CdsChannelFactoryTest : public LoadBalancingPolicyTest {
 
   // Sends an update with a leaf cluster "foo" to the CDS policy.
   absl::Status ApplyLeafClusterUpdate(
-      std::shared_ptr<XdsClusterResource> cluster) {
+      std::shared_ptr<const XdsClusterResource> cluster) {
     auto xds_config = MakeRefCounted<XdsConfig>();
     xds_config->clusters["foo"].emplace(std::move(cluster), MakeEndpoints(),
                                         "");

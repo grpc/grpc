@@ -19,6 +19,7 @@
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server_builder.h>
 
+#include <optional>
 #include <utility>
 
 #include "src/core/util/grpc_check.h"
@@ -40,9 +41,12 @@ namespace testing {
 class AutoshardingServiceImpl::Reactor final
     : public grpc::ServerBidiReactor<Request, Response> {
  public:
-  explicit Reactor(AutoshardingServiceImpl* service) : service_(service) {
+  Reactor(AutoshardingServiceImpl* service,
+          grpc::CallbackServerContext* context)
+      : service_(service) {
     service_->IncreaseRequestCount();
     grpc_core::MutexLock lock(service_->mu_);
+    service_->clients_.insert(context->peer());
     if (service_->shutdown_) {
       MaybeFinishLocked(
           grpc::Status(grpc::StatusCode::UNAVAILABLE, "server shutdown"));
@@ -59,11 +63,9 @@ class AutoshardingServiceImpl::Reactor final
       MaybeFinishLocked(grpc::Status::OK);
       return;
     }
-    if (first_read_) {
-      first_read_ = false;
-      const std::string target = request_.initial_client_config().target();
-      service_->targets_.push_back(target);
-      silent_ = (target == service_->silent_target_);
+    if (!target_.has_value()) {
+      target_ = request_.initial_client_config().target();
+      service_->targets_.push_back(*target_);
       LOG(INFO) << "autosharding server: received initial request: "
                 << request_.ShortDebugString();
     } else {
@@ -113,13 +115,17 @@ class AutoshardingServiceImpl::Reactor final
     Finish(status);
   }
 
-  // Starts sending the latest assignment, if one is available and no write is
-  // in flight.  service_->mu_ must be held.
+  // Starts sending the latest assignment for the target of the stream, if
+  // one is available and no write is in flight.  service_->mu_ must be held.
   void SendAssignmentLocked() {
-    if (called_finish_ || writing_ || silent_ || service_->shutdown_) return;
-    if (service_->assignment_version_ == sent_version_) return;
-    sent_version_ = service_->assignment_version_;
-    pending_assignment_ = service_->assignment_;
+    if (called_finish_ || writing_ || service_->shutdown_) return;
+    if (!target_.has_value()) return;
+    auto it = service_->assignments_.find(*target_);
+    if (it == service_->assignments_.end()) return;
+    const Assignment& assignment = it->second;
+    if (assignment.version == sent_version_) return;
+    sent_version_ = assignment.version;
+    pending_assignment_ = assignment.responses;
     next_write_index_ = 0;
     writing_ = true;
     StartWrite(&pending_assignment_[0]);
@@ -128,11 +134,11 @@ class AutoshardingServiceImpl::Reactor final
  private:
   AutoshardingServiceImpl* const service_;
   Request request_;
+  // The target of the InitialClientConfig.  Unset until the first read.
+  std::optional<std::string> target_;
   std::vector<Response> pending_assignment_;
   size_t next_write_index_ = 0;
   uint64_t sent_version_ = 0;
-  bool first_read_ = true;
-  bool silent_ = false;
   bool writing_ = false;
   bool called_finish_ = false;
 };
@@ -144,8 +150,8 @@ class AutoshardingServiceImpl::Reactor final
 grpc::ServerBidiReactor<AutoshardingServiceImpl::Request,
                         AutoshardingServiceImpl::Response>*
 AutoshardingServiceImpl::WatchShardingAssignment(
-    grpc::CallbackServerContext* /*context*/) {
-  return new Reactor(this);
+    grpc::CallbackServerContext* context) {
+  return new Reactor(this, context);
 }
 
 void AutoshardingServiceImpl::Start() {
@@ -162,7 +168,7 @@ void AutoshardingServiceImpl::Shutdown() {
 }
 
 void AutoshardingServiceImpl::SetAssignment(
-    const std::vector<Slice>& slices,
+    const std::string& target, const std::vector<Slice>& slices,
     const std::vector<std::string>& endpoint_names, int64_t generation) {
   Response chunk_response;
   auto* chunk = chunk_response.mutable_chunk();
@@ -184,21 +190,23 @@ void AutoshardingServiceImpl::SetAssignment(
   Response metadata_response;
   metadata_response.mutable_metadata()->set_generation(generation);
   grpc_core::MutexLock lock(mu_);
-  assignment_ = {std::move(chunk_response), std::move(metadata_response)};
-  ++assignment_version_;
+  Assignment& assignment = assignments_[target];
+  assignment.responses = {std::move(chunk_response),
+                          std::move(metadata_response)};
+  assignment.version = ++last_assignment_version_;
   for (Reactor* reactor : reactors_) {
     reactor->SendAssignmentLocked();
   }
 }
 
-void AutoshardingServiceImpl::SetSilentTarget(std::string target) {
-  grpc_core::MutexLock lock(mu_);
-  silent_target_ = std::move(target);
-}
-
 std::vector<std::string> AutoshardingServiceImpl::targets() {
   grpc_core::MutexLock lock(mu_);
   return targets_;
+}
+
+std::set<std::string> AutoshardingServiceImpl::clients() {
+  grpc_core::MutexLock lock(mu_);
+  return clients_;
 }
 
 //

@@ -27,12 +27,10 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <vector>
 
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/core/v3/extension.pb.h"
 #include "envoy/config/core/v3/grpc_service.pb.h"
-#include "envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.pb.h"
 #include "envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.pb.h"
 #include "envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.pb.h"
 #include "envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.pb.h"
@@ -72,8 +70,6 @@ namespace {
 
 using LoadBalancingPolicyProto =
     ::envoy::config::cluster::v3::LoadBalancingPolicy;
-using ::envoy::extensions::grpc_service::call_credentials::access_token::v3::
-    AccessTokenCredentials;
 using ::envoy::extensions::grpc_service::channel_credentials::insecure::v3::
     InsecureCredentials;
 using ::envoy::extensions::load_balancing_policies::autosharding::v3::
@@ -89,15 +85,12 @@ using ::xds::type::v3::TypedStruct;
 
 // Uses XdsLbPolicyRegistry to convert
 // envoy::config::cluster::v3::LoadBalancingPolicy to gRPC's JSON form.
-// - If registry is null, uses the default registry.
-// - If xds_client is non-null, the DecodeContext uses its bootstrap and
-//   its first xDS server.
+// - If xds_client is non-null, uses its bootstrap's registry and its first
+//   xDS server.  Otherwise, uses the default registry.
 // - If grpc_services is non-null, it gets the GrpcServices that the
 //   converters add.
-absl::StatusOr<Json::Array> ConvertXdsPolicyToArray(
-    const LoadBalancingPolicyProto& policy,
-    const XdsLbPolicyRegistry* registry = nullptr,
-    XdsClient* xds_client = nullptr,
+absl::StatusOr<std::string> ConvertXdsPolicy(
+    const LoadBalancingPolicyProto& policy, XdsClient* xds_client = nullptr,
     XdsGrpcServiceMap* grpc_services = nullptr) {
   std::string serialized_policy = policy.SerializeAsString();
   upb::Arena arena;
@@ -113,30 +106,25 @@ absl::StatusOr<Json::Array> ConvertXdsPolicyToArray(
   ValidationErrors errors;
   ValidationErrors::ScopedField field(&errors, ".load_balancing_policy");
   std::optional<XdsLbPolicyRegistry> default_registry;
-  if (registry == nullptr) {
+  const XdsLbPolicyRegistry* registry;
+  if (xds_client != nullptr) {
+    registry = &DownCast<const GrpcXdsBootstrap&>(xds_client->bootstrap())
+                    .lb_policy_registry();
+  } else {
     default_registry.emplace(
         GrpcXdsBootstrapBuilder::CreateXdsLbPolicyRegistry());
     registry = &*default_registry;
   }
   XdsGrpcServiceMap unused_grpc_services;
   if (grpc_services == nullptr) grpc_services = &unused_grpc_services;
-  auto config = registry->ConvertXdsLbPolicyConfig({context, *grpc_services},
-                                                   upb_policy, &errors);
+  auto config = registry->ConvertXdsLbPolicyConfig(context, upb_policy,
+                                                   *grpc_services, &errors);
   if (!errors.ok()) {
     return errors.status(absl::StatusCode::kInvalidArgument,
                          "validation errors");
   }
-  return config;
-}
-
-// Like ConvertXdsPolicyToArray(), but expects exactly one policy and
-// returns it as a JSON string.
-absl::StatusOr<std::string> ConvertXdsPolicy(
-    const LoadBalancingPolicyProto& policy) {
-  auto config = ConvertXdsPolicyToArray(policy);
-  if (!config.ok()) return config.status();
-  EXPECT_EQ(config->size(), 1);
-  return JsonDump(Json{(*config)[0]});
+  EXPECT_EQ(config.size(), 1);
+  return JsonDump(Json{config[0]});
 }
 
 // A gRPC LB policy factory for a custom policy.  None of the methods
@@ -553,16 +541,9 @@ TEST(CustomPolicy, Basic) {
 
 constexpr char kAutoshardingEnvVar[] =
     "GRPC_XDS_EXPERIMENTAL_ENABLE_AUTOSHARDING_LB";
-constexpr absl::string_view kAutoshardingServiceUri =
-    "dns:///autosharding.example.com";
 
 class AutoshardingTest : public ::testing::Test {
  protected:
-  struct ConvertResult {
-    absl::StatusOr<Json::Array> config;
-    XdsGrpcServiceMap grpc_services;
-  };
-
   // Creates the XdsClient with a bootstrap config.  Call it after setting
   // the env var, because the bootstrap creates the xDS LB policy registry.
   void CreateXdsClient(absl::string_view extra_bootstrap_text,
@@ -587,170 +568,96 @@ class AutoshardingTest : public ::testing::Test {
         "foo version");
   }
 
-  ConvertResult Convert(const LoadBalancingPolicyProto& policy) {
-    ConvertResult result;
-    result.config = ConvertXdsPolicyToArray(
-        policy,
-        &DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
-             .lb_policy_registry(),
-        xds_client_.get(), &result.grpc_services);
-    return result;
-  }
-
-  // Returns an Autosharding config whose GrpcService has insecure creds.
-  static Autosharding MakeAutosharding() {
-    Autosharding autosharding;
-    auto* google_grpc =
-        autosharding.mutable_grpc_service()->mutable_google_grpc();
-    google_grpc->set_target_uri(kAutoshardingServiceUri);
-    google_grpc->add_channel_credentials_plugin()->PackFrom(
-        InsecureCredentials());
-    autosharding.set_autosharding_target("target-%s");
-    autosharding.set_key_header_name("x-shard-key");
-    autosharding.set_enable_fallback(true);
-    autosharding.mutable_initial_assignment_timeout()->set_seconds(5);
-    return autosharding;
-  }
-
-  static LoadBalancingPolicyProto MakePolicy(const Autosharding& autosharding) {
-    LoadBalancingPolicyProto policy;
-    policy.add_policies()
-        ->mutable_typed_extension_config()
-        ->mutable_typed_config()
-        ->PackFrom(autosharding);
-    return policy;
-  }
-
-  // Returns the channel factory key that the converter generates for
-  // autosharding, or an error if the conversion does not give exactly one
-  // GrpcService.
-  absl::StatusOr<std::string> ConvertAndGetKey(
-      const Autosharding& autosharding) {
-    auto result = Convert(MakePolicy(autosharding));
-    if (!result.config.ok()) return result.config.status();
-    if (result.grpc_services.size() != 1) {
-      return absl::InternalError(absl::StrCat("expected 1 GrpcService, got ",
-                                              result.grpc_services.size()));
-    }
-    return result.grpc_services.begin()->first;
-  }
-
-  // Returns the expected JSON config for MakeAutosharding().
-  static std::string ExpectedAutoshardingJson(absl::string_view key) {
-    return JsonDump(Json::FromArray({Json::FromObject(
-        {{"autosharding_experimental",
-          Json::FromObject({
-              {"channelFactoryKey", Json::FromString(std::string(key))},
-              {"autoshardingTarget", Json::FromString("target-%s")},
-              {"keyHeaderName", Json::FromString("x-shard-key")},
-              {"enableFallback", Json::FromBool(true)},
-              {"initialAssignmentTimeout", Json::FromString("5.000000000s")},
-          })}})}));
-  }
-
   RefCountedPtr<XdsClient> xds_client_;
 };
 
 TEST_F(AutoshardingTest, TrustedXdsServerUsesResourceGrpcService) {
   ScopedExperimentalEnvVar env_var(kAutoshardingEnvVar);
   CreateXdsClient("", /*trusted_xds_server=*/true);
-  auto result = Convert(MakePolicy(MakeAutosharding()));
-  ASSERT_TRUE(result.config.ok()) << result.config.status();
-  ASSERT_EQ(result.grpc_services.size(), 1);
-  const auto& [key, grpc_service] = *result.grpc_services.begin();
-  // The key is human-readable and includes a hash of the full GrpcService.
-  EXPECT_THAT(key, ::testing::StartsWith(kAutoshardingServiceUri));
-  EXPECT_THAT(key, ::testing::HasSubstr("channel_creds_type=insecure"));
-  EXPECT_THAT(key, ::testing::HasSubstr(", hash="));
-  EXPECT_EQ(grpc_service->server_uri(), kAutoshardingServiceUri);
+  Autosharding autosharding;
+  auto* google_grpc =
+      autosharding.mutable_grpc_service()->mutable_google_grpc();
+  google_grpc->set_target_uri("dns:///autosharding.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      InsecureCredentials());
+  autosharding.set_autosharding_target("target-%s");
+  autosharding.set_key_header_name("x-shard-key");
+  autosharding.set_enable_fallback(true);
+  autosharding.mutable_initial_assignment_timeout()->set_seconds(5);
+  LoadBalancingPolicyProto policy;
+  policy.add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(autosharding);
+  XdsGrpcServiceMap grpc_services;
+  auto result = ConvertXdsPolicy(policy, xds_client_.get(), &grpc_services);
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(*result,
+            "{\"autosharding_experimental\":{"
+            "\"autoshardingTarget\":\"target-%s\","
+            "\"channelFactoryKey\":"
+            "\"{server_uri=dns:///autosharding.example.com, "
+            "channel_creds={type=insecure, config={}}, timeout=\\u221e}\","
+            "\"enableFallback\":true,"
+            "\"initialAssignmentTimeout\":\"5.000000000s\","
+            "\"keyHeaderName\":\"x-shard-key\"}}");
+  ASSERT_EQ(grpc_services.size(), 1);
+  const auto& [key, grpc_service] = *grpc_services.begin();
+  EXPECT_EQ(key,
+            "{server_uri=dns:///autosharding.example.com, "
+            "channel_creds={type=insecure, config={}}, timeout=\u221e}");
+  EXPECT_EQ(grpc_service->server_uri(), "dns:///autosharding.example.com");
   ASSERT_NE(grpc_service->channel_creds_config(), nullptr);
   EXPECT_EQ(grpc_service->channel_creds_config()->type(), "insecure");
-  EXPECT_EQ(JsonDump(Json::FromArray(*result.config)),
-            ExpectedAutoshardingJson(key));
-}
-
-TEST_F(AutoshardingTest, SameGrpcServiceGivesSameKey) {
-  ScopedExperimentalEnvVar env_var(kAutoshardingEnvVar);
-  CreateXdsClient("", /*trusted_xds_server=*/true);
-  auto key1 = ConvertAndGetKey(MakeAutosharding());
-  ASSERT_TRUE(key1.ok()) << key1.status();
-  auto key2 = ConvertAndGetKey(MakeAutosharding());
-  ASSERT_TRUE(key2.ok()) << key2.status();
-  EXPECT_EQ(*key1, *key2);
-}
-
-TEST_F(AutoshardingTest, DifferentCallCredsGiveDifferentKeys) {
-  ScopedExperimentalEnvVar env_var(kAutoshardingEnvVar);
-  CreateXdsClient("", /*trusted_xds_server=*/true);
-  Autosharding autosharding1 = MakeAutosharding();
-  AccessTokenCredentials call_creds;
-  call_creds.set_token("secret-token-1");
-  autosharding1.mutable_grpc_service()
-      ->mutable_google_grpc()
-      ->add_call_credentials_plugin()
-      ->PackFrom(call_creds);
-  Autosharding autosharding2 = MakeAutosharding();
-  call_creds.set_token("secret-token-2");
-  autosharding2.mutable_grpc_service()
-      ->mutable_google_grpc()
-      ->add_call_credentials_plugin()
-      ->PackFrom(call_creds);
-  auto key1 = ConvertAndGetKey(autosharding1);
-  ASSERT_TRUE(key1.ok()) << key1.status();
-  auto key2 = ConvertAndGetKey(autosharding2);
-  ASSERT_TRUE(key2.ok()) << key2.status();
-  EXPECT_NE(*key1, *key2);
-  // The key must not leak the token.
-  EXPECT_THAT(*key1, ::testing::Not(::testing::HasSubstr("secret")));
-  EXPECT_THAT(*key2, ::testing::Not(::testing::HasSubstr("secret")));
-}
-
-TEST_F(AutoshardingTest, DifferentInitialMetadataGiveDifferentKeys) {
-  ScopedExperimentalEnvVar env_var(kAutoshardingEnvVar);
-  CreateXdsClient("", /*trusted_xds_server=*/true);
-  Autosharding autosharding1 = MakeAutosharding();
-  auto* header = autosharding1.mutable_grpc_service()->add_initial_metadata();
-  header->set_key("x-metadata");
-  header->set_value("secret-value-1");
-  Autosharding autosharding2 = MakeAutosharding();
-  header = autosharding2.mutable_grpc_service()->add_initial_metadata();
-  header->set_key("x-metadata");
-  header->set_value("secret-value-2");
-  auto key1 = ConvertAndGetKey(autosharding1);
-  ASSERT_TRUE(key1.ok()) << key1.status();
-  auto key2 = ConvertAndGetKey(autosharding2);
-  ASSERT_TRUE(key2.ok()) << key2.status();
-  EXPECT_NE(*key1, *key2);
-  // The key must not leak the metadata value.
-  EXPECT_THAT(*key1, ::testing::Not(::testing::HasSubstr("secret")));
-  EXPECT_THAT(*key2, ::testing::Not(::testing::HasSubstr("secret")));
 }
 
 TEST_F(AutoshardingTest, UntrustedXdsServerUsesAllowedGrpcService) {
   ScopedExperimentalEnvVar env_var(kAutoshardingEnvVar);
-  CreateXdsClient(absl::StrCat(",\n"
-                               "  \"allowed_grpc_services\": {\n"
-                               "    \"",
-                               kAutoshardingServiceUri,
-                               "\": {\n"
-                               "      \"channel_creds\": [{\"type\": "
-                               "\"google_default\"}]\n"
-                               "    }\n"
-                               "  }"),
-                  /*trusted_xds_server=*/false);
-  auto result = Convert(MakePolicy(MakeAutosharding()));
-  ASSERT_TRUE(result.config.ok()) << result.config.status();
-  ASSERT_EQ(result.grpc_services.size(), 1);
-  const auto& [key, grpc_service] = *result.grpc_services.begin();
-  EXPECT_THAT(key, ::testing::StartsWith(kAutoshardingServiceUri));
-  EXPECT_THAT(key, ::testing::HasSubstr("channel_creds_type=google_default"));
-  EXPECT_THAT(key, ::testing::HasSubstr(", hash="));
-  EXPECT_EQ(grpc_service->server_uri(), kAutoshardingServiceUri);
+  CreateXdsClient(
+      ",\n"
+      "  \"allowed_grpc_services\": {\n"
+      "    \"dns:///autosharding.example.com\": {\n"
+      "      \"channel_creds\": [{\"type\": \"google_default\"}]\n"
+      "    }\n"
+      "  }",
+      /*trusted_xds_server=*/false);
+  Autosharding autosharding;
+  auto* google_grpc =
+      autosharding.mutable_grpc_service()->mutable_google_grpc();
+  google_grpc->set_target_uri("dns:///autosharding.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      InsecureCredentials());
+  autosharding.set_autosharding_target("target-%s");
+  autosharding.set_key_header_name("x-shard-key");
+  autosharding.set_enable_fallback(true);
+  autosharding.mutable_initial_assignment_timeout()->set_seconds(5);
+  LoadBalancingPolicyProto policy;
+  policy.add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(autosharding);
+  XdsGrpcServiceMap grpc_services;
+  auto result = ConvertXdsPolicy(policy, xds_client_.get(), &grpc_services);
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(
+      *result,
+      "{\"autosharding_experimental\":{"
+      "\"autoshardingTarget\":\"target-%s\","
+      "\"channelFactoryKey\":"
+      "\"{server_uri=dns:///autosharding.example.com, "
+      "channel_creds={type=google_default, config={}}, timeout=\\u221e}\","
+      "\"enableFallback\":true,"
+      "\"initialAssignmentTimeout\":\"5.000000000s\","
+      "\"keyHeaderName\":\"x-shard-key\"}}");
+  ASSERT_EQ(grpc_services.size(), 1);
+  const auto& [key, grpc_service] = *grpc_services.begin();
   // The creds come from the bootstrap, not from the resource.
+  EXPECT_EQ(key,
+            "{server_uri=dns:///autosharding.example.com, "
+            "channel_creds={type=google_default, config={}}, timeout=\u221e}");
+  EXPECT_EQ(grpc_service->server_uri(), "dns:///autosharding.example.com");
   ASSERT_NE(grpc_service->channel_creds_config(), nullptr);
   EXPECT_EQ(grpc_service->channel_creds_config()->type(), "google_default");
-  EXPECT_EQ(JsonDump(Json::FromArray(*result.config)),
-            ExpectedAutoshardingJson(key));
 }
 
 // This tests that we pass along errors that are generated by
@@ -759,44 +666,118 @@ TEST_F(AutoshardingTest, UntrustedXdsServerUsesAllowedGrpcService) {
 TEST_F(AutoshardingTest, UntrustedXdsServerAndGrpcServiceNotAllowed) {
   ScopedExperimentalEnvVar env_var(kAutoshardingEnvVar);
   CreateXdsClient("", /*trusted_xds_server=*/false);
-  auto result = Convert(MakePolicy(MakeAutosharding()));
-  EXPECT_EQ(result.config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.config.status().message(),
+  Autosharding autosharding;
+  auto* google_grpc =
+      autosharding.mutable_grpc_service()->mutable_google_grpc();
+  google_grpc->set_target_uri("dns:///autosharding.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      InsecureCredentials());
+  autosharding.set_autosharding_target("target-%s");
+  LoadBalancingPolicyProto policy;
+  policy.add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(autosharding);
+  auto result = ConvertXdsPolicy(policy, xds_client_.get());
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.status().message(),
             "validation errors: [field:load_balancing_policy.policies[0]"
             ".typed_extension_config.typed_config.value["
             "envoy.extensions.load_balancing_policies.autosharding.v3."
             "Autosharding].grpc_service.google_grpc.target_uri "
             "error:service not present in \"allowed_grpc_services\" in "
             "bootstrap config]")
-      << result.config.status();
-  EXPECT_THAT(result.grpc_services, ::testing::IsEmpty());
+      << result.status();
 }
 
 TEST_F(AutoshardingTest, MissingGrpcService) {
   ScopedExperimentalEnvVar env_var(kAutoshardingEnvVar);
   CreateXdsClient("", /*trusted_xds_server=*/true);
-  Autosharding autosharding = MakeAutosharding();
-  autosharding.clear_grpc_service();
-  auto result = Convert(MakePolicy(autosharding));
-  EXPECT_EQ(result.config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.config.status().message(),
+  Autosharding autosharding;
+  autosharding.set_autosharding_target("target-%s");
+  LoadBalancingPolicyProto policy;
+  policy.add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(autosharding);
+  XdsGrpcServiceMap grpc_services;
+  auto result = ConvertXdsPolicy(policy, xds_client_.get(), &grpc_services);
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.status().message(),
             "validation errors: [field:load_balancing_policy.policies[0]"
             ".typed_extension_config.typed_config.value["
             "envoy.extensions.load_balancing_policies.autosharding.v3."
             "Autosharding].grpc_service error:field not set]")
-      << result.config.status();
-  EXPECT_THAT(result.grpc_services, ::testing::IsEmpty());
+      << result.status();
+  EXPECT_THAT(grpc_services, ::testing::IsEmpty());
 }
 
 TEST_F(AutoshardingTest, RejectedWithoutEnvVar) {
   CreateXdsClient("", /*trusted_xds_server=*/true);
-  auto result = Convert(MakePolicy(MakeAutosharding()));
-  EXPECT_EQ(result.config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.config.status().message(),
+  Autosharding autosharding;
+  auto* google_grpc =
+      autosharding.mutable_grpc_service()->mutable_google_grpc();
+  google_grpc->set_target_uri("dns:///autosharding.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      InsecureCredentials());
+  autosharding.set_autosharding_target("target-%s");
+  LoadBalancingPolicyProto policy;
+  policy.add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(autosharding);
+  XdsGrpcServiceMap grpc_services;
+  auto result = ConvertXdsPolicy(policy, xds_client_.get(), &grpc_services);
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.status().message(),
             "validation errors: [field:load_balancing_policy "
             "error:no supported load balancing policy config found]")
-      << result.config.status();
-  EXPECT_THAT(result.grpc_services, ::testing::IsEmpty());
+      << result.status();
+  EXPECT_THAT(grpc_services, ::testing::IsEmpty());
+}
+
+// This tests that WrrLocality passes the GrpcService map down to the
+// converter of its child policy.
+TEST_F(AutoshardingTest, UnderWrrLocality) {
+  ScopedExperimentalEnvVar env_var(kAutoshardingEnvVar);
+  CreateXdsClient("", /*trusted_xds_server=*/true);
+  Autosharding autosharding;
+  auto* google_grpc =
+      autosharding.mutable_grpc_service()->mutable_google_grpc();
+  google_grpc->set_target_uri("dns:///autosharding.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      InsecureCredentials());
+  autosharding.set_autosharding_target("target-%s");
+  autosharding.set_key_header_name("x-shard-key");
+  WrrLocality wrr_locality;
+  wrr_locality.mutable_endpoint_picking_policy()
+      ->add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(autosharding);
+  LoadBalancingPolicyProto policy;
+  policy.add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(wrr_locality);
+  XdsGrpcServiceMap grpc_services;
+  auto result = ConvertXdsPolicy(policy, xds_client_.get(), &grpc_services);
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(*result,
+            "{\"xds_wrr_locality_experimental\":{\"childPolicy\":[{"
+            "\"autosharding_experimental\":{"
+            "\"autoshardingTarget\":\"target-%s\","
+            "\"channelFactoryKey\":"
+            "\"{server_uri=dns:///autosharding.example.com, "
+            "channel_creds={type=insecure, config={}}, timeout=\\u221e}\","
+            "\"enableFallback\":false,"
+            "\"keyHeaderName\":\"x-shard-key\"}}]}}");
+  ASSERT_EQ(grpc_services.size(), 1);
+  const auto& [key, grpc_service] = *grpc_services.begin();
+  EXPECT_EQ(key,
+            "{server_uri=dns:///autosharding.example.com, "
+            "channel_creds={type=insecure, config={}}, timeout=\u221e}");
+  EXPECT_EQ(grpc_service->server_uri(), "dns:///autosharding.example.com");
 }
 
 //
@@ -928,67 +909,6 @@ TEST(XdsLbPolicyRegistryTest, MaxRecursion) {
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(std::string(result.status().message()),
               ::testing::EndsWith("error:exceeded max recursion depth of 16]"));
-}
-
-// A converter that adds a parsed GrpcService to the context's map, as
-// the autosharding converter does (gRFC A119).
-class FakeGrpcServiceLbPolicyConfigFactory final
-    : public XdsLbPolicyRegistry::ConfigFactory {
- public:
-  static constexpr absl::string_view kKey = "fake_key";
-
-  Json::Object ConvertXdsLbPolicyConfig(
-      const XdsLbPolicyRegistry* /*registry*/,
-      const XdsLbPolicyRegistry::ConvertContext& context,
-      absl::string_view /*configuration*/, ValidationErrors* /*errors*/,
-      int /*recursion_depth*/) override {
-    context.grpc_services[std::string(kKey)] =
-        std::make_shared<GrpcXdsServerTarget>(
-            "dns:///fake.example.com", /*channel_creds_config=*/nullptr,
-            /*call_creds_configs=*/
-            std::vector<RefCountedPtr<const CallCredsConfig>>());
-    return Json::Object{
-        {"fake_policy",
-         Json::FromObject(
-             {{"channelFactoryKey", Json::FromString(std::string(kKey))}})}};
-  }
-
-  absl::string_view type() override { return Type(); }
-
-  // Any proto type works here.  The converter ignores the contents.
-  static absl::string_view Type() { return "google.protobuf.Duration"; }
-};
-
-TEST(XdsLbPolicyRegistryTest, ConverterOutputsGrpcServiceMap) {
-  // Put the fake policy under wrr_locality, to check that the map is
-  // passed down to nested converters.
-  LoadBalancingPolicyProto inner_policy;
-  inner_policy.add_policies()
-      ->mutable_typed_extension_config()
-      ->mutable_typed_config()
-      ->PackFrom(google::protobuf::Duration());
-  WrrLocality wrr_locality;
-  *wrr_locality.mutable_endpoint_picking_policy() = inner_policy;
-  LoadBalancingPolicyProto policy;
-  policy.add_policies()
-      ->mutable_typed_extension_config()
-      ->mutable_typed_config()
-      ->PackFrom(wrr_locality);
-  auto registry = GrpcXdsBootstrapBuilder::CreateXdsLbPolicyRegistry();
-  registry.RegisterFactory(
-      std::make_unique<FakeGrpcServiceLbPolicyConfigFactory>());
-  XdsGrpcServiceMap grpc_services;
-  auto config = ConvertXdsPolicyToArray(policy, &registry,
-                                        /*xds_client=*/nullptr, &grpc_services);
-  ASSERT_TRUE(config.ok()) << config.status();
-  EXPECT_EQ(JsonDump(Json::FromArray(*config)),
-            "[{\"xds_wrr_locality_experimental\":{\"childPolicy\":["
-            "{\"fake_policy\":{\"channelFactoryKey\":\"fake_key\"}}]}}]");
-  EXPECT_THAT(grpc_services,
-              ::testing::ElementsAre(::testing::Pair(
-                  "fake_key", ::testing::Pointee(::testing::Property(
-                                  &GrpcXdsServerInterface::server_uri,
-                                  "dns:///fake.example.com")))));
 }
 
 }  // namespace

@@ -39,7 +39,6 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
 #include "src/core/util/load_file.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -388,14 +387,6 @@ void GrpcXdsClient::ResetBackoff() {
 grpc_pollset_set* GrpcXdsClient::interested_parties() const {
   return reinterpret_cast<GrpcXdsTransportFactory*>(transport_factory())
       ->interested_parties();
-}
-
-std::shared_ptr<experimental::ChannelFactory>
-GrpcXdsClient::CreateChannelFactory(XdsGrpcServiceMap targets) {
-  return std::make_shared<XdsTransportFactoryWrapper>(
-      DownCast<GrpcXdsTransportFactory*>(transport_factory())
-          ->RefAsSubclass<GrpcXdsTransportFactory>(),
-      std::move(targets));
 }
 
 namespace {

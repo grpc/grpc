@@ -43,6 +43,7 @@
 #include "envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
 #include "envoy/extensions/upstreams/http/v3/http_protocol_options.pb.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
@@ -93,11 +94,7 @@ namespace {
 
 class XdsClusterTest : public ::testing::Test {
  protected:
-  XdsClusterTest()
-      : xds_client_(MakeXdsClient()),
-        decode_context_{xds_client_.get(),
-                        *xds_client_->bootstrap().servers().front(),
-                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+  XdsClusterTest() : xds_client_(MakeXdsClient()) {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient(
       bool trusted_xds_server = false) {
@@ -136,10 +133,15 @@ class XdsClusterTest : public ::testing::Test {
                                      "foo version");
   }
 
+  XdsResourceType::DecodeContext MakeDecodeContext() {
+    return XdsResourceType::DecodeContext{
+        xds_client_.get(), *xds_client_->bootstrap().servers().front(),
+        upb_def_pool_.ptr(), upb_arena_.ptr()};
+  }
+
   RefCountedPtr<XdsClient> xds_client_;
   upb::DefPool upb_def_pool_;
   upb::Arena upb_arena_;
-  XdsResourceType::DecodeContext decode_context_;
 };
 
 TEST_F(XdsClusterTest, Definition) {
@@ -153,7 +155,7 @@ TEST_F(XdsClusterTest, UnparsableProto) {
   std::string serialized_resource("\0", 1);
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -170,7 +172,7 @@ TEST_F(XdsClusterTest, MinimumValidConfig) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -203,7 +205,7 @@ TEST_F(ClusterTypeTest, EdsConfigSourceAds) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -225,7 +227,7 @@ TEST_F(ClusterTypeTest, EdsServiceName) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -246,7 +248,7 @@ TEST_F(ClusterTypeTest, EdsServiceNameAbsentWithXdstpName) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "xdstp:foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -265,7 +267,7 @@ TEST_F(ClusterTypeTest, DiscoveryTypeNotPresent) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -284,7 +286,7 @@ TEST_F(ClusterTypeTest, EdsClusterConfigMissing) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -304,7 +306,7 @@ TEST_F(ClusterTypeTest, EdsConfigSourceMissing) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -324,7 +326,7 @@ TEST_F(ClusterTypeTest, EdsConfigSourceWrongType) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -352,7 +354,7 @@ TEST_F(ClusterTypeTest, LogicalDnsValid) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -372,7 +374,7 @@ TEST_F(ClusterTypeTest, LogicalDnsMissingLoadAssignment) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -393,7 +395,7 @@ TEST_F(ClusterTypeTest, LogicalDnsMissingLocalities) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -415,7 +417,7 @@ TEST_F(ClusterTypeTest, LogicalDnsTooManyLocalities) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -436,7 +438,7 @@ TEST_F(ClusterTypeTest, LogicalDnsLocalityMissingEndpoints) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -459,7 +461,7 @@ TEST_F(ClusterTypeTest, LogicalDnsLocalityTooManyEndpoints) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -480,7 +482,7 @@ TEST_F(ClusterTypeTest, LogicalDnsEndpointMissing) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -504,7 +506,7 @@ TEST_F(ClusterTypeTest, LogicalDnsAddressMissing) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -529,7 +531,7 @@ TEST_F(ClusterTypeTest, LogicalDnsSocketAddressMissing) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -556,7 +558,7 @@ TEST_F(ClusterTypeTest, LogicalDnsSocketAddressInvalid) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -587,7 +589,7 @@ TEST_F(ClusterTypeTest, AggregateClusterValid) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -612,7 +614,7 @@ TEST_F(ClusterTypeTest, AggregateClusterUnparsableProto) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -635,7 +637,7 @@ TEST_F(ClusterTypeTest, AggregateClusterEmptyClusterList) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -664,7 +666,7 @@ TEST_F(LbPolicyTest, EnumLbPolicyRingHash) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -688,7 +690,7 @@ TEST_F(LbPolicyTest, EnumLbPolicyRingHashSetMinAndMaxRingSize) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -712,7 +714,7 @@ TEST_F(LbPolicyTest, EnumLbPolicyRingHashSetMinAndMaxRingSizeToZero) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -739,7 +741,7 @@ TEST_F(LbPolicyTest, EnumLbPolicyRingHashSetMinAndMaxRingSizeTooLarge) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -766,7 +768,7 @@ TEST_F(LbPolicyTest, EnumLbPolicyRingHashSetMinRingSizeLargerThanMaxRingSize) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -790,7 +792,7 @@ TEST_F(LbPolicyTest, EnumLbPolicyRingHashUnsupportedHashFunction) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -812,7 +814,7 @@ TEST_F(LbPolicyTest, EnumUnsupportedPolicy) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -844,7 +846,7 @@ TEST_F(LbPolicyTest, LoadBalancingPolicyField) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -863,12 +865,12 @@ constexpr char kAutoshardingEnvVar[] =
 // fills lb_policy_grpc_services.
 TEST_F(LbPolicyTest, AutoshardingPolicyFillsGrpcServiceMap) {
   ScopedExperimentalEnvVar env_var(kAutoshardingEnvVar);
+  // Rebuild the core configuration after setting the env var, so that the
+  // gRPC LB policy registry has the autosharding policy.
+  CoreConfiguration::WithSubstituteBuilder builder(BuildCoreConfiguration);
   // Create the bootstrap after setting the env var, so that its xDS LB
   // policy registry has the Autosharding converter.
-  auto xds_client = MakeXdsClient(/*trusted_xds_server=*/true);
-  XdsResourceType::DecodeContext decode_context = {
-      xds_client.get(), *xds_client->bootstrap().servers().front(),
-      upb_def_pool_.ptr(), upb_arena_.ptr()};
+  xds_client_ = MakeXdsClient(/*trusted_xds_server=*/true);
   Autosharding autosharding;
   auto* google_grpc =
       autosharding.mutable_grpc_service()->mutable_google_grpc();
@@ -890,7 +892,7 @@ TEST_F(LbPolicyTest, AutoshardingPolicyFillsGrpcServiceMap) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -898,6 +900,9 @@ TEST_F(LbPolicyTest, AutoshardingPolicyFillsGrpcServiceMap) {
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   ASSERT_EQ(resource.lb_policy_grpc_services.size(), 1);
   const auto& [key, grpc_service] = *resource.lb_policy_grpc_services.begin();
+  EXPECT_EQ(key,
+            "{server_uri=dns:///autosharding.example.com, "
+            "channel_creds={type=insecure, config={}}, timeout=\u221e}");
   EXPECT_EQ(grpc_service->server_uri(), "dns:///autosharding.example.com");
   // The LB policy config refers to the map entry by its key.
   EXPECT_THAT(JsonDump(Json::FromArray(resource.lb_policy_config)),
@@ -922,7 +927,7 @@ TEST_F(LbPolicyTest, XdsLbPolicyRegistryConversionFails) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -953,7 +958,7 @@ TEST_F(LbPolicyTest, ConvertedCustomPolicyFailsValidation) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -991,7 +996,7 @@ TEST_F(TlsConfigTest, MinimumValidConfig) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1022,7 +1027,7 @@ TEST_F(TlsConfigTest, SystemRootCerts) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1056,7 +1061,7 @@ TEST_F(TlsConfigTest, UpstreamTlsContextSni) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1090,7 +1095,7 @@ TEST_F(TlsConfigTest, UpstreamTlsContextSniNoEnv) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1124,7 +1129,7 @@ TEST_F(TlsConfigTest, UnknownCertificateProviderInstance) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -1150,7 +1155,7 @@ TEST_F(TlsConfigTest, UnknownTransportSocketType) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -1176,7 +1181,7 @@ TEST_F(TlsConfigTest, UnparsableUpstreamTlsContext) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -1204,7 +1209,7 @@ TEST_F(TlsConfigTest, UpstreamTlsContextInTypedStruct) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -1230,7 +1235,7 @@ TEST_F(TlsConfigTest, CaCertProviderUnset) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -1264,7 +1269,7 @@ TEST_F(TlsConfigTest, SniTooLong) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -1297,7 +1302,7 @@ TEST_F(HttpConnectTest, FeatureNotEnabled) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -1321,7 +1326,7 @@ TEST_F(HttpConnectTest, NoTransportSocket) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1345,7 +1350,7 @@ TEST_F(HttpConnectTest, NoInnerTransportSocket) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1370,7 +1375,7 @@ TEST_F(HttpConnectTest, UnknownWrappedTransportSocketType) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -1400,7 +1405,7 @@ TEST_F(HttpConnectTest, UnparsableHttp11ProxyUpstreamTransport) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -1430,7 +1435,7 @@ TEST_F(HttpConnectTest, UpstreamTlsContextInTypedStruct) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -1468,7 +1473,7 @@ TEST_F(HttpConnectTest, WrappingUpstreamTlsContext) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1510,7 +1515,7 @@ TEST_F(HttpConnectTest, WrappingInvalidUpstreamTlsContext) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -1544,7 +1549,7 @@ TEST_F(LrsTest, Valid) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1565,7 +1570,7 @@ TEST_F(LrsTest, NotSelfConfigSource) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -1590,7 +1595,7 @@ TEST_F(LrsTest, IgnoresPropagationWithEnvVarDisabled) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1619,7 +1624,7 @@ TEST_F(LrsTest, Propagation) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1646,7 +1651,7 @@ TEST_F(LrsTest, PropagationNamedMetricsAll) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1675,7 +1680,7 @@ TEST_F(UpstreamConfigTest, DefaultWithNoUpstreamConfig) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1696,7 +1701,7 @@ TEST_F(UpstreamConfigTest, DefaultWithNoCommonHttpProtocolOptions) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1718,7 +1723,7 @@ TEST_F(UpstreamConfigTest, DefaultWithFieldUnset) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1742,7 +1747,7 @@ TEST_F(UpstreamConfigTest, ExplicitlySet) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1762,7 +1767,7 @@ TEST_F(UpstreamConfigTest, UnknownUpstreamConfigType) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -1788,7 +1793,7 @@ TEST_F(UpstreamConfigTest, UnparsableHttpProtocolOptions) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -1816,7 +1821,7 @@ TEST_F(UpstreamConfigTest, HttpProtocolOptionsInTypedStruct) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -1848,7 +1853,7 @@ TEST_F(UpstreamConfigTest, ErrorsParsingDurations) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -1886,7 +1891,7 @@ TEST_F(CircuitBreakingTest, Valid) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1907,7 +1912,7 @@ TEST_F(CircuitBreakingTest, NoDefaultThreshold) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1927,7 +1932,7 @@ TEST_F(CircuitBreakingTest, DefaultThresholdWithMaxRequestsUnset) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1952,7 +1957,7 @@ TEST_F(OutlierDetectionTest, DefaultValues) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1984,7 +1989,7 @@ TEST_F(OutlierDetectionTest, AllFieldsSet) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -2031,7 +2036,7 @@ TEST_F(OutlierDetectionTest, InvalidValues) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -2076,7 +2081,7 @@ TEST_F(HostOverrideStatusTest, PassesOnRelevantHealthStatuses) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -2096,7 +2101,7 @@ TEST_F(HostOverrideStatusTest,
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -2116,7 +2121,7 @@ TEST_F(HostOverrideStatusTest,
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -2135,7 +2140,7 @@ TEST_F(HostOverrideStatusTest, CanExplicitlySetToEmpty) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -2164,7 +2169,7 @@ TEST_F(MetadataTest, UntypedMetadata) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
@@ -2192,7 +2197,7 @@ TEST_F(MetadataTest, MetadataUnparseable) {
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
