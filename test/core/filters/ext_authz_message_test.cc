@@ -1281,7 +1281,7 @@ TEST_F(ParseExtAuthzResponseTest, InvalidHeaderKeysFail) {
 }
 
 // Non-binary header values must be valid gRPC header values and no longer
-// than 16384 bytes (gRFC A102).
+// than 32768 bytes (gRFC A102).
 TEST_F(ParseExtAuthzResponseTest, InvalidHeaderValuesFail) {
   struct TestCase {
     std::string value;
@@ -1290,7 +1290,7 @@ TEST_F(ParseExtAuthzResponseTest, InvalidHeaderValuesFail) {
   for (const TestCase& test_case : {
            TestCase{"\x01", "Illegal header value"},
            TestCase{"a\nb", "Illegal header value"},
-           TestCase{std::string(16385, 'a'), "longer than 16384 bytes"},
+           TestCase{std::string(32769, 'a'), "longer than 32768 bytes"},
        }) {
     CheckResponse response;
     response.mutable_status()->set_code(GRPC_STATUS_OK);
