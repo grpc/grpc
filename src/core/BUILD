@@ -8629,6 +8629,7 @@ grpc_cc_library(
         "connectivity_state",
         "delegating_helper",
         "down_cast",
+        "experiment_env_var",
         "grpc_check",
         "grpc_lb_policy_autosharding_assignment",
         "grpc_lb_policy_autosharding_client",
