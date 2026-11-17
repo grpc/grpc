@@ -877,15 +877,16 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   bool ExpectStateAndQueuingPicker(
       grpc_connectivity_state expected_state,
       absl::Status expected_status = absl::OkStatus(),
+      const std::map<std::string, std::string>& metadata = {},
       SourceLocation location = SourceLocation()) {
     auto picker = ExpectState(expected_state, expected_status, location);
-    return ExpectPickQueued(picker.get(), {}, {}, location);
+    return ExpectPickQueued(picker.get(), {}, metadata, location);
   }
 
   // Convenient frontend to ExpectStateAndQueuingPicker() for CONNECTING.
   bool ExpectConnectingUpdate(SourceLocation location = SourceLocation()) {
     return ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING,
-                                       absl::OkStatus(), location);
+                                       absl::OkStatus(), {}, location);
   }
 
   static std::unique_ptr<LoadBalancingPolicy::MetadataInterface> MakeMetadata(
@@ -1265,6 +1266,21 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     ASSERT_NE(fail, nullptr) << PickResultString(pick_result) << " at "
                              << location.file() << ":" << location.line();
     check_status(fail->status);
+  }
+
+  // Requests a pick on picker and expects a Drop result.
+  // The failing status is passed to check_status.
+  void ExpectPickDrop(LoadBalancingPolicy::SubchannelPicker* picker,
+                      std::function<void(const absl::Status&)> check_status,
+                      const CallAttributes& call_attributes = {},
+                      const std::map<std::string, std::string>& metadata = {},
+                      SourceLocation location = SourceLocation()) {
+    auto pick_result = DoPick(picker, call_attributes, metadata);
+    auto* drop =
+        std::get_if<LoadBalancingPolicy::PickResult::Drop>(&pick_result.result);
+    ASSERT_NE(drop, nullptr) << PickResultString(pick_result) << " at "
+                             << location.file() << ":" << location.line();
+    check_status(drop->status);
   }
 
   // Returns a human-readable string for a pick result.

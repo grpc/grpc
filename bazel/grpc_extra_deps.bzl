@@ -21,7 +21,6 @@ load("@com_envoyproxy_protoc_gen_validate//:dependencies.bzl", "go_third_party")
 load("@com_google_googleapis//:repository_rules.bzl", "switched_rules_by_language")
 load("@com_google_googletest//:googletest_deps.bzl", "googletest_deps")
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
-load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
 load("@google_cloud_cpp//bazel:google_cloud_cpp_deps.bzl", "google_cloud_cpp_deps")
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@rules_java//java:rules_java_deps.bzl", "rules_java_dependencies")
@@ -61,8 +60,6 @@ def grpc_extra_deps(ignore_version_differences = False):
 
     rules_proto_dependencies()
     bazel_features_deps()
-
-    api_dependencies()
 
     go_rules_dependencies()
     go_register_toolchains(version = "1.22.5")

@@ -56,4 +56,68 @@ grpc_call* LameChannel::CreateCall(
                         compression_options(), std::move(arena), Ref());
 }
 
+namespace {
+
+// Tracks state to complete a connectivity watch on a CQ.
+// This is a fire-and-forget object: it cleans itself up once the
+// completion has been reported.
+class ExternalWatcher final {
+ public:
+  ExternalWatcher(grpc_event_engine::experimental::EventEngine& event_engine,
+                  grpc_connectivity_state initial_state, Timestamp deadline,
+                  grpc_completion_queue* cq, void* tag)
+      : cq_(cq), tag_(tag) {
+    grpc_cq_begin_op(cq_, tag_);
+    // Lame channels never report any state other than TRANSIENT_FAILURE.
+    // If the initial state is anything else, report a "change" immediately.
+    if (initial_state != GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      Complete(absl::OkStatus());
+      return;
+    }
+    // Otherwise, wait until the deadline expires, because the state will
+    // never change.
+    const Duration timeout = deadline - Timestamp::Now();
+    event_engine.RunAfter(timeout, [this]() mutable {
+      ExecCtx exec_ctx;
+      Complete(absl::DeadlineExceededError(
+          "Timed out waiting for connection state change"));
+    });
+  }
+
+ private:
+  static void FinishedCompletion(void* arg, grpc_cq_completion*) {
+    auto* self = static_cast<ExternalWatcher*>(arg);
+    delete self;
+  }
+
+  void Complete(absl::Status status) {
+    grpc_cq_end_op(cq_, tag_, status, FinishedCompletion, this,
+                   &completion_storage_);
+  }
+
+  grpc_completion_queue* cq_;
+  void* tag_;
+  grpc_cq_completion completion_storage_;
+};
+
+}  // namespace
+
+void LameChannel::WatchConnectivityState(grpc_connectivity_state initial_state,
+                                         Timestamp deadline,
+                                         grpc_completion_queue* cq, void* tag) {
+  new ExternalWatcher(*event_engine_, initial_state, deadline, cq, tag);
+}
+
+void LameChannel::AddConnectivityWatcher(
+    grpc_connectivity_state initial_state,
+    OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher) {
+  // Lame channels never report any state other than TRANSIENT_FAILURE.
+  // If the initial state is anything else, report a "change" immediately.
+  // Otherwise, don't bother reporting anything or even retaining
+  // ownership of the watcher, because the state will never change.
+  if (initial_state != GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    watcher->Notify(GRPC_CHANNEL_TRANSIENT_FAILURE, status_);
+  }
+}
+
 }  // namespace grpc_core
