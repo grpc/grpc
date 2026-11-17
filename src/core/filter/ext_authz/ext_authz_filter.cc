@@ -147,60 +147,81 @@ bool ExtAuthzFilter::Config::Equals(const FilterConfig& other) const {
 
 std::string ExtAuthzFilter::Config::ToString() const {
   std::string result = "{";
-  bool has_server = false;
+  bool is_first = true;
   Match(
       channel_info,
+      [&](const GrpcXdsServerTarget& target) {
+        StrAppend(result, "grpc_service=");
+        StrAppend(result, target.Key());
+        is_first = false;
+      },
       [&](const RefCountedPtr<ExtAuthzChannel>& channel) {
         if (channel != nullptr) {
-          StrAppend(result, "server_uri=");
-          StrAppend(result, channel->server().server_uri());
-          has_server = true;
+          StrAppend(result, "ext_authz_channel=");
+          StrAppend(result, channel->server().Key());
+          is_first = false;
         }
-      },
-      [&](const GrpcXdsServerTarget& target) {
-        StrAppend(result, "server_uri=");
-        StrAppend(result, target.server_uri());
-        has_server = true;
       });
-  if (has_server) {
-    if (filter_enabled < kFilterEnabledMax) {
-      StrAppend(result, ", filter_enabled=");
-      StrAppend(result, std::to_string(filter_enabled));
-    }
-    StrAppend(result, ", deny_at_disable=");
-    StrAppend(result, deny_at_disable ? "true" : "false");
-    StrAppend(result, ", failure_mode_allow=");
-    StrAppend(result, failure_mode_allow ? "true" : "false");
-    StrAppend(result, ", failure_mode_allow_header_add=");
-    StrAppend(result, failure_mode_allow_header_add ? "true" : "false");
-    StrAppend(result, ", status_on_error=");
+  if (filter_enabled < kFilterEnabledMax) {
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "filter_enabled=");
+    StrAppend(result, std::to_string(filter_enabled));
+    is_first = false;
+  }
+  if (deny_at_disable) {
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "deny_at_disable=true");
+    is_first = false;
+  }
+  if (failure_mode_allow) {
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "failure_mode_allow=true");
+    is_first = false;
+  }
+  if (failure_mode_allow_header_add) {
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "failure_mode_allow_header_add=true");
+    is_first = false;
+  }
+  if (status_on_error != GRPC_STATUS_PERMISSION_DENIED) {
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "status_on_error=");
     StrAppend(result, std::to_string(static_cast<int>(status_on_error)));
-    StrAppend(result, ", include_peer_certificate=");
-    StrAppend(result, include_peer_certificate ? "true" : "false");
-    if (!(decoder_header_mutation_rules == HeaderMutationRules())) {
-      StrAppend(result, ", decoder_header_mutation_rules=");
-      StrAppend(result, decoder_header_mutation_rules.ToString());
+    is_first = false;
+  }
+  if (include_peer_certificate) {
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "include_peer_certificate=true");
+    is_first = false;
+  }
+  if (!(decoder_header_mutation_rules == HeaderMutationRules())) {
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "decoder_header_mutation_rules=");
+    StrAppend(result, decoder_header_mutation_rules.ToString());
+    is_first = false;
+  }
+  if (!allowed_headers.empty()) {
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "allowed_headers=[");
+    bool first_matcher = true;
+    for (const auto& matcher : allowed_headers) {
+      if (!first_matcher) StrAppend(result, ", ");
+      StrAppend(result, matcher.ToString());
+      first_matcher = false;
     }
-    if (!allowed_headers.empty()) {
-      StrAppend(result, ", allowed_headers=[");
-      bool is_first = true;
-      for (const auto& matcher : allowed_headers) {
-        if (!is_first) StrAppend(result, ", ");
-        is_first = false;
-        StrAppend(result, matcher.ToString());
-      }
-      StrAppend(result, "]");
+    StrAppend(result, "]");
+    is_first = false;
+  }
+  if (!disallowed_headers.empty()) {
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "disallowed_headers=[");
+    bool first_matcher = true;
+    for (const auto& matcher : disallowed_headers) {
+      if (!first_matcher) StrAppend(result, ", ");
+      StrAppend(result, matcher.ToString());
+      first_matcher = false;
     }
-    if (!disallowed_headers.empty()) {
-      StrAppend(result, ", disallowed_headers=[");
-      bool is_first = true;
-      for (const auto& matcher : disallowed_headers) {
-        if (!is_first) StrAppend(result, ", ");
-        is_first = false;
-        StrAppend(result, matcher.ToString());
-      }
-      StrAppend(result, "]");
-    }
+    StrAppend(result, "]");
   }
   StrAppend(result, "}");
   return result;
@@ -411,8 +432,8 @@ ArenaPromise<absl::Status> ExtAuthzFilter::Call::OnClientInitialMetadata(
               filter->RecordDeniedRpc();
               std::string status_message = "ExtAuthz request is denied";
               if (!response->status_message.empty()) {
-                absl::StrAppend(&status_message, ", error message: ",
-                                response->status_message);
+                absl::StrAppend(&status_message,
+                                ", error message: ", response->status_message);
               }
               return absl::Status(static_cast<absl::StatusCode>(denied.status),
                                   status_message);

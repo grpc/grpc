@@ -3615,10 +3615,9 @@ TEST_F(XdsHttpFilterTest, ExtAuthzServerEnvVarEnablesAllowedGrpcServices) {
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
   EXPECT_EQ(config->ToString(),
-            "{server_uri=localhost:1234, "
-            "deny_at_disable=false, failure_mode_allow=false, "
-            "failure_mode_allow_header_add=false, status_on_error=7, "
-            "include_peer_certificate=false}");
+            "{grpc_service={server_uri=localhost:1234, "
+            "channel_creds={type=google_default, config={}}, "
+            "timeout=\xE2\x88\x9E}}");
 }
 
 class XdsExtAuthzFilterTest : public XdsHttpFilterTest {
@@ -3721,10 +3720,9 @@ TEST_F(XdsExtAuthzFilterTest, ParseMinimumConfig) {
   ASSERT_NE(config, nullptr);
   ASSERT_EQ(config->type(), ExtAuthzFilter::Config::Type());
   EXPECT_EQ(config->ToString(),
-            "{server_uri=localhost:1234, "
-            "deny_at_disable=false, failure_mode_allow=false, "
-            "failure_mode_allow_header_add=false, status_on_error=7, "
-            "include_peer_certificate=false}");
+            "{grpc_service={server_uri=localhost:1234, "
+            "channel_creds={type=google_default, config={}}, "
+            "timeout=\xE2\x88\x9E}}");
 }
 
 TEST_F(XdsExtAuthzFilterTest, ParseFullConfig) {
@@ -3736,7 +3734,9 @@ TEST_F(XdsExtAuthzFilterTest, ParseFullConfig) {
   ASSERT_NE(config, nullptr);
   ASSERT_EQ(config->type(), ExtAuthzFilter::Config::Type());
   EXPECT_EQ(config->ToString(),
-            "{server_uri=localhost:1234, "
+            "{grpc_service={server_uri=localhost:1234, "
+            "channel_creds={type=google_default, config={}}, "
+            "timeout=\xE2\x88\x9E}, "
             "filter_enabled=10000, "
             "deny_at_disable=true, failure_mode_allow=true, "
             "failure_mode_allow_header_add=true, status_on_error=16, "
@@ -3782,10 +3782,9 @@ TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigEmptyHeaderLists) {
   ASSERT_NE(config, nullptr);
   ASSERT_EQ(config->type(), ExtAuthzFilter::Config::Type());
   EXPECT_EQ(config->ToString(),
-            "{server_uri=localhost:1234, "
-            "deny_at_disable=false, failure_mode_allow=false, "
-            "failure_mode_allow_header_add=false, status_on_error=7, "
-            "include_peer_certificate=false}");
+            "{grpc_service={server_uri=localhost:1234, "
+            "channel_creds={type=google_default, config={}}, "
+            "timeout=\xE2\x88\x9E}}");
 }
 
 TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigMissingGrpcService) {
@@ -4018,10 +4017,9 @@ TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigIgnoredFields) {
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
   EXPECT_EQ(config->ToString(),
-            "{server_uri=localhost:1234, "
-            "deny_at_disable=false, failure_mode_allow=false, "
-            "failure_mode_allow_header_add=false, status_on_error=7, "
-            "include_peer_certificate=false}");
+            "{grpc_service={server_uri=localhost:1234, "
+            "channel_creds={type=google_default, config={}}, "
+            "timeout=\xE2\x88\x9E}}");
 }
 
 // filter_enabled is converted to parts per million for every denominator.
@@ -4330,7 +4328,9 @@ TEST_F(XdsExtAuthzFilterTest, MergeConfigsNoOverride) {
   ASSERT_NE(merged_config, nullptr);
   ASSERT_EQ(merged_config->type(), ExtAuthzFilter::Config::Type());
   EXPECT_EQ(merged_config->ToString(),
-            "{server_uri=localhost:1234, "
+            "{ext_authz_channel={server_uri=localhost:1234, "
+            "channel_creds={type=google_default, config={}}, "
+            "timeout=\xE2\x88\x9E}, "
             "filter_enabled=10000, "
             "deny_at_disable=true, failure_mode_allow=true, "
             "failure_mode_allow_header_add=true, status_on_error=16, "
