@@ -14,6 +14,8 @@
 
 licenses(["notice"])
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
 cc_library(
     name = "inja",
     hdrs = ["include/inja/inja.hpp"],

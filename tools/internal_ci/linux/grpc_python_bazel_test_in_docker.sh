@@ -15,6 +15,18 @@
 
 set -ex
 
+# Under Bazel 9 with strict action environments (--incompatible_strict_action_env=true),
+# actions running in the sandbox execute in a cleared environment (e.g., `exec env -`).
+# Tools like rules_python's `wheel_record_rewriter_py` use `#!/usr/bin/env python3`
+# which resolves python3 via default system PATH (/bin:/usr/bin). In this container,
+# python3 is installed in /usr/local/bin, so we ensure a symlink exists in /usr/bin.
+# Reference:
+# - https://bazel.build/reference/command-line-reference#flag--incompatible_strict_action_env
+# - https://github.com/bazel-contrib/rules_python/issues/1369
+if [ ! -f /usr/bin/python3 ] && which python3 > /dev/null 2>&1; then
+  ln -sf "$(which python3)" /usr/bin/python3
+fi
+
 RESULTSTORE_RESULTS_FLAG="--bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc"
 TEST_TARGETS="//src/python/... //tools/distrib/python/grpcio_tools/... //examples/python/..."
 BAZEL_FLAGS="--test_output=errors --config=python"
