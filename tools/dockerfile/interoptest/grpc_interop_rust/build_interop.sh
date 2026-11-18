@@ -30,7 +30,7 @@ mkdir -p /var/local/git
 git clone /var/local/jenkins/grpc-rust /var/local/git/grpc-rust
 
 # copy service account keys if available
-cp -r /var/local/jenkins/service_account $HOME || true
+cp -r /var/local/jenkins/service_account "${HOME}" || true
 
 cd /var/local/git/grpc-rust
 cargo build --release -p interop --bins --features protoc-gen-grpc-rust
