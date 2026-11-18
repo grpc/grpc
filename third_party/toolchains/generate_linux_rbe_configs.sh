@@ -47,7 +47,7 @@ BAZEL_VERSION=9.3.2
 # TODO(jtattermusch): experiment with --cpp_env_json to simplify bazel build configuration.
 
 # Where to store the generated configs (relative to repo root)
-CONFIG_OUTPUT_PATH=third_party/toolchains/rbe_ubuntu2004_bazel7
+CONFIG_OUTPUT_PATH=third_party/toolchains/rbe_ubuntu2004_bazel9
 
 # Delete old generated configs.
 rm -rf "${REPO_ROOT}/${CONFIG_OUTPUT_PATH}"
