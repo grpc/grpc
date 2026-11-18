@@ -78,11 +78,13 @@ Examples:
 """
 
 import argparse
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Generator, Iterator, Sequence
 from concurrent import futures
+import contextlib
 import dataclasses
 import enum
 import logging
+import os
 import pathlib
 import re
 import shutil
@@ -90,13 +92,19 @@ import sys
 import tempfile
 import textwrap
 import time
-from typing import Final, Protocol, cast
+from types import TracebackType
+from typing import Final, Protocol, Self, cast
 from xml.etree import ElementTree as ET
 
 from google.api_core import exceptions as gcs_exceptions
+from google.auth import credentials as auth_credentials
+from google.auth import exceptions as auth_exceptions
+from google.auth.transport import requests as auth_requests
 from google.cloud import storage  # pyright: ignore[reportMissingTypeStubs]
+import google.cloud.storage.exceptions  # pyright: ignore[reportMissingTypeStubs]
 import requests
 from requests import adapters
+from requests import exceptions as requests_exceptions
 
 _LOGGER: Final = logging.getLogger(__name__)
 
@@ -105,6 +113,9 @@ DEFAULT_PREFIX: Final = "archive"
 DEFAULT_WORKERS: Final = 16
 INDEX_FILENAME: Final = "index.xml"
 XML_CONTENT_TYPE: Final = "application/xml"
+# Cap well below google-cloud-storage's 8 MiB multipart upload threshold so
+# uploads are always single-request atomic multipart operations.
+MAX_INDEX_XML_BYTES: Final = 4 * 1024 * 1024
 
 XHTML_NAMESPACE: Final = "http://www.w3.org/1999/xhtml"
 XHTML_SCRIPT_TAG: Final = f"{{{XHTML_NAMESPACE}}}script"
@@ -113,16 +124,24 @@ POLYFILL_LINE: Final = (
     f'  <script src="{POLYFILL_SRC}" xmlns="{XHTML_NAMESPACE}"></script>'
 )
 
-_YEAR_RE: Final = re.compile(r"^\d{4}$")
+_YEAR_RE: Final = re.compile(r"^[0-9]{4}$")
 _MONTH_RE: Final = re.compile(r"^(0[1-9]|1[0-2])$")
 _BUILD_OPEN_TAG_RE: Final = re.compile(
-    r"^(<build\b[^>]*>)(\r?\n)",
+    r"^(<build\b[^>]*(?<!/)>)(\r?\n)",
     re.MULTILINE,
 )
 _STYLESHEET_PI_RE: Final = re.compile(
-    r"<\?xml-stylesheet\b[^>]*href=[\"']/web-assets/build-[^\"']+[\"'][^>]*\?>",
+    r"<\?xml-stylesheet\b[^>]*href=[\"']/web-assets/build-201807\.xsl[\"'][^>]*\?>",
 )
 _DTD_RE: Final = re.compile(r"<!(DOCTYPE|ENTITY)\b", re.IGNORECASE)
+
+_GCS_OPERATION_ERRORS: Final = (
+    gcs_exceptions.GoogleAPIError,
+    google.cloud.storage.exceptions.DataCorruption,
+    google.cloud.storage.exceptions.InvalidResponse,
+    auth_exceptions.GoogleAuthError,
+    requests_exceptions.RequestException,
+)
 
 
 class Outcome(enum.Enum):
@@ -253,9 +272,16 @@ def patch_build_index_xml(raw_bytes: bytes, source_label: str) -> bytes | None:
       Patched UTF-8 XML bytes if modified, or None if already patched.
 
     Raises:
-      ValueError: If the document is not a valid build index.xml or has an
-        unexpected structure.
+      ValueError: If the document is not a valid build index.xml, exceeds the
+        expected manifest size limit, or has an unexpected structure.
     """
+    if len(raw_bytes) > MAX_INDEX_XML_BYTES:
+        msg = (
+            f"{source_label}: size {len(raw_bytes)} bytes exceeds limit "
+            f"({MAX_INDEX_XML_BYTES} bytes)"
+        )
+        raise ValueError(msg)
+
     try:
         text = raw_bytes.decode("utf-8")
     except UnicodeDecodeError as exc:
@@ -294,22 +320,22 @@ def patch_build_index_xml(raw_bytes: bytes, source_label: str) -> bytes | None:
         )
         raise ValueError(msg)
 
-    if not _STYLESHEET_PI_RE.search(text):
-        msg = (
-            f"{source_label}: missing expected <?xml-stylesheet?> header for "
-            "/web-assets/build-*.xsl"
-        )
-        raise ValueError(msg)
-
     matches = list(_BUILD_OPEN_TAG_RE.finditer(text))
     if len(matches) != 1:
         msg = (
-            f"{source_label}: expected exactly 1 opening <build ...> line, "
-            f"found {len(matches)}"
+            f"{source_label}: expected exactly 1 non-empty opening "
+            f"<build ...> line, found {len(matches)}"
         )
         raise ValueError(msg)
 
     match = matches[0]
+    if not _STYLESHEET_PI_RE.search(text, 0, match.start()):
+        msg = (
+            f"{source_label}: missing expected <?xml-stylesheet?> prolog for "
+            "/web-assets/build-201807.xsl"
+        )
+        raise ValueError(msg)
+
     newline = match.group(2)
     insert_pos = match.end()
     patched_text = (
@@ -329,7 +355,14 @@ def patch_build_index_xml(raw_bytes: bytes, source_label: str) -> bytes | None:
         msg = f"{source_label}: patched XML missing expected first <script>"
         raise ValueError(msg)
 
-    return patched_text.encode("utf-8")
+    patched_bytes = patched_text.encode("utf-8")
+    if len(patched_bytes) > MAX_INDEX_XML_BYTES:
+        msg = (
+            f"{source_label}: patched size {len(patched_bytes)} bytes exceeds "
+            f"limit ({MAX_INDEX_XML_BYTES} bytes)"
+        )
+        raise ValueError(msg)
+    return patched_bytes
 
 
 class LocalArchiveBackend:
@@ -338,6 +371,17 @@ class LocalArchiveBackend:
     def __init__(self, archive_dir: pathlib.Path, *, dry_run: bool) -> None:
         self._archive_dir = archive_dir.resolve()
         self._dry_run = dry_run
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        return None
 
     @property
     def is_remote_gcs(self) -> bool:
@@ -387,11 +431,11 @@ class LocalArchiveBackend:
     def process_target(self, target: str) -> ItemResult:
         """Reads, validates, patches, and atomically writes one local file."""
         file_path = pathlib.Path(target)
-        if not file_path.is_file():
-            _LOGGER.warning("Missing build index: %s", file_path)
-            return ItemResult(target=target, outcome=Outcome.MISSING)
-
         try:
+            if not file_path.is_file():
+                _LOGGER.warning("Missing build index: %s", file_path)
+                return ItemResult(target=target, outcome=Outcome.MISSING)
+
             raw_bytes = file_path.read_bytes()
             patched_bytes = patch_build_index_xml(raw_bytes, str(file_path))
             if patched_bytes is None:
@@ -413,31 +457,27 @@ class LocalArchiveBackend:
 
 def _atomic_write_file(target_path: pathlib.Path, data: bytes) -> None:
     """Writes data to a sibling temp file and atomically replaces target."""
-    with tempfile.NamedTemporaryFile(
-        mode="wb",
-        prefix=f".{target_path.name}.",
-        suffix=".tmp",
-        dir=target_path.parent,
-        delete=False,
-    ) as handle:
-        tmp_path = pathlib.Path(handle.name)
-        try:
+    tmp_path: pathlib.Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="wb",
+            prefix=f".{target_path.name}.",
+            suffix=".tmp",
+            dir=target_path.parent,
+            delete=False,
+        ) as handle:
+            tmp_path = pathlib.Path(handle.name)
             handle.write(data)
-        except BaseException:
+            handle.flush()
+            os.fsync(handle.fileno())
+        shutil.copymode(target_path, tmp_path)
+        tmp_path.replace(target_path)
+    except BaseException:
+        if tmp_path is not None:
             try:
                 tmp_path.unlink(missing_ok=True)
             except OSError:
                 _LOGGER.warning("Failed to remove temporary file %s", tmp_path)
-            raise
-
-    try:
-        shutil.copymode(target_path, tmp_path)
-        tmp_path.replace(target_path)
-    except BaseException:
-        try:
-            tmp_path.unlink(missing_ok=True)
-        except OSError:
-            _LOGGER.warning("Failed to remove temporary file %s", tmp_path)
         raise
 
 
@@ -485,18 +525,55 @@ class _GcsClientProtocol(Protocol):
         delimiter: str | None = None,
     ) -> _GcsBlobIteratorProtocol: ...
 
+    def close(self) -> None: ...
+
+
+class _MtlsSessionProtocol(Protocol):
+    """Typed subset of google.auth.transport.requests.AuthorizedSession."""
+
+    @property
+    def is_mtls(self) -> bool: ...
+
+    def configure_mtls_channel(
+        self,
+        client_cert_callback: Callable[[], tuple[bytes, bytes]] | None = None,
+    ) -> None: ...
+
+
+@dataclasses.dataclass(frozen=True)
+class _DownloadedBlob:
+    """Downloaded GCS object payload paired with its generation number."""
+
+    raw_bytes: bytes
+    generation: int
+
 
 def _create_gcs_client(*, pool_size: int) -> _GcsClientProtocol:
     """Creates a GCS Client with an HTTP pool sized for worker threads."""
     raw_client = storage.Client()
+    creds = getattr(raw_client, "_credentials", None)
+    if isinstance(creds, auth_credentials.Credentials):
+        creds.with_non_blocking_refresh()
+
     session = getattr(raw_client, "_http", None)
     if isinstance(session, requests.Session):
-        adapter = adapters.HTTPAdapter(
-            pool_connections=pool_size,
-            pool_maxsize=pool_size,
-        )
-        session.mount("https://", adapter)
-        session.mount("http://", adapter)
+        for scheme in ("https://", "http://"):
+            old_adapter = session.adapters.get(scheme)
+            new_adapter = adapters.HTTPAdapter(
+                pool_connections=pool_size,
+                pool_maxsize=pool_size,
+            )
+            session.mount(scheme, new_adapter)
+            if old_adapter is not None and old_adapter is not new_adapter:
+                old_adapter.close()
+        if isinstance(session, auth_requests.AuthorizedSession):
+            mtls_session = cast("_MtlsSessionProtocol", session)
+            if mtls_session.is_mtls:
+                cert_source = cast(
+                    "Callable[[], tuple[bytes, bytes]] | None",
+                    getattr(raw_client, "_client_cert_source", None),
+                )
+                mtls_session.configure_mtls_channel(cert_source)
     return cast("_GcsClientProtocol", raw_client)
 
 
@@ -517,6 +594,17 @@ class GcsArchiveBackend:
         self._client = _create_gcs_client(pool_size=max(workers + 4, 16))
         self._bucket = self._client.bucket(bucket_name)
 
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        self._client.close()
+
     @property
     def is_remote_gcs(self) -> bool:
         """Whether this backend uploads to remote GCS."""
@@ -525,7 +613,9 @@ class GcsArchiveBackend:
     @property
     def description(self) -> str:
         """Human-readable target description."""
-        return f"gs://{self._bucket_name}/{self._prefix}/"
+        if self._prefix:
+            return f"gs://{self._bucket_name}/{self._prefix}/"
+        return f"gs://{self._bucket_name}/"
 
     def list_year_months(self, bounds: PartitionBounds) -> list[YearMonth]:
         """Discovers sorted YYYY/MM partitions in GCS matching bounds."""
@@ -578,16 +668,19 @@ class GcsArchiveBackend:
             for build_prefix in sorted(build_iter.prefixes)
         ]
 
-    def process_target(self, target: str) -> ItemResult:
-        """Downloads, validates, patches, and conditionally uploads one blob."""
-        uri = f"gs://{self._bucket_name}/{target}"
+    def _download_target(
+        self,
+        target: str,
+        uri: str,
+    ) -> _DownloadedBlob | ItemResult:
+        """Downloads target bytes and returns generation or failure result."""
         download_blob = self._bucket.blob(target)
         try:
-            raw_bytes = download_blob.download_as_bytes(checksum="md5")
+            raw_bytes = download_blob.download_as_bytes(checksum="auto")
         except gcs_exceptions.NotFound:
             _LOGGER.warning("Missing build index object: %s", uri)
             return ItemResult(target=uri, outcome=Outcome.MISSING)
-        except gcs_exceptions.GoogleAPICallError as exc:
+        except _GCS_OPERATION_ERRORS as exc:
             _LOGGER.error("Failed downloading %s: %s", uri, exc)
             return ItemResult(
                 target=uri, outcome=Outcome.FAILED, error=str(exc)
@@ -598,20 +691,66 @@ class GcsArchiveBackend:
             msg = f"{uri}: missing object generation after download"
             _LOGGER.error("%s", msg)
             return ItemResult(target=uri, outcome=Outcome.FAILED, error=msg)
+        return _DownloadedBlob(raw_bytes=raw_bytes, generation=generation)
+
+    def process_target(self, target: str) -> ItemResult:
+        """Downloads, validates, patches, and conditionally uploads one blob."""
+        uri = f"gs://{self._bucket_name}/{target}"
+        downloaded = self._download_target(target, uri)
+        if isinstance(downloaded, ItemResult):
+            return downloaded
 
         try:
-            patched_bytes = patch_build_index_xml(raw_bytes, uri)
+            patched_bytes = patch_build_index_xml(downloaded.raw_bytes, uri)
             if patched_bytes is None:
                 return ItemResult(target=uri, outcome=Outcome.ALREADY_PATCHED)
             if not self._dry_run:
-                self._upload_patched(target, patched_bytes, generation)
-        except (ValueError, gcs_exceptions.GoogleAPICallError) as exc:
+                self._upload_patched(
+                    target,
+                    patched_bytes,
+                    downloaded.generation,
+                )
+        except gcs_exceptions.PreconditionFailed as exc:
+            return self._recover_precondition_failure(target, uri, exc)
+        except (ValueError, *_GCS_OPERATION_ERRORS) as exc:
             _LOGGER.error("Failed updating %s: %s", uri, exc)
             return ItemResult(
                 target=uri, outcome=Outcome.FAILED, error=str(exc)
             )
 
         return ItemResult(target=uri, outcome=Outcome.PATCHED)
+
+    def _recover_precondition_failure(
+        self,
+        target: str,
+        uri: str,
+        original_exc: gcs_exceptions.PreconditionFailed,
+    ) -> ItemResult:
+        """Checks whether a 412 retry error occurred after our upload landed."""
+        try:
+            latest_bytes = self._bucket.blob(target).download_as_bytes(
+                checksum="auto"
+            )
+            if patch_build_index_xml(latest_bytes, uri) is None:
+                _LOGGER.warning(
+                    "Upload retry for %s received 412 PreconditionFailed, "
+                    "but remote object is already validly patched; "
+                    "counting as uploaded.",
+                    uri,
+                )
+                return ItemResult(target=uri, outcome=Outcome.PATCHED)
+        except (
+            gcs_exceptions.NotFound,
+            ValueError,
+            *_GCS_OPERATION_ERRORS,
+        ) as verify_exc:
+            _LOGGER.warning(
+                "Post-412 verification failed for %s: %s", uri, verify_exc
+            )
+        _LOGGER.error("Failed updating %s: %s", uri, original_exc)
+        return ItemResult(
+            target=uri, outcome=Outcome.FAILED, error=str(original_exc)
+        )
 
     def _upload_patched(
         self,
@@ -620,6 +759,13 @@ class GcsArchiveBackend:
         generation: int,
     ) -> None:
         """Uploads patched XML via a fresh Blob with generation precondition."""
+        if len(patched_bytes) > MAX_INDEX_XML_BYTES:
+            msg = (
+                f"Refusing to upload {len(patched_bytes)} bytes "
+                f"(exceeds {MAX_INDEX_XML_BYTES} byte limit)"
+            )
+            raise ValueError(msg)
+
         uri = f"gs://{self._bucket_name}/{target}"
         _LOGGER.info(
             "UPLOADING patched XML to %s (if_generation_match=%d)",
@@ -634,7 +780,7 @@ class GcsArchiveBackend:
             patched_bytes,
             content_type=XML_CONTENT_TYPE,
             if_generation_match=generation,
-            checksum="md5",
+            checksum="auto",
         )
 
 
@@ -660,15 +806,17 @@ def _build_epilog() -> str:
         Examples:
           # 1. Local archive mirror (never touches GCS):
           %(prog)s --local-dir="/path/to/archive" --dry-run
-          %(prog)s --local-dir="/path/to/archive" --only="2018/07" --dry-run --verbose
+          %(prog)s --local-dir="/path/to/archive" --only="2018/07" \\
+            --dry-run --verbose
           %(prog)s --local-dir="/path/to/archive" --only="2018/07"
-          %(prog)s --local-dir="/path/to/archive" --start-from="2018/08" --end-at="2018/12"
+          %(prog)s --local-dir="/path/to/archive" \\
+            --start-from="2018/08" --end-at="2018/12"
 
-          # 2. Read-only GCS dry-run (downloads & validates in memory; NO uploads):
+          # 2. Read-only GCS dry-run (validates in memory; NO uploads):
           %(prog)s --only="2026/11" --dry-run --verbose
           %(prog)s --start-from="2018/07" --end-at="2018/12" --dry-run
 
-          # 3. LIVE GCS upload (UPLOADS modified index.xml objects to GCS; prompts [yN]):
+          # 3. LIVE GCS upload (UPLOADS modified index.xml; prompts [yN]):
           %(prog)s --only="2018/07"
           %(prog)s --start-from="2018/07" --end-at="2018/12"
           %(prog)s --start-from="2019/01"
@@ -704,8 +852,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--prefix",
-        default=DEFAULT_PREFIX,
-        help=f"Archive prefix inside the GCS bucket (default: {DEFAULT_PREFIX}).",
+        default=None,
+        help=(
+            "Archive prefix inside the GCS bucket "
+            f"(default: {DEFAULT_PREFIX})."
+        ),
     )
 
     range_group = parser.add_mutually_exclusive_group()
@@ -725,14 +876,20 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--end-at",
         default=None,
         metavar="YYYY[/MM]",
-        help="Stop inclusive at 'YYYY' or 'YYYY/MM' (cannot combine with --only).",
+        help=(
+            "Stop inclusive at 'YYYY' or 'YYYY/MM' "
+            "(cannot combine with --only)."
+        ),
     )
 
     parser.add_argument(
         "--workers",
         type=int,
         default=DEFAULT_WORKERS,
-        help=f"Concurrent worker threads per month (default: {DEFAULT_WORKERS}).",
+        help=(
+            "Concurrent worker threads per month "
+            f"(default: {DEFAULT_WORKERS})."
+        ),
     )
     parser.add_argument(
         "--dry-run",
@@ -746,7 +903,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "-y",
         "--yes",
         action="store_true",
-        help="Skip interactive [yN] confirmation prompt when writing/uploading.",
+        help=(
+            "Skip interactive [yN] confirmation prompt when "
+            "writing/uploading."
+        ),
     )
     parser.add_argument(
         "--verbose",
@@ -757,6 +917,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     args = parser.parse_args(argv)
     if args.only is not None and args.end_at is not None:
         parser.error("argument --end-at: not allowed with argument --only")
+    if args.local_dir is not None and args.prefix is not None:
+        parser.error("argument --prefix: not allowed with argument --local-dir")
+    if args.prefix is None:
+        args.prefix = DEFAULT_PREFIX
+    if args.local_dir is None:
+        bucket = args.bucket.strip()
+        if not bucket or "/" in bucket:
+            parser.error("argument --bucket: must be a valid GCS bucket name")
+        args.bucket = bucket
     if args.workers < 1:
         parser.error("argument --workers: must be >= 1")
     return args
@@ -840,6 +1009,9 @@ def confirm_execution(
         response = input(prompt)
     except EOFError:
         return False
+    except KeyboardInterrupt:
+        sys.stderr.write("\n")
+        raise
     return response.strip().lower() == "y"
 
 
@@ -852,6 +1024,21 @@ def _format_outcome_label(
     if outcome is Outcome.PATCHED:
         return patched_label
     return outcome.value
+
+
+@contextlib.contextmanager
+def _managed_thread_pool(
+    workers: int,
+) -> Generator[futures.ThreadPoolExecutor]:
+    """Yields a ThreadPoolExecutor that cancels queued futures on exception."""
+    executor = futures.ThreadPoolExecutor(max_workers=workers)
+    try:
+        yield executor
+    except BaseException:
+        executor.shutdown(wait=True, cancel_futures=True)
+        raise
+    else:
+        executor.shutdown(wait=True)
 
 
 def _process_partition(
@@ -920,7 +1107,7 @@ def _execute_partitions(
     current_ym: YearMonth | None = None
 
     try:
-        with futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        with _managed_thread_pool(workers) as executor:
             for ym in partitions:
                 current_ym = ym
                 month_stats = _process_partition(
@@ -939,13 +1126,24 @@ def _execute_partitions(
                         ym,
                     )
                     return 1
-    except KeyboardInterrupt:
-        resume_hint = f'--start-from="{current_ym}"' if current_ym else ""
-        _LOGGER.warning(
-            "Interrupted during %s. Resume safely with: %s",
+    except (*_GCS_OPERATION_ERRORS, OSError) as exc:
+        _LOGGER.error(
+            "Failed processing partition %s: %s. Re-run with "
+            '--start-from="%s" to retry.',
             current_ym,
-            resume_hint,
+            exc,
+            current_ym,
         )
+        return 1
+    except KeyboardInterrupt:
+        if current_ym is not None:
+            _LOGGER.warning(
+                'Interrupted during %s. Resume safely with --start-from="%s".',
+                current_ym,
+                current_ym,
+            )
+        else:
+            _LOGGER.warning("Interrupted.")
         return 130
 
     elapsed = time.monotonic() - start_time
@@ -962,6 +1160,58 @@ def _execute_partitions(
         cumulative.failed,
     )
     return 0
+
+
+def _run_with_backend(
+    backend: LocalArchiveBackend | GcsArchiveBackend,
+    args: argparse.Namespace,
+    bounds: PartitionBounds,
+) -> int:
+    """Discovers partitions, confirms execution, and runs the backfill."""
+    _LOGGER.info(
+        "Discovering YYYY/MM partitions in %s ...", backend.description
+    )
+    partitions = backend.list_year_months(bounds)
+    if not partitions:
+        _LOGGER.warning("No matching YYYY/MM partitions found.")
+        return 0
+
+    mode_display = _describe_mode(
+        is_remote_gcs=backend.is_remote_gcs,
+        dry_run=args.dry_run,
+    )
+    _LOGGER.info(
+        "Mode=%s | Target=%s | Partitions=%d (%s..%s) | Workers=%d",
+        mode_display.banner,
+        backend.description,
+        len(partitions),
+        partitions[0],
+        partitions[-1],
+        args.workers,
+    )
+    if backend.is_remote_gcs and not args.dry_run:
+        _LOGGER.warning(
+            "LIVE GCS UPLOAD ENABLED: Modified index.xml manifests "
+            "WILL BE UPLOADED to %s",
+            backend.description,
+        )
+
+    if (
+        not args.dry_run
+        and not args.yes
+        and not confirm_execution(backend, partitions, args.workers)
+    ):
+        _LOGGER.info("Cancelled.")
+        return 1
+
+    return _execute_partitions(
+        backend,
+        partitions,
+        workers=args.workers,
+        verbose=args.verbose,
+        mode_label=mode_display.banner,
+        patched_label=mode_display.action_label,
+    )
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -986,66 +1236,31 @@ def main(argv: Sequence[str] | None = None) -> int:
         _LOGGER.error("%s", exc)
         return 2
 
-    backend: LocalArchiveBackend | GcsArchiveBackend
-    if args.local_dir is not None:
-        if not args.local_dir.is_dir():
-            _LOGGER.error(
-                "Local archive directory not found: %s", args.local_dir
+    try:
+        backend: LocalArchiveBackend | GcsArchiveBackend
+        if args.local_dir is not None:
+            if not args.local_dir.is_dir():
+                _LOGGER.error(
+                    "Local archive directory not found: %s", args.local_dir
+                )
+                return 2
+            backend = LocalArchiveBackend(args.local_dir, dry_run=args.dry_run)
+        else:
+            backend = GcsArchiveBackend(
+                args.bucket,
+                args.prefix,
+                workers=args.workers,
+                dry_run=args.dry_run,
             )
-            return 2
-        backend = LocalArchiveBackend(args.local_dir, dry_run=args.dry_run)
-    else:
-        backend = GcsArchiveBackend(
-            args.bucket,
-            args.prefix,
-            workers=args.workers,
-            dry_run=args.dry_run,
-        )
 
-    _LOGGER.info(
-        "Discovering YYYY/MM partitions in %s ...", backend.description
-    )
-    partitions = backend.list_year_months(bounds)
-    if not partitions:
-        _LOGGER.warning("No matching YYYY/MM partitions found.")
-        return 0
-
-    mode_display = _describe_mode(
-        is_remote_gcs=backend.is_remote_gcs,
-        dry_run=args.dry_run,
-    )
-    _LOGGER.info(
-        "Mode=%s | Target=%s | Partitions=%d (%s..%s) | Workers=%d",
-        mode_display.banner,
-        backend.description,
-        len(partitions),
-        partitions[0],
-        partitions[-1],
-        args.workers,
-    )
-    if backend.is_remote_gcs and not args.dry_run:
-        _LOGGER.warning(
-            "LIVE GCS UPLOAD ENABLED: Modified index.xml manifests WILL BE "
-            "UPLOADED to %s",
-            backend.description,
-        )
-
-    if (
-        not args.dry_run
-        and not args.yes
-        and not confirm_execution(backend, partitions, args.workers)
-    ):
-        _LOGGER.info("Cancelled.")
+        with backend:
+            return _run_with_backend(backend, args, bounds)
+    except (*_GCS_OPERATION_ERRORS, OSError) as exc:
+        _LOGGER.error("%s", exc)
         return 1
-
-    return _execute_partitions(
-        backend,
-        partitions,
-        workers=args.workers,
-        verbose=args.verbose,
-        mode_label=mode_display.banner,
-        patched_label=mode_display.action_label,
-    )
+    except KeyboardInterrupt:
+        _LOGGER.warning("Interrupted.")
+        return 130
 
 
 if __name__ == "__main__":
