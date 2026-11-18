@@ -101,7 +101,7 @@ git commit -m "update submodule boringssl-with-bazel with origin/master-with-baz
       ```
       Rule 'boringssl' indicated that a canonical reproducible form can be obtained by modifying arguments sha256 = "SHA value"
       ```
-    - Commit the regenrated files `git commit -m "regenerate files"`
+    - Commit the regenerated files `git commit -m "regenerate files"`
     - Update `bazel/grpc_deps.bzl` with the SHA value shown in the above debug msg. Commit again `git commit -m "Updated sha256"`
 
 - Run `tools/distrib/generate_boringssl_prefix_header.sh`

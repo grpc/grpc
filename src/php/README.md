@@ -120,7 +120,7 @@ classes.
 If you don't have it already, you need to install the protobuf compiler
 `protoc`, version 3.5.0+ (the newer the better) for the current gRPC version.
 If you installed already, make the protobuf version is compatible to the
-grpc version you installed. If you build grpc.so from the souce, you can check
+grpc version you installed. If you build grpc.so from the source, you can check
 the version of grpc inside package.xml file.
 
 The compatibility between the grpc and protobuf version is listed as table
