@@ -35,18 +35,15 @@
 
 namespace grpc_core {
 
-// Registers a FakeStatsClientFilter as a client channel filter if there is a
-// FakeClientCallTracerFactory in the channel args. This filter will use the
-// FakeClientCallTracerFactory to create and inject a FakeClientCallTracer into
-// the call context.
 // Example usage:
-//   RegisterFakeStatsPlugin();  // before grpc_init()
 //
-//   // Creates a FakeClientCallTracerFactory and adds it into the channel args.
+//   // Create and register a StatsPlugin that will create a
+//   // FakeClientCallTracer for each RPC.
 //   FakeClientCallTracerFactory fake_client_call_tracer_factory;
-//   ChannelArguments channel_args;
-//   channel_args.SetPointer(GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY,
-//                           &fake_client_call_tracer_factory);
+//   auto stats_plugin = FakeStatsPluginBuilder()
+//       .UseDisabledByDefaultMetrics(true)
+//       .SetClientCallTracerFactory(&fake_client_call_tracer_factory)
+//       .BuildAndRegister();
 //
 //   // After the system under test has been executed (e.g. an RPC has been
 //   // sent), use the FakeClientCallTracerFactory to verify certain
@@ -55,8 +52,6 @@ namespace grpc_core {
 //                   ->GetLastCallAttemptTracer()
 //                   ->GetOptionalLabels(),
 //               VerifyCsmServiceLabels());
-void RegisterFakeStatsPlugin();
-
 class FakeClientCallTracer : public ClientCallTracerInterface {
  public:
   class FakeClientCallAttemptTracer
@@ -100,6 +95,7 @@ class FakeClientCallTracer : public ClientCallTracerInterface {
     void RecordOutgoingBytes(
         const TransportByteSize& /*transport_byte_size*/) override {}
     void RecordAnnotation(absl::string_view annotation) override {
+      if (annotation_logger_ == nullptr) return;
       annotation_logger_->push_back(std::string(annotation));
     }
     void RecordAnnotation(const Annotation& /*annotation*/) override {}
@@ -135,6 +131,7 @@ class FakeClientCallTracer : public ClientCallTracerInterface {
   }
 
   void RecordAnnotation(absl::string_view annotation) override {
+    if (annotation_logger_ == nullptr) return;
     annotation_logger_->push_back(std::string(annotation));
   }
   void RecordAnnotation(const Annotation& /*annotation*/) override {}
@@ -143,6 +140,7 @@ class FakeClientCallTracer : public ClientCallTracerInterface {
   bool IsSampled() override { return false; }
 
   FakeClientCallAttemptTracer* GetLastCallAttemptTracer() const {
+    if (call_attempt_tracers_.empty()) return nullptr;
     return call_attempt_tracers_.back().get();
   }
 
@@ -151,23 +149,20 @@ class FakeClientCallTracer : public ClientCallTracerInterface {
   std::vector<RefCountedPtr<FakeClientCallAttemptTracer>> call_attempt_tracers_;
 };
 
-#define GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY \
-  "grpc.testing.inject_fake_client_call_tracer_factory"
-
 class FakeClientCallTracerFactory {
  public:
   FakeClientCallTracer* CreateFakeClientCallTracer() {
     fake_client_call_tracers_.emplace_back(
-        new FakeClientCallTracer(&annotation_logger_));
+        std::make_unique<FakeClientCallTracer>(nullptr));
     return fake_client_call_tracers_.back().get();
   }
 
   FakeClientCallTracer* GetLastFakeClientCallTracer() {
+    if (fake_client_call_tracers_.empty()) return nullptr;
     return fake_client_call_tracers_.back().get();
   }
 
  private:
-  std::vector<std::string> annotation_logger_;
   std::vector<std::unique_ptr<FakeClientCallTracer>> fake_client_call_tracers_;
 };
 
@@ -232,10 +227,12 @@ class FakeStatsPlugin : public StatsPlugin {
           bool(const experimental::StatsPluginChannelScope& /*scope*/) const>
           channel_filter = nullptr,
       bool use_disabled_by_default_metrics = false,
-      InstrumentLabelSet labels_of_interest = {})
+      InstrumentLabelSet labels_of_interest = {},
+      FakeClientCallTracerFactory* client_call_tracer_factory = nullptr)
       : channel_filter_(std::move(channel_filter)),
         use_disabled_by_default_metrics_(use_disabled_by_default_metrics),
-        collection_scope_(CreateCollectionScope({}, labels_of_interest)) {
+        collection_scope_(CreateCollectionScope({}, labels_of_interest)),
+        client_call_tracer_factory_(client_call_tracer_factory) {
     GlobalInstrumentsRegistry::ForEach(
         [&](const GlobalInstrumentsRegistry::GlobalInstrumentDescriptor&
                 descriptor) {
@@ -393,6 +390,9 @@ class FakeStatsPlugin : public StatsPlugin {
   ClientCallTracerInterface* GetClientCallTracer(
       const Slice& /*path*/, bool /*registered_method*/,
       std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
+    if (client_call_tracer_factory_ != nullptr) {
+      return client_call_tracer_factory_->CreateFakeClientCallTracer();
+    }
     return nullptr;
   }
   ServerCallTracerInterface* GetServerCallTracer(
@@ -789,6 +789,7 @@ class FakeStatsPlugin : public StatsPlugin {
       ABSL_GUARDED_BY(&callback_mu_);
   std::set<RegisteredMetricCallback*> callbacks_ ABSL_GUARDED_BY(&callback_mu_);
   RefCountedPtr<CollectionScope> collection_scope_;
+  FakeClientCallTracerFactory* const client_call_tracer_factory_;
 };
 
 class FakeStatsPluginBuilder {
@@ -811,12 +812,22 @@ class FakeStatsPluginBuilder {
     return *this;
   }
 
+  FakeStatsPluginBuilder& SetClientCallTracerFactory(
+      FakeClientCallTracerFactory* client_call_tracer_factory) {
+    client_call_tracer_factory_ = client_call_tracer_factory;
+    return *this;
+  }
+
+  std::shared_ptr<FakeStatsPlugin> Build() {
+    return std::make_shared<FakeStatsPlugin>(
+        std::move(channel_filter_), use_disabled_by_default_metrics_,
+        labels_of_interest_, client_call_tracer_factory_);
+  }
+
   std::shared_ptr<FakeStatsPlugin> BuildAndRegister() {
-    auto f = std::make_shared<FakeStatsPlugin>(std::move(channel_filter_),
-                                               use_disabled_by_default_metrics_,
-                                               labels_of_interest_);
-    GlobalStatsPluginRegistry::RegisterStatsPlugin(f);
-    return f;
+    const std::shared_ptr<FakeStatsPlugin> plugin = Build();
+    GlobalStatsPluginRegistry::RegisterStatsPlugin(plugin);
+    return plugin;
   }
 
  private:
@@ -825,6 +836,7 @@ class FakeStatsPluginBuilder {
       channel_filter_;
   bool use_disabled_by_default_metrics_ = false;
   InstrumentLabelSet labels_of_interest_;
+  FakeClientCallTracerFactory* client_call_tracer_factory_ = nullptr;
 };
 
 std::shared_ptr<FakeStatsPlugin> MakeStatsPluginForTarget(
