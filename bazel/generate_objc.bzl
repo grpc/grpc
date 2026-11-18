@@ -104,7 +104,7 @@ def _generate_objc_impl(ctx):
         arguments = arguments,
     )
 
-    return struct(files = depset(out_files))  # buildifier: disable=rule-impl-return
+    return [DefaultInfo(files = depset(out_files))]
 
 def _label_to_full_file_path(src, package):
     if not src.startswith("//"):
@@ -203,7 +203,7 @@ def _group_objc_files_impl(ctx):
         for file in ctx.attr.src.files.to_list()
         if file.basename.endswith(suffix)
     ]
-    return struct(files = depset(out_files))  # buildifier: disable=rule-impl-return
+    return [DefaultInfo(files = depset(out_files))]
 
 generate_objc_hdrs = rule(
     attrs = {

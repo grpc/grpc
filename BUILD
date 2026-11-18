@@ -56,6 +56,11 @@ exports_files(
     ],
 )
 
+exports_files(
+    ["src/cpp/server/load_reporter/constants.h"],
+    visibility = ["//src/core:__pkg__"],
+)
+
 bool_flag(
     name = "small_client",
     build_setting_default = False,
