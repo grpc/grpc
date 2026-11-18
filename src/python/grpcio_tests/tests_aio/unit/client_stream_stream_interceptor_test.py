@@ -255,9 +255,7 @@ class TestStreamStreamClientInterceptor(AioTestBase):
 
             await stub.UnaryCall(messages_pb2.SimpleRequest())
 
-            streaming_output_request = (
-                messages_pb2.StreamingOutputCallRequest()
-            )
+            streaming_output_request = messages_pb2.StreamingOutputCallRequest()
             streaming_output_request.response_parameters.append(
                 messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)
             )

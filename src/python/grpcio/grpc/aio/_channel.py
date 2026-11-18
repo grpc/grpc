@@ -407,7 +407,7 @@ class Channel(_base_channel.Channel):
                     self._stream_stream_interceptors.append(interceptor)
                     matched = True
                 if not matched:
-                    raise ValueError(  # noqa: TRY004
+                    raise ValueError(
                         "Interceptor {} must be ".format(interceptor)
                         + "{} or ".format(UnaryUnaryClientInterceptor.__name__)
                         + "{} or ".format(UnaryStreamClientInterceptor.__name__)
