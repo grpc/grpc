@@ -150,7 +150,11 @@ python.defaults(python_version = DEFAULT_PYTHON_VERSION)
 
 use_repo(python, "python_3_11_aarch64-apple-darwin")
 
-register_toolchains("//:python_3_11_ios_sim_arm64_workaround")
+# Only gRPC's own iOS tests use this toolchain.
+register_toolchains(
+    "//:python_3_11_ios_sim_arm64_workaround",
+    dev_dependency = True,
+)
 
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 
