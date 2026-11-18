@@ -217,6 +217,7 @@ grpc_cc_test(
         "//:grpc_security_base",
         "//src/core:channel_fwd",
         "//src/core:grpc_fake_credentials",
+        "//test/core/end2end:cq_verifier",
         "//test/core/test_util:grpc_test_util",
     ],
 )
