@@ -67,6 +67,6 @@ fi
 dir=$(dirname "${0}")
 cd "${dir}/../.."
 
-bazel_files=$(find . \( -iname 'BUILD' -o -iname '*.bzl' -o -iname '*.bazel' -o -iname 'WORKSPACE' \) -type f -not -path "./third_party/*" -not -path "./REPO.bazel")
+bazel_files=$(find . \( -iname 'BUILD' -o -iname '*.bzl' -o -iname '*.bazel' -o -iname 'WORKSPACE' \) -type f \( -not -path "./third_party/*" -o -path "./third_party/toolchains/*" \) -not -path "./REPO.bazel")
 # shellcheck disable=SC2086,SC2068
 ${buildifier_bin} ${EXTRA_BUILDIFIER_FLAGS[@]} -v ${bazel_files}

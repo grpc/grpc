@@ -14,9 +14,11 @@
 
 # This becomes the BUILD file for @local_config_cc// under non-BSD unixes.
 
-load(":cc_toolchain_config.bzl", "cc_toolchain_config")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc/toolchains:cc_toolchain.bzl", "cc_toolchain")
+load("@rules_cc//cc/toolchains:cc_toolchain_suite.bzl", "cc_toolchain_suite")
 load(":armeabi_cc_toolchain_config.bzl", "armeabi_cc_toolchain_config")
-load("@rules_cc//cc:defs.bzl", "cc_library", "cc_toolchain", "cc_toolchain_suite")
+load(":cc_toolchain_config.bzl", "cc_toolchain_config")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -60,10 +62,21 @@ filegroup(
 )
 
 filegroup(
+    name = "deps_scanner_wrapper",
+    srcs = ["deps_scanner_wrapper.sh"],
+)
+
+filegroup(
     name = "compiler_deps",
-    srcs = glob(["extra_tools/**"], allow_empty = True) + [":builtin_include_directory_paths",
-    ":cc_wrapper",
-    ":validate_static_library"],
+    srcs = glob(
+        ["extra_tools/**"],
+        allow_empty = True,
+    ) + [
+        ":builtin_include_directory_paths",
+        ":cc_wrapper",
+        ":deps_scanner_wrapper",
+        ":validate_static_library",
+    ],
 )
 
 # This is the entry point for --crosstool_top.  Toolchains are found
@@ -81,42 +94,89 @@ cc_toolchain_suite(
 
 cc_toolchain(
     name = "cc-compiler-k8",
-    toolchain_identifier = "linux_gnu_x86",
-    toolchain_config = ":linux_gnu_x86",
     all_files = ":compiler_deps",
     ar_files = ":compiler_deps",
     as_files = ":compiler_deps",
     compiler_files = ":compiler_deps",
     dwp_files = ":empty",
     linker_files = ":compiler_deps",
+    module_map = ":module.modulemap",
     objcopy_files = ":empty",
     strip_files = ":empty",
     supports_header_parsing = 1,
     supports_param_files = 1,
-    module_map = ":module.modulemap",
+    toolchain_config = ":linux_gnu_x86",
+    toolchain_identifier = "linux_gnu_x86",
 )
 
 cc_toolchain_config(
     name = "linux_gnu_x86",
-    cpu = "k8",
-    compiler = "clang",
-    toolchain_identifier = "linux_gnu_x86",
-    host_system_name = "i686-unknown-linux-gnu",
-    target_system_name = "x86_64-unknown-linux-gnu",
-    target_libc = "glibc_2.19",
-    abi_version = "clang",
     abi_libc_version = "glibc_2.19",
-    cxx_builtin_include_directories = ["/usr/local/lib/clang/19/include",
-    "/usr/local/include",
-    "/usr/include/x86_64-linux-gnu",
-    "/usr/include",
-    "/usr/local/lib/clang/19/share",
-    "/usr/include/c++/9",
-    "/usr/include/x86_64-linux-gnu/c++/9",
-    "/usr/include/c++/9/backward",
-    "/usr/local/include/c++/v1",
-    "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"],
-    tool_paths = {"ar": "/usr/bin/ar",
+    abi_version = "clang",
+    all_compile_flags = [],
+    compile_flags = [
+        "-fstack-protector",
+        "-Wall",
+        "-Wthread-safety",
+        "-Wself-assign",
+        "-Wunused-but-set-parameter",
+        "-Wno-free-nonheap-object",
+        "-fcolor-diagnostics",
+        "-fno-omit-frame-pointer",
+    ],
+    compiler = "clang",
+    conly_flags = [],
+    coverage_compile_flags = ["--coverage"],
+    coverage_link_flags = ["--coverage"],
+    cpu = "k8",
+    cxx_builtin_include_directories = [
+        "/usr/local/lib/clang/19/include",
+        "/usr/local/include",
+        "/usr/include/x86_64-linux-gnu",
+        "/usr/include",
+        "/usr/local/lib/clang/19/share",
+        "/usr/include/c++/9",
+        "/usr/include/x86_64-linux-gnu/c++/9",
+        "/usr/include/c++/9/backward",
+        "/usr/local/include/c++/v1",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+    ],
+    cxx_flags = ["-std=c++17"],
+    dbg_compile_flags = ["-g"],
+    extra_flags_per_feature = {"use_module_maps": [
+        "-Xclang",
+        "-fno-cxx-modules",
+    ]},
+    fastbuild_compile_flags = [],
+    host_system_name = "i686-unknown-linux-gnu",
+    link_flags = [
+        "-fuse-ld=/usr/local/bin/ld.lld",
+        "-B/usr/local/bin",
+        "-Wl,-no-as-needed",
+        "-Wl,-z,relro,-z,now",
+    ],
+    link_libs = [
+        "-Wl,--push-state,-as-needed",
+        "-lstdc++",
+        "-Wl,--pop-state",
+        "-Wl,--push-state,-as-needed",
+        "-lm",
+        "-Wl,--pop-state",
+    ],
+    opt_compile_flags = [
+        "-g0",
+        "-O2",
+        "-D_FORTIFY_SOURCE=1",
+        "-DNDEBUG",
+        "-ffunction-sections",
+        "-fdata-sections",
+    ],
+    opt_link_flags = ["-Wl,--gc-sections"],
+    supports_start_end_lib = True,
+    target_libc = "glibc_2.19",
+    target_system_name = "x86_64-unknown-linux-gnu",
+    tool_paths = {
+        "ar": "/usr/bin/ar",
         "ld": "/usr/bin/ld",
         "llvm-cov": "/usr/local/bin/llvm-cov",
         "llvm-profdata": "/usr/local/bin/llvm-profdata",
@@ -129,52 +189,23 @@ cc_toolchain_config(
         "objdump": "/usr/bin/objdump",
         "strip": "/usr/bin/strip",
         "c++filt": "/usr/bin/c++filt",
+        "cpp-module-deps-scanner": "deps_scanner_wrapper.sh",
         "parse_headers": "cc_wrapper.sh",
-        "validate_static_library": "validate_static_library.sh"},
-    compile_flags = ["-fstack-protector",
-    "-Wall",
-    "-Wthread-safety",
-    "-Wself-assign",
-    "-Wunused-but-set-parameter",
-    "-Wno-free-nonheap-object",
-    "-fcolor-diagnostics",
-    "-fno-omit-frame-pointer"],
-    opt_compile_flags = ["-g0",
-    "-O2",
-    "-D_FORTIFY_SOURCE=1",
-    "-DNDEBUG",
-    "-ffunction-sections",
-    "-fdata-sections"],
-    dbg_compile_flags = ["-g"],
-    conly_flags = [],
-    cxx_flags = ["-std=c++14"],
-    link_flags = ["-fuse-ld=/usr/local/bin/ld.lld",
-    "-B/usr/local/bin",
-    "-Wl,-no-as-needed",
-    "-Wl,-z,relro,-z,now"],
-    link_libs = ["-Wl,--push-state,-as-needed",
-    "-lstdc++",
-    "-Wl,--pop-state",
-    "-Wl,--push-state,-as-needed",
-    "-lm",
-    "-Wl,--pop-state"],
-    opt_link_flags = ["-Wl,--gc-sections"],
-    unfiltered_compile_flags = ["-no-canonical-prefixes",
-    "-Wno-builtin-macro-redefined",
-    "-D__DATE__=\"redacted\"",
-    "-D__TIMESTAMP__=\"redacted\"",
-    "-D__TIME__=\"redacted\""],
-    coverage_compile_flags = ["--coverage"],
-    coverage_link_flags = ["--coverage"],
-    supports_start_end_lib = True,
-    extra_flags_per_feature = {"use_module_maps": ["-Xclang", "-fno-cxx-modules"]},
+        "validate_static_library": "validate_static_library.sh",
+    },
+    toolchain_identifier = "linux_gnu_x86",
+    unfiltered_compile_flags = [
+        "-no-canonical-prefixes",
+        "-Wno-builtin-macro-redefined",
+        "-D__DATE__=\"redacted\"",
+        "-D__TIMESTAMP__=\"redacted\"",
+        "-D__TIME__=\"redacted\"",
+    ],
 )
 
 # Android tooling requires a default toolchain for the armeabi-v7a cpu.
 cc_toolchain(
     name = "cc-compiler-armeabi-v7a",
-    toolchain_identifier = "stub_armeabi-v7a",
-    toolchain_config = ":stub_armeabi-v7a",
     all_files = ":empty",
     ar_files = ":empty",
     as_files = ":empty",
@@ -184,6 +215,8 @@ cc_toolchain(
     objcopy_files = ":empty",
     strip_files = ":empty",
     supports_param_files = 1,
+    toolchain_config = ":stub_armeabi-v7a",
+    toolchain_identifier = "stub_armeabi-v7a",
 )
 
 armeabi_cc_toolchain_config(name = "stub_armeabi-v7a")

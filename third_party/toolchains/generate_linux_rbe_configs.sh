@@ -42,7 +42,7 @@ LINUX_RBE_DOCKER_IMAGE=$(cat ${LINUX_RBE_DOCKERFILE_DIR}.current_version)
 # Bazel version used for configuring
 # Needs to be the oldest of the versions from bazel/supported_versions.txt chosen 
 # so that the result is compatible with other supported bazel versions.
-BAZEL_VERSION=7.4.1
+BAZEL_VERSION=9.3.2
 
 # TODO(jtattermusch): experiment with --cpp_env_json to simplify bazel build configuration.
 
