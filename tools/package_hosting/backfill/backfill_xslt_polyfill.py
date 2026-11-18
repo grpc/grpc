@@ -20,8 +20,8 @@ inserts the XHTML <script> element for /web-assets/xslt-polyfill.min.js if not
 already present, verifies the resulting XML, and writes or uploads it safely.
 
 Prerequisites:
-  Requires the `google-cloud-storage` package:
-    pip install google-cloud-storage
+  Requires `google-cloud-storage>=3.0.0`:
+    pip install "google-cloud-storage>=3.0.0"
 
 Examples:
   1. Local archive mirror testing (never touches GCS):
@@ -88,11 +88,13 @@ import os
 import pathlib
 import re
 import shutil
+import stat
 import sys
 import tempfile
 import textwrap
+import threading
 import time
-from types import TracebackType
+import types
 from typing import Final, Protocol, Self, cast
 from xml.etree import ElementTree as ET
 
@@ -105,6 +107,7 @@ import google.cloud.storage.exceptions  # pyright: ignore[reportMissingTypeStubs
 import requests
 from requests import adapters
 from requests import exceptions as requests_exceptions
+from urllib3 import exceptions as urllib3_exceptions
 
 _LOGGER: Final = logging.getLogger(__name__)
 
@@ -124,14 +127,15 @@ POLYFILL_LINE: Final = (
     f'  <script src="{POLYFILL_SRC}" xmlns="{XHTML_NAMESPACE}"></script>'
 )
 
-_YEAR_RE: Final = re.compile(r"^[0-9]{4}$")
-_MONTH_RE: Final = re.compile(r"^(0[1-9]|1[0-2])$")
+_YEAR_RE: Final = re.compile(r"^[0-9]{4}\Z")
+_MONTH_RE: Final = re.compile(r"^(0[1-9]|1[0-2])\Z")
 _BUILD_OPEN_TAG_RE: Final = re.compile(
     r"^(<build\b[^>]*(?<!/)>)(\r?\n)",
     re.MULTILINE,
 )
+_XML_COMMENT_RE: Final = re.compile(r"<!--.*?-->", re.DOTALL)
 _STYLESHEET_PI_RE: Final = re.compile(
-    r"<\?xml-stylesheet\b[^>]*href=[\"']/web-assets/build-201807\.xsl[\"'][^>]*\?>",
+    r"<\?xml-stylesheet\b[^>]*href=(['\"])/web-assets/build-201807\.xsl\1[^>]*\?>",
 )
 _DTD_RE: Final = re.compile(r"<!(DOCTYPE|ENTITY)\b", re.IGNORECASE)
 
@@ -141,6 +145,8 @@ _GCS_OPERATION_ERRORS: Final = (
     google.cloud.storage.exceptions.InvalidResponse,
     auth_exceptions.GoogleAuthError,
     requests_exceptions.RequestException,
+    urllib3_exceptions.HTTPError,
+    OSError,
 )
 
 
@@ -151,6 +157,7 @@ class Outcome(enum.Enum):
     ALREADY_PATCHED = "already_patched"
     MISSING = "missing"
     FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 @dataclasses.dataclass(frozen=True, order=True)
@@ -261,6 +268,41 @@ def _parse_xml_root(text: str, source_label: str) -> ET.Element:
         raise ValueError(msg) from exc
 
 
+def _check_existing_scripts(
+    root: ET.Element,
+    text: str,
+    source_label: str,
+) -> bool:
+    """Returns True if already patched, False if unpatched, or raises ValueError."""
+    all_scripts = [
+        elem for elem in root.iter() if elem.tag in (XHTML_SCRIPT_TAG, "script")
+    ]
+    polyfill_children = [
+        child
+        for child in root
+        if child.tag == XHTML_SCRIPT_TAG
+        and child.get("src") == POLYFILL_SRC
+        and not (child.text and child.text.strip())
+        and len(child) == 0
+    ]
+    if polyfill_children:
+        if len(all_scripts) > 1 or text.count(POLYFILL_SRC) != 1:
+            msg = (
+                f"{source_label}: found unexpected extra script reference "
+                f"(scripts={len(all_scripts)})"
+            )
+            raise ValueError(msg)
+        return True
+
+    if all_scripts or POLYFILL_SRC in text:
+        msg = (
+            f"{source_label}: found unexpected existing script reference "
+            "under <build>"
+        )
+        raise ValueError(msg)
+    return False
+
+
 def patch_build_index_xml(raw_bytes: bytes, source_label: str) -> bytes | None:
     """Validates and inserts the XSLT polyfill script into a build index.xml.
 
@@ -296,29 +338,8 @@ def patch_build_index_xml(raw_bytes: bytes, source_label: str) -> bytes | None:
         )
         raise ValueError(msg)
 
-    polyfill_scripts = [
-        child
-        for child in root
-        if child.tag == XHTML_SCRIPT_TAG and child.get("src") == POLYFILL_SRC
-    ]
-    any_scripts = [
-        child for child in root if child.tag in (XHTML_SCRIPT_TAG, "script")
-    ]
-    if polyfill_scripts:
-        if len(any_scripts) > 1:
-            msg = (
-                f"{source_label}: found multiple <script> elements "
-                f"({len(any_scripts)}) under <build>"
-            )
-            raise ValueError(msg)
+    if _check_existing_scripts(root, text, source_label):
         return None
-
-    if any_scripts or POLYFILL_SRC in text:
-        msg = (
-            f"{source_label}: found unexpected existing script reference "
-            "under <build>"
-        )
-        raise ValueError(msg)
 
     matches = list(_BUILD_OPEN_TAG_RE.finditer(text))
     if len(matches) != 1:
@@ -329,7 +350,8 @@ def patch_build_index_xml(raw_bytes: bytes, source_label: str) -> bytes | None:
         raise ValueError(msg)
 
     match = matches[0]
-    if not _STYLESHEET_PI_RE.search(text, 0, match.start()):
+    prolog = _XML_COMMENT_RE.sub("", text[: match.start()])
+    if not _STYLESHEET_PI_RE.search(prolog):
         msg = (
             f"{source_label}: missing expected <?xml-stylesheet?> prolog for "
             "/web-assets/build-201807.xsl"
@@ -365,6 +387,42 @@ def patch_build_index_xml(raw_bytes: bytes, source_label: str) -> bytes | None:
     return patched_bytes
 
 
+def _read_local_target(
+    file_path: pathlib.Path,
+    target: str,
+) -> bytes | ItemResult:
+    """Stats and reads a regular non-symlink local file within size limit."""
+    try:
+        st = file_path.lstat()
+    except FileNotFoundError:
+        _LOGGER.warning("Missing build index: %s", file_path)
+        return ItemResult(target=target, outcome=Outcome.MISSING)
+    except OSError as exc:
+        _LOGGER.error("Failed stating %s: %s", file_path, exc)
+        return ItemResult(target=target, outcome=Outcome.FAILED, error=str(exc))
+
+    if stat.S_ISLNK(st.st_mode) or not stat.S_ISREG(st.st_mode):
+        msg = (
+            f"{file_path}: expected regular file "
+            "(not symlink or special file)"
+        )
+        _LOGGER.error("%s", msg)
+        return ItemResult(target=target, outcome=Outcome.FAILED, error=msg)
+    if st.st_size > MAX_INDEX_XML_BYTES:
+        msg = (
+            f"{file_path}: size {st.st_size} bytes exceeds limit "
+            f"({MAX_INDEX_XML_BYTES} bytes)"
+        )
+        _LOGGER.error("%s", msg)
+        return ItemResult(target=target, outcome=Outcome.FAILED, error=msg)
+
+    try:
+        return file_path.read_bytes()
+    except OSError as exc:
+        _LOGGER.error("Failed reading %s: %s", file_path, exc)
+        return ItemResult(target=target, outcome=Outcome.FAILED, error=str(exc))
+
+
 class LocalArchiveBackend:
     """Operates on a local archive directory tree (archive/YYYY/MM/<build>/)."""
 
@@ -379,9 +437,12 @@ class LocalArchiveBackend:
         self,
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
+        exc_tb: types.TracebackType | None,
     ) -> None:
         return None
+
+    def mark_unjoined_workers(self) -> None:
+        """No-op hook matching GcsArchiveBackend for unjoined worker shutdown."""
 
     @property
     def is_remote_gcs(self) -> bool:
@@ -395,9 +456,14 @@ class LocalArchiveBackend:
 
     def list_year_months(self, bounds: PartitionBounds) -> list[YearMonth]:
         """Returns sorted YYYY/MM partitions in archive_dir matching bounds."""
-        partitions: list[YearMonth] = []
+        partitions: set[YearMonth] = set()
         for year_dir in sorted(self._archive_dir.iterdir()):
-            if not year_dir.is_dir() or not _YEAR_RE.match(year_dir.name):
+            if not _YEAR_RE.match(year_dir.name):
+                continue
+            if year_dir.is_symlink():
+                msg = f"Refusing to traverse symlinked directory: {year_dir}"
+                raise OSError(msg)
+            if not year_dir.is_dir():
                 continue
             year = int(year_dir.name)
             if bounds.start_from is not None and year < bounds.start_from.year:
@@ -405,11 +471,17 @@ class LocalArchiveBackend:
             if bounds.end_at is not None and year > bounds.end_at.year:
                 continue
             for month_dir in sorted(year_dir.iterdir()):
-                if not month_dir.is_dir() or not _MONTH_RE.match(
-                    month_dir.name
-                ):
+                if not _MONTH_RE.match(month_dir.name):
                     continue
-                partitions.append(
+                if month_dir.is_symlink():
+                    msg = (
+                        "Refusing to traverse symlinked directory: "
+                        f"{month_dir}"
+                    )
+                    raise OSError(msg)
+                if not month_dir.is_dir():
+                    continue
+                partitions.add(
                     YearMonth(
                         year=year,
                         month=int(month_dir.name),
@@ -420,29 +492,43 @@ class LocalArchiveBackend:
     def list_targets(self, ym: YearMonth) -> list[str]:
         """Returns sorted build-root index.xml paths for a YYYY/MM partition."""
         month_dir = self._archive_dir / f"{ym.year:04d}" / f"{ym.month:02d}"
+        if month_dir.is_symlink():
+            msg = f"Refusing to traverse symlinked directory: {month_dir}"
+            raise OSError(msg)
         if not month_dir.is_dir():
             return []
-        return [
-            str(child / INDEX_FILENAME)
-            for child in sorted(month_dir.iterdir())
-            if child.is_dir()
-        ]
+        targets: list[str] = []
+        for child in sorted(month_dir.iterdir()):
+            if child.is_symlink():
+                msg = f"Refusing to traverse symlinked directory: {child}"
+                raise OSError(msg)
+            if child.is_dir():
+                targets.append(str(child / INDEX_FILENAME))
+        return targets
 
-    def process_target(self, target: str) -> ItemResult:
+    def process_target(
+        self,
+        target: str,
+        *,
+        cancel_event: threading.Event | None = None,
+    ) -> ItemResult:
         """Reads, validates, patches, and atomically writes one local file."""
-        file_path = pathlib.Path(target)
-        try:
-            if not file_path.is_file():
-                _LOGGER.warning("Missing build index: %s", file_path)
-                return ItemResult(target=target, outcome=Outcome.MISSING)
+        if cancel_event is not None and cancel_event.is_set():
+            return ItemResult(target=target, outcome=Outcome.CANCELLED)
 
-            raw_bytes = file_path.read_bytes()
-            patched_bytes = patch_build_index_xml(raw_bytes, str(file_path))
+        file_path = pathlib.Path(target)
+        raw_or_result = _read_local_target(file_path, target)
+        if isinstance(raw_or_result, ItemResult):
+            return raw_or_result
+
+        try:
+            patched_bytes = patch_build_index_xml(raw_or_result, str(file_path))
             if patched_bytes is None:
                 return ItemResult(
                     target=target, outcome=Outcome.ALREADY_PATCHED
                 )
-
+            if cancel_event is not None and cancel_event.is_set():
+                return ItemResult(target=target, outcome=Outcome.CANCELLED)
             if not self._dry_run:
                 _atomic_write_file(file_path, patched_bytes)
             return ItemResult(target=target, outcome=Outcome.PATCHED)
@@ -455,8 +541,16 @@ class LocalArchiveBackend:
             )
 
 
+def _reject_symlink(path: pathlib.Path) -> None:
+    """Raises ValueError if path is a symbolic link."""
+    if path.is_symlink():
+        msg = f"Refusing to overwrite symlink: {path}"
+        raise ValueError(msg)
+
+
 def _atomic_write_file(target_path: pathlib.Path, data: bytes) -> None:
     """Writes data to a sibling temp file and atomically replaces target."""
+    _reject_symlink(target_path)
     tmp_path: pathlib.Path | None = None
     try:
         with tempfile.NamedTemporaryFile(
@@ -470,6 +564,7 @@ def _atomic_write_file(target_path: pathlib.Path, data: bytes) -> None:
             handle.write(data)
             handle.flush()
             os.fsync(handle.fileno())
+        _reject_symlink(target_path)
         shutil.copymode(target_path, tmp_path)
         tmp_path.replace(target_path)
     except BaseException:
@@ -528,6 +623,23 @@ class _GcsClientProtocol(Protocol):
     def close(self) -> None: ...
 
 
+class _CredentialsProtocol(Protocol):
+    """Typed subset of google.auth.credentials.Credentials."""
+
+    @property
+    def valid(self) -> bool: ...
+
+    def with_non_blocking_refresh(self) -> None: ...
+
+    def before_request(
+        self,
+        request: auth_requests.Request,
+        method: str,
+        url: str,
+        headers: dict[str, str],
+    ) -> None: ...
+
+
 class _MtlsSessionProtocol(Protocol):
     """Typed subset of google.auth.transport.requests.AuthorizedSession."""
 
@@ -550,10 +662,15 @@ class _DownloadedBlob:
 
 def _create_gcs_client(*, pool_size: int) -> _GcsClientProtocol:
     """Creates a GCS Client with an HTTP pool sized for worker threads."""
-    raw_client = storage.Client()
-    creds = getattr(raw_client, "_credentials", None)
-    if isinstance(creds, auth_credentials.Credentials):
-        creds.with_non_blocking_refresh()
+    raw_client = storage.Client(project=None)
+    raw_creds = getattr(raw_client, "_credentials", None)
+    typed_creds = (
+        cast("_CredentialsProtocol", raw_creds)
+        if isinstance(raw_creds, auth_credentials.Credentials)
+        else None
+    )
+    if typed_creds is not None:
+        typed_creds.with_non_blocking_refresh()
 
     session = getattr(raw_client, "_http", None)
     if isinstance(session, requests.Session):
@@ -574,6 +691,20 @@ def _create_gcs_client(*, pool_size: int) -> _GcsClientProtocol:
                     getattr(raw_client, "_client_cert_source", None),
                 )
                 mtls_session.configure_mtls_channel(cert_source)
+            auth_req = getattr(session, "_auth_request", None)
+            if (
+                typed_creds is not None
+                and not typed_creds.valid
+                and isinstance(auth_req, auth_requests.Request)
+            ):
+                endpoint = str(
+                    getattr(
+                        raw_client,
+                        "api_endpoint",
+                        "https://storage.googleapis.com",
+                    )
+                )
+                typed_creds.before_request(auth_req, "GET", endpoint, {})
     return cast("_GcsClientProtocol", raw_client)
 
 
@@ -589,8 +720,9 @@ class GcsArchiveBackend:
         dry_run: bool,
     ) -> None:
         self._bucket_name = bucket_name
-        self._prefix = prefix.strip("/")
+        self._prefix = prefix.strip().strip("/")
         self._dry_run = dry_run
+        self._unjoined_workers = False
         self._client = _create_gcs_client(pool_size=max(workers + 4, 16))
         self._bucket = self._client.bucket(bucket_name)
 
@@ -601,9 +733,14 @@ class GcsArchiveBackend:
         self,
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
+        exc_tb: types.TracebackType | None,
     ) -> None:
-        self._client.close()
+        if not self._unjoined_workers:
+            self._client.close()
+
+    def mark_unjoined_workers(self) -> None:
+        """Skips client.close() on exit if workers were abandoned via 2x SIGINT."""
+        self._unjoined_workers = True
 
     @property
     def is_remote_gcs(self) -> bool:
@@ -628,7 +765,7 @@ class GcsArchiveBackend:
         for _ in year_iter:
             pass
 
-        partitions: list[YearMonth] = []
+        partitions: set[YearMonth] = set()
         for year_prefix in sorted(year_iter.prefixes):
             year_str = year_prefix.rstrip("/").rsplit("/", maxsplit=1)[-1]
             if not _YEAR_RE.match(year_str):
@@ -649,7 +786,7 @@ class GcsArchiveBackend:
                 month_str = month_prefix.rstrip("/").rsplit("/", maxsplit=1)[-1]
                 if not _MONTH_RE.match(month_str):
                     continue
-                partitions.append(YearMonth(year=year, month=int(month_str)))
+                partitions.add(YearMonth(year=year, month=int(month_str)))
         return filter_partitions(sorted(partitions), bounds)
 
     def list_targets(self, ym: YearMonth) -> list[str]:
@@ -677,53 +814,90 @@ class GcsArchiveBackend:
         download_blob = self._bucket.blob(target)
         try:
             raw_bytes = download_blob.download_as_bytes(checksum="auto")
+            generation = download_blob.generation
         except gcs_exceptions.NotFound:
             _LOGGER.warning("Missing build index object: %s", uri)
             return ItemResult(target=uri, outcome=Outcome.MISSING)
-        except _GCS_OPERATION_ERRORS as exc:
+        except (ValueError, *_GCS_OPERATION_ERRORS) as exc:
             _LOGGER.error("Failed downloading %s: %s", uri, exc)
             return ItemResult(
                 target=uri, outcome=Outcome.FAILED, error=str(exc)
             )
 
-        generation = download_blob.generation
-        if generation is None:
-            msg = f"{uri}: missing object generation after download"
+        if generation is None or generation <= 0:
+            msg = (
+                f"{uri}: invalid or missing object generation "
+                f"({generation!r}) after download"
+            )
             _LOGGER.error("%s", msg)
             return ItemResult(target=uri, outcome=Outcome.FAILED, error=msg)
         return _DownloadedBlob(raw_bytes=raw_bytes, generation=generation)
 
-    def process_target(self, target: str) -> ItemResult:
+    def process_target(
+        self,
+        target: str,
+        *,
+        cancel_event: threading.Event | None = None,
+    ) -> ItemResult:
         """Downloads, validates, patches, and conditionally uploads one blob."""
         uri = f"gs://{self._bucket_name}/{target}"
+        if cancel_event is not None and cancel_event.is_set():
+            return ItemResult(target=uri, outcome=Outcome.CANCELLED)
+
         downloaded = self._download_target(target, uri)
         if isinstance(downloaded, ItemResult):
             return downloaded
 
         try:
             patched_bytes = patch_build_index_xml(downloaded.raw_bytes, uri)
-            if patched_bytes is None:
-                return ItemResult(target=uri, outcome=Outcome.ALREADY_PATCHED)
-            if not self._dry_run:
-                self._upload_patched(
-                    target,
-                    patched_bytes,
-                    downloaded.generation,
-                )
+        except ValueError as exc:
+            _LOGGER.error("Failed validating %s: %s", uri, exc)
+            return ItemResult(
+                target=uri, outcome=Outcome.FAILED, error=str(exc)
+            )
+
+        if patched_bytes is None:
+            return ItemResult(target=uri, outcome=Outcome.ALREADY_PATCHED)
+        if cancel_event is not None and cancel_event.is_set():
+            return ItemResult(target=uri, outcome=Outcome.CANCELLED)
+        return self._upload_or_recover(
+            target,
+            uri,
+            patched_bytes,
+            downloaded.generation,
+        )
+
+    def _upload_or_recover(
+        self,
+        target: str,
+        uri: str,
+        patched_bytes: bytes,
+        generation: int,
+    ) -> ItemResult:
+        """Uploads patched bytes or returns dry-run / 412-recovered outcome."""
+        if self._dry_run:
+            return ItemResult(target=uri, outcome=Outcome.PATCHED)
+        try:
+            self._upload_patched(target, patched_bytes, generation)
         except gcs_exceptions.PreconditionFailed as exc:
-            return self._recover_precondition_failure(target, uri, exc)
+            return self._recover_precondition_failure(
+                target,
+                uri,
+                patched_bytes,
+                exc,
+            )
         except (ValueError, *_GCS_OPERATION_ERRORS) as exc:
             _LOGGER.error("Failed updating %s: %s", uri, exc)
             return ItemResult(
                 target=uri, outcome=Outcome.FAILED, error=str(exc)
             )
-
         return ItemResult(target=uri, outcome=Outcome.PATCHED)
 
     def _recover_precondition_failure(
         self,
         target: str,
         uri: str,
+        patched_bytes: bytes,
         original_exc: gcs_exceptions.PreconditionFailed,
     ) -> ItemResult:
         """Checks whether a 412 retry error occurred after our upload landed."""
@@ -731,14 +905,22 @@ class GcsArchiveBackend:
             latest_bytes = self._bucket.blob(target).download_as_bytes(
                 checksum="auto"
             )
-            if patch_build_index_xml(latest_bytes, uri) is None:
+            if latest_bytes == patched_bytes:
                 _LOGGER.warning(
                     "Upload retry for %s received 412 PreconditionFailed, "
-                    "but remote object is already validly patched; "
+                    "but exact patched payload is already live; "
                     "counting as uploaded.",
                     uri,
                 )
                 return ItemResult(target=uri, outcome=Outcome.PATCHED)
+            if patch_build_index_xml(latest_bytes, uri) is None:
+                _LOGGER.warning(
+                    "Upload for %s received 412 PreconditionFailed because "
+                    "another process already patched it; counting as "
+                    "already_patched.",
+                    uri,
+                )
+                return ItemResult(target=uri, outcome=Outcome.ALREADY_PATCHED)
         except (
             gcs_exceptions.NotFound,
             ValueError,
@@ -824,6 +1006,43 @@ def _build_epilog() -> str:
     )
 
 
+def _validate_parsed_args(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+) -> None:
+    """Validates mutually dependent CLI arguments on args in place."""
+    if args.only is not None and args.end_at is not None:
+        parser.error("argument --end-at: not allowed with argument --only")
+    if args.local_dir is not None:
+        if args.prefix is not None:
+            parser.error(
+                "argument --prefix: not allowed with argument --local-dir"
+            )
+        local_dir_str = args.local_dir.strip()
+        if not local_dir_str:
+            parser.error("argument --local-dir: path must not be empty")
+        args.local_dir = pathlib.Path(local_dir_str)
+    else:
+        bucket = args.bucket.strip()
+        if not bucket or "/" in bucket:
+            parser.error("argument --bucket: must be a valid GCS bucket name")
+        args.bucket = bucket
+
+    if args.prefix is None:
+        args.prefix = DEFAULT_PREFIX
+    else:
+        cleaned_prefix = args.prefix.strip()
+        if cleaned_prefix.startswith("gs://"):
+            parser.error(
+                "argument --prefix: expected object prefix inside bucket, "
+                "not a gs:// URI"
+            )
+        args.prefix = cleaned_prefix
+
+    if args.workers < 1:
+        parser.error("argument --workers: must be >= 1")
+
+
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     """Parses command-line arguments."""
     parser = argparse.ArgumentParser(
@@ -838,7 +1057,6 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     target_group = parser.add_mutually_exclusive_group()
     target_group.add_argument(
         "--local-dir",
-        type=pathlib.Path,
         default=None,
         help=(
             "Operate on a local archive directory (e.g. ./archive) instead "
@@ -915,19 +1133,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
 
     args = parser.parse_args(argv)
-    if args.only is not None and args.end_at is not None:
-        parser.error("argument --end-at: not allowed with argument --only")
-    if args.local_dir is not None and args.prefix is not None:
-        parser.error("argument --prefix: not allowed with argument --local-dir")
-    if args.prefix is None:
-        args.prefix = DEFAULT_PREFIX
-    if args.local_dir is None:
-        bucket = args.bucket.strip()
-        if not bucket or "/" in bucket:
-            parser.error("argument --bucket: must be a valid GCS bucket name")
-        args.bucket = bucket
-    if args.workers < 1:
-        parser.error("argument --workers: must be >= 1")
+    _validate_parsed_args(parser, args)
     return args
 
 
@@ -1029,12 +1235,28 @@ def _format_outcome_label(
 @contextlib.contextmanager
 def _managed_thread_pool(
     workers: int,
-) -> Generator[futures.ThreadPoolExecutor]:
-    """Yields a ThreadPoolExecutor that cancels queued futures on exception."""
+    *,
+    cancel_event: threading.Event,
+    backend: LocalArchiveBackend | GcsArchiveBackend,
+) -> Generator[futures.ThreadPoolExecutor, None, None]:
+    """Yields a ThreadPoolExecutor that cancels work cleanly on exception."""
     executor = futures.ThreadPoolExecutor(max_workers=workers)
     try:
         yield executor
+    except KeyboardInterrupt:
+        cancel_event.set()
+        _LOGGER.warning(
+            "Interrupt received; cancelling queued tasks and waiting for "
+            "in-flight requests to finish..."
+        )
+        try:
+            executor.shutdown(wait=True, cancel_futures=True)
+        except KeyboardInterrupt:
+            backend.mark_unjoined_workers()
+            raise
+        raise
     except BaseException:
+        cancel_event.set()
         executor.shutdown(wait=True, cancel_futures=True)
         raise
     else:
@@ -1046,6 +1268,7 @@ def _process_partition(
     backend: LocalArchiveBackend | GcsArchiveBackend,
     ym: YearMonth,
     *,
+    cancel_event: threading.Event,
     cumulative: Stats,
     verbose: bool,
     patched_label: str,
@@ -1055,7 +1278,11 @@ def _process_partition(
     month_stats = Stats()
 
     future_map = {
-        executor.submit(backend.process_target, target): target
+        executor.submit(
+            backend.process_target,
+            target,
+            cancel_event=cancel_event,
+        ): target
         for target in targets
     }
     for future in futures.as_completed(future_map):
@@ -1105,15 +1332,21 @@ def _execute_partitions(
     cumulative = Stats()
     start_time = time.monotonic()
     current_ym: YearMonth | None = None
+    cancel_event = threading.Event()
 
     try:
-        with _managed_thread_pool(workers) as executor:
+        with _managed_thread_pool(
+            workers,
+            cancel_event=cancel_event,
+            backend=backend,
+        ) as executor:
             for ym in partitions:
                 current_ym = ym
                 month_stats = _process_partition(
                     executor,
                     backend,
                     ym,
+                    cancel_event=cancel_event,
                     cumulative=cumulative,
                     verbose=verbose,
                     patched_label=patched_label,
@@ -1173,8 +1406,11 @@ def _run_with_backend(
     )
     partitions = backend.list_year_months(bounds)
     if not partitions:
-        _LOGGER.warning("No matching YYYY/MM partitions found.")
-        return 0
+        _LOGGER.error(
+            "No matching YYYY/MM partitions found in %s.",
+            backend.description,
+        )
+        return 1
 
     mode_display = _describe_mode(
         is_remote_gcs=backend.is_remote_gcs,
@@ -1227,8 +1463,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ),
         datefmt="%m%d %H:%M:%S",
     )
-    if args.verbose:
-        _LOGGER.setLevel(logging.DEBUG)
+    _LOGGER.setLevel(logging.DEBUG if args.verbose else logging.INFO)
 
     try:
         bounds = resolve_bounds(args)
@@ -1239,9 +1474,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         backend: LocalArchiveBackend | GcsArchiveBackend
         if args.local_dir is not None:
-            if not args.local_dir.is_dir():
+            if args.local_dir.is_symlink() or not args.local_dir.is_dir():
                 _LOGGER.error(
-                    "Local archive directory not found: %s", args.local_dir
+                    "Local archive directory not found or is a symlink: %s",
+                    args.local_dir,
                 )
                 return 2
             backend = LocalArchiveBackend(args.local_dir, dry_run=args.dry_run)
