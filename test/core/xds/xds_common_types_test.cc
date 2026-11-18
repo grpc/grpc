@@ -1769,6 +1769,64 @@ TEST_F(ParseHeaderTest, RawHeaderValueValidationForNonBinaryHeader) {
       "validation failed: [field:raw_value error:Illegal header value]");
 }
 
+TEST_F(ParseHeaderTest, HeaderValueAtMaxLength) {
+  HeaderValueProto proto;
+  proto.set_key("foo");
+  proto.set_value(std::string(32768, 'a'));
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto header = ParseXdsHeader(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
+  EXPECT_EQ(header.first, "foo");
+  EXPECT_EQ(header.second, std::string(32768, 'a'));
+}
+
+TEST_F(ParseHeaderTest, HeaderValueTooLong) {
+  HeaderValueProto proto;
+  proto.set_key("foo");
+  proto.set_value(std::string(32769, 'a'));
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  ParseXdsHeader(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:value error:longer than 32768 bytes]");
+}
+
+TEST_F(ParseHeaderTest, RawHeaderValueAtMaxLength) {
+  HeaderValueProto proto;
+  proto.set_key("foo");
+  proto.set_raw_value(std::string(32768, 'a'));
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto header = ParseXdsHeader(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
+  EXPECT_EQ(header.first, "foo");
+  EXPECT_EQ(header.second, std::string(32768, 'a'));
+}
+
+TEST_F(ParseHeaderTest, RawHeaderValueTooLong) {
+  HeaderValueProto proto;
+  proto.set_key("foo");
+  proto.set_raw_value(std::string(32769, 'a'));
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  ParseXdsHeader(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:raw_value error:longer than 32768 bytes]");
+}
+
 TEST_F(ParseHeaderTest, NoHeaderValueSet) {
   HeaderValueProto proto;
   proto.set_key("foo");
