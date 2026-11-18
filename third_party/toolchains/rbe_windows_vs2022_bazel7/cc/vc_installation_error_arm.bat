@@ -20,7 +20,7 @@ echo Bazel couldn't find a valid Visual C++ build tools installation on your mac
 echo. 1>&2
 echo Visual C++ build tools seems to be installed at C:\VS\VC 1>&2
 echo But Bazel can't find the following tools: 1>&2
-echo     cl.exe, link.exe, lib.exe 1>&2
+echo     cl.exe, dumpbin.exe, lib.exe, link.exe 1>&2
 echo for arm target architecture 1>&2
 echo. 1>&2
 echo Please check your installation following https://bazel.build/docs/windows#using 1>&2

@@ -33,7 +33,7 @@ WINDOWS_RBE_DOCKER_IMAGE=us-docker.pkg.dev/grpc-testing/testing-images-public/rb
 # Bazel version used for configuring
 # Needs to be one of the versions from bazel/supported_versions.txt chosen so that the result is compatible
 # with other supported bazel versions.
-BAZEL_VERSION=7.4.1
+BAZEL_VERSION=9.3.2
 
 # Where to store the generated configs (relative to repo root)
 CONFIG_OUTPUT_PATH=third_party/toolchains/rbe_windows_vs2022_bazel7
