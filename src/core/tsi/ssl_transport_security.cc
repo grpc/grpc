@@ -96,6 +96,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 
@@ -206,6 +207,9 @@ struct tsi_ssl_server_handshaker_factory {
 #if defined(OPENSSL_IS_BORINGSSL)
   std::shared_ptr<grpc_core::CertificateSelector> certificate_selector;
 #endif  // defined(OPENSSL_IS_BORINGSSL)
+  // Populated on BoringSSL with the configured TLS verify signature algorithm
+  // IDs; std::nullopt on OpenSSL.
+  std::optional<std::vector<uint16_t>> verify_algorithms;
   std::string exported_keying_material_label;
   size_t exported_keying_material_length;
 };
@@ -584,12 +588,16 @@ tsi_result SetKeyExchangeGroups(
 
 // Populates the signature algorithms.
 // Prefers the signature algorithms (input argument) configured by the user,
-// otherwise uses our defaults.
+// otherwise uses our defaults. On BoringSSL, if `configured_algorithms` is
+// non-null, populates it with the configured BoringSSL SSL_SIGN_* IDs; on
+// OpenSSL, leaves it untouched.
 tsi_result SetSignatureAlgorithms(
     [[maybe_unused]] SSL_CTX* context,
-    const std::vector<grpc_tls_signature_algorithm>& signature_algorithms) {
+    const std::vector<grpc_tls_signature_algorithm>& signature_algorithms,
+    [[maybe_unused]] std::optional<std::vector<uint16_t>>*
+        configured_algorithms) {
+  std::vector<absl::string_view> algorithm_names;
   if (!signature_algorithms.empty()) {
-    std::vector<absl::string_view> algorithm_names;
     algorithm_names.reserve(signature_algorithms.size());
     for (const grpc_tls_signature_algorithm algorithm : signature_algorithms) {
       absl::StatusOr<absl::string_view> algorithm_name =
@@ -616,7 +624,7 @@ tsi_result SetSignatureAlgorithms(
     LOG(ERROR) << "Setting TLS signature algorithms is not supported when "
                   "building against OpenSSL versions < 1.1.1.";
     return TSI_FAILED_PRECONDITION;
-#endif  // OPENSSL_VERSION_NUMBER >= 0x10101000
+#endif  // OPENSSL_VERSION_NUMBER >= 0x10101000L
   } else {
 // Use defaults
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
@@ -626,6 +634,27 @@ tsi_result SetSignatureAlgorithms(
     }
 #endif
   }
+#if defined(OPENSSL_IS_BORINGSSL)
+  if (configured_algorithms != nullptr) {
+    if (signature_algorithms.empty()) {
+      algorithm_names = absl::StrSplit(kDefaultSignatureAlgorithms, ':');
+    }
+    std::vector<uint16_t> sigalgs;
+    sigalgs.reserve(algorithm_names.size());
+    for (absl::string_view algorithm_name : algorithm_names) {
+      absl::StatusOr<uint16_t> algorithm_id =
+          tsi::ConvertSignatureAlgorithmNameToBoringSslId(algorithm_name);
+      if (!algorithm_id.ok()) {
+        LOG(ERROR) << "Could not convert signature algorithm to BoringSSL ID: "
+                   << algorithm_name;
+        return signature_algorithms.empty() ? TSI_INTERNAL_ERROR
+                                            : TSI_INVALID_ARGUMENT;
+      }
+      sigalgs.push_back(*algorithm_id);
+    }
+    *configured_algorithms = std::move(sigalgs);
+  }
+#endif  // defined(OPENSSL_IS_BORINGSSL)
   return TSI_OK;
 }
 }  // namespace
@@ -750,7 +779,8 @@ const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
     TlsPrivateKeyOffloadComplete};
 
 SelectCertificateInfo PrepareSelectCertificateInfo(
-    const SSL_CLIENT_HELLO* client_hello) {
+    const SSL_CLIENT_HELLO* client_hello,
+    const std::optional<std::vector<uint16_t>>& verify_algorithms) {
   SelectCertificateInfo select_cert_info;
   const char* sni =
       SSL_get_servername(client_hello->ssl, TLSEXT_NAMETYPE_host_name);
@@ -774,6 +804,10 @@ SelectCertificateInfo PrepareSelectCertificateInfo(
   select_cert_info.handshake_hints_info.client_hello =
       std::string(reinterpret_cast<const char*>(client_hello->client_hello),
                   client_hello->client_hello_len);
+  if (verify_algorithms.has_value()) {
+    select_cert_info.handshake_hints_info.verify_algorithms =
+        *verify_algorithms;
+  }
   return select_cert_info;
 }
 
@@ -890,14 +924,21 @@ void OnSelectCertificateDone(
   }
 }
 
-grpc_core::CertificateSelector* GetCertificateSelector(
+tsi_ssl_server_handshaker_factory* GetServerHandshakerFactory(
     tsi_ssl_handshaker* handshaker) {
   if (handshaker->is_client) {
     return nullptr;
   }
   return reinterpret_cast<tsi_ssl_server_handshaker_factory*>(
-             handshaker->factory_ref)
-      ->certificate_selector.get();
+      handshaker->factory_ref);
+}
+
+grpc_core::CertificateSelector* GetCertificateSelector(
+    tsi_ssl_handshaker* handshaker) {
+  tsi_ssl_server_handshaker_factory* server_factory =
+      GetServerHandshakerFactory(handshaker);
+  return server_factory != nullptr ? server_factory->certificate_selector.get()
+                                   : nullptr;
 }
 
 // Invoked by BoringSSL to get the result of cert selection.
@@ -912,8 +953,11 @@ ssl_select_cert_result_t SelectCertificateCallback(
         "is nullptr; this should never happen.");
     return ssl_select_cert_error;
   }
+  tsi_ssl_server_handshaker_factory* server_factory =
+      GetServerHandshakerFactory(handshaker);
   grpc_core::CertificateSelector* cert_selector =
-      GetCertificateSelector(handshaker);
+      server_factory != nullptr ? server_factory->certificate_selector.get()
+                                : nullptr;
   if (cert_selector == nullptr) {
     handshaker->MaybeSetError(
         "SelectCertificateCallback failed because certificate selector "
@@ -936,7 +980,8 @@ ssl_select_cert_result_t SelectCertificateCallback(
   std::variant<absl::StatusOr<SelectCertificateResult>,
                std::shared_ptr<AsyncCertificateSelectionHandle>>
       result = cert_selector->SelectCertificate(
-          PrepareSelectCertificateInfo(client_hello),
+          PrepareSelectCertificateInfo(client_hello,
+                                       server_factory->verify_algorithms),
           absl::bind_front(OnSelectCertificateDone, handshaker->Ref()));
   // The outer function guarantees the mutex lock, and we have to disable the
   // absl thread safety analysis because the use of MatchMutable.
@@ -1602,7 +1647,8 @@ static tsi_result populate_ssl_context(
     SSL_CTX* context, const grpc_core::PemKeyCertPair* key_cert_pair,
     const char* cipher_list,
     const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
-    const std::vector<grpc_tls_signature_algorithm>& signature_algorithms) {
+    const std::vector<grpc_tls_signature_algorithm>& signature_algorithms,
+    std::optional<std::vector<uint16_t>>* configured_signature_algorithms) {
   tsi_result result = TSI_OK;
   if (key_cert_pair != nullptr) {
     if (!key_cert_pair->cert_chain().empty()) {
@@ -1650,7 +1696,8 @@ static tsi_result populate_ssl_context(
   if (result != TSI_OK) {
     return result;
   }
-  result = SetSignatureAlgorithms(context, signature_algorithms);
+  result = SetSignatureAlgorithms(context, signature_algorithms,
+                                  configured_signature_algorithms);
   if (result != TSI_OK) {
     return result;
   }
@@ -3537,7 +3584,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   do {
     result = populate_ssl_context(
         ssl_context, options->pem_key_cert_pair, options->cipher_suites,
-        options->key_exchange_groups, options->signature_algorithms);
+        options->key_exchange_groups, options->signature_algorithms,
+        /*configured_signature_algorithms=*/nullptr);
     if (result != TSI_OK) break;
 
 #if defined(OPENSSL_IS_BORINGSSL)
@@ -3709,7 +3757,8 @@ tsi_result tsi_configure_server_ssl_context(
 
   result = populate_ssl_context(
       ssl_context.ssl_ctx, pem_key_cert_pair, options->cipher_suites,
-      options->key_exchange_groups, options->signature_algorithms);
+      options->key_exchange_groups, options->signature_algorithms,
+      &impl->verify_algorithms);
 #if defined(OPENSSL_IS_BORINGSSL)
   if (pem_key_cert_pair != nullptr) {
     grpc_core::Match(

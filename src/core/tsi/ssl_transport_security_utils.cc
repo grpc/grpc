@@ -31,6 +31,7 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <utility>
@@ -670,5 +671,36 @@ absl::StatusOr<absl::string_view> ConvertSignatureAlgorithmToString(
       return absl::InvalidArgumentError("Unknown signature algorithm.");
   }
 }
+
+#if defined(OPENSSL_IS_BORINGSSL)
+absl::StatusOr<uint16_t> ConvertSignatureAlgorithmNameToBoringSslId(
+    absl::string_view algorithm_name) {
+  struct NameToBoringSslId {
+    absl::string_view name;
+    uint16_t id;
+  };
+  static constexpr NameToBoringSslId kNameToId[] = {
+      {"rsa_pkcs1_sha1", SSL_SIGN_RSA_PKCS1_SHA1},
+      {"rsa_pkcs1_sha256", SSL_SIGN_RSA_PKCS1_SHA256},
+      {"rsa_pkcs1_sha384", SSL_SIGN_RSA_PKCS1_SHA384},
+      {"rsa_pkcs1_sha512", SSL_SIGN_RSA_PKCS1_SHA512},
+      {"ecdsa_secp256r1_sha256", SSL_SIGN_ECDSA_SECP256R1_SHA256},
+      {"ecdsa_secp384r1_sha384", SSL_SIGN_ECDSA_SECP384R1_SHA384},
+      {"ecdsa_secp521r1_sha512", SSL_SIGN_ECDSA_SECP521R1_SHA512},
+      {"rsa_pss_rsae_sha256", SSL_SIGN_RSA_PSS_RSAE_SHA256},
+      {"rsa_pss_rsae_sha384", SSL_SIGN_RSA_PSS_RSAE_SHA384},
+      {"rsa_pss_rsae_sha512", SSL_SIGN_RSA_PSS_RSAE_SHA512},
+      {"mldsa44", SSL_SIGN_ML_DSA_44},
+      {"mldsa65", SSL_SIGN_ML_DSA_65},
+      {"mldsa87", SSL_SIGN_ML_DSA_87},
+  };
+  for (const NameToBoringSslId& entry : kNameToId) {
+    if (entry.name == algorithm_name) {
+      return entry.id;
+    }
+  }
+  return absl::InvalidArgumentError("Unknown signature algorithm.");
+}
+#endif  // defined(OPENSSL_IS_BORINGSSL)
 
 }  // namespace tsi
