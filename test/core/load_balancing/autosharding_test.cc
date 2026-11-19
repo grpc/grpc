@@ -42,6 +42,7 @@
 #include "src/core/util/time.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/xds/xds_transport_fake.h"
 #include "gmock/gmock.h"
@@ -1313,6 +1314,10 @@ TEST_F(AutoShardingTest,
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
+  // Set before the core configuration is built, because that is when the
+  // policy is registered.
+  grpc_core::testing::ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AUTOSHARDING_LB");
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
   return RUN_ALL_TESTS();

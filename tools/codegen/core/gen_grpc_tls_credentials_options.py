@@ -249,6 +249,16 @@ _DATA_MEMBERS = [
         test_name="DifferentKeyExchangeGroups",
         test_value_1="{grpc_tls_key_exchange_group::GRPC_TLS_GROUP_X25519}",
         test_value_2="{grpc_tls_key_exchange_group::GRPC_TLS_GROUP_X25519_MLKEM768}",
+        special_getter_return_type="const std::vector<grpc_tls_key_exchange_group>&",
+    ),
+    DataMember(
+        name="signature_algorithms",
+        type="std::vector<grpc_tls_signature_algorithm>",
+        setter_move_semantics=True,
+        test_name="DifferentSignatureAlgorithms",
+        test_value_1="{grpc_tls_signature_algorithm::GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256}",
+        test_value_2="{grpc_tls_signature_algorithm::GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65}",
+        special_getter_return_type="const std::vector<grpc_tls_signature_algorithm>&",
     ),
     DataMember(
         name="exported_keying_material_label",

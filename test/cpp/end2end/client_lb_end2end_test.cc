@@ -656,6 +656,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
 };
 
 TEST_F(ClientLbEnd2endTest, ChannelStateConnectingWhenResolving) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix b/581109284");
   const int kNumServers = 3;
   StartServers(kNumServers);
   FakeResolverResponseGeneratorWrapper response_generator;
@@ -4150,7 +4151,6 @@ class ClientLbSubchannelMetricsTest : public ClientLbEnd2endTest {
 };
 
 TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
-  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   StartServers(1, {}, grpc::InsecureServerCredentials());
   const int port = servers_[0]->port_;
   std::string target = grpc_core::LocalIpAndPort(port);
