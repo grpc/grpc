@@ -291,13 +291,17 @@ void XdsDependencyManager::Orphan() {
 
 void XdsDependencyManager::RequestReresolution() {
   for (const auto& [_, dns_state] : dns_resolvers_) {
-    dns_state.resolver->RequestReresolutionLocked();
+    if (dns_state.resolver != nullptr) {
+      dns_state.resolver->RequestReresolutionLocked();
+    }
   }
 }
 
 void XdsDependencyManager::ResetBackoff() {
   for (const auto& [_, dns_state] : dns_resolvers_) {
-    dns_state.resolver->ResetBackoffLocked();
+    if (dns_state.resolver != nullptr) {
+      dns_state.resolver->ResetBackoffLocked();
+    }
   }
 }
 
@@ -445,6 +449,12 @@ void XdsDependencyManager::OnRouteConfigUpdate(
                                      << "] received RouteConfig update for "
                                      << (name.empty() ? "<inline>" : name);
   if (xds_client_ == nullptr) return;
+  // Ignore updates for stale names.
+  if (name.empty()) {
+    if (!route_config_name_.empty()) return;
+  } else {
+    if (name != route_config_name_) return;
+  }
   if (!route_config.ok()) {
     current_virtual_host_ = nullptr;
     ReportError(route_config_name_.empty() ? "LDS" : "RDS",
@@ -452,12 +462,6 @@ void XdsDependencyManager::OnRouteConfigUpdate(
                                            : route_config_name_,
                 route_config.status().message());
     return;
-  }
-  // Ignore updates for stale names.
-  if (name.empty()) {
-    if (!route_config_name_.empty()) return;
-  } else {
-    if (name != route_config_name_) return;
   }
   // Find the relevant VirtualHost from the RouteConfiguration.
   // If the resource doesn't have the right vhost, fail.
@@ -488,6 +492,7 @@ void XdsDependencyManager::OnRouteConfigAmbientError(std::string resource_name,
       << "[XdsDependencyManager " << this
       << "] received RouteConfig error: " << resource_name << ": " << status;
   if (xds_client_ == nullptr) return;
+  if (resource_name != route_config_name_) return;
   if (status.ok()) {
     rds_resolution_note_.clear();
   } else {
@@ -609,21 +614,25 @@ void XdsDependencyManager::PopulateDnsUpdate(const std::string& dns_name,
   locality.name = MakeRefCounted<XdsLocalityName>("", "", "");
   locality.lb_weight = 1;
   if (result.addresses.ok()) {
-    std::vector<grpc_resolved_address> addresses;
-    ChannelArgs address_args = result.addresses->front().args();
-    for (const auto& address : *result.addresses) {
-      GRPC_CHECK_EQ(address.addresses().size(), 1UL);
-      addresses.emplace_back(address.addresses().front());
-      GRPC_CHECK_EQ(address_args, address.args());
+    if (!result.addresses->empty()) {
+      std::vector<grpc_resolved_address> addresses;
+      ChannelArgs address_args = result.addresses->front().args();
+      for (const auto& address : *result.addresses) {
+        GRPC_CHECK_EQ(address.addresses().size(), 1UL);
+        addresses.emplace_back(address.addresses().front());
+        GRPC_CHECK_EQ(address_args, address.args());
+      }
+      locality.endpoints.emplace_back(
+          std::move(addresses),
+          address_args.Set(GRPC_ARG_ADDRESS_NAME, dns_name));
     }
-    locality.endpoints.emplace_back(
-        std::move(addresses),
-        address_args.Set(GRPC_ARG_ADDRESS_NAME, dns_name));
     dns_state->update.resolution_note = std::move(result.resolution_note);
   } else if (result.resolution_note.empty()) {
     dns_state->update.resolution_note =
         absl::StrCat("DNS resolution failed for ", dns_name, ": ",
                      result.addresses.status().ToString());
+  } else {
+    dns_state->update.resolution_note = std::move(result.resolution_note);
   }
   XdsEndpointResource::Priority priority;
   priority.localities.emplace(locality.name.get(), std::move(locality));
@@ -855,6 +864,7 @@ XdsDependencyManager::GetClusterSubscription(absl::string_view cluster_name) {
   if (it != cluster_subscriptions_.end()) {
     auto subscription = it->second->RefIfNonZero();
     if (subscription != nullptr) return subscription;
+    cluster_subscriptions_.erase(it);
   }
   auto subscription = MakeRefCounted<ClusterSubscription>(cluster_name, Ref());
   cluster_subscriptions_.emplace(subscription->cluster_name(),
