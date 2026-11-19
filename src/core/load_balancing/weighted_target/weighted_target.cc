@@ -134,16 +134,13 @@ class WeightedTargetLb final : public LoadBalancingPolicy {
     using PickerList =
         std::vector<std::pair<uint64_t, RefCountedPtr<SubchannelPicker>>>;
 
-    explicit WeightedPicker(PickerList pickers,
-                            std::string delay_reason_prefix = "")
-        : pickers_(std::move(pickers)),
-          delay_reason_prefix_(std::move(delay_reason_prefix)) {}
+    explicit WeightedPicker(PickerList pickers)
+        : pickers_(std::move(pickers)) {}
 
     PickResult Pick(PickArgs args) override;
 
    private:
     PickerList pickers_;
-    std::string delay_reason_prefix_;
   };
 
   // Delegates to a single CONNECTING (or IDLE child picker while no children
@@ -413,8 +410,6 @@ void WeightedTargetLb::UpdateStateLocked() {
   // sum of the weights of all children.
   WeightedPicker::PickerList ready_picker_list;
   uint64_t ready_end = 0;
-  WeightedPicker::PickerList connecting_or_idle_picker_list;
-  uint64_t connecting_or_idle_end = 0;
   WeightedPicker::PickerList tf_picker_list;
   uint64_t tf_end = 0;
   // Also count the number of children in CONNECTING and IDLE, to determine

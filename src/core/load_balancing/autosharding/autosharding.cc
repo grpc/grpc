@@ -437,9 +437,6 @@ AutoshardingLbPolicy::Picker::PickFromEndpointIndices(
       case GRPC_CHANNEL_TRANSIENT_FAILURE:
         last_failure = &endpoint_info.status;
         break;
-      case GRPC_CHANNEL_TRANSIENT_FAILURE:
-        last_failure = &endpoint_info.status;
-        break;
       default:
         break;
     }
