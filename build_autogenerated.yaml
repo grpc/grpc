@@ -7058,6 +7058,7 @@ targets:
   headers:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
@@ -16029,6 +16030,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/promise/poll_matcher.h
   - test/core/test_util/postmortem.h
+  - test/core/transport/chttp2/http2_common_test_inputs.h
   - test/core/transport/chttp2/http2_frame_test_helper.h
   - test/core/transport/util/mock_promise_endpoint.h
   - test/core/transport/util/transport_test.h
@@ -22906,6 +22908,7 @@ targets:
   headers:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/scoped_env_var.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/credentials/call/regional_access_boundary_fetcher_test.cc

@@ -14,7 +14,7 @@
 
 module(
     name = "grpc",
-    version = "1.86.0-dev",
+    version = "1.87.0-dev",
     compatibility_level = 1,
     repo_name = "com_github_grpc_grpc",
 )
@@ -205,14 +205,6 @@ archive_override(
 
 # --- Provide repo @com_google_fuzztest.
 bazel_dep(name = "fuzztest", version = "20260629.0.bcr.1", dev_dependency = True, repo_name = "com_google_fuzztest")
-
-# This package is not directly used by grpc, but requested by fuzztest.
-#
-# The reason for version bump is because bazel resolve this package to riegeli@0.0.0-20240606-973b6f0,
-# which is incompatible with the version of abseil-cpp we use.
-#
-# See also https://bazel.build/external/module#version-selection.
-bazel_dep(name = "riegeli", version = "0.0.0-20250706-c4d1f27", dev_dependency = True)
 
 # This package is not directly used by grpc, but requested by opentelemetry-cpp
 # and google_cloud_cpp. Pin a newer version than the 8.11.0.bcr.2 that

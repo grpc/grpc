@@ -432,6 +432,7 @@ grpc_fuzz_test(
         "fuzztest_main",
         "gtest",
     ],
+    shard_count = 50,
     deps = [
         ":ext_proc_test_util",
         ":filter_matchers",

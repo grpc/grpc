@@ -374,8 +374,13 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return std::exchange(requested_connection_, false);
     }
 
+    void set_fail_creation(bool fail_creation) {
+      fail_creation_ = fail_creation;
+    }
+
     // To be invoked by FakeHelper.
     RefCountedPtr<SubchannelInterface> CreateSubchannel() {
+      if (fail_creation_) return nullptr;
       return MakeRefCounted<FakeSubchannel>(this);
     }
 
@@ -413,6 +418,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     ConnectivityStateTracker state_tracker_;
 
     bool requested_connection_ = false;
+
+    bool fail_creation_ = false;
 
     std::set<OrcaWatcher*> orca_watchers_;
   };
