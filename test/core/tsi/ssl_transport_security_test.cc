@@ -38,6 +38,7 @@
 #include <tuple>
 #include <vector>
 
+#include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/telemetry/instrument.h"
 #include "src/core/tsi/tls_telemetry.h"
 #include "src/core/tsi/transport_security.h"
@@ -403,6 +404,7 @@ class SslTransportSecurityTest
       ssl_alpn_lib* alpn_lib = ssl_fixture->alpn_lib_;
       // Create client handshaker factory.
       tsi_ssl_client_handshaker_options client_options;
+      client_options.cipher_suites = grpc_get_ssl_cipher_suites();
       if (key_cert_lib->use_pem_root_certs &&
           !key_cert_lib->root_cert.empty()) {
         client_options.root_cert_info =
@@ -448,6 +450,7 @@ class SslTransportSecurityTest
                 TSI_OK);
       // Create server handshaker factory.
       tsi_ssl_server_handshaker_options server_options;
+      server_options.cipher_suites = grpc_get_ssl_cipher_suites();
       if (alpn_lib->alpn_mode == ALPN_SERVER_NO_CLIENT ||
           alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ||
           alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_MISMATCH) {
@@ -1932,15 +1935,13 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
   auto tls_version = std::get<0>(GetParam());
   SetUpSslFixture(tls_version,
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
-  // The client default protocols set by the handshaker factory are [toto, baz].
   ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_X25519});
   ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_SECP256R1});
-  // In TLS1.2, on key exchange group mismatch, it will fall back to an ECDHE
-  // ciphersuite, provided there is a matching one between the client and server
-  // TLS1.3 is stricter and requires a match, and will thus fail in this test
-  // case.
-  ssl_fixture_->SetServerExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
-  ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
+  // With gRPC's default cipher suites (ECDHE-only for TLS 1.2 and TLS 1.3),
+  // there is no non-ephemeral fallback when key exchange groups do not overlap,
+  // so both TLS 1.2 and TLS 1.3 fail the handshake.
+  ssl_fixture_->SetServerExpectsHandshakeFailure(true);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(true);
   DoHandshake();
 }
 
@@ -2045,15 +2046,15 @@ TEST_P(SslTransportSecurityTest, TestSignatureAlgorithmMismatch) {
   auto tls_version = std::get<0>(GetParam());
   SetUpSslFixture(tls_version,
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
-  // Default fixture uses RSA certificates, so restricting signature algorithms
-  // to ECDSA P-256 causes handshake failure in TLS 1.3 (in TLS 1.2, it falls
-  // back to a static RSA cipher suite that does not sign ServerKeyExchange).
+  // Default fixture uses RSA certificates and gRPC's default cipher suites
+  // (ECDHE-only for TLS 1.2 and TLS 1.3), so restricting signature algorithms
+  // to ECDSA P-256 causes handshake failure in both TLS 1.2 and TLS 1.3.
   ssl_fixture_->OverrideClientSignatureAlgorithms(
       {GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256});
   ssl_fixture_->OverrideServerSignatureAlgorithms(
       {GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256});
-  ssl_fixture_->SetServerExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
-  ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
+  ssl_fixture_->SetServerExpectsHandshakeFailure(true);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(true);
   DoHandshake();
 }
 
