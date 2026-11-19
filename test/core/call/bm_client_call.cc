@@ -15,6 +15,8 @@
 #include <benchmark/benchmark.h>
 #include <grpc/grpc.h>
 
+#include <utility>
+
 #include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/client_call.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -24,6 +26,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/telemetry/metrics.h"
 
 namespace grpc_core {
 namespace {
@@ -64,7 +67,7 @@ class Helper {
     return std::unique_ptr<grpc_call, void (*)(grpc_call*)>(
         MakeClientCall(nullptr, 0, cq_, path_.Copy(), std::nullopt, true,
                        Timestamp::InfFuture(), compression_options_,
-                       std::move(arena), destination_),
+                       std::move(arena), destination_, &stats_plugin_group_),
         grpc_call_unref);
   }
 
@@ -89,6 +92,7 @@ class Helper {
           1024);
   RefCountedPtr<TestCallDestination> destination_ =
       MakeRefCounted<TestCallDestination>();
+  GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
 };
 
 void BM_CreateDestroy(benchmark::State& state) {

@@ -59,6 +59,7 @@
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/all_ok.h"
@@ -82,6 +83,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
@@ -1515,14 +1517,22 @@ Http2Status Http2ServerTransport::ValidateIncomingStream(
   return Http2Status::Ok();
 }
 
+RefCountedPtr<Arena> Http2ServerTransport::MakeStreamArena() {
+  RefCountedPtr<Arena> arena = call_arena_allocator_->MakeArena();
+  arena->SetContext<EventEngine>(event_engine_.get());
+  if (IsCallTracerInTransportEnabled() && stats_plugin_group_ != nullptr) {
+    stats_plugin_group_->AddServerCallTracers(arena.get(),
+                                              /*additional_tracers=*/{});
+  }
+  return arena;
+}
+
 Http2Status Http2ServerTransport::IncomingStream(
     ClientMetadataHandle&& metadata, const uint32_t stream_id) {
   GRPC_DCHECK(LookupStream(stream_id) == nullptr);
 
-  RefCountedPtr<Arena> arena = call_arena_allocator_->MakeArena();
-  arena->SetContext<EventEngine>(event_engine_.get());
   CallInitiatorAndHandler call =
-      MakeCallPair(std::move(metadata), std::move(arena));
+      MakeCallPair(std::move(metadata), MakeStreamArena());
 
   // TODO(akshitpatel) : [PH2][P2] : For the server side, MakeStream most likely
   // will not fail. Evaluate this.
@@ -2200,7 +2210,10 @@ Http2ServerTransport::Http2ServerTransport(
           &memory_owner_),
       security_frame_handler_(MakeRefCounted<SecurityFrameHandler>()),
       ztrace_collector_(std::make_shared<PromiseHttp2ZTraceCollector>()),
-      tarpit_manager_(channel_args) {
+      tarpit_manager_(channel_args),
+      stats_plugin_group_(
+          channel_args
+              .GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>()) {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Constructor Begin";
 
   // Initialize the general party and write party.
