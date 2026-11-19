@@ -36,6 +36,36 @@ py_library(
     srcs = ["test_utilities.py"],
 )
 
+py_binary(
+    name = "benchmark_script",
+    srcs = ["benchmark_script.py"],
+    imports = ["../../../"],
+    python_version = "PY3",
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+    ],
+)
+
+py_binary(
+    name = "benchmark_script_simple",
+    srcs = ["benchmark_script_simple.py"],
+    imports = ["../../../"],
+    python_version = "PY3",
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+    ],
+)
+
+py_binary(
+    name = "benchmark_script_simple_aio",
+    srcs = ["benchmark_script_simple_aio.py"],
+    imports = ["../../../"],
+    python_version = "PY3",
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+    ],
+)
+
 [
     py_test(
         name = test_file_name[:-3],
