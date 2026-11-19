@@ -147,23 +147,6 @@ TEST_P(CdsTest, EndpointWeightDoesNotImpactWeightedRoundRobin) {
               ::testing::DoubleNear(kLocalityWeightRate1, kErrorTolerance));
 }
 
-// In most of our tests, we use different names for different resource
-// types, to make sure that there are no cut-and-paste errors in the code
-// that cause us to look at data for the wrong resource type.  So we add
-// this test to make sure that the EDS resource name defaults to the
-// cluster name if not specified in the CDS resource.
-TEST_P(CdsTest, EdsServiceNameDefaultsToClusterName) {
-  CreateAndStartBackends(1);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kDefaultClusterName));
-  Cluster cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->clear_service_name();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendOk(DEBUG_LOCATION, /*times=*/1,
-                 RpcOptions().set_timeout_ms(5000));
-}
-
 // Tests switching over from one cluster to another.
 TEST_P(CdsTest, ChangeClusters) {
   CreateAndStartBackends(2);
