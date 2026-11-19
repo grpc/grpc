@@ -601,6 +601,10 @@ ExternalAccountCredentials::Create(
   if (it != json.object().end()) {
     options.client_secret = it->second.string();
   }
+  it = json.object().find("universe_domain");
+  if (it != json.object().end() && it->second.type() == Json::Type::kString) {
+    options.universe_domain = it->second.string();
+  }
   it = json.object().find("workforce_pool_user_project");
   if (it != json.object().end()) {
     if (auto workforce_pool_id = MatchWorkforcePoolAudience(options.audience);
@@ -674,8 +678,16 @@ namespace {
 
 std::string BuildRegionalAccessBoundaryUrl(
     const ExternalAccountCredentials::Options& options) {
+  if (!options.universe_domain.empty() &&
+      options.universe_domain != "googleapis.com") {
+    return "";
+  }
   if (!options.service_account_impersonation_url.empty()) {
     absl::string_view url = options.service_account_impersonation_url;
+    auto uri = URI::Parse(url);
+    if (!uri.ok() || uri->authority() != "iamcredentials.googleapis.com") {
+      return "";
+    }
     absl::string_view::size_type start = url.find("serviceAccounts/");
     absl::string_view::size_type end = url.find(":generateAccessToken");
     if (start != absl::string_view::npos && end != absl::string_view::npos &&
@@ -686,6 +698,7 @@ std::string BuildRegionalAccessBoundaryUrl(
           "%s/allowedLocations",
           email);
     }
+    return "";
   }
   if (!options.workforce_pool_id.empty()) {
     return absl::StrFormat(
