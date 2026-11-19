@@ -1020,26 +1020,27 @@ void WeightedRoundRobin::WrrEndpointList::
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
         << "[WRR " << wrr << "] reporting CONNECTING with endpoint list "
         << this;
+    // last_failure_.message() already includes the subchannel status code.
     std::string reason = absl::StrCat(
         "weighted_round_robin: connecting to endpoints (", CountersString(),
-        last_failure_.ok()
-            ? ""
-            : absl::StrCat("; last failure: ", last_failure_.ToString()),
-        ")");
+        last_failure_.ok() ? "" : "; last failure: ",
+        last_failure_.ok() ? "" : last_failure_.message(), ")");
     wrr->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-        MakeRefCounted<QueuePicker>(nullptr, kDelayTypeConnecting,
-                                    std::move(reason)));
+        MakeConnectingPicker(std::move(reason)));
   } else if (num_transient_failure_ == size()) {
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
         << "[WRR " << wrr << "] reporting TRANSIENT_FAILURE with endpoint list "
         << this << ": " << status_for_tf;
     if (!status_for_tf.ok()) {
-      last_failure_ = absl::UnavailableError(
-          absl::StrCat("connections to all backends failing; last error: ",
-                       status_for_tf.ToString()));
+      last_failure_ = std::move(status_for_tf);
     }
-    ReportTransientFailure(last_failure_);
+    ReportTransientFailure(
+        last_failure_.ok()
+            ? last_failure_
+            : absl::UnavailableError(absl::StrCat(
+                  "connections to all backends failing; last error: ",
+                  last_failure_.message())));
   }
 }
 

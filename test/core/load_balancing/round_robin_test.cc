@@ -26,6 +26,7 @@
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
@@ -94,17 +95,27 @@ TEST_F(RoundRobinTest, MultipleAddressesPerEndpoint) {
   // In the first endpoint, the first subchannel reports CONNECTING.
   // This causes RR to report CONNECTING.
   subchannel1_0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-  ExpectConnectingUpdate(
+  ExpectConnectingUpdate(absl::StrCat(
       "round_robin: connecting to endpoints (num_children=2 num_ready=0 "
-      "num_connecting=1 num_transient_failure=0)");
+      "num_connecting=1 num_transient_failure=0): pick_first: connecting to ",
+      kEndpoint1Addresses[0], " (subchannel 1 of 2)"));
   // In the second endpoint, the first subchannel reports CONNECTING.
   subchannel2_0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectConnectingUpdate(absl::StrCat(
+      "round_robin: connecting to endpoints (num_children=2 num_ready=0 "
+      "num_connecting=2 num_transient_failure=0): pick_first: connecting to ",
+      kEndpoint1Addresses[0], " (subchannel 1 of 2)"));
   // In the first endpoint, the first subchannel fails to connect.
   // This causes PF to start a connection attempt on the second subchannel.
   subchannel1_0->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                       absl::UnavailableError("ugh"));
   EXPECT_TRUE(subchannel1_1->ConnectionRequested());
   subchannel1_1->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectConnectingUpdate(absl::StrCat(
+      "round_robin: connecting to endpoints (num_children=2 num_ready=0 "
+      "num_connecting=2 num_transient_failure=0): pick_first: connecting to ",
+      kEndpoint1Addresses[1],
+      " (subchannel 2 of 2); last attempt failure: UNAVAILABLE: ugh"));
   // In the second endpoint, the first subchannel becomes connected.
   // This causes RR to report READY with all RPCs going to a single address.
   subchannel2_0->SetConnectivityState(GRPC_CHANNEL_READY);
@@ -183,6 +194,77 @@ TEST_F(RoundRobinTest, StartsConnectingFromRandomIndex) {
     EXPECT_THAT(connect_order, ::testing::ElementsAreArray(kAddresses));
   }
   FAIL() << "all attempts started connecting at index 0";
+}
+
+TEST_F(RoundRobinTest, ConnectingDelayReason) {
+  const std::array<absl::string_view, 2> kAddresses = {"ipv4:127.0.0.1:441",
+                                                       "ipv4:127.0.0.1:442"};
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, nullptr), lb_policy()),
+            absl::OkStatus());
+  auto* subchannel0 = FindSubchannel(kAddresses[0]);
+  ASSERT_NE(subchannel0, nullptr);
+  auto* subchannel1 = FindSubchannel(kAddresses[1]);
+  ASSERT_NE(subchannel1, nullptr);
+  EXPECT_TRUE(subchannel0->ConnectionRequested());
+  EXPECT_TRUE(subchannel1->ConnectionRequested());
+  // 1. Both connecting.
+  subchannel0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectConnectingUpdate(absl::StrCat(
+      "round_robin: connecting to endpoints (num_children=2 num_ready=0 "
+      "num_connecting=1 num_transient_failure=0): pick_first: connecting to ",
+      kAddresses[0], " (subchannel 1 of 1)"));
+  subchannel1->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectConnectingUpdate(absl::StrCat(
+      "round_robin: connecting to endpoints (num_children=2 num_ready=0 "
+      "num_connecting=2 num_transient_failure=0): pick_first: connecting to ",
+      kAddresses[0], " (subchannel 1 of 1)"));
+  // 2. First is IDLE, second is CONNECTING; RR prefers CONNECTING second.
+  subchannel0->SetConnectivityState(GRPC_CHANNEL_READY);
+  WaitForConnected();
+  subchannel0->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  ExpectReresolutionRequest();
+  EXPECT_TRUE(subchannel0->ConnectionRequested());
+  ExpectConnectingUpdate(absl::StrCat(
+      "round_robin: connecting to endpoints (num_children=2 num_ready=0 "
+      "num_connecting=2 num_transient_failure=0): pick_first: connecting to ",
+      kAddresses[1], " (subchannel 1 of 1)"));
+  // 3. Both fail; RR enters TRANSIENT_FAILURE and records last_failure_.
+  subchannel0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  DrainConnectingUpdates();
+  subchannel0->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                    absl::UnavailableError("sc0 failed"));
+  ExpectReresolutionRequest();
+  DrainConnectingUpdates();
+  subchannel1->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                    absl::UnavailableError("sc1 failed"));
+  ExpectReresolutionRequest();
+  ExpectTransientFailureUpdate(
+      absl::UnavailableError("connections to all backends failing; last error: "
+                             "UNAVAILABLE: sc1 failed"));
+  // 4. First recovers to READY, then drops to IDLE and reconnects.
+  // RR reports IDLE fallback, then CONNECTING, both with last_failure_.
+  subchannel0->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  EXPECT_TRUE(subchannel0->ConnectionRequested());
+  subchannel0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  subchannel0->SetConnectivityState(GRPC_CHANNEL_READY);
+  WaitForConnected();
+  subchannel0->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  ExpectReresolutionRequest();
+  EXPECT_TRUE(subchannel0->ConnectionRequested());
+  ExpectConnectingUpdate(
+      "round_robin: connecting to endpoints (num_children=2 num_ready=0 "
+      "num_connecting=1 num_transient_failure=1; last failure: UNAVAILABLE: "
+      "sc1 failed): pick_first: connection closed; waiting for exit-idle "
+      "signal to reconnect");
+  subchannel0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectConnectingUpdate(absl::StrCat(
+      "round_robin: connecting to endpoints (num_children=2 num_ready=0 "
+      "num_connecting=1 num_transient_failure=1; last failure: UNAVAILABLE: "
+      "sc1 failed): pick_first: connecting to ",
+      kAddresses[0], " (subchannel 1 of 1)"));
+  subchannel0->SetConnectivityState(GRPC_CHANNEL_READY);
+  auto picker = WaitForConnected();
+  ExpectRoundRobinPicks(picker.get(), {kAddresses[0]});
 }
 
 // TODO(roth): Add test cases:

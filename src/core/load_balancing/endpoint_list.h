@@ -23,6 +23,7 @@
 
 #include <memory>
 #include <optional>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -212,6 +213,13 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
   bool AllEndpointsSeenInitialState() const {
     return num_endpoints_seen_initial_state_ == size();
   }
+
+  // Returns the picker to report while the list is CONNECTING.  It
+  // delegates to the picker of an endpoint in state CONNECTING (or IDLE
+  // if none are CONNECTING).  If that pick is queued, the resulting delay
+  // reason is "<delay_reason>: <child's delay reason>".
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> MakeConnectingPicker(
+      std::string delay_reason) const;
 
  private:
   // Returns the parent policy's helper.  Needed because the accessor

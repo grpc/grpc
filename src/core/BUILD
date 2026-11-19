@@ -8179,6 +8179,7 @@ grpc_cc_library(
         "absl/random",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
     ],
     deps = [
         "channel_args",

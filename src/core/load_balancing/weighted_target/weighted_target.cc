@@ -134,9 +134,8 @@ class WeightedTargetLb final : public LoadBalancingPolicy {
     using PickerList =
         std::vector<std::pair<uint64_t, RefCountedPtr<SubchannelPicker>>>;
 
-    explicit WeightedPicker(
-        PickerList pickers,
-        std::string delay_reason_prefix = "weighted_target: ")
+    explicit WeightedPicker(PickerList pickers,
+                            std::string delay_reason_prefix = "")
         : pickers_(std::move(pickers)),
           delay_reason_prefix_(std::move(delay_reason_prefix)) {}
 
@@ -168,6 +167,7 @@ class WeightedTargetLb final : public LoadBalancingPolicy {
       return connectivity_state_;
     }
     RefCountedPtr<SubchannelPicker> picker() const { return picker_; }
+    const absl::Status& last_failure() const { return last_failure_; }
 
    private:
     class Helper final : public DelegatingChannelControlHelper {
@@ -223,6 +223,7 @@ class WeightedTargetLb final : public LoadBalancingPolicy {
 
     RefCountedPtr<SubchannelPicker> picker_;
     grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_CONNECTING;
+    absl::Status last_failure_;
 
     OrphanablePtr<DelayedRemovalTimer> delayed_removal_timer_;
   };
@@ -275,8 +276,10 @@ WeightedTargetLb::PickResult WeightedTargetLb::WeightedPicker::Pick(
   PickResult result = pickers_[index].second->Pick(args);
   auto* queue = std::get_if<PickResult::Queue>(&result.result);
   if (queue != nullptr) {
-    queue->delay_reason =
-        absl::StrCat(delay_reason_prefix_, queue->delay_reason);
+    absl::string_view prefix = delay_reason_prefix_.empty()
+                                   ? absl::string_view("weighted_target: ")
+                                   : delay_reason_prefix_;
+    queue->delay_reason = absl::StrCat(prefix, queue->delay_reason);
   }
   return result;
 }
@@ -395,6 +398,7 @@ void WeightedTargetLb::UpdateStateLocked() {
   // the aggregated state.
   size_t num_connecting = 0;
   size_t num_idle = 0;
+  const absl::Status* last_failure = nullptr;
   for (const auto& [child_name, child] : targets_) {
     // Skip the targets that are not in the latest update.
     if (config_->target_map().find(child_name) == config_->target_map().end()) {
@@ -432,6 +436,7 @@ void WeightedTargetLb::UpdateStateLocked() {
         GRPC_CHECK_GT(child->weight(), 0u);
         tf_end += child->weight();
         tf_picker_list.emplace_back(tf_end, std::move(child_picker));
+        if (!child->last_failure().ok()) last_failure = &child->last_failure();
         break;
       }
       default:
@@ -459,13 +464,18 @@ void WeightedTargetLb::UpdateStateLocked() {
       picker = MakeRefCounted<WeightedPicker>(std::move(ready_picker_list));
       break;
     case GRPC_CHANNEL_CONNECTING:
-    case GRPC_CHANNEL_IDLE:
+    case GRPC_CHANNEL_IDLE: {
+      std::string last_failure_str =
+          last_failure == nullptr ? "" : last_failure->ToString();
       picker = MakeRefCounted<WeightedPicker>(
           std::move(connecting_or_idle_picker_list),
           absl::StrCat("weighted_target: connecting to targets (num_targets=",
                        config_->target_map().size(), " num_connecting=",
-                       num_connecting, " num_idle=", num_idle, "): "));
+                       num_connecting, " num_idle=", num_idle,
+                       last_failure == nullptr ? "" : "; last failure: ",
+                       last_failure_str, "): "));
       break;
+    }
     default:
       picker = MakeRefCounted<WeightedPicker>(std::move(tf_picker_list));
   }
@@ -638,6 +648,9 @@ void WeightedTargetLb::WeightedChild::OnConnectivityStateUpdateLocked(
   if (connectivity_state_ != GRPC_CHANNEL_TRANSIENT_FAILURE ||
       state == GRPC_CHANNEL_READY) {
     connectivity_state_ = state;
+  }
+  if (state == GRPC_CHANNEL_TRANSIENT_FAILURE && !status.ok()) {
+    last_failure_ = status;
   }
   // Update the LB policy's state if this child is not deactivated.
   if (weight_ != 0) weighted_target_policy_->UpdateStateLocked();

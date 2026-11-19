@@ -243,9 +243,10 @@ TEST_F(OutlierDetectionTest, Basic) {
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
+  ExpectConnectingUpdate(absl::StrCat(
       "round_robin: connecting to endpoints (num_children=1 num_ready=0 "
-      "num_connecting=1 num_transient_failure=0)");
+      "num_connecting=1 num_transient_failure=0): pick_first: connecting to ",
+      kAddressUri, " (subchannel 1 of 1)"));
   // When the subchannel becomes connected, it reports READY.
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   // The LB policy will report CONNECTING some number of times (doesn't
