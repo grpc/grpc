@@ -446,7 +446,7 @@ TEST_F(AutoShardingTest, FallbackDisabledQueuesPicksUntilAssignmentTimeout) {
                               MakeMetadata("some_key"));
   // When the initial assignment timer fires without an assignment, picks
   // fail, because fallback is disabled.
-  IncrementTimeBy(kDefaultInitialAssignmentTimeout * 2);
+  IncrementTimeBy(kDefaultInitialAssignmentTimeout);
   const absl::Status kTimeout = absl::UnavailableError(
       "timed out waiting for initial assignment from autosharding server");
   auto picker = ExpectState(GRPC_CHANNEL_TRANSIENT_FAILURE, kTimeout);
@@ -486,7 +486,7 @@ TEST_F(AutoShardingTest, ResolutionNotePropagatedOnFallbackDisabled) {
   EXPECT_EQ(ApplyUpdate(std::move(update), lb_policy()), absl::OkStatus());
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
                               MakeMetadata("some_key"));
-  IncrementTimeBy(kDefaultInitialAssignmentTimeout * 2);
+  IncrementTimeBy(kDefaultInitialAssignmentTimeout);
   const absl::Status kTimeout = absl::UnavailableError(
       "timed out waiting for initial assignment from autosharding server "
       "(DNS resolution note)");
@@ -857,7 +857,7 @@ TEST_F(AutoShardingTest, InitialAssignmentTimeoutUsesFallbackWhenEnabled) {
     EXPECT_EQ(FindSubchannel(address), nullptr);
   }
   // When the initial assignment timer fires, picks use the fallback pool.
-  IncrementTimeBy(kDefaultInitialAssignmentTimeout * 2);
+  IncrementTimeBy(kDefaultInitialAssignmentTimeout);
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
                               MakeMetadata("some_key"));
   SubchannelState* subchannel = nullptr;
@@ -1173,14 +1173,16 @@ TEST_F(AutoShardingTest, AssignmentDuringEmptyEndpointListKeepsFailing) {
 }
 
 TEST_F(AutoShardingTest, EndpointsWithDuplicateHostnames) {
+  // The per-address args of the endpoints, which are part of the
+  // subchannel key.
+  const ChannelArgs kHost1Args =
+      ChannelArgs().Set(GRPC_ARG_ADDRESS_NAME, "host1");
   // Two endpoints with the same hostname attribute.  The first one wins, and
   // the duplicate is ignored.
   ChannelArgs args = MakeChannelArgs();
   const std::vector<EndpointAddresses> endpoints = {
-      MakeEndpointAddresses({kAddresses[0]},
-                            ChannelArgs().Set(GRPC_ARG_ADDRESS_NAME, "host1")),
-      MakeEndpointAddresses({kAddresses[1]},
-                            ChannelArgs().Set(GRPC_ARG_ADDRESS_NAME, "host1"))};
+      MakeEndpointAddresses({kAddresses[0]}, kHost1Args),
+      MakeEndpointAddresses({kAddresses[1]}, kHost1Args)};
   EXPECT_EQ(
       ApplyUpdate(
           BuildUpdate(endpoints,
@@ -1196,8 +1198,8 @@ TEST_F(AutoShardingTest, EndpointsWithDuplicateHostnames) {
   // (the one with index 0).
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
                               MakeMetadata("some_key"));
-  EXPECT_EQ(FindSubchannel(kAddresses[1]), nullptr);
-  auto* subchannel = FindSubchannel(kAddresses[0]);
+  EXPECT_EQ(FindSubchannel(kAddresses[1], kHost1Args), nullptr);
+  auto* subchannel = FindSubchannel(kAddresses[0], kHost1Args);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -1210,10 +1212,14 @@ TEST_F(AutoShardingTest, EndpointsWithDuplicateHostnames) {
 }
 
 TEST_F(AutoShardingTest, RetainsEndpointForHostnameAcrossUpdates) {
+  // The per-address args of the endpoints, which are part of the
+  // subchannel key.
+  const ChannelArgs kHost1Args =
+      ChannelArgs().Set(GRPC_ARG_ADDRESS_NAME, "host1");
   ChannelArgs args = MakeChannelArgs();
   // First update: a single endpoint with hostname "host1". Drive it to READY.
-  const std::vector<EndpointAddresses> first_update = {MakeEndpointAddresses(
-      {kAddresses[0]}, ChannelArgs().Set(GRPC_ARG_ADDRESS_NAME, "host1"))};
+  const std::vector<EndpointAddresses> first_update = {
+      MakeEndpointAddresses({kAddresses[0]}, kHost1Args)};
   EXPECT_EQ(
       ApplyUpdate(
           BuildUpdate(first_update,
@@ -1227,7 +1233,7 @@ TEST_F(AutoShardingTest, RetainsEndpointForHostnameAcrossUpdates) {
   stream->MaybeSendStatusToClient(absl::UnavailableError("stream failed"));
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
                               MakeMetadata("some_key"));
-  auto* subchannel = FindSubchannel(kAddresses[0]);
+  auto* subchannel = FindSubchannel(kAddresses[0], kHost1Args);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -1238,8 +1244,8 @@ TEST_F(AutoShardingTest, RetainsEndpointForHostnameAcrossUpdates) {
   EXPECT_THAT(ExpectPickComplete(picker.get(), {}, MakeMetadata("some_key")),
               ::testing::Optional(kAddresses[0]));
   // Second update: retains endpoint for "host1".
-  const std::vector<EndpointAddresses> second_update = {MakeEndpointAddresses(
-      {kAddresses[0]}, ChannelArgs().Set(GRPC_ARG_ADDRESS_NAME, "host1"))};
+  const std::vector<EndpointAddresses> second_update = {
+      MakeEndpointAddresses({kAddresses[0]}, kHost1Args)};
   EXPECT_EQ(
       ApplyUpdate(
           BuildUpdate(second_update,
@@ -1411,7 +1417,9 @@ TEST_F(AutoShardingTest,
   ExpectReresolutionRequest();
   picker = ExpectState(
       GRPC_CHANNEL_TRANSIENT_FAILURE,
-      absl::UnavailableError("UNAVAILABLE: connection attempt failed"));
+      absl::UnavailableError(
+          "no reachable endpoints; last error: UNAVAILABLE: connection "
+          "attempt failed"));
   connecting_subchannel = nullptr;
   for (size_t i = 0; i < subchannels.size(); ++i) {
     if (subchannels[i]->ConnectionRequested()) {
@@ -1424,7 +1432,9 @@ TEST_F(AutoShardingTest,
   connecting_subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(
       GRPC_CHANNEL_TRANSIENT_FAILURE,
-      absl::UnavailableError("UNAVAILABLE: connection attempt failed"));
+      absl::UnavailableError(
+          "no reachable endpoints; last error: UNAVAILABLE: connection "
+          "attempt failed"));
   for (size_t i = 0; i < subchannels.size(); ++i) {
     EXPECT_FALSE(subchannels[i]->ConnectionRequested());
   }
@@ -1435,7 +1445,9 @@ TEST_F(AutoShardingTest,
   ExpectReresolutionRequest();
   picker = ExpectState(
       GRPC_CHANNEL_TRANSIENT_FAILURE,
-      absl::UnavailableError("UNAVAILABLE: connection attempt failed"));
+      absl::UnavailableError(
+          "no reachable endpoints; last error: UNAVAILABLE: connection "
+          "attempt failed"));
   connecting_subchannel = nullptr;
   for (size_t i = 0; i < subchannels.size(); ++i) {
     if (subchannels[i]->ConnectionRequested()) {
@@ -1448,7 +1460,9 @@ TEST_F(AutoShardingTest,
   connecting_subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(
       GRPC_CHANNEL_TRANSIENT_FAILURE,
-      absl::UnavailableError("UNAVAILABLE: connection attempt failed"));
+      absl::UnavailableError(
+          "no reachable endpoints; last error: UNAVAILABLE: connection "
+          "attempt failed"));
   for (size_t i = 0; i < subchannels.size(); ++i) {
     EXPECT_FALSE(subchannels[i]->ConnectionRequested());
   }
@@ -1459,7 +1473,9 @@ TEST_F(AutoShardingTest,
   ExpectReresolutionRequest();
   picker = ExpectState(
       GRPC_CHANNEL_TRANSIENT_FAILURE,
-      absl::UnavailableError("UNAVAILABLE: connection attempt failed"));
+      absl::UnavailableError(
+          "no reachable endpoints; last error: UNAVAILABLE: connection "
+          "attempt failed"));
   subchannel0->SetConnectivityState(GRPC_CHANNEL_IDLE);
   EXPECT_TRUE(subchannel0->ConnectionRequested());
   subchannel0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);

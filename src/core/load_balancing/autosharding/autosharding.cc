@@ -911,7 +911,9 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked() {
   // In TRANSIENT_FAILURE, report the last failure reported by an endpoint.
   // Otherwise, report OK.
   const absl::Status status = state == GRPC_CHANNEL_TRANSIENT_FAILURE
-                                  ? last_failure_
+                                  ? absl::UnavailableError(absl::StrCat(
+                                        "no reachable endpoints; last error: ",
+                                        last_failure_.message()))
                                   : absl::OkStatus();
   channel_control_helper()->UpdateState(
       state, status,

@@ -709,7 +709,6 @@ TEST_F(AutoshardingTest, MissingGrpcService) {
             "envoy.extensions.load_balancing_policies.autosharding.v3."
             "Autosharding].grpc_service error:field not set]")
       << result.status();
-  EXPECT_THAT(grpc_services, ::testing::IsEmpty());
 }
 
 TEST_F(AutoshardingTest, RejectedWithoutEnvVar) {

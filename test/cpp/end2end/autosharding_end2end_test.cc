@@ -273,7 +273,8 @@ TEST_F(AutoshardingEnd2endTest, NewAssignmentMovesTraffic) {
   autosharding_server_->service().SetAssignment(
       std::string(kAutoshardingTarget), {{"", {0}}}, {BackendName(1)},
       /*generation=*/2);
-  const absl::Time deadline = absl::Now() + absl::Seconds(10);
+  const absl::Time deadline =
+      absl::Now() + absl::Seconds(10 * grpc_test_slowdown_factor());
   while (backends_[1]->service().request_count() == 0) {
     ASSERT_LT(absl::Now(), deadline) << "traffic did not move to backend 1";
     EXPECT_EQ(SendRpc("a").error_code(), StatusCode::OK);

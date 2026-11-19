@@ -523,10 +523,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         const grpc_resolved_address& address,
-        const ChannelArgs& /*per_address_args*/,
-        const ChannelArgs& args) override {
-      // TODO(roth): Need to use per_address_args here.
-      SubchannelKey key(address, MakeSubchannelArgs(args, ChannelArgs()));
+        const ChannelArgs& per_address_args, const ChannelArgs& args) override {
+      SubchannelKey key(address, MakeSubchannelArgs(args, per_address_args));
       auto it = test_->subchannel_pool_.find(key);
       if (it == test_->subchannel_pool_.end()) {
         auto address_uri = grpc_sockaddr_to_uri(&address);

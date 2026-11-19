@@ -395,20 +395,17 @@ class AutoshardingLbPolicyConfigFactory final
     // grpc_service
     {
       ValidationErrors::ScopedField field(errors, ".grpc_service");
-      const auto* grpc_service_proto =
+      auto grpc_service = std::make_shared<
+          GrpcXdsServerTarget>(ParseXdsGrpcService(
+          context,
           envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding_grpc_service(
-              resource);
-      if (grpc_service_proto == nullptr) {
-        errors->AddError("field not set");
-      } else {
-        auto grpc_service = std::make_shared<GrpcXdsServerTarget>(
-            ParseXdsGrpcService(context, grpc_service_proto, errors));
-        // The LB policy passes the key to the channel factory that the
-        // CDS policy creates from the map.
-        std::string key = grpc_service->Key();
-        config["channelFactoryKey"] = Json::FromString(key);
-        grpc_services[std::move(key)] = std::move(grpc_service);
-      }
+              resource),
+          errors));
+      // The LB policy passes the key to the channel factory that the
+      // CDS policy creates from the map.
+      std::string key = grpc_service->Key();
+      config["channelFactoryKey"] = Json::FromString(key);
+      grpc_services[std::move(key)] = std::move(grpc_service);
     }
     // The LB policy validates the remaining fields when the cluster parser
     // checks the generated config.
