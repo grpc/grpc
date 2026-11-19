@@ -305,7 +305,7 @@ def ios_cc_test(
     test_runner = "ios_x86_64_sim_runner_" + name
     ios_test_runner(
         name = test_runner,
-        device_type = "iPhone X",
+        device_type = "iPhone 11",
     )
     if not any([t for t in tags if t.startswith("no_test_ios")]):
         objc_library(
