@@ -255,7 +255,9 @@ class TokenWithEmail final : public grpc_core::TokenFetcherCredentials::Token {
   void AddTokenToClientInitialMetadata(
       grpc_core::ClientMetadata& metadata) override {
     Token::AddTokenToClientInitialMetadata(metadata);
-    email_fetcher_->Fetch(token().as_string_view(), metadata);
+    if (email_fetcher_ != nullptr) {
+      email_fetcher_->Fetch(token().as_string_view(), metadata);
+    }
   }
 
  private:
@@ -266,10 +268,10 @@ class grpc_compute_engine_token_fetcher_credentials
     : public grpc_core::HttpTokenFetcherCredentials {
  public:
   grpc_compute_engine_token_fetcher_credentials()
-      : email_fetcher_(grpc_core::MakeRefCounted<grpc_core::EmailFetcher>()) {}
+      : email_fetcher_(grpc_core::EmailFetcher::Create()) {}
   explicit grpc_compute_engine_token_fetcher_credentials(
       std::vector<grpc_core::URI::QueryParam> query_params)
-      : email_fetcher_(grpc_core::MakeRefCounted<grpc_core::EmailFetcher>()),
+      : email_fetcher_(grpc_core::EmailFetcher::Create()),
         query_params_(std::move(query_params)) {}
 
   std::string debug_string() override {
@@ -285,7 +287,7 @@ class grpc_compute_engine_token_fetcher_credentials
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
       grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
       grpc_http_response* response, grpc_closure* on_complete) override {
-    email_fetcher_->StartEmailFetch();
+    if (email_fetcher_ != nullptr) email_fetcher_->StartEmailFetch();
     memset(response, 0, sizeof(*response));
     grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
                                const_cast<char*>("Google")};
