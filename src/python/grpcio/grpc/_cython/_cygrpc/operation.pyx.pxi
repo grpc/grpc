@@ -301,7 +301,3 @@ cdef class ReceiveCloseOnServerOperation(Operation):
 
   def cancelled(self):
     return self._cancelled
-
-
-def python_zero_copy_enabled():
-  return IsPythonZeroCopyEnabled()
