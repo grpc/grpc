@@ -19,6 +19,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -40,6 +41,7 @@
 namespace grpc_core {
 
 namespace {
+
 constexpr absl::string_view kAllowedLocationsKey = "x-allowed-locations";
 constexpr Duration kRegionalAccessBoundarySoftCacheGraceDuration =
     Duration::Hours(1);
@@ -47,6 +49,12 @@ constexpr Duration kRegionalAccessBoundaryCacheDuration = Duration::Hours(6);
 constexpr absl::string_view kRegionalEndpoint = "rep.googleapis.com";
 constexpr char kComputeEngineDefaultSaEmailPath[] =
     "/computeMetadata/v1/instance/service-accounts/default/email";
+
+bool IsRegionalAccessBoundaryFetcherEnabled() {
+  return IsExperimentEnvVarEnabled(
+      "GRPC_EXPERIMENTAL_REGIONAL_ACCESS_BOUNDARY_LOOKUP");
+}
+
 }  // namespace
 
 RefCountedPtr<RegionalAccessBoundaryFetcher>
@@ -54,6 +62,7 @@ RegionalAccessBoundaryFetcher::Create(
     absl::string_view lookup_url,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
     std::optional<BackOff::Options> backoff_options) {
+  if (!IsRegionalAccessBoundaryFetcherEnabled()) return nullptr;
   auto uri = URI::Parse(lookup_url);
   if (!uri.ok()) {
     LOG(INFO) << "Invalid RegionalAccessBoundary lookup URI \"" << lookup_url
@@ -312,6 +321,13 @@ class EmailFetcher::EmailRequest final
   WeakRefCountedPtr<EmailFetcher> fetcher_;
   grpc_closure closure_;
 };
+
+RefCountedPtr<EmailFetcher> EmailFetcher::Create(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine) {
+  if (!IsRegionalAccessBoundaryFetcherEnabled()) return nullptr;
+  return MakeRefCounted<EmailFetcher>(std::move(event_engine));
+}
 
 EmailFetcher::EmailFetcher(
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
