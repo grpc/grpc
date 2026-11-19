@@ -235,7 +235,6 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:grpc_check",
         "//src/core:grpc_lb_xds_channel_args",
-        "//src/core:json",
         "//src/core:resolved_address",
         "//src/core:sync",
         "//src/core:time",
@@ -253,5 +252,6 @@ grpc_cc_test(
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/xds:fake_xds_client",
     ],
 )
