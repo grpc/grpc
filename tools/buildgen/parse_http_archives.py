@@ -85,9 +85,10 @@ class ModuleVisitor(ast.NodeVisitor):
         self.http_archives = list()
 
     def visit_Call(self, node):
-        sub_visitor = KeywordVisitor()
-        sub_visitor.visit(node)
-        self.http_archives.append(sub_visitor.http_archive)
+        if isinstance(node.func, ast.Name) and node.func.id == "http_archive":
+            sub_visitor = KeywordVisitor()
+            sub_visitor.visit(node)
+            self.http_archives.append(sub_visitor.http_archive)
 
 
 def parse_http_archives(bazel_output: str) -> HttpArchives:

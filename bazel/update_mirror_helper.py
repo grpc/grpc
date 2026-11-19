@@ -48,11 +48,11 @@ _SUPPORTED_RULE_KINDS = [
 _LOGGED_FIELDS = ["repoRuleName", "name", "canonicalName", "apparentName"]
 
 _BAZEL_URLS = [
-    "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-linux-arm64",
-    "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-linux-x86_64",
-    "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-darwin-arm64",
-    "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-darwin-x86_64",
-    "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-windows-x86_64.exe",
+    "https://github.com/bazelbuild/bazel/releases/download/9.3.2/bazel-9.3.2-linux-arm64",
+    "https://github.com/bazelbuild/bazel/releases/download/9.3.2/bazel-9.3.2-linux-x86_64",
+    "https://github.com/bazelbuild/bazel/releases/download/9.3.2/bazel-9.3.2-darwin-arm64",
+    "https://github.com/bazelbuild/bazel/releases/download/9.3.2/bazel-9.3.2-darwin-x86_64",
+    "https://github.com/bazelbuild/bazel/releases/download/9.3.2/bazel-9.3.2-windows-x86_64.exe",
 ]
 
 logger = logging.getLogger(__name__)
@@ -69,14 +69,6 @@ def parse_ndjson(file_path):
             obj = json.loads(line)
             repos.append(obj)
     return repos
-
-
-def parse_workspace_urls():
-    url_pattern = re.compile(r'"(https://github.com/[^"]+)')
-    with open("bazel/grpc_deps.bzl", "r", encoding="utf-8") as f:
-        for line in f:
-            for match in re.finditer(url_pattern, line):
-                yield match.group(1)
 
 
 def parse_cmake_urls():
@@ -143,7 +135,6 @@ def main():
         itertools.chain(
             _BAZEL_URLS,
             parse_cmake_urls(),
-            parse_workspace_urls(),
             parse_bzlmod_urls(args.bzlmod_deps_file),
         )
     )

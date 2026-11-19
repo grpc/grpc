@@ -59,7 +59,7 @@ EXCLUDED_TARGETS=(
 
   # Analyzing windows toolchains when running on linux results in an error.
   # Since bazel distribtests are run on linux, we exclude the windows RBE toolchains.
-  "-//third_party/toolchains/rbe_windows_vs2022_bazel7/..."
+  "-//third_party/toolchains/rbe_windows_vs2022_bazel9/..."
   "-//third_party/toolchains:rbe_windows_default_toolchain_suite"
 
   # A bunch of stuff in the CEL repo doesn't seem to work right in this

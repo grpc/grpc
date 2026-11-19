@@ -1,0 +1,51 @@
+# Patch bazel_compdb (grailbio/bazel-compilation-database) for Bazel 9 compatibility.
+#
+# The upstream repository is archived and no longer maintained, so we
+# patch aspects.bzl locally for Bazel 9:
+#   - Load CcInfo and cc_common from @rules_cc (removed from global Starlark
+#     scope in Bazel 9).
+#   - Replace @bazel_tools//tools/osx:current_xcode_config (removed in Bazel 9)
+#     with apple_support.action_required_attrs() from @build_bazel_apple_support.
+#   - Use CC_TOOLCHAIN_ATTRS and use_cc_toolchain() from @rules_cc instead of
+#     hardcoding @bazel_tools//tools/cpp targets.
+diff --git a/aspects.bzl b/aspects.bzl
+--- a/aspects.bzl
++++ b/aspects.bzl
+@@ -22,7 +22,6 @@
+ https://github.com/google/kythe/blob/master/tools/cpp/generate_compilation_database.sh
+ """
+ 
+-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
+ load(
+     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
+     "CPP_COMPILE_ACTION_NAME",
+@@ -30,6 +29,11 @@
+     "OBJCPP_COMPILE_ACTION_NAME",
+     "OBJC_COMPILE_ACTION_NAME",
+ )
++load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
++load("@build_bazel_apple_support//lib:apple_support.bzl", "apple_support")
++load("@rules_cc//cc:find_cc_toolchain.bzl", "CC_TOOLCHAIN_ATTRS", "use_cc_toolchain")
++load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
++load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+ 
+ CompilationAspect = provider()
+ 
+@@ -357,15 +361,10 @@
+     # Also include srcs in the attribute aspects so people can use filegroup targets.
+     # See https://github.com/grailbio/bazel-compilation-database/issues/84.
+     attr_aspects = ["srcs", "deps", "implementation_deps"],
+-    attrs = {
+-        "_cc_toolchain": attr.label(
+-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+-        ),
+-        "_xcode_config": attr.label(default = Label("@bazel_tools//tools/osx:current_xcode_config")),
+-    },
++    attrs = CC_TOOLCHAIN_ATTRS | apple_support.action_required_attrs(),
+     fragments = ["cpp", "objc", "apple"],
+     provides = [CompilationAspect],
+-    toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],
++    toolchains = use_cc_toolchain(),
+     implementation = _compilation_database_aspect_impl,
+     apply_to_generating_rules = True,
+ )

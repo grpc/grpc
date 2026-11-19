@@ -14,7 +14,7 @@
 
 bazel_dep(name = "pugixml", version = "1.15")
 bazel_dep(name = "abseil-cpp", version = "20240722.0")
-bazel_dep(name = "nlohmann_json", version = "3.11.3.bcr.1")
+bazel_dep(name = "nlohmann_json", version = "3.12.0.bcr.2")
 bazel_dep(name = "rules_cc", version = "0.2.15")
 bazel_dep(name = "yaml-cpp", version = "0.9.0")
 

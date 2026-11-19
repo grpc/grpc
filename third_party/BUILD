@@ -1,22 +1,7 @@
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 
 exports_files([
-    "gtest.BUILD",
-    "zlib.BUILD",
-    "twisted.BUILD",
-    "yaml.BUILD",
-    "incremental.BUILD",
-    "zope_interface.BUILD",
-    "constantly.BUILD",
-    "cython.BUILD",
-    "six.BUILD",
     "typing_extensions.BUILD",
-    "enum34.BUILD",
-    "futures.BUILD",
-    "envoy-api.patch",
-    "opencensus-cpp.patch",
-    "protobuf.patch",
-    "protoc-gen-validate.patch",
 ])
 
 package(default_visibility = ["//:__subpackages__"])
