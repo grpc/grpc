@@ -327,7 +327,15 @@ class CallOpSendMessage {
       return;
     }
     if (msg_ != nullptr) {
-      ABSL_CHECK(serializer_(msg_).ok());
+      auto status = serializer_(msg_);
+      if (!status.ok()) {
+        ABSL_LOG(ERROR) << "Failed to serialize message: "
+                        << status.error_code() << " " << status.error_message()
+                        << " " << status.error_details();
+        failed_send_ = true;
+        msg_ = nullptr;
+        return;
+      }
     }
     serializer_ = nullptr;
     grpc_op* op = &ops[(*nops)++];
