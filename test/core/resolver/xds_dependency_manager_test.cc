@@ -409,15 +409,6 @@ class XdsDependencyManagerTest : public ::testing::Test {
       return update;
     }
 
-    std::string RemainingUpdatesSummary() const {
-      std::string out;
-      for (const auto& u : updates_) {
-        absl::StrAppend(&out, u.ok() ? (*u)->ToString() : u.status().ToString(),
-                        "\n");
-      }
-      return out;
-    }
-
    private:
     std::deque<absl::StatusOr<RefCountedPtr<const XdsConfig>>> updates_;
   };
@@ -446,19 +437,19 @@ class XdsDependencyManagerTest : public ::testing::Test {
 
   void TearDown() override {
     if (watcher_state_ != nullptr) {
-      DrainWork();
-      EXPECT_TRUE(watcher_state_->Empty())
-          << "Unexpected unread updates at end of test:\n"
-          << watcher_state_->RemainingUpdatesSummary();
+      ExpectNoUpdate();
     }
     if (dependency_mgr_ != nullptr) {
       OrphanDependencyManager();
+      EXPECT_TRUE(WaitUntil([this]() { return dependency_mgr_ == nullptr; }));
     }
     if (xds_client_ != nullptr) {
-      EXPECT_FALSE(xds_client_->HasAnyWatches())
+      EXPECT_TRUE(WaitForAllWatchesCancelled())
           << "Active xDS watches leaked after Orphan()";
     }
-    EXPECT_THAT(GetActiveDnsResolvers(), ::testing::IsEmpty());
+    EXPECT_TRUE(WaitUntil([this]() {
+      return dns_state_->active_resolvers.empty();
+    })) << "Active DNS resolvers leaked after Orphan()";
     work_serializer_.reset();
     xds_client_.reset();
     event_engine_->FuzzingDone();
@@ -490,7 +481,26 @@ class XdsDependencyManagerTest : public ::testing::Test {
         /*interested_parties=*/nullptr);
   }
 
-  void DrainWork() { event_engine_->TickUntilIdle(); }
+  // Ticks FuzzingEventEngine until pred() returns true or the EventEngine
+  // becomes idle. Returns true if pred() became true.
+  template <typename Predicate>
+  bool WaitUntil(Predicate pred) {
+    while (!pred()) {
+      if (event_engine_->IsIdle()) return false;
+      event_engine_->Tick();
+    }
+    return true;
+  }
+
+  template <typename ResourceType>
+  bool WaitForWatch(absl::string_view name) {
+    return WaitUntil(
+        [this, name]() { return xds_client_->HasWatch<ResourceType>(name); });
+  }
+
+  bool WaitForAllWatchesCancelled() {
+    return WaitUntil([this]() { return !xds_client_->HasAnyWatches(); });
+  }
 
   void RunOnWorkSerializer(absl::AnyInvocable<void()> fn) {
     bool done = false;
@@ -498,15 +508,11 @@ class XdsDependencyManagerTest : public ::testing::Test {
       fn();
       done = true;
     });
-    while (!done) {
-      GRPC_CHECK(!event_engine_->IsIdle());
-      event_engine_->Tick();
-    }
+    GRPC_CHECK(WaitUntil([&done]() { return done; }));
   }
 
   void OrphanDependencyManager() {
-    RunOnWorkSerializer([this]() { dependency_mgr_.reset(); });
-    DrainWork();
+    work_serializer_->Run([this]() { dependency_mgr_.reset(); });
   }
 
   RefCountedPtr<XdsDependencyManager::ClusterSubscription>
@@ -518,11 +524,11 @@ class XdsDependencyManagerTest : public ::testing::Test {
   }
 
   void RequestReresolution() {
-    RunOnWorkSerializer([this]() { dependency_mgr_->RequestReresolution(); });
+    work_serializer_->Run([this]() { dependency_mgr_->RequestReresolution(); });
   }
 
   void ResetBackoff() {
-    RunOnWorkSerializer([this]() { dependency_mgr_->ResetBackoff(); });
+    work_serializer_->Run([this]() { dependency_mgr_->ResetBackoff(); });
   }
 
   void TriggerListenerUpdate(
@@ -531,10 +537,11 @@ class XdsDependencyManagerTest : public ::testing::Test {
       RefCountedPtr<XdsClientInterface::ReadDelayHandle> read_delay_handle =
           XdsClientInterface::ReadDelayHandle::NoWait(),
       SourceLocation location = SourceLocation()) {
-    ASSERT_TRUE(xds_client_->TriggerResourceUpdate<XdsListenerResourceType>(
-        name, std::move(listener), std::move(read_delay_handle)))
+    ASSERT_TRUE(WaitForWatch<XdsListenerResourceType>(name))
         << "No active LDS watch for " << name << " at " << location.file()
         << ":" << location.line();
+    ASSERT_TRUE(xds_client_->TriggerResourceUpdate<XdsListenerResourceType>(
+        name, std::move(listener), std::move(read_delay_handle)));
   }
 
   void TriggerListenerAmbientError(
@@ -542,10 +549,11 @@ class XdsDependencyManagerTest : public ::testing::Test {
       RefCountedPtr<XdsClientInterface::ReadDelayHandle> read_delay_handle =
           XdsClientInterface::ReadDelayHandle::NoWait(),
       SourceLocation location = SourceLocation()) {
-    ASSERT_TRUE(xds_client_->TriggerAmbientError<XdsListenerResourceType>(
-        name, std::move(status), std::move(read_delay_handle)))
+    ASSERT_TRUE(WaitForWatch<XdsListenerResourceType>(name))
         << "No active LDS watch for " << name << " at " << location.file()
         << ":" << location.line();
+    ASSERT_TRUE(xds_client_->TriggerAmbientError<XdsListenerResourceType>(
+        name, std::move(status), std::move(read_delay_handle)));
   }
 
   void TriggerRouteConfigUpdate(
@@ -555,10 +563,11 @@ class XdsDependencyManagerTest : public ::testing::Test {
       RefCountedPtr<XdsClientInterface::ReadDelayHandle> read_delay_handle =
           XdsClientInterface::ReadDelayHandle::NoWait(),
       SourceLocation location = SourceLocation()) {
-    ASSERT_TRUE(xds_client_->TriggerResourceUpdate<XdsRouteConfigResourceType>(
-        name, std::move(route_config), std::move(read_delay_handle)))
+    ASSERT_TRUE(WaitForWatch<XdsRouteConfigResourceType>(name))
         << "No active RDS watch for " << name << " at " << location.file()
         << ":" << location.line();
+    ASSERT_TRUE(xds_client_->TriggerResourceUpdate<XdsRouteConfigResourceType>(
+        name, std::move(route_config), std::move(read_delay_handle)));
   }
 
   void TriggerRouteConfigAmbientError(
@@ -566,10 +575,11 @@ class XdsDependencyManagerTest : public ::testing::Test {
       RefCountedPtr<XdsClientInterface::ReadDelayHandle> read_delay_handle =
           XdsClientInterface::ReadDelayHandle::NoWait(),
       SourceLocation location = SourceLocation()) {
-    ASSERT_TRUE(xds_client_->TriggerAmbientError<XdsRouteConfigResourceType>(
-        name, std::move(status), std::move(read_delay_handle)))
+    ASSERT_TRUE(WaitForWatch<XdsRouteConfigResourceType>(name))
         << "No active RDS watch for " << name << " at " << location.file()
         << ":" << location.line();
+    ASSERT_TRUE(xds_client_->TriggerAmbientError<XdsRouteConfigResourceType>(
+        name, std::move(status), std::move(read_delay_handle)));
   }
 
   void TriggerClusterUpdate(
@@ -578,10 +588,11 @@ class XdsDependencyManagerTest : public ::testing::Test {
       RefCountedPtr<XdsClientInterface::ReadDelayHandle> read_delay_handle =
           XdsClientInterface::ReadDelayHandle::NoWait(),
       SourceLocation location = SourceLocation()) {
-    ASSERT_TRUE(xds_client_->TriggerResourceUpdate<XdsClusterResourceType>(
-        name, std::move(cluster), std::move(read_delay_handle)))
+    ASSERT_TRUE(WaitForWatch<XdsClusterResourceType>(name))
         << "No active CDS watch for " << name << " at " << location.file()
         << ":" << location.line();
+    ASSERT_TRUE(xds_client_->TriggerResourceUpdate<XdsClusterResourceType>(
+        name, std::move(cluster), std::move(read_delay_handle)));
   }
 
   void TriggerClusterAmbientError(
@@ -589,10 +600,11 @@ class XdsDependencyManagerTest : public ::testing::Test {
       RefCountedPtr<XdsClientInterface::ReadDelayHandle> read_delay_handle =
           XdsClientInterface::ReadDelayHandle::NoWait(),
       SourceLocation location = SourceLocation()) {
-    ASSERT_TRUE(xds_client_->TriggerAmbientError<XdsClusterResourceType>(
-        name, std::move(status), std::move(read_delay_handle)))
+    ASSERT_TRUE(WaitForWatch<XdsClusterResourceType>(name))
         << "No active CDS watch for " << name << " at " << location.file()
         << ":" << location.line();
+    ASSERT_TRUE(xds_client_->TriggerAmbientError<XdsClusterResourceType>(
+        name, std::move(status), std::move(read_delay_handle)));
   }
 
   void TriggerEndpointUpdate(
@@ -601,10 +613,11 @@ class XdsDependencyManagerTest : public ::testing::Test {
       RefCountedPtr<XdsClientInterface::ReadDelayHandle> read_delay_handle =
           XdsClientInterface::ReadDelayHandle::NoWait(),
       SourceLocation location = SourceLocation()) {
-    ASSERT_TRUE(xds_client_->TriggerResourceUpdate<XdsEndpointResourceType>(
-        name, std::move(endpoint), std::move(read_delay_handle)))
+    ASSERT_TRUE(WaitForWatch<XdsEndpointResourceType>(name))
         << "No active EDS watch for " << name << " at " << location.file()
         << ":" << location.line();
+    ASSERT_TRUE(xds_client_->TriggerResourceUpdate<XdsEndpointResourceType>(
+        name, std::move(endpoint), std::move(read_delay_handle)));
   }
 
   void TriggerEndpointAmbientError(
@@ -612,15 +625,18 @@ class XdsDependencyManagerTest : public ::testing::Test {
       RefCountedPtr<XdsClientInterface::ReadDelayHandle> read_delay_handle =
           XdsClientInterface::ReadDelayHandle::NoWait(),
       SourceLocation location = SourceLocation()) {
-    ASSERT_TRUE(xds_client_->TriggerAmbientError<XdsEndpointResourceType>(
-        name, std::move(status), std::move(read_delay_handle)))
+    ASSERT_TRUE(WaitForWatch<XdsEndpointResourceType>(name))
         << "No active EDS watch for " << name << " at " << location.file()
         << ":" << location.line();
+    ASSERT_TRUE(xds_client_->TriggerAmbientError<XdsEndpointResourceType>(
+        name, std::move(status), std::move(read_delay_handle)));
   }
 
   std::optional<absl::StatusOr<RefCountedPtr<const XdsConfig>>>
   WaitForUpdate() {
-    DrainWork();
+    if (!WaitUntil([this]() { return !watcher_state_->Empty(); })) {
+      return std::nullopt;
+    }
     return watcher_state_->Pop();
   }
 
@@ -657,14 +673,32 @@ class XdsDependencyManagerTest : public ::testing::Test {
   }
 
   void ExpectNoUpdate(SourceLocation location = SourceLocation()) {
-    DrainWork();
-    EXPECT_TRUE(watcher_state_->Empty())
-        << "Expected no update, but got:\n"
-        << watcher_state_->RemainingUpdatesSummary() << " at "
-        << location.file() << ":" << location.line();
+    auto update = WaitForUpdate();
+    EXPECT_FALSE(update.has_value())
+        << "Expected no update, but got: "
+        << (update->ok() ? (**update)->ToString() : update->status().ToString())
+        << " at " << location.file() << ":" << location.line();
   }
 
   // DNS test helpers.
+  bool WaitForDnsResolver(absl::string_view hostname) {
+    return WaitUntil([this, hostname]() {
+      return dns_state_->active_resolvers.count(std::string(hostname)) > 0;
+    });
+  }
+
+  bool WaitForDnsReresolution(absl::string_view hostname, int expected_count) {
+    return WaitUntil([this, hostname, expected_count]() {
+      return GetDnsReresolutionCount(hostname) >= expected_count;
+    });
+  }
+
+  bool WaitForDnsResetBackoff(absl::string_view hostname, int expected_count) {
+    return WaitUntil([this, hostname, expected_count]() {
+      return GetDnsResetBackoffCount(hostname) >= expected_count;
+    });
+  }
+
   std::set<std::string> GetActiveDnsResolvers() const {
     std::set<std::string> names;
     for (const auto& [name, _] : dns_state_->active_resolvers) {
@@ -683,10 +717,10 @@ class XdsDependencyManagerTest : public ::testing::Test {
   void SendDnsResult(absl::string_view hostname, Resolver::Result result,
                      bool allow_after_shutdown = false,
                      SourceLocation location = SourceLocation()) {
-    auto it = dns_state_->active_resolvers.find(std::string(hostname));
-    ASSERT_NE(it, dns_state_->active_resolvers.end())
+    ASSERT_TRUE(WaitForDnsResolver(hostname))
         << "No active DNS resolver for " << hostname << " at "
         << location.file() << ":" << location.line();
+    auto it = dns_state_->active_resolvers.find(std::string(hostname));
     EXPECT_TRUE(it->second->started());
     it->second->SendResult(std::move(result), allow_after_shutdown);
   }
@@ -724,11 +758,8 @@ class XdsDependencyManagerTest : public ::testing::Test {
     res.cluster = MakeEdsCluster(kDefaultEdsServiceName);
     res.endpoints = MakeDefaultEndpointResource();
     TriggerListenerUpdate(kDefaultListenerName, res.listener);
-    DrainWork();
     TriggerRouteConfigUpdate(kDefaultRouteConfigName, res.route_config);
-    DrainWork();
     TriggerClusterUpdate(kDefaultClusterName, res.cluster);
-    DrainWork();
     TriggerEndpointUpdate(kDefaultEdsServiceName, res.endpoints);
     res.config = ExpectConfig();
     return res;
@@ -921,7 +952,6 @@ TEST_F(XdsDependencyManagerTest, EdsServiceNameDefaultsToClusterName) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig({"c1"})));
-  DrainWork();
   TriggerClusterUpdate("c1", MakeEdsCluster(/*eds_service_name=*/""));
   ExpectNoUpdate();
   EXPECT_THAT(xds_client_->GetWatchedResources(XdsEndpointResourceType::Get()),
@@ -1112,7 +1142,6 @@ TEST_F(XdsDependencyManagerTest, LdsSwitchFromRdsToInlineRouteConfig) {
                                       false}));
 
   TriggerClusterUpdate("c2", MakeEdsCluster("e2"));
-  DrainWork();
   auto e2 = MakeDefaultEndpointResource("ipv4:127.0.0.1:444");
   TriggerEndpointUpdate("e2", e2);
   auto config = ExpectConfig();
@@ -1126,9 +1155,7 @@ TEST_F(XdsDependencyManagerTest, LdsSwitchFromInlineRouteConfigToRds) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig({"c1"})));
-  DrainWork();
   TriggerClusterUpdate("c1", MakeEdsCluster("e1"));
-  DrainWork();
   TriggerEndpointUpdate("e1", MakeDefaultEndpointResource());
   ASSERT_NE(ExpectConfig(), nullptr);
   xds_client_->TakeCancelHistory();
@@ -1176,7 +1203,6 @@ TEST_F(XdsDependencyManagerTest, RdsNoMatchingVirtualHost) {
   Init();
   TriggerListenerUpdate(kDefaultListenerName,
                         MakeApiListenerWithRds(kDefaultRouteConfigName));
-  DrainWork();
   TriggerRouteConfigUpdate(
       kDefaultRouteConfigName,
       MakeDefaultRouteConfig({kDefaultClusterName}, {"other.example.com"}));
@@ -1212,7 +1238,6 @@ TEST_F(XdsDependencyManagerTest, VirtualHostDomainMatchingPrecedence) {
   EXPECT_THAT(xds_client_->GetWatchedResources(XdsClusterResourceType::Get()),
               ::testing::ElementsAre("c_exact"));
   TriggerClusterUpdate("c_exact", MakeEdsCluster("e_exact"));
-  DrainWork();
   TriggerEndpointUpdate("e_exact", MakeDefaultEndpointResource());
   auto config = ExpectConfig();
   ASSERT_NE(config, nullptr);
@@ -1230,7 +1255,6 @@ TEST_F(XdsDependencyManagerTest, VirtualHostDomainMatchingPrecedence) {
   EXPECT_THAT(xds_client_->GetWatchedResources(XdsClusterResourceType::Get()),
               ::testing::ElementsAre("c_wild"));
   TriggerClusterUpdate("c_wild", MakeEdsCluster("e_wild"));
-  DrainWork();
   TriggerEndpointUpdate("e_wild", MakeDefaultEndpointResource());
   config = ExpectConfig();
   ASSERT_NE(config, nullptr);
@@ -1255,7 +1279,6 @@ TEST_F(XdsDependencyManagerTest, RouteActionTypesClusterExtraction) {
   for (absl::string_view name : {"c1", "c2", "c3"}) {
     TriggerClusterUpdate(name, MakeEdsCluster(name));
   }
-  DrainWork();
   for (absl::string_view name : {"c1", "c2", "c3"}) {
     TriggerEndpointUpdate(name, MakeDefaultEndpointResource());
   }
@@ -1319,7 +1342,6 @@ TEST_F(XdsDependencyManagerTest, RdsDynamicClusterAdditionRemovalAndGating) {
                                       false}));
 
   TriggerClusterUpdate("c3", MakeEdsCluster("e3"));
-  DrainWork();
   auto e3 = MakeDefaultEndpointResource("ipv4:127.0.0.1:446");
   TriggerEndpointUpdate("e3", e3);
   config = ExpectConfig();
@@ -1336,7 +1358,6 @@ TEST_F(XdsDependencyManagerTest, RdsStaleWatcherUpdateAndErrorIgnored) {
 
   // Switch LDS to rds2.
   TriggerListenerUpdate(kDefaultListenerName, MakeApiListenerWithRds("rds2"));
-  DrainWork();
   TriggerRouteConfigUpdate("rds2", MakeDefaultRouteConfig());
   ASSERT_NE(ExpectConfig(), nullptr);
 
@@ -1380,9 +1401,7 @@ TEST_F(XdsDependencyManagerTest, CdsErrorAndPartialSuccess) {
   TriggerListenerUpdate(kDefaultListenerName,
                         MakeApiListenerWithInlineRouteConfig(
                             MakeDefaultRouteConfig({"c1", "c2"})));
-  DrainWork();
   TriggerClusterUpdate("c1", MakeEdsCluster("e1"));
-  DrainWork();
   auto e1 = MakeDefaultEndpointResource();
   TriggerEndpointUpdate("e1", e1);
   ExpectNoUpdate();
@@ -1419,7 +1438,6 @@ TEST_F(XdsDependencyManagerTest, CdsRecoveryAfterError) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig({"c1"})));
-  DrainWork();
   TriggerClusterUpdate("c1", absl::NotFoundError("missing"));
   auto config = ExpectConfig();
   ASSERT_NE(config, nullptr);
@@ -1462,10 +1480,8 @@ TEST_F(XdsDependencyManagerTest, SharedEdsResourceAcrossMultipleClusters) {
   Init();
   TriggerListenerUpdate(kDefaultListenerName,
                         MakeApiListenerWithRds(kDefaultRouteConfigName));
-  DrainWork();
   TriggerRouteConfigUpdate(kDefaultRouteConfigName,
                            MakeDefaultRouteConfig({"c1", "c2"}));
-  DrainWork();
   TriggerClusterUpdate("c1", MakeEdsCluster("e_shared"));
   TriggerClusterUpdate("c2", MakeEdsCluster("e_shared"));
   ExpectNoUpdate();
@@ -1534,7 +1550,6 @@ TEST_F(XdsDependencyManagerTest, ClusterTypeTransitions) {
               ::testing::UnorderedElementsAre(kDefaultClusterName, "child1"));
 
   TriggerClusterUpdate("child1", MakeEdsCluster("child_eds"));
-  DrainWork();
   TriggerEndpointUpdate("child_eds", MakeDefaultEndpointResource());
   config = ExpectConfig();
   ASSERT_NE(config, nullptr);
@@ -1590,10 +1605,8 @@ TEST_F(XdsDependencyManagerTest,
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig()));
-  DrainWork();
   TriggerClusterUpdate(kDefaultClusterName,
                        MakeEdsCluster(kDefaultEdsServiceName));
-  DrainWork();
   TriggerEndpointUpdate(kDefaultEdsServiceName, absl::NotFoundError("no eds"));
   auto config = ExpectConfig();
   ASSERT_NE(config, nullptr);
@@ -1608,10 +1621,8 @@ TEST_F(XdsDependencyManagerTest, EdsNoLocalities) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig()));
-  DrainWork();
   TriggerClusterUpdate(kDefaultClusterName,
                        MakeEdsCluster(kDefaultEdsServiceName));
-  DrainWork();
   auto empty_eds = MakeEndpointResource({});
   TriggerEndpointUpdate(kDefaultEdsServiceName, empty_eds);
   auto config = ExpectConfig();
@@ -1628,10 +1639,8 @@ TEST_F(XdsDependencyManagerTest, EdsEmptyLocalitiesSorted) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig()));
-  DrainWork();
   TriggerClusterUpdate(kDefaultClusterName,
                        MakeEdsCluster(kDefaultEdsServiceName));
-  DrainWork();
   auto eds = MakeEndpointResource({
       {{/*region=*/"r", /*zone=*/"z", /*sub_zone=*/"z2", /*lb_weight=*/1, {}},
        {/*region=*/"r",
@@ -1668,10 +1677,8 @@ TEST_F(XdsDependencyManagerTest, EdsDynamicUpdateAndRecoveryFromError) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig()));
-  DrainWork();
   TriggerClusterUpdate(kDefaultClusterName,
                        MakeEdsCluster(kDefaultEdsServiceName));
-  DrainWork();
 
   // Initial error.
   TriggerEndpointUpdate(kDefaultEdsServiceName, absl::NotFoundError("missing"));
@@ -1726,7 +1733,6 @@ TEST_F(XdsDependencyManagerTest, LogicalDnsBasicMultiAddressAndChannelArgs) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig()));
-  DrainWork();
   TriggerClusterUpdate(kDefaultClusterName,
                        MakeLogicalDnsCluster("backend.example.com:443"));
   ExpectNoUpdate();
@@ -1769,10 +1775,8 @@ TEST_F(XdsDependencyManagerTest, LogicalDnsResolutionError) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig()));
-  DrainWork();
   TriggerClusterUpdate(kDefaultClusterName,
                        MakeLogicalDnsCluster("backend.example.com:443"));
-  DrainWork();
 
   // Error with empty resolution_note -> synthesizes default DNS failure note.
   Resolver::Result err_result;
@@ -1810,9 +1814,7 @@ TEST_F(XdsDependencyManagerTest, LogicalDnsDynamicUpdateAndRecovery) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig()));
-  DrainWork();
   TriggerClusterUpdate(kDefaultClusterName, MakeLogicalDnsCluster("h1:443"));
-  DrainWork();
 
   // Initial DNS error.
   Resolver::Result err;
@@ -1855,9 +1857,7 @@ TEST_F(XdsDependencyManagerTest, LogicalDnsHostnameChange) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig()));
-  DrainWork();
   TriggerClusterUpdate(kDefaultClusterName, MakeLogicalDnsCluster("h1:443"));
-  DrainWork();
   Resolver::Result r1;
   r1.addresses = MakeEndpointAddressesList({"ipv4:127.0.0.1:443"});
   SendDnsResult("h1:443", std::move(r1));
@@ -1896,10 +1896,8 @@ TEST_F(XdsDependencyManagerTest, MultipleLogicalDnsClustersAndSharedHostname) {
   Init();
   TriggerListenerUpdate(kDefaultListenerName,
                         MakeApiListenerWithRds(kDefaultRouteConfigName));
-  DrainWork();
   TriggerRouteConfigUpdate(kDefaultRouteConfigName,
                            MakeDefaultRouteConfig({"c1", "c2", "c3"}));
-  DrainWork();
   // c1 and c2 share h1:443; c3 uses h2:443.
   TriggerClusterUpdate("c1", MakeLogicalDnsCluster("h1:443"));
   TriggerClusterUpdate("c2", MakeLogicalDnsCluster("h1:443"));
@@ -1943,19 +1941,17 @@ TEST_F(XdsDependencyManagerTest, LogicalDnsRequestReresolutionAndResetBackoff) {
   Init();
   TriggerListenerUpdate(kDefaultListenerName,
                         MakeApiListenerWithRds(kDefaultRouteConfigName));
-  DrainWork();
 
   // No DNS resolvers -> safe no-ops.
   RequestReresolution();
   ResetBackoff();
+  ExpectNoUpdate();
 
   // Start two DNS resolvers.
   TriggerRouteConfigUpdate(kDefaultRouteConfigName,
                            MakeDefaultRouteConfig({"c1", "c2"}));
-  DrainWork();
   TriggerClusterUpdate("c1", MakeLogicalDnsCluster("h1:443"));
   TriggerClusterUpdate("c2", MakeLogicalDnsCluster("h2:443"));
-  DrainWork();
   Resolver::Result r1;
   r1.addresses = MakeEndpointAddressesList({"ipv4:127.0.0.1:443"});
   SendDnsResult("h1:443", std::move(r1));
@@ -1965,12 +1961,12 @@ TEST_F(XdsDependencyManagerTest, LogicalDnsRequestReresolutionAndResetBackoff) {
   ASSERT_NE(ExpectConfig(), nullptr);
 
   RequestReresolution();
-  EXPECT_EQ(GetDnsReresolutionCount("h1:443"), 1);
-  EXPECT_EQ(GetDnsReresolutionCount("h2:443"), 1);
+  EXPECT_TRUE(WaitForDnsReresolution("h1:443", 1));
+  EXPECT_TRUE(WaitForDnsReresolution("h2:443", 1));
 
   ResetBackoff();
-  EXPECT_EQ(GetDnsResetBackoffCount("h1:443"), 1);
-  EXPECT_EQ(GetDnsResetBackoffCount("h2:443"), 1);
+  EXPECT_TRUE(WaitForDnsResetBackoff("h1:443", 1));
+  EXPECT_TRUE(WaitForDnsResetBackoff("h2:443", 1));
 
   // Remove c1 -> subsequent calls only hit h2.
   TriggerRouteConfigUpdate(kDefaultRouteConfigName,
@@ -1978,10 +1974,10 @@ TEST_F(XdsDependencyManagerTest, LogicalDnsRequestReresolutionAndResetBackoff) {
   ASSERT_NE(ExpectConfig(), nullptr);
   RequestReresolution();
   ResetBackoff();
+  EXPECT_TRUE(WaitForDnsReresolution("h2:443", 2));
+  EXPECT_TRUE(WaitForDnsResetBackoff("h2:443", 2));
   EXPECT_EQ(GetDnsReresolutionCount("h1:443"), 1);
-  EXPECT_EQ(GetDnsReresolutionCount("h2:443"), 2);
   EXPECT_EQ(GetDnsResetBackoffCount("h1:443"), 1);
-  EXPECT_EQ(GetDnsResetBackoffCount("h2:443"), 2);
 }
 
 TEST_F(XdsDependencyManagerTest, LogicalDnsFakeResolverResponseGeneratorArg) {
@@ -1996,7 +1992,6 @@ TEST_F(XdsDependencyManagerTest, LogicalDnsFakeResolverResponseGeneratorArg) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig()));
-  DrainWork();
   TriggerClusterUpdate(kDefaultClusterName,
                        MakeLogicalDnsCluster("fake.host:443"));
   ExpectNoUpdate();
@@ -2025,8 +2020,9 @@ TEST_F(XdsDependencyManagerTest, LogicalDnsFakeResolverResponseGeneratorArg) {
             "fake.host:443");
 
   RequestReresolution();
-  EXPECT_TRUE(
-      response_generator->WaitForReresolutionRequest(absl::ZeroDuration()));
+  EXPECT_TRUE(WaitUntil([&]() {
+    return response_generator->WaitForReresolutionRequest(absl::ZeroDuration());
+  }));
 }
 
 TEST_F(XdsDependencyManagerTest, LogicalDnsCreateResolverFailure) {
@@ -2035,7 +2031,6 @@ TEST_F(XdsDependencyManagerTest, LogicalDnsCreateResolverFailure) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig()));
-  DrainWork();
   TriggerClusterUpdate(kDefaultClusterName,
                        MakeLogicalDnsCluster("bad.example.com:443"));
 
@@ -2053,6 +2048,7 @@ TEST_F(XdsDependencyManagerTest, LogicalDnsCreateResolverFailure) {
   // Calling RequestReresolution / ResetBackoff must not crash on null resolver.
   RequestReresolution();
   ResetBackoff();
+  ExpectNoUpdate();
 }
 
 //
@@ -2064,7 +2060,6 @@ TEST_F(XdsDependencyManagerTest, AggregateClusterEdsAndLogicalDns) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig({"agg"})));
-  DrainWork();
   TriggerClusterUpdate("agg", MakeAggregateCluster({"c_eds", "c_dns"}));
   ExpectNoUpdate();
   EXPECT_THAT(xds_client_->GetWatchedResources(XdsClusterResourceType::Get()),
@@ -2097,15 +2092,11 @@ TEST_F(XdsDependencyManagerTest, AggregateClusterNestedHierarchy) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig({"agg1"})));
-  DrainWork();
   TriggerClusterUpdate("agg1", MakeAggregateCluster({"agg2", "leaf3"}));
-  DrainWork();
   TriggerClusterUpdate("agg2", MakeAggregateCluster({"leaf1", "leaf2"}));
-  DrainWork();
   for (absl::string_view leaf : {"leaf1", "leaf2", "leaf3"}) {
     TriggerClusterUpdate(leaf, MakeEdsCluster(leaf));
   }
-  DrainWork();
   for (absl::string_view leaf : {"leaf1", "leaf2", "leaf3"}) {
     TriggerEndpointUpdate(leaf, MakeDefaultEndpointResource());
   }
@@ -2126,14 +2117,10 @@ TEST_F(XdsDependencyManagerTest, AggregateClusterDiamondDependency) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig({"agg1"})));
-  DrainWork();
   TriggerClusterUpdate("agg1", MakeAggregateCluster({"leaf1", "agg2"}));
-  DrainWork();
   TriggerClusterUpdate("agg2", MakeAggregateCluster({"leaf1", "leaf2"}));
-  DrainWork();
   TriggerClusterUpdate("leaf1", MakeEdsCluster("e1"));
   TriggerClusterUpdate("leaf2", MakeEdsCluster("e2"));
-  DrainWork();
   TriggerEndpointUpdate("e1", MakeDefaultEndpointResource());
   TriggerEndpointUpdate("e2", MakeDefaultEndpointResource());
 
@@ -2149,10 +2136,8 @@ TEST_F(XdsDependencyManagerTest, AggregateClusterDependencyLoopNoLeafClusters) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig({"agg1"})));
-  DrainWork();
   // Two-node cycle: agg1 -> agg2 -> agg1.
   TriggerClusterUpdate("agg1", MakeAggregateCluster({"agg2"}));
-  DrainWork();
   TriggerClusterUpdate("agg2", MakeAggregateCluster({"agg1"}));
   auto config = ExpectConfig();
   ASSERT_NE(config, nullptr);
@@ -2178,11 +2163,8 @@ TEST_F(XdsDependencyManagerTest,
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig({"agg1"})));
-  DrainWork();
   TriggerClusterUpdate("agg1", MakeAggregateCluster({"leaf1", "agg1"}));
-  DrainWork();
   TriggerClusterUpdate("leaf1", MakeEdsCluster("e1"));
-  DrainWork();
   TriggerEndpointUpdate("e1", MakeDefaultEndpointResource());
 
   auto config = ExpectConfig();
@@ -2197,15 +2179,12 @@ TEST_F(XdsDependencyManagerTest, AggregateClusterRecursionDepthJustBelowMax) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig({"c0"})));
-  DrainWork();
   // c0 (depth 0) -> c1 (depth 1) -> ... -> c14 (depth 14) -> c15 (leaf at 15).
   for (int i = 0; i < 15; ++i) {
     TriggerClusterUpdate(absl::StrCat("c", i),
                          MakeAggregateCluster({absl::StrCat("c", i + 1)}));
-    DrainWork();
   }
   TriggerClusterUpdate("c15", MakeEdsCluster("e15"));
-  DrainWork();
   TriggerEndpointUpdate("e15", MakeDefaultEndpointResource());
 
   auto config = ExpectConfig();
@@ -2220,19 +2199,17 @@ TEST_F(XdsDependencyManagerTest, AggregateClusterRecursionExceedsMaxDepth) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig({"c0"})));
-  DrainWork();
   // c0 (depth 0) -> ... -> c15 (depth 15) -> c16 (depth 16 == max -> error).
   for (int i = 0; i < 16; ++i) {
     TriggerClusterUpdate(absl::StrCat("c", i),
                          MakeAggregateCluster({absl::StrCat("c", i + 1)}));
-    if (i < 15) DrainWork();
   }
   auto config = ExpectConfig();
   ASSERT_NE(config, nullptr);
   ExpectClusterError(*config, "c0", absl::StatusCode::kUnavailable,
                      "aggregate cluster graph exceeds max depth");
   // c16 should never even be watched since recursion stopped at depth 16.
-  EXPECT_FALSE(xds_client_->HasWatch(XdsClusterResourceType::Get(), "c16"));
+  EXPECT_FALSE(WaitForWatch<XdsClusterResourceType>("c16"));
 }
 
 TEST_F(XdsDependencyManagerTest, AggregateClusterPartialChildFailure) {
@@ -2240,15 +2217,11 @@ TEST_F(XdsDependencyManagerTest, AggregateClusterPartialChildFailure) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig({"agg1"})));
-  DrainWork();
   TriggerClusterUpdate("agg1", MakeAggregateCluster({"agg2", "leaf_ok"}));
-  DrainWork();
   TriggerClusterUpdate("agg2", MakeAggregateCluster({"leaf_err", "leaf_ok2"}));
-  DrainWork();
   TriggerClusterUpdate("leaf_err", absl::NotFoundError("does not exist"));
   TriggerClusterUpdate("leaf_ok2", MakeEdsCluster("e_ok2"));
   TriggerClusterUpdate("leaf_ok", MakeEdsCluster("e_ok"));
-  DrainWork();
   TriggerEndpointUpdate("e_ok2", MakeDefaultEndpointResource());
   TriggerEndpointUpdate("e_ok", MakeDefaultEndpointResource());
 
@@ -2272,9 +2245,7 @@ TEST_F(XdsDependencyManagerTest,
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig({"agg"})));
-  DrainWork();
   TriggerClusterUpdate("agg", MakeAggregateCluster({"m1", "m2"}));
-  DrainWork();
 
   // First child fails while second is still pending -> must NOT prematurely
   // report "has no leaf clusters".
@@ -2295,12 +2266,9 @@ TEST_F(XdsDependencyManagerTest, AggregateClusterDynamicChildUpdate) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig({"agg"})));
-  DrainWork();
   TriggerClusterUpdate("agg", MakeAggregateCluster({"c1", "c2"}));
-  DrainWork();
   TriggerClusterUpdate("c1", MakeEdsCluster("e1"));
   TriggerClusterUpdate("c2", MakeEdsCluster("e2"));
-  DrainWork();
   TriggerEndpointUpdate("e1", MakeDefaultEndpointResource());
   TriggerEndpointUpdate("e2", MakeDefaultEndpointResource());
   ASSERT_NE(ExpectConfig(), nullptr);
@@ -2314,7 +2282,6 @@ TEST_F(XdsDependencyManagerTest, AggregateClusterDynamicChildUpdate) {
               ::testing::ElementsAre("e2"));
 
   TriggerClusterUpdate("c3", MakeEdsCluster("e3"));
-  DrainWork();
   TriggerEndpointUpdate("e3", MakeDefaultEndpointResource());
   auto config = ExpectConfig();
   ASSERT_NE(config, nullptr);
@@ -2382,7 +2349,6 @@ TEST_F(XdsDependencyManagerTest, ClusterSubscriptionOverlapWithRouteConfig) {
   EXPECT_THAT(xds_client_->GetWatchedResources(XdsClusterResourceType::Get()),
               ::testing::UnorderedElementsAre(kDefaultClusterName, "c2"));
   TriggerClusterUpdate("c2", MakeEdsCluster("e2"));
-  DrainWork();
   TriggerEndpointUpdate("e2", MakeDefaultEndpointResource());
   auto config = ExpectConfig();
   ASSERT_NE(config, nullptr);
@@ -2408,7 +2374,6 @@ TEST_F(XdsDependencyManagerTest, ClusterSubscriptionSharedRefCounting) {
   EXPECT_EQ(sub1.get(), sub2.get());
 
   TriggerClusterUpdate("c_ext", MakeEdsCluster("e_ext"));
-  DrainWork();
   TriggerEndpointUpdate("e_ext", MakeDefaultEndpointResource());
   ASSERT_NE(ExpectConfig(), nullptr);
 
@@ -2442,7 +2407,6 @@ TEST_F(XdsDependencyManagerTest, ClusterSubscriptionBeforeInitialLdsRds) {
 
   TriggerClusterUpdate("c1", MakeEdsCluster("e1"));
   TriggerClusterUpdate("c_ext", MakeEdsCluster("e_ext"));
-  DrainWork();
   TriggerEndpointUpdate("e1", MakeDefaultEndpointResource());
   TriggerEndpointUpdate("e_ext", MakeDefaultEndpointResource());
   auto config = ExpectConfig();
@@ -2461,12 +2425,9 @@ TEST_F(XdsDependencyManagerTest, ClusterSubscriptionAggregateAndLogicalDns) {
   auto res = SetupBasicEdsConfig();
 
   auto sub = GetClusterSubscription("agg_ext");
-  DrainWork();
   TriggerClusterUpdate("agg_ext", MakeAggregateCluster({"c_eds", "c_dns"}));
-  DrainWork();
   TriggerClusterUpdate("c_eds", MakeEdsCluster("e_sub"));
   TriggerClusterUpdate("c_dns", MakeLogicalDnsCluster("h_sub:443"));
-  DrainWork();
   TriggerEndpointUpdate("e_sub", MakeDefaultEndpointResource());
   Resolver::Result dns_res;
   dns_res.addresses = MakeEndpointAddressesList({"ipv4:127.0.0.1:900"});
@@ -2495,11 +2456,8 @@ TEST_F(XdsDependencyManagerTest, ClusterSubscriptionOverlapWithAggregateChild) {
   TriggerListenerUpdate(
       kDefaultListenerName,
       MakeApiListenerWithInlineRouteConfig(MakeDefaultRouteConfig({"agg"})));
-  DrainWork();
   TriggerClusterUpdate("agg", MakeAggregateCluster({"c1"}));
-  DrainWork();
   TriggerClusterUpdate("c1", MakeEdsCluster("e1"));
-  DrainWork();
   TriggerEndpointUpdate("e1", MakeDefaultEndpointResource());
   ASSERT_NE(ExpectConfig(), nullptr);
 
@@ -2520,9 +2478,7 @@ TEST_F(XdsDependencyManagerTest,
   auto res = SetupBasicEdsConfig();
 
   auto sub1 = GetClusterSubscription("c_ext");
-  DrainWork();
   TriggerClusterUpdate("c_ext", MakeEdsCluster("e_ext"));
-  DrainWork();
   TriggerEndpointUpdate("e_ext", MakeDefaultEndpointResource());
   ASSERT_NE(ExpectConfig(), nullptr);
 
@@ -2534,24 +2490,23 @@ TEST_F(XdsDependencyManagerTest,
     sub1.reset();  // Queues OnClusterSubscriptionUnref behind this callback.
     sub2 = dependency_mgr_->GetClusterSubscription("c_ext");
   });
-  DrainWork();
+
+  // Re-subscribing triggers an update containing c_ext; sub1's queued
+  // OnClusterSubscriptionUnref must then run as a no-op with no further update.
+  auto config = ExpectConfig();
+  ASSERT_NE(config, nullptr);
+  EXPECT_TRUE(config->clusters.contains("c_ext"));
+  ExpectNoUpdate();
 
   // sub2 must have replaced sub1, so c_ext must still be watched!
-  EXPECT_TRUE(xds_client_->HasWatch(XdsClusterResourceType::Get(), "c_ext"));
-  EXPECT_TRUE(xds_client_->HasWatch(XdsEndpointResourceType::Get(), "e_ext"));
-  // Drain the update produced by re-subscribing (if any) and verify c_ext is
-  // present.
-  auto update = WaitForUpdate();
-  if (update.has_value()) {
-    ASSERT_TRUE(update->ok());
-    EXPECT_TRUE((**update)->clusters.contains("c_ext"));
-  }
+  EXPECT_TRUE(xds_client_->HasWatch<XdsClusterResourceType>("c_ext"));
+  EXPECT_TRUE(xds_client_->HasWatch<XdsEndpointResourceType>("e_ext"));
 
   // Trigger an EDS update to confirm c_ext is still included in reported
   // configs.
   auto ep2 = MakeDefaultEndpointResource("ipv4:127.0.0.1:999");
   TriggerEndpointUpdate("e_ext", ep2);
-  auto config = ExpectConfig();
+  config = ExpectConfig();
   ASSERT_NE(config, nullptr);
   EXPECT_EQ(GetEndpointConfig(*config, "c_ext")->endpoints, ep2);
 
@@ -2564,9 +2519,10 @@ TEST_F(XdsDependencyManagerTest,
 TEST_F(XdsDependencyManagerTest, ClusterSubscriptionOutlivesDependencyManager) {
   auto res = SetupBasicEdsConfig();
   auto sub = GetClusterSubscription("c_ext");
-  DrainWork();
+  EXPECT_TRUE(WaitForWatch<XdsClusterResourceType>("c_ext"));
 
   OrphanDependencyManager();
+  EXPECT_TRUE(WaitForAllWatchesCancelled());
   // Releasing subscription after Orphan must be a safe no-op.
   sub.reset();
   ExpectNoUpdate();
@@ -2580,13 +2536,10 @@ TEST_F(XdsDependencyManagerTest, AmbientErrorLdsSetAndClear) {
   Init();
   TriggerListenerUpdate(kDefaultListenerName,
                         MakeApiListenerWithRds(kDefaultRouteConfigName));
-  DrainWork();
   TriggerRouteConfigUpdate(kDefaultRouteConfigName,
                            MakeDefaultRouteConfig({"c1", "c2"}));
-  DrainWork();
   TriggerClusterUpdate("c1", MakeEdsCluster("e1"));
   TriggerClusterUpdate("c2", MakeEdsCluster("e2"));
-  DrainWork();
   TriggerEndpointUpdate("e1", MakeDefaultEndpointResource());
   TriggerEndpointUpdate("e2", MakeDefaultEndpointResource());
   ASSERT_NE(ExpectConfig(), nullptr);
@@ -2656,10 +2609,8 @@ TEST_F(XdsDependencyManagerTest, AmbientErrorCdsAffectsOnlyTargetCluster) {
   TriggerListenerUpdate(kDefaultListenerName,
                         MakeApiListenerWithInlineRouteConfig(
                             MakeDefaultRouteConfig({"c1", "c2"})));
-  DrainWork();
   TriggerClusterUpdate("c1", MakeEdsCluster("e1"));
   TriggerClusterUpdate("c2", MakeEdsCluster("e2"));
-  DrainWork();
   TriggerEndpointUpdate("e1", MakeDefaultEndpointResource());
   TriggerEndpointUpdate("e2", MakeDefaultEndpointResource());
   ASSERT_NE(ExpectConfig(), nullptr);
@@ -2866,13 +2817,10 @@ TEST_F(XdsDependencyManagerTest, OrphanCancelsAllWatchesAndDnsResolvers) {
   Init();
   TriggerListenerUpdate(kDefaultListenerName,
                         MakeApiListenerWithRds(kDefaultRouteConfigName));
-  DrainWork();
   TriggerRouteConfigUpdate(kDefaultRouteConfigName,
                            MakeDefaultRouteConfig({"c_eds", "c_dns"}));
-  DrainWork();
   TriggerClusterUpdate("c_eds", MakeEdsCluster("e1"));
   TriggerClusterUpdate("c_dns", MakeLogicalDnsCluster("h1:443"));
-  DrainWork();
   TriggerEndpointUpdate("e1", MakeDefaultEndpointResource());
   Resolver::Result dns_res;
   dns_res.addresses = MakeEndpointAddressesList({"ipv4:127.0.0.1:443"});
@@ -2882,7 +2830,7 @@ TEST_F(XdsDependencyManagerTest, OrphanCancelsAllWatchesAndDnsResolvers) {
 
   OrphanDependencyManager();
 
-  EXPECT_FALSE(xds_client_->HasAnyWatches());
+  EXPECT_TRUE(WaitForAllWatchesCancelled());
   EXPECT_THAT(GetActiveDnsResolvers(), ::testing::IsEmpty());
   EXPECT_THAT(
       xds_client_->TakeCancelHistory(),
@@ -2904,13 +2852,10 @@ TEST_F(XdsDependencyManagerTest, OrphanIgnoresInFlightCallbacks) {
   Init();
   TriggerListenerUpdate(kDefaultListenerName,
                         MakeApiListenerWithRds(kDefaultRouteConfigName));
-  DrainWork();
   TriggerRouteConfigUpdate(kDefaultRouteConfigName,
                            MakeDefaultRouteConfig({"c_eds", "c_dns"}));
-  DrainWork();
   TriggerClusterUpdate("c_eds", MakeEdsCluster("e1"));
   TriggerClusterUpdate("c_dns", MakeLogicalDnsCluster("h1:443"));
-  DrainWork();
   TriggerEndpointUpdate("e1", MakeDefaultEndpointResource());
   Resolver::Result dns_res;
   dns_res.addresses = MakeEndpointAddressesList({"ipv4:127.0.0.1:443"});
@@ -2932,7 +2877,7 @@ TEST_F(XdsDependencyManagerTest, OrphanIgnoresInFlightCallbacks) {
   auto eds_watcher =
       xds_client_->GetWatcher(XdsEndpointResourceType::Get(), "e1");
 
-  work_serializer_->Run([this]() { dependency_mgr_.reset(); });
+  OrphanDependencyManager();
 
   FakeXdsClient::DeliverToWatcher(
       lds_watcher.get(), MakeApiListenerWithRds(kDefaultRouteConfigName),
