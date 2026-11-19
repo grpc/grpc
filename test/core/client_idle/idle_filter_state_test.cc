@@ -39,7 +39,22 @@ TEST(IdleFilterStateTest, IdlenessStartsTimer) {
 
 TEST(IdleFilterStateTest, TimerStopsAfterIdle) {
   IdleFilterState s(true);
+  EXPECT_FALSE(s.IsIdle());
   EXPECT_FALSE(s.CheckTimer());
+  EXPECT_TRUE(s.IsIdle());
+}
+
+TEST(IdleFilterStateTest, IsIdleTracksCallsAndTimerAcrossCycles) {
+  IdleFilterState s(false);
+  EXPECT_TRUE(s.IsIdle());
+  for (int cycle = 0; cycle < 3; ++cycle) {
+    s.IncreaseCallCount();
+    EXPECT_FALSE(s.IsIdle());
+    EXPECT_TRUE(s.DecreaseCallCount());
+    EXPECT_FALSE(s.IsIdle());
+    EXPECT_FALSE(s.CheckTimer());
+    EXPECT_TRUE(s.IsIdle());
+  }
 }
 
 TEST(IdleFilterStateTest, TimerKeepsGoingWithActivity) {

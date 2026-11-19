@@ -92,4 +92,8 @@ bool IdleFilterState::CheckTimer() {
   return start_timer;
 }
 
+bool IdleFilterState::IsIdle() const {
+  return state_.load(std::memory_order_acquire) == 0;
+}
+
 }  // namespace grpc_core

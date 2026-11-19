@@ -189,7 +189,10 @@ class ClientChannel : public Channel {
   //
   const Duration idle_timeout_;
   IdleFilterState idle_state_{false};
-  SingleSetPtr<Activity, typename ActivityPtr::deleter_type> idle_activity_;
+  Mutex idle_activity_mu_;
+  bool idle_shutdown_ ABSL_GUARDED_BY(idle_activity_mu_) = false;
+  uint64_t idle_timer_generation_ ABSL_GUARDED_BY(idle_activity_mu_) = 0;
+  ActivityPtr idle_activity_ ABSL_GUARDED_BY(idle_activity_mu_);
 
   //
   // Fields related to name resolution.

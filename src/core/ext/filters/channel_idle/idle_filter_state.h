@@ -47,6 +47,9 @@ class IdleFilterState {
   // we know that the channel is idle and has been for one full cycle.
   GRPC_MUST_USE_RESULT bool CheckTimer();
 
+  // Returns true if no calls are in progress and no timer is active.
+  GRPC_MUST_USE_RESULT bool IsIdle() const;
+
  private:
   // Bit in state_ indicating that the timer has been started.
   static constexpr uintptr_t kTimerStarted = 1;

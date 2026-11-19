@@ -19,6 +19,7 @@
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
+#include <stdint.h>
 
 #include <functional>
 #include <optional>
@@ -217,6 +218,21 @@ void LegacyMaxAgeFilter::PostInit() {
   }
 }
 
+struct LegacyChannelIdleFilter::ActivityState {
+  Mutex mu;
+  bool shutdown ABSL_GUARDED_BY(mu) = false;
+  uint64_t generation ABSL_GUARDED_BY(mu) = 0;
+  ActivityPtr activity ABSL_GUARDED_BY(mu);
+};
+
+LegacyChannelIdleFilter::LegacyChannelIdleFilter(
+    grpc_channel_stack* channel_stack, Duration client_idle_timeout)
+    : channel_stack_(channel_stack),
+      client_idle_timeout_(client_idle_timeout),
+      activity_state_(std::make_shared<ActivityState>()) {}
+
+LegacyChannelIdleFilter::~LegacyChannelIdleFilter() { ShutdownIdleTimer(); }
+
 // Construct a promise for one call.
 ArenaPromise<ServerMetadataHandle> LegacyChannelIdleFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
@@ -226,7 +242,7 @@ ArenaPromise<ServerMetadataHandle> LegacyChannelIdleFilter::MakeCallPromise(
   return ArenaPromise<ServerMetadataHandle>(
       [decrementer = Decrementer(this),
        next = next_promise_factory(std::move(call_args))]() mutable
-          -> Poll<ServerMetadataHandle> { return next(); });
+      -> Poll<ServerMetadataHandle> { return next(); });
 }
 
 bool LegacyChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
@@ -236,11 +252,27 @@ bool LegacyChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
   return false;
 }
 
-void LegacyChannelIdleFilter::Shutdown() {
+bool LegacyClientIdleFilter::StartTransportOp(grpc_transport_op* op) {
+  // CloseChannel() sets op->go_idle when moving a client channel to IDLE; only
+  // shut down the idle filter when the channel itself is shutting down.
+  if (!op->disconnect_with_error.ok() && !op->go_idle) Shutdown();
+  return false;
+}
+
+void LegacyChannelIdleFilter::Shutdown() { ShutdownIdleTimer(); }
+
+void LegacyChannelIdleFilter::ShutdownIdleTimer() {
+  if (activity_state_ == nullptr) return;
   // IncreaseCallCount() introduces a phony call and prevent the timer from
   // being reset by other threads.
   IncreaseCallCount();
-  activity_.Reset();
+  ActivityPtr activity;
+  {
+    MutexLock lock(activity_state_->mu);
+    activity_state_->shutdown = true;
+    activity = std::move(activity_state_->activity);
+  }
+  activity.reset();
 }
 
 void LegacyChannelIdleFilter::IncreaseCallCount() {
@@ -257,6 +289,13 @@ void LegacyChannelIdleFilter::DecreaseCallCount() {
 void LegacyChannelIdleFilter::StartIdleTimer() {
   GRPC_TRACE_LOG(client_idle_filter, INFO)
       << "(client idle filter) timer has started";
+  auto activity_state = activity_state_;
+  uint64_t gen;
+  {
+    MutexLock lock(activity_state->mu);
+    if (activity_state->shutdown) return;
+    gen = ++activity_state->generation;
+  }
   auto idle_filter_state = idle_filter_state_;
   // Hold a ref to the channel stack for the timer callback.
   auto channel_stack = channel_stack_->Ref();
@@ -274,20 +313,46 @@ void LegacyChannelIdleFilter::StartIdleTimer() {
   auto arena = SimpleArenaAllocator()->MakeArena();
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       channel_stack_->EventEngine());
-  activity_.Set(MakeActivity(
+  auto new_activity = MakeActivity(
       std::move(promise), ExecCtxWakeupScheduler{},
-      [channel_stack, this](absl::Status status) {
-        if (status.ok()) CloseChannel("connection idle");
+      [channel_stack, idle_filter_state,
+       weak_state = std::weak_ptr<ActivityState>(activity_state),
+       gen](absl::Status status) {
+        if (!status.ok()) return;
+        auto state = weak_state.lock();
+        if (state == nullptr) return;
+        {
+          MutexLock lock(state->mu);
+          if (state->shutdown || gen != state->generation) return;
+        }
+        if (!idle_filter_state->IsIdle()) return;
+        CloseChannel(channel_stack.get(), "connection idle");
       },
-      std::move(arena)));
+      std::move(arena));
+  ActivityPtr displaced_activity;
+  {
+    MutexLock lock(activity_state->mu);
+    if (activity_state->shutdown || gen != activity_state->generation) {
+      displaced_activity = std::move(new_activity);
+    } else {
+      displaced_activity = std::move(activity_state->activity);
+      activity_state->activity = std::move(new_activity);
+    }
+  }
+  displaced_activity.reset();
 }
 
 void LegacyChannelIdleFilter::CloseChannel(absl::string_view reason) {
+  CloseChannel(channel_stack_, reason);
+}
+
+void LegacyChannelIdleFilter::CloseChannel(grpc_channel_stack* channel_stack,
+                                           absl::string_view reason) {
   auto* op = grpc_make_transport_op(nullptr);
   op->disconnect_with_error = GRPC_ERROR_CREATE(reason);
   op->go_idle = true;
   // Pass the transport op down to the channel stack.
-  auto* elem = grpc_channel_stack_element(channel_stack_, 0);
+  auto* elem = grpc_channel_stack_element(channel_stack, 0);
   elem->filter->start_transport_op(elem, op);
 }
 
