@@ -55,7 +55,7 @@ cdef class SendInitialMetadataOperation(Operation):
 
 cdef class SendMessageOperation(Operation):
 
-  def __cinit__(self, object message, int flags):
+  def __cinit__(self, bytes message, int flags):
     if message is None:
       self._message = b''
     else:
@@ -68,26 +68,20 @@ cdef class SendMessageOperation(Operation):
   cdef void c(self) except *:
     self.c_op.type = GRPC_OP_SEND_MESSAGE
     self.c_op.flags = self._flags
-    
     cdef grpc_slice message_slice
-    cdef bytes message_bytes
-
-    if isinstance(self._message, bytes):
-      message_bytes = self._message
-    else:
-      message_bytes = bytes(self._message)
-
     if IsPythonZeroCopyEnabled():
-      if len(message_bytes) > 0:
-        Py_INCREF(message_bytes)
+      if len(self._message) > 0:
+        # bytes are immutable, so core can read the buffer in place. The slice
+        # holds a reference that py_decref_destroy releases.
+        Py_INCREF(self._message)
         message_slice = grpc_slice_new_with_user_data(
-            <void*><char*>message_bytes, len(message_bytes), py_decref_destroy, <void*>message_bytes)
+            <void*><char*>self._message, len(self._message),
+            py_decref_destroy, <void*>self._message)
       else:
         message_slice = grpc_empty_slice()
     else:
       message_slice = grpc_slice_from_copied_buffer(
-          <const char *>message_bytes, len(message_bytes))
-      
+          self._message, len(self._message))
     self._c_message_byte_buffer = grpc_raw_byte_buffer_create(
         &message_slice, 1)
     grpc_slice_unref(message_slice)
