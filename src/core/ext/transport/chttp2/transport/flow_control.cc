@@ -179,10 +179,12 @@ absl::Status TransportFlowControl::IncomingUpdateContext::RecvData(
 int64_t TransportFlowControl::target_window() const {
   // See comment above announced_stream_total_over_incoming_window_ for the
   // logic behind this decision.
-  return static_cast<uint32_t>(
-      std::min(static_cast<int64_t>((1u << 31) - 1),
-               announced_stream_total_over_incoming_window_ +
-                   std::max<int64_t>(1, target_initial_window_size_)));
+  // Clamp below at zero: the total is a sum of positive per-stream deltas, and
+  // a negative value here would otherwise wrap the uint32 window to ~4GB,
+  // making us advertise a huge receive window to the peer.
+  return std::clamp(announced_stream_total_over_incoming_window_ +
+                        std::max<int64_t>(1, target_initial_window_size_),
+                    int64_t{0}, kMaxWindowUpdateSize);
 }
 
 FlowControlAction TransportFlowControl::UpdateAction(FlowControlAction action) {
