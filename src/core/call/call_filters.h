@@ -2094,9 +2094,7 @@ class CallFilters {
   // Closes the request entirely - no messages can be sent/received
   // If no server initial metadata has been sent, implies
   // NoServerInitialMetadata() called.
-  // Returns Failure if server trailing metadata had already been pushed, in
-  // which case `md` is dropped.
-  StatusFlag PushServerTrailingMetadata(ServerMetadataHandle md);
+  void PushServerTrailingMetadata(ServerMetadataHandle md);
   // Optimized path to push cancellation onto the call
   void Cancel();
   // Client: Fetch server trailing metadata

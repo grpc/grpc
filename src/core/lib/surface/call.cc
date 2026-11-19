@@ -143,9 +143,8 @@ void Call::AddData(channelz::DataSink sink) {
       .Set("encodings_accepted_by_peer",
            encodings_accepted_by_peer_.ToString());
   {
-    MutexLock lock(address_mu_);
-    properties.Set("peer_string", peer_string_.as_string_view())
-        .Set("local_address_string", local_address_string_.as_string_view());
+    MutexLock lock(peer_mu_);
+    properties.Set("peer_string", peer_string_.as_string_view());
   }
   {
     MutexLock lock(deadline_mu_);
@@ -317,11 +316,6 @@ void Call::ProcessIncomingInitialMetadata(grpc_metadata_batch& md) {
   Slice* peer_string = md.get_pointer(PeerString());
   if (peer_string != nullptr) SetPeerString(peer_string->Ref());
 
-  Slice* local_address_string = md.get_pointer(LocalAddressString());
-  if (local_address_string != nullptr) {
-    SetLocalAddressString(local_address_string->Ref());
-  }
-
   SetIncomingCompressionAlgorithm(
       md.Take(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE));
   encodings_accepted_by_peer_ =
@@ -367,7 +361,7 @@ void Call::HandleCompressionAlgorithmDisabled(
 }
 
 grpc_error_handle Call::UpdateDeadline(Timestamp deadline) {
-  ReleasableMutexLock lock(deadline_mu_);
+  ReleasableMutexLock lock(&deadline_mu_);
   GRPC_TRACE_LOG(call, INFO)
       << "[call " << this << "] UpdateDeadline from=" << deadline_.ToString()
       << " to=" << deadline.ToString();
@@ -436,10 +430,6 @@ void grpc_call_unref(grpc_call* c) {
 
 char* grpc_call_get_peer(grpc_call* call) {
   return grpc_core::Call::FromC(call)->GetPeer();
-}
-
-char* grpc_call_get_local_address(grpc_call* call) {
-  return grpc_core::Call::FromC(call)->GetLocalAddress();
 }
 
 grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {

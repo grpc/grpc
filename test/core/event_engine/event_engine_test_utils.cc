@@ -251,7 +251,8 @@ ConnectionManager::CreateConnection(std::string target_addr,
 }
 
 bool IsSaneTimerEnvironment() {
-  return grpc_core::IsEventEngineClientEnabled();
+  return grpc_core::IsEventEngineClientEnabled() &&
+         grpc_core::IsEventEngineListenerEnabled();
 }
 
 }  // namespace experimental

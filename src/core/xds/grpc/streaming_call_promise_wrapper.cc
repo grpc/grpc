@@ -33,7 +33,7 @@ namespace grpc_core {
 // into XdsStreamingCallPromiseWrapper. It holds a weak reference to avoid
 // reference cycles between the transport stream and the wrapper.
 class XdsStreamingCallPromiseWrapper::EventHandler final
-    : public XdsTransport::StreamingCall::EventHandler {
+    : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
  public:
   explicit EventHandler(
       WeakRefCountedPtr<XdsStreamingCallPromiseWrapper> promise_wrapper)
@@ -87,10 +87,7 @@ XdsStreamingCallPromiseWrapper::PollPullMessage() {
     case RecvState::kRecvMessageInFlight:
       return Pending{};
     case RecvState::kReceivedStatus:
-      // Status may arrive after a message has been received but before it
-      // has been consumed, so return any buffered message before reporting
-      // end of stream.
-      return std::exchange(recv_message_, std::nullopt);
+      return std::nullopt;
     default:
       return Pending{};
   }

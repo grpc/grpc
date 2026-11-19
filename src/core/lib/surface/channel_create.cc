@@ -24,7 +24,6 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/direct_channel.h"
-#include "src/core/client_channel/lame_channel.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -97,9 +96,7 @@ absl::StatusOr<RefCountedPtr<Channel>> ChannelCreate(
     args = args.SetObject(optional_transport);
   }
   // Delegate to appropriate channel impl.
-  if (!args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false) &&
-      (!IsLameChannelV3Enabled() ||
-       channel_stack_type != GRPC_CLIENT_LAME_CHANNEL)) {
+  if (!args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false)) {
     return LegacyChannel::Create(std::move(target), std::move(args),
                                  channel_stack_type);
   }
@@ -108,8 +105,6 @@ absl::StatusOr<RefCountedPtr<Channel>> ChannelCreate(
       return ClientChannel::Create(std::move(target), std::move(args));
     case GRPC_CLIENT_DIRECT_CHANNEL:
       return DirectChannel::Create(std::move(target), std::move(args));
-    case GRPC_CLIENT_LAME_CHANNEL:
-      return LameChannel::Create(std::move(target), std::move(args));
     default:
       Crash(absl::StrCat("Invalid channel stack type for ChannelCreate: ",
                          grpc_channel_stack_type_string(channel_stack_type)));
@@ -214,7 +209,6 @@ grpc_channel* CreateChannelFromFd(int fd, grpc_channel_credentials* creds,
   return CreateChannelFromEndpoint(std::move(endpoint).value(), creds,
                                    channel_args.ToC().get());
 }
-
 }  // namespace experimental
 
 }  // namespace grpc_core

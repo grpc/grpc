@@ -34,7 +34,8 @@
 
 namespace grpc_core {
 
-// A promise-based wrapper around XdsTransport::StreamingCall.
+// A promise-based wrapper around
+// XdsTransportFactory::XdsTransport::StreamingCall.
 //
 // This class adapts callback-based xDS streaming transport calls into gRPC
 // Core's promise-based architecture. It provides asynchronous promise
@@ -47,6 +48,8 @@ namespace grpc_core {
 class XdsStreamingCallPromiseWrapper final
     : public DualRefCounted<XdsStreamingCallPromiseWrapper> {
  public:
+  using XdsTransport = XdsTransportFactory::XdsTransport;
+
   // Constructs a new streaming call wrapper for the given method on the
   // transport.
   XdsStreamingCallPromiseWrapper(
@@ -189,7 +192,7 @@ class XdsStreamingCallPromiseWrapper final
 
   Mutex mu_;
 
-  OrphanablePtr<XdsTransport::StreamingCall> call_;
+  OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall> call_;
 
   // State for outgoing messages (PushMessage).
   SendState send_state_ ABSL_GUARDED_BY(mu_) = SendState::kIdle;

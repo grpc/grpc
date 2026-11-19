@@ -58,10 +58,13 @@ class KeepaliveManager {
     }
     GRPC_HTTP2_KEEPALIVE_LOG << "Data received. Setting data_received_ to true";
     data_received_in_last_cycle_ = true;
-    Waker waker = std::move(waker_);
+    auto waker = std::move(waker_);
     // This will only trigger a wakeup if WaitForData() is pending on this
     // waker. Otherwise this would be noop.
     waker.Wakeup();
+  }
+  void SetKeepAliveTimeout(Duration keepalive_timeout) {
+    keepalive_timeout_ = keepalive_timeout;
   }
 
   bool IsKeepAliveLoopNeeded();

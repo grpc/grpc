@@ -301,7 +301,7 @@ class LrsClient::LrsChannel::LrsCall final
 
  private:
   class StreamEventHandler final
-      : public XdsTransport::StreamingCall::EventHandler {
+      : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
    public:
     explicit StreamEventHandler(RefCountedPtr<LrsCall> lrs_call)
         : lrs_call_(std::move(lrs_call)) {}
@@ -365,7 +365,8 @@ class LrsClient::LrsChannel::LrsCall final
   // The owning RetryableCall<>.
   RefCountedPtr<RetryableCall<LrsCall>> retryable_call_;
 
-  OrphanablePtr<XdsTransport::StreamingCall> streaming_call_;
+  OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
+      streaming_call_;
 
   bool seen_response_ = false;
   bool send_message_pending_ ABSL_GUARDED_BY(&LrsClient::mu_) = false;
@@ -573,7 +574,8 @@ LrsClient::LrsChannel::LrsCall::LrsCall(
           // Passing the initial ref here.  This ref will go away when
           // the StreamEventHandler is destroyed.
           RefCountedPtr<LrsCall>(this)),
-      XdsTransport::CallOptions().set_wait_for_ready(true));
+      XdsTransportFactory::XdsTransport::CallOptions().set_wait_for_ready(
+          true));
   GRPC_CHECK(streaming_call_ != nullptr);
   // Start the call.
   GRPC_TRACE_LOG(xds_client, INFO)

@@ -376,6 +376,22 @@ FILTER_TEST(FilterTest, ConsumingInterceptorCreatesNoChildCall) {
   WaitForAllPendingWork();
 }
 
+// For a filter that creates its child call right away, the deferred form
+// behaves just like StartCallForFilter(): the handler is there immediately.
+FILTER_TEST(FilterTest, DeferredHandlerWithFilterThatDoesNotDefer) {
+  ASSERT_TRUE(CreateFilterChain<PassThroughFilter>().ok());
+  StartCallWithDeferredHandler(NewClientMetadata({{"echo-test", "on"}}));
+  ASSERT_TRUE(WaitForHandler());
+  ValueOrFailure<ClientMetadataHandle> client_initial_metadata =
+      PullClientInitialMetadata();
+  ASSERT_TRUE(client_initial_metadata.ok());
+  EXPECT_THAT(**client_initial_metadata,
+              HasMetadataKeyValue("echo-test", "on"));
+  PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
+  EXPECT_EQ(PullServerTrailingStatus(), absl::OkStatus());
+  WaitForAllPendingWork();
+}
+
 namespace {
 
 // A one-shot signal the test opens by hand, standing in for an external
@@ -468,7 +484,7 @@ class DeferredHandlerFilterTest : public FilterTest {
   }
 
   // The gate may hold a waker into the call under test, so drop it only once
-  // that call has been torn down.
+  // FilterTest has cancelled that call.
   void Cleanup() override { gate_.reset(); }
 
   RefCountedPtr<Gate> gate_ = MakeRefCounted<Gate>();
@@ -476,55 +492,52 @@ class DeferredHandlerFilterTest : public FilterTest {
 
 }  // namespace
 
-// The filter holds the call until the gate opens: until then GetNextHandler()
-// times out, and once the gate opens the handler arrives and the call runs end
-// to end. The client's message is pushed while the call is held, as a client
-// would while a filter waits on an external service.
+// The filter holds the call until the gate opens: until then WaitForHandler()
+// times out without setting the implicit handler (so it may be retried), and
+// once the gate opens the handler arrives and the call runs end to end. The
+// client's message is pushed while the call is held, as a client would while a
+// filter waits on an external service.
 FILTER_TEST(DeferredHandlerFilterTest, HandlerArrivesOnlyOnceFilterCreatesIt) {
   ASSERT_TRUE(Init().ok());
-  CallInitiator initiator = StartCall(NewClientMetadata({{"echo-test", "on"}}));
-  PushClientMessage(initiator, NewMessage("hello"));
-  PushClientHalfClose(initiator);
-  EXPECT_FALSE(GetNextHandler(std::chrono::seconds(5)).has_value());
+  StartCallWithDeferredHandler(NewClientMetadata({{"echo-test", "on"}}));
+  PushClientMessage(NewMessage("hello"));
+  PushClientHalfClose();
+  EXPECT_FALSE(WaitForHandler(std::chrono::seconds(5)));
   gate_->Open();
-  std::optional<CallHandler> handler = GetNextHandler();
-  ASSERT_TRUE(handler.has_value());
+  ASSERT_TRUE(WaitForHandler());
   ValueOrFailure<ClientMetadataHandle> client_initial_metadata =
-      PullClientInitialMetadata(*handler);
+      PullClientInitialMetadata();
   ASSERT_TRUE(client_initial_metadata.ok());
   EXPECT_THAT(**client_initial_metadata,
               HasMetadataKeyValue("echo-test", "on"));
-  ClientToServerNextMessage request = PullClientMessage(*handler);
+  ClientToServerNextMessage request = PullClientMessage();
   ASSERT_TRUE(request.ok());
   ASSERT_TRUE(request.has_value());
   EXPECT_THAT(request.value(), HasMessagePayload("hello"));
-  PushServerInitialMetadata(*handler,
-                            NewServerMetadata({{"server-hdr", "yes"}}));
-  PushServerMessage(*handler, NewMessage("world"));
+  PushServerInitialMetadata(NewServerMetadata({{"server-hdr", "yes"}}));
+  PushServerMessage(NewMessage("world"));
   ValueOrFailure<std::optional<ServerMetadataHandle>> server_initial_metadata =
-      PullServerInitialMetadata(initiator);
+      PullServerInitialMetadata();
   ASSERT_TRUE(server_initial_metadata.ok());
   EXPECT_THAT(*server_initial_metadata,
               ::testing::Optional(::testing::Pointee(
                   HasMetadataKeyValue("server-hdr", "yes"))));
-  ServerToClientNextMessage response = PullServerMessage(initiator);
+  ServerToClientNextMessage response = PullServerMessage();
   ASSERT_TRUE(response.ok());
   ASSERT_TRUE(response.has_value());
   EXPECT_THAT(response.value(), HasMessagePayload("world"));
-  PushServerTrailingMetadata(*handler,
-                             ServerMetadataFromStatus(GRPC_STATUS_OK));
-  EXPECT_EQ(PullServerTrailingStatus(initiator), absl::OkStatus());
+  PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
+  EXPECT_EQ(PullServerTrailingStatus(), absl::OkStatus());
   WaitForAllPendingWork();
 }
 
-// A filter that never creates its child call: GetNextHandler() reports that.
-// The held call is cancelled by the test, before the suite's Cleanup() drops
-// the gate.
+// A filter that never creates its child call: WaitForHandler() reports that,
+// and the held call is cancelled by FilterTest at teardown, before the suite's
+// Cleanup() drops the gate.
 FILTER_TEST(DeferredHandlerFilterTest, NoHandlerIfFilterNeverCreatesIt) {
   ASSERT_TRUE(Init().ok());
-  CallInitiator initiator = StartCall(NewClientMetadata());
-  EXPECT_FALSE(GetNextHandler(std::chrono::seconds(5)).has_value());
-  initiator.SpawnCancel();
+  StartCallWithDeferredHandler(NewClientMetadata());
+  EXPECT_FALSE(WaitForHandler(std::chrono::seconds(5)));
   WaitForAllPendingWork();
 }
 

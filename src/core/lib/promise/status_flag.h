@@ -19,7 +19,6 @@
 
 #include <optional>
 #include <ostream>
-#include <utility>
 
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/util/grpc_check.h"
@@ -287,9 +286,7 @@ class ValueOrFailure {
   std::optional<T> value_;
 };
 
-// Only participates in overload resolution if T itself is streamable.
-template <typename T, typename = decltype(std::declval<std::ostream&>()
-                                          << std::declval<const T&>())>
+template <typename T>
 inline std::ostream& operator<<(std::ostream& os,
                                 const ValueOrFailure<T>& value) {
   if (value.ok()) {
@@ -299,9 +296,7 @@ inline std::ostream& operator<<(std::ostream& os,
   }
 }
 
-// Only participates in overload resolution if T itself is stringifiable.
-template <typename Sink, typename T,
-          typename = decltype(absl::StrCat(std::declval<const T&>()))>
+template <typename Sink, typename T>
 void AbslStringify(Sink& sink, const ValueOrFailure<T>& value) {
   if (value.ok()) {
     sink.Append("Success(");

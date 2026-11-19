@@ -517,8 +517,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
 
   void SetUp() override {
     SKIP_TEST_FOR_PH2_CLIENT(
-        "TODO(ritulb) [PH2][P3][Client] A lot of tests are failing and "
-        "flaking in this suite");
+        "[PH2][P3] A lot of tests are failing and flaking in");
     response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     balancer_ = CreateAndStartBalancer();

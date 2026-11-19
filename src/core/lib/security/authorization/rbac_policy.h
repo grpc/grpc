@@ -60,7 +60,7 @@ struct Rbac {
     std::string ToString() const;
 
     std::string address_prefix;
-    uint32_t prefix_len = 0;
+    uint32_t prefix_len;
   };
 
   // TODO(ashithasantosh): Support for destination_port_range.
@@ -106,7 +106,7 @@ struct Rbac {
     HeaderMatcher header_matcher;
     StringMatcher string_matcher;
     CidrRange ip;
-    int port = 0;
+    int port;
     // For type kAnd/kOr/kNot. For kNot type, the vector will have only one
     // element.
     std::vector<std::unique_ptr<Permission>> permissions;

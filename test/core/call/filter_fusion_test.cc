@@ -226,15 +226,9 @@ class Test5 : public ImplementChannelFilter<Test5> {
   class Call {
    public:
     explicit Call(Test5* test5) { test5->CalledFromCallConstructor(); }
-    Promise<absl::Status> OnClientInitialMetadata(ClientMetadata& md,
-                                                  Test5* test5) {
+    void OnClientInitialMetadata(ClientMetadata&, Test5* test5) {
       history.push_back("Test5::Call::OnClientInitialMetadata");
-      md.Set(GrpcStatusMetadata(), GRPC_STATUS_OK);
-      return [&md, test5]() -> Poll<absl::Status> {
-        test5->FilterMethod();
-        EXPECT_EQ(md.get(GrpcStatusMetadata()), GRPC_STATUS_OK);
-        return absl::OkStatus();
-      };
+      test5->FilterMethod();
     }
     void OnServerInitialMetadata(ServerMetadata&, Test5* filter) {
       history.push_back("Test5::Call::OnServerInitialMetadata");
@@ -355,11 +349,8 @@ TEST(FusedFilterTest, ClientFilterTest) {
         call.OnServerToClientMessage(std::move(message), (*filter).get()));
     RunSuccessfulPromise<ServerMetadata>(call.OnServerInitialMetadata(
         std::move(server_metadata_handle), (*filter).get()));
-    client_metadata_handle =
-        RunSuccessfulPromise<ClientMetadata>(call.OnClientInitialMetadata(
-            std::move(client_metadata_handle), (*filter).get()));
-    EXPECT_EQ(client_metadata_handle->get(GrpcStatusMetadata()),
-              GRPC_STATUS_OK);
+    RunSuccessfulPromise<ClientMetadata>(call.OnClientInitialMetadata(
+        std::move(client_metadata_handle), (*filter).get()));
     call.OnServerTrailingMetadata(*server_trailing_metadata_handle,
                                   (*filter).get());
     call.OnClientToServerHalfClose();

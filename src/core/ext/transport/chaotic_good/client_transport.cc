@@ -170,7 +170,7 @@ void ChaoticGoodClientTransport::StreamDispatch::OnFrameTransportClosed(
   // Mark transport as unavailable when the endpoint write/read failed.
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: OnFrameTransportClosed: " << status;
-  ReleasableMutexLock lock(mu_);
+  ReleasableMutexLock lock(&mu_);
   StreamMap stream_map = std::move(stream_map_);
   stream_map_.clear();
   next_stream_id_ = kClosedTransportStreamId;

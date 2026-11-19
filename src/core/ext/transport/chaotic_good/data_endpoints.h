@@ -277,12 +277,12 @@ class InputQueue final : public RefCounted<InputQueue> {
 
     ~ReadTicket() {
       if (input_queues_ != nullptr) {
-        completion_->mu.lock();
+        completion_->mu.Lock();
         if (!completion_->ready) {
-          completion_->mu.unlock();
+          completion_->mu.Unlock();
           input_queues_->Cancel(completion_.get());
         } else {
-          completion_->mu.unlock();
+          completion_->mu.Unlock();
         }
       }
     }
@@ -297,12 +297,12 @@ class InputQueue final : public RefCounted<InputQueue> {
 
         ~AwaitPromise() {
           if (input_queues_ != nullptr) {
-            completion_->mu.lock();
+            completion_->mu.Lock();
             if (!completion_->ready) {
-              completion_->mu.unlock();
+              completion_->mu.Unlock();
               input_queues_->Cancel(completion_.get());
             } else {
-              completion_->mu.unlock();
+              completion_->mu.Unlock();
             }
           }
         }
@@ -320,15 +320,15 @@ class InputQueue final : public RefCounted<InputQueue> {
 
         Poll<absl::StatusOr<SliceBuffer>> operator()() {
           DCHECK(completion_ != nullptr);
-          completion_->mu.lock();
+          completion_->mu.Lock();
           if (completion_->ready) {
             auto result = std::move(completion_->result);
-            completion_->mu.unlock();
+            completion_->mu.Unlock();
             input_queues_.reset();
             return std::move(result);
           }
           completion_->waker = GetContext<Activity>()->MakeNonOwningWaker();
-          completion_->mu.unlock();
+          completion_->mu.Unlock();
           return Pending{};
         }
 

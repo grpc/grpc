@@ -139,16 +139,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   /// Overridden socket API for c-ares
   static ares_socket_t Socket(int af, int type, int protocol,
                               void* /*user_data*/) {
-    ares_socket_t s = socket(af, type, protocol);
-#ifdef GRPC_HAVE_SO_NOSIGPIPE
-    // No MSG_NOSIGNAL here (e.g. Apple): make writes to a peer-closed socket
-    // fail with EPIPE instead of raising SIGPIPE. See WriteV below.
-    if (s != ARES_SOCKET_BAD) {
-      int one = 1;
-      (void)setsockopt(s, SOL_SOCKET, SO_NOSIGPIPE, &one, sizeof(one));
-    }
-#endif
-    return s;
+    return socket(af, type, protocol);
   }
 
   /// Overridden connect API for c-ares
@@ -160,18 +151,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   /// Overridden writev API for c-ares
   static ares_ssize_t WriteV(ares_socket_t as, const struct iovec* iov,
                              int iovec_count, void* /*user_data*/) {
-#ifdef GRPC_HAVE_MSG_NOSIGNAL
-    // c-ares may write to a TCP connection that the peer already closed or
-    // reset. c-ares passes MSG_NOSIGNAL to its own send functions, but the
-    // legacy ares_socket_functions API (asendv) does not forward the flags,
-    // so a plain writev() would raise SIGPIPE and kill the process.
-    struct msghdr msg = {};
-    msg.msg_iov = const_cast<struct iovec*>(iov);
-    msg.msg_iovlen = static_cast<decltype(msg.msg_iovlen)>(iovec_count);
-    return sendmsg(as, &msg, MSG_NOSIGNAL);
-#else
     return writev(as, iov, iovec_count);
-#endif
   }
 
   /// Overridden recvfrom API for c-ares

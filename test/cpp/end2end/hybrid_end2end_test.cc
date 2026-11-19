@@ -804,7 +804,6 @@ TEST_F(HybridEnd2endTest, GenericEcho) {
 }
 
 TEST_P(HybridEnd2endTest, CallbackGenericEcho) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   EchoTestService::WithGenericMethod_Echo<TestServiceImpl> service;
   class GenericEchoService : public CallbackGenericService {
    private:

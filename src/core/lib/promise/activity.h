@@ -500,9 +500,9 @@ class PromiseActivity final
     // This may hit a waiter, which could expose our this pointer to other
     // threads, meaning we do need to hold this mutex even though we're still
     // constructing.
-    mu()->lock();
+    mu()->Lock();
     auto status = Start(Factory(std::move(promise_factory)));
-    mu()->unlock();
+    mu()->Unlock();
     // We may complete immediately.
     if (status.has_value()) {
       on_done_(std::move(*status));
@@ -594,14 +594,14 @@ class PromiseActivity final
     GRPC_LATENT_SEE_SCOPE("PromiseActivity::Step");
     wakeup_flow_.End();
     // Poll the promise until things settle out under a lock.
-    mu()->lock();
+    mu()->Lock();
     if (done_) {
       // We might get some spurious wakeups after finishing.
-      mu()->unlock();
+      mu()->Unlock();
       return;
     }
     auto status = RunStep();
-    mu()->unlock();
+    mu()->Unlock();
     if (status.has_value()) {
       on_done_(std::move(*status));
     }

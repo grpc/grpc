@@ -425,7 +425,7 @@ module GRPC
       c = ActiveCall.new(an_rpc.call, noop, noop, an_rpc.deadline,
                          metadata_received: true, started: false)
       c.send_status(GRPC::Core::StatusCodes::RESOURCE_EXHAUSTED,
-                    'No free threads in thread pool', true)
+                    'No free threads in thread pool')
       nil
     end
 
@@ -440,7 +440,7 @@ module GRPC
       # metadata hasn't been sent yet
       c = ActiveCall.new(an_rpc.call, noop, noop, an_rpc.deadline,
                          metadata_received: true, started: false)
-      c.send_status(GRPC::Core::StatusCodes::UNIMPLEMENTED, '', true)
+      c.send_status(GRPC::Core::StatusCodes::UNIMPLEMENTED, '')
       nil
     end
 

@@ -272,7 +272,7 @@ void AsyncConnect::OnWritable(absl::Status status)
   EventHandle* fd;
   absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep;
 
-  mu_.lock();
+  mu_.Lock();
   GRPC_CHECK_NE(fd_, nullptr);
   fd = std::exchange(fd_, nullptr);
   bool connect_cancelled = connect_cancelled_;
@@ -288,7 +288,7 @@ void AsyncConnect::OnWritable(absl::Status status)
       status = absl::FailedPreconditionError("Connection cancelled");
     }
   }
-  mu_.unlock();
+  mu_.Unlock();
 
   if (engine_->Cancel(alarm_handle_)) {
     ++consumed_refs;
@@ -318,13 +318,13 @@ void AsyncConnect::OnWritable(absl::Status status)
           });
     }
     done = ((refs_ -= consumed_refs) == 0);
-    mu_.unlock();
+    mu_.Unlock();
     if (done) {
       delete this;
     }
   });
 
-  mu_.lock();
+  mu_.Lock();
   if (!status.ok() || connect_cancelled) {
     return;
   }
@@ -369,7 +369,7 @@ void AsyncConnect::OnWritable(absl::Status status)
       // opened too many network connections.  The "easy" fix:
       // don't do that!
       LOG(ERROR) << "kernel out of buffers";
-      mu_.unlock();
+      mu_.Unlock();
       fd->NotifyOnWrite(on_writable_);
       // Don't run the cleanup function for this case.
       std::move(on_writable_finish).Cancel();
@@ -683,7 +683,7 @@ bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
   if (ac == nullptr) {
     return false;
   }
-  ac->mu_.lock();
+  ac->mu_.Lock();
   bool connection_cancel_success = (ac->fd_ != nullptr);
   if (connection_cancel_success) {
     // Connection is still pending. The OnWritable callback hasn't executed
@@ -697,7 +697,7 @@ bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
         absl::FailedPreconditionError("Connection cancelled"));
   }
   bool done = (--ac->refs_ == 0);
-  ac->mu_.unlock();
+  ac->mu_.Unlock();
   if (done) {
     delete ac;
   }

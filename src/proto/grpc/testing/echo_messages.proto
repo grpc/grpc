@@ -62,7 +62,6 @@ message RequestParams {
     GZIP = 2;
   }
   CompressionAlgorithm compression_algorithm = 21;
-  bool echo_local_address = 22;
 }
 
 message EchoRequest {
@@ -74,7 +73,6 @@ message ResponseParams {
   int64 request_deadline = 1;
   string host = 2;
   string peer = 3;
-  string local_address = 4;
 }
 
 message EchoResponse {

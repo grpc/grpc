@@ -50,20 +50,15 @@ const grpc_channel_filter* FilterNamed(const char* name) {
       .first->second;
 }
 
-auto RemoveFiltersNamed(std::vector<std::string> names) {
-  return [names](ChannelStackBuilder& builder) {
+auto RemoveFilterNamed(std::string name) {
+  return [name](ChannelStackBuilder& builder) {
     auto* stk = builder.mutable_stack();
-    stk->erase(
-        std::remove_if(stk->begin(), stk->end(),
-                       [names](const FilterAndConfig& filter_and_config) {
-                         for (const auto& name : names) {
-                           if (filter_and_config.filter->name.name() == name) {
-                             return true;
-                           }
-                         }
-                         return false;
-                       }),
-        stk->end());
+    stk->erase(std::remove_if(stk->begin(), stk->end(),
+                              [name](const FilterAndConfig& filter_and_config) {
+                                return filter_and_config.filter->name.name() ==
+                                       name;
+                              }),
+               stk->end());
   };
 }
 
@@ -287,7 +282,8 @@ TEST(ChannelInitTest, CanPostProcessFilters) {
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("aaa")).Terminal();
   int called_post_processor = 0;
   b.RegisterPostProcessor(
-      GRPC_CLIENT_CHANNEL, ChannelInit::PostProcessorSlot::kAuthSubstitution,
+      GRPC_CLIENT_CHANNEL,
+      ChannelInit::PostProcessorSlot::kXdsChannelStackModifier,
       [&called_post_processor](ChannelStackBuilder& b) {
         ++called_post_processor;
         b.mutable_stack()->push_back({FilterNamed("bar"), nullptr});
@@ -630,10 +626,14 @@ TEST(ChannelInitTest, CanRegisterFusedFilters) {
 
 TEST(ChannelInitTest, CanRegisterFusedFiltersWithPostProcessors) {
   ChannelInit::Builder b;
-  // Register a post processor to remove filter 2 and filter 5.
+  // Register 2 post processors to remove filter 2 and filter 5.
   b.RegisterPostProcessor(GRPC_CLIENT_CHANNEL,
                           ChannelInit::PostProcessorSlot::kAuthSubstitution,
-                          RemoveFiltersNamed({"Filter2", "Filter5"}));
+                          RemoveFilterNamed("Filter2"));
+  b.RegisterPostProcessor(
+      GRPC_CLIENT_CHANNEL,
+      ChannelInit::PostProcessorSlot::kXdsChannelStackModifier,
+      RemoveFilterNamed("Filter5"));
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter1"));
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter2"));
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter3"));

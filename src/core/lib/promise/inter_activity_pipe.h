@@ -64,7 +64,7 @@ class InterActivityPipe {
     }
 
     Poll<bool> Push(T& value) {
-      ReleasableMutexLock lock(mu_);
+      ReleasableMutexLock lock(&mu_);
       if (closed_) return false;
       if (count_ == kQueueSize) {
         on_available_ = GetContext<Activity>()->MakeNonOwningWaker();
@@ -81,7 +81,7 @@ class InterActivityPipe {
     }
 
     Poll<NextResult> Next() {
-      ReleasableMutexLock lock(mu_);
+      ReleasableMutexLock lock(&mu_);
       if (count_ == 0) {
         if (closed_) return std::nullopt;
         on_occupied_ = GetContext<Activity>()->MakeNonOwningWaker();
@@ -100,7 +100,7 @@ class InterActivityPipe {
     }
 
     void MarkClosed() {
-      ReleasableMutexLock lock(mu_);
+      ReleasableMutexLock lock(&mu_);
       if (std::exchange(closed_, true)) return;
       auto on_occupied = std::move(on_occupied_);
       auto on_available = std::move(on_available_);

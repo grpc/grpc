@@ -29,6 +29,8 @@
 
 namespace grpc_core {
 
+extern const grpc_channel_filter kLegacyServerConfigSelectorFilter;
+
 // This filter handles injection of dynamic filters for server connections.
 //
 // This filter will get the ServerConfigSelectorProvider from channel
@@ -68,8 +70,6 @@ class ServerConfigSelectorInterceptor final
   };
 
   void Orphaned() override;
-
-  void Init(const ChannelArgs& args) override;
 
   void OnConfigSelectorUpdate(
       absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector);

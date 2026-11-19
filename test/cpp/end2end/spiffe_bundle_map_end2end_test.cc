@@ -38,7 +38,6 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
-#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -312,7 +311,6 @@ TEST_F(SpiffeBundleMapTest, SpiffeWithCertChain) {
 }
 
 TEST_F(SpiffeBundleMapTest, ServerSpiffeReload) {
-  SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P3][Client] Fix bug");
   auto server_bundle_map = grpc_core::testing::GetFileContents(
       std::string(kServerSpiffeBundleMapPath));
   auto client_bundle_map = grpc_core::testing::GetFileContents(
@@ -399,7 +397,6 @@ TEST_F(SpiffeBundleMapTest, ClientSpiffeReload) {
 }
 
 TEST_F(SpiffeBundleMapTest, ServerSideSpiffeVerificationFailure) {
-  SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P3][Client] Fix bug");
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;

@@ -121,7 +121,7 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
     friend class grpc_core::testing::ActiveConnectionTestPeer;
     friend class grpc_core::testing::HandshakingStateTestPeer;
 
-    void OnClose();
+    static void OnClose(void* arg, grpc_error_handle error);
 
     void SendGoAwayImplLocked();
     void DisconnectImmediatelyImplLocked();
@@ -135,6 +135,7 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
                  RefCountedPtr<grpc_chttp2_transport>,
                  RefCountedPtr<http2::Http2ServerTransport>>
         state_;
+    grpc_closure on_close_;
     bool shutdown_ = false;
   };
 

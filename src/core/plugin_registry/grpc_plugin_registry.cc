@@ -108,17 +108,20 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
     top_filter_server_virtual_reg.BeforeAll();
   }
 
-  auto& server_config_selector_interceptor_reg =
-      builder->channel_init()
-          ->RegisterFilter<ServerConfigSelectorInterceptor>(GRPC_SERVER_CHANNEL)
-          .IfHasChannelArg(ServerConfigSelectorProvider::ChannelArgName());
+  if (IsXdsServerFilterChainPerRouteEnabled()) {
+    auto& server_config_selector_interceptor_reg =
+        builder->channel_init()
+            ->RegisterFilter<ServerConfigSelectorInterceptor>(
+                GRPC_SERVER_CHANNEL)
+            .IfHasChannelArg(ServerConfigSelectorProvider::ChannelArgName());
 
-  if (IsFixV3FilterStackServerSideOrderingEnabled()) {
-    server_config_selector_interceptor_reg.Before(
-        {LegacyMaxAgeFilter::kFilter.name});
-  } else {
-    server_config_selector_interceptor_reg.After(
-        {LegacyMaxAgeFilter::kFilter.name});
+    if (IsFixV3FilterStackServerSideOrderingEnabled()) {
+      server_config_selector_interceptor_reg.Before(
+          {LegacyMaxAgeFilter::kFilter.name});
+    } else {
+      server_config_selector_interceptor_reg.After(
+          {LegacyMaxAgeFilter::kFilter.name});
+    }
   }
 }
 

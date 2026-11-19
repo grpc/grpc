@@ -158,7 +158,7 @@ class ChaoticGoodOneByteChunkFixture final
 };
 
 std::vector<CoreTestConfiguration> End2endTestConfigs() {
-  if (!IsEventEngineClientEnabled()) {
+  if (!IsEventEngineClientEnabled() || !IsEventEngineListenerEnabled()) {
     return {};
   }
 

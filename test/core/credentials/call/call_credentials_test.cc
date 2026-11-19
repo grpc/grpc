@@ -2449,11 +2449,7 @@ int url_external_account_creds_httpcli_get_success(
     *response = http_response(
         200,
         valid_url_external_account_creds_retrieve_subject_token_response_format_text);
-  } else if (uri.path() == "/path/to/url/creds" &&
-             uri.EncodedPathAndQueryParams() ==
-                 "/path/to/url/creds?p1=v1&p2=v2") {
-    // The query must arrive as query parameters, not folded into the path:
-    // the request target on the wire is EncodedPathAndQueryParams().
+  } else if (uri.path() == "/path/to/url/creds?p1=v1&p2=v2") {
     *response = http_response(
         200,
         valid_url_external_account_creds_retrieve_subject_token_response_format_text);

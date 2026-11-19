@@ -110,12 +110,7 @@ class BenchmarkClient
     while !@done
       wait_to_issue(waiter)
       start = Time.now
-      begin
-        resp = stub.unary_call(req)
-      rescue GRPC::BadStatus => e
-        raise e unless @done
-        break
-      end
+      resp = stub.unary_call(req)
       @histogram.add((Time.now-start)*1e9)
     end
   end

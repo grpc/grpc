@@ -81,14 +81,10 @@ class TrieLookupTree {
     return matched_value;
   }
 
-  // Invokes cb for least to most matching prefix, including the empty
-  // prefix.
+  // Invokes cb for least to most matching prefix
   void ForEachPrefixMatch(absl::string_view key,
                           absl::FunctionRef<void(const Value&)> cb) const {
     const auto* node = root_.get();
-    if (node->value.has_value()) {
-      cb(*node->value);
-    }
     for (auto c : key) {
       auto it = node->child.find(c);
       if (it == node->child.end()) {

@@ -127,13 +127,11 @@ class CallSpine final : public Party, public channelz::DataSource {
     return call_filters().PullServerToClientMessage();
   }
 
-  // Returns Failure if server trailing metadata had already been pushed (e.g.
-  // the call was already cancelled), in which case `md` is dropped.
-  StatusFlag PushServerTrailingMetadata(ServerMetadataHandle md) {
+  void PushServerTrailingMetadata(ServerMetadataHandle md) {
     GRPC_TRACE_LOG(call_state, INFO)
         << "[CallSpine " << this
         << "]: PushServerTrailingMetadata(): " << md->DebugString();
-    return call_filters().PushServerTrailingMetadata(std::move(md));
+    call_filters().PushServerTrailingMetadata(std::move(md));
   }
 
   void FinishSends() {
@@ -532,10 +530,8 @@ class CallHandler {
     return spine_->SpawnPushServerInitialMetadata(std::move(md));
   }
 
-  // Returns Failure if server trailing metadata had already been pushed (e.g.
-  // the call was already cancelled), in which case `status` is dropped.
-  StatusFlag PushServerTrailingMetadata(ServerMetadataHandle status) {
-    return spine_->PushServerTrailingMetadata(std::move(status));
+  void PushServerTrailingMetadata(ServerMetadataHandle status) {
+    spine_->PushServerTrailingMetadata(std::move(status));
   }
 
   void SpawnPushServerTrailingMetadata(ServerMetadataHandle status) {
@@ -619,10 +615,8 @@ class UnstartedCallHandler {
   explicit UnstartedCallHandler(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
 
-  // Returns Failure if server trailing metadata had already been pushed (e.g.
-  // the call was already cancelled), in which case `status` is dropped.
-  StatusFlag PushServerTrailingMetadata(ServerMetadataHandle status) {
-    return spine_->PushServerTrailingMetadata(std::move(status));
+  void PushServerTrailingMetadata(ServerMetadataHandle status) {
+    spine_->PushServerTrailingMetadata(std::move(status));
   }
 
   GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)>&& fn) {

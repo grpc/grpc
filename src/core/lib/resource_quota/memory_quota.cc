@@ -570,11 +570,11 @@ void BasicMemoryQuota::Take(GrpcMemoryAllocatorImpl* allocator, size_t amount) {
     auto& shard = big_allocators_.shards[allocator->IncrementShardIndex() %
                                          big_allocators_.shards.size()];
 
-    if (shard.shard_mu.try_lock()) {
+    if (shard.shard_mu.TryLock()) {
       if (!shard.allocators.empty()) {
         chosen_allocator = *shard.allocators.begin();
       }
-      shard.shard_mu.unlock();
+      shard.shard_mu.Unlock();
     }
 
     if (chosen_allocator != nullptr) {

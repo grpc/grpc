@@ -36,6 +36,8 @@ namespace grpc_core {
 std::string XdsRouteConfigResource::FilterConfigOverride::ToString() const {
   std::string result = "{config_proto_type=";
   StrAppend(result, config_proto_type);
+  StrAppend(result, ", config=");
+  StrAppend(result, JsonDump(config));
   StrAppend(result, ", disabled=");
   StrAppend(result, disabled ? "true" : "false");
   StrAppend(result, ", filter_config=");
