@@ -131,6 +131,9 @@ class Http2ServerTransport final : public ServerTransport,
   void SetCallDestination(RefCountedPtr<UnstartedCallDestination>
                               unstarted_call_destination) override;
 
+  // Schedules transport loop startup on the EventEngine.
+  void StartReading() override;
+
   void PerformOp(grpc_transport_op*) override;
 
   void Orphan() override;

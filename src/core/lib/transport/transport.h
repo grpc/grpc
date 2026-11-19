@@ -713,6 +713,10 @@ class ServerTransport : public Transport {
   virtual void SetCallDestination(
       RefCountedPtr<UnstartedCallDestination> unstarted_call_handler) = 0;
 
+  // Called once by the server under its mutex right after registering the
+  // transport.
+  virtual void StartReading() {}
+
  protected:
   ~ServerTransport() override = default;
 };

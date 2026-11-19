@@ -24,9 +24,12 @@
 #include <string>
 #include <utility>
 
+#include "src/core/call/message.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/time.h"
@@ -57,6 +60,7 @@ class ServerCallTest : public YodelTest {
         event_engine().get());
     auto call =
         MakeCallPair(std::move(client_initial_metadata), std::move(arena));
+    call_initiator_ = call.initiator;
     call.initiator.SpawnGuarded(
         "initial_metadata",
         [this, handler = call.handler.StartCall()]() mutable {
@@ -102,6 +106,17 @@ class ServerCallTest : public YodelTest {
     return BatchBuilder(call_.load(std::memory_order_acquire),
                         cq_verifier_.get(), tag);
   }
+
+  // Pushes a message from the client side of the call.
+  void ClientSendMessage(absl::string_view payload) {
+    SliceBuffer slice_buffer;
+    slice_buffer.Append(Slice::FromCopiedString(payload));
+    call_initiator_.SpawnPushMessage(
+        Arena::MakePooled<Message>(std::move(slice_buffer), 0u));
+  }
+
+  // Half-closes the client side of the call (no more client messages).
+  void ClientHalfClose() { call_initiator_.SpawnFinishSends(); }
 
   using ExpectedResult = CqVerifier::ExpectedResult;
   void Expect(int tag, ExpectedResult result, SourceLocation whence = {}) {
@@ -154,6 +169,8 @@ class ServerCallTest : public YodelTest {
     if (call != nullptr) {
       grpc_call_unref(call);
     }
+    // Drop the client side of the call so the call spine can be destroyed.
+    call_initiator_ = CallInitiator();
     grpc_completion_queue_shutdown(cq_);
     auto ev = grpc_completion_queue_next(
         cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
@@ -202,6 +219,58 @@ SERVER_CALL_TEST(SendStatusFromServerAfterCancelFails) {
   Expect(2, true);
   TickThroughCqExpectations();
   EXPECT_TRUE(close.was_cancelled());
+  WaitForAllPendingWork();
+}
+
+// Asserts that grpc_call_failed_before_recv_message() stays false when the
+// server receives a message and then observes a clean client half-close:
+// a RECV_MESSAGE that completes with no message because the client is done
+// sending is a graceful end-of-stream, not a failure.
+SERVER_CALL_TEST(FailedBeforeRecvMessageIsFalseOnCleanHalfClose) {
+  grpc_call* const call = InitCall(MakeClientInitialMetadata({}));
+  // Nothing has been received yet: the flag starts out false.
+  EXPECT_FALSE(grpc_call_failed_before_recv_message(call));
+  // Step 1: the client sends one message and half-closes.
+  ClientSendMessage("hello");
+  ClientHalfClose();
+  // Step 2: the server reads the message successfully.
+  IncomingMessage first_message;
+  NewBatch(1).RecvMessage(first_message);
+  Expect(1, true);
+  TickThroughCqExpectations();
+  EXPECT_FALSE(first_message.is_end_of_stream());
+  EXPECT_EQ(first_message.payload(), "hello");
+  EXPECT_FALSE(grpc_call_failed_before_recv_message(call));
+  // Step 3: the next read sees end-of-stream (no message) with an OK batch,
+  // and the call must NOT be reported as failed.
+  IncomingMessage end_of_stream;
+  NewBatch(2).RecvMessage(end_of_stream);
+  Expect(2, true);
+  TickThroughCqExpectations();
+  EXPECT_TRUE(end_of_stream.is_end_of_stream());
+  EXPECT_FALSE(grpc_call_failed_before_recv_message(call));
+  WaitForAllPendingWork();
+}
+
+// Asserts that grpc_call_failed_before_recv_message() becomes true when a
+// pending RECV_MESSAGE completes without a message because the call was
+// cancelled. This is what ServerContext::IsCancelled() relies on (via
+// ServerContextBase::MaybeMarkCancelledOnRead()) to tell a cancellation apart
+// from a clean half-close, and it is read from the application thread.
+SERVER_CALL_TEST(FailedBeforeRecvMessageIsTrueAfterCancel) {
+  grpc_call* const call = InitCall(MakeClientInitialMetadata({}));
+  EXPECT_FALSE(grpc_call_failed_before_recv_message(call));
+  // Step 1: start a read that cannot complete yet (no client message).
+  IncomingMessage message;
+  NewBatch(1).RecvMessage(message);
+  // Step 2: cancel the call while the read is outstanding.
+  EXPECT_EQ(grpc_call_cancel(call, nullptr), GRPC_CALL_OK);
+  // Step 3: the read fails with no message, and the call is reported as
+  // having failed before a message was received.
+  Expect(1, false);
+  TickThroughCqExpectations();
+  EXPECT_TRUE(message.is_end_of_stream());
+  EXPECT_TRUE(grpc_call_failed_before_recv_message(call));
   WaitForAllPendingWork();
 }
 

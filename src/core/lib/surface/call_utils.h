@@ -529,13 +529,30 @@ class MessageReceiver {
 
   uint32_t last_message_flags() const { return test_only_last_message_flags_; }
 
+  // Returns whether the last receive message operation that completed without
+  // a message did so because the call was cancelled, as opposed to a graceful
+  // end-of-stream. Backs grpc_call_failed_before_recv_message().
+  // Based on Call V1's FilterStackCall::call_failed_before_recv_message_.
+  // Safe to call from any thread.
+  bool failed_before_recv_message() const {
+    return failed_before_recv_message_.load(std::memory_order_acquire);
+  }
+
   template <typename Puller>
   auto MakeBatchOp(const grpc_op& op, Puller* puller) {
     GRPC_CHECK_EQ(recv_message_, nullptr);
     recv_message_ = op.data.recv_message.recv_message;
     return [this, puller]() mutable {
       return Map(puller->PullMessage(),
-                 [this](typename Puller::NextMessage&& msg) {
+                 [this, puller](typename Puller::NextMessage&& msg) {
+                   if (!msg.ok() || !msg.has_value()) {
+                     // No message. This runs inside the call's party, so the
+                     // call state can be read here: record whether this was
+                     // due to cancellation for readers on other threads.
+                     failed_before_recv_message_.store(
+                         puller->WasCancelledPushed(),
+                         std::memory_order_release);
+                   }
                    return FinishRecvMessage(
                        std::forward<typename Puller::NextMessage>(msg));
                  });
@@ -587,6 +604,8 @@ class MessageReceiver {
   // Compression algorithm for incoming data
   grpc_compression_algorithm incoming_compression_algorithm_ =
       GRPC_COMPRESS_NONE;
+  // See failed_before_recv_message(). Only written inside the call's party.
+  std::atomic<bool> failed_before_recv_message_{false};
 };
 
 // Tracks and validates the state of operations on a call to ensure invariants.

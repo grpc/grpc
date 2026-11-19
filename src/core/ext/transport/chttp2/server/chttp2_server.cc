@@ -245,6 +245,7 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
   // If the handshaking succeeded but there is no endpoint, then the
   // handshaker may have handed off the connection to some external
   // code, so we can just clean up here without creating a transport.
+  bool registered_on_close = false;
   if (!connection_->shutdown_ && result.ok() &&
       (*result)->endpoint != nullptr) {
     const bool is_callv3 =
@@ -271,6 +272,7 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
             [connection = connection_->RefAsSubclass<ActiveConnection>()]() {
               connection->OnClose();
             });
+        registered_on_close = true;
         timer_handle_ = connection_->listener_state_->event_engine()->RunAfter(
             deadline_ - Timestamp::Now(), [self = Ref()]() mutable {
               // HandshakingState deletion might require an active ExecCtx.
@@ -309,6 +311,9 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
             [connection = connection_->RefAsSubclass<ActiveConnection>()]() {
               connection->OnClose();
             });
+        // CloseTransport() runs on_close_callback whether SetupTransport()
+        // succeeds or orphans ph2_transport on failure.
+        registered_on_close = true;
         // SetupTransport will spawn the initial transport promises.
         grpc_error_handle channel_init_err =
             connection_->listener_state_->server()->SetupTransport(
@@ -323,7 +328,7 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
                     // HandshakingState deletion might require an active
                     // ExecCtx.
                     ExecCtx exec_ctx;
-                    auto* self_ptr = self.get();
+                    HandshakingState* const self_ptr = self.get();
                     self_ptr->connection_->work_serializer_.Run(
                         [self = std::move(self)]() { self->OnTimeoutLocked(); },
                         DEBUG_LOCATION);
@@ -331,7 +336,6 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
         } else {
           LOG(ERROR) << "Failed to create channel: "
                      << StatusToString(channel_init_err);
-          ph2_transport->Orphan();
         }
       }
     }
@@ -340,11 +344,8 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
   // shutdown the handshake when the listener needs to stop serving.
   handshake_mgr_.reset();
   connection_->listener_state_->OnHandshakeDone(connection_.get());
-  // Clean up if we don't have a transport
-  if (!std::holds_alternative<RefCountedPtr<grpc_chttp2_transport>>(
-          connection_->state_) &&
-      !std::holds_alternative<RefCountedPtr<http2::Http2ServerTransport>>(
-          connection_->state_)) {
+  // Clean up if no transport registered an OnClose() callback.
+  if (!registered_on_close) {
     connection_->listener_state_->connection_quota()->ReleaseConnections(1);
     connection_->listener_state_->RemoveLogicalConnection(connection_.get());
   }
@@ -929,7 +930,6 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
       if (!error.ok()) {
         LOG(ERROR) << "Failed to create channel: "
                    << grpc_core::StatusToString(error);
-        transport->Orphan();
       }
     } else {
       LOG(ERROR) << "Failed to take endpoint.";
