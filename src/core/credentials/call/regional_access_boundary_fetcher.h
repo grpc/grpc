@@ -115,6 +115,10 @@ class RegionalAccessBoundaryFetcher::Request final
 
 class EmailFetcher final : public DualRefCounted<EmailFetcher> {
  public:
+  static RefCountedPtr<EmailFetcher> Create(
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine = nullptr);
+
   explicit EmailFetcher(
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine = nullptr);
