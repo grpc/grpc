@@ -233,6 +233,36 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "weighted_target_test",
+    srcs = ["weighted_target_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/strings",
+    ],
+    tags = [
+        "lb_unit_test",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":lb_policy_test_lib",
+        "//:endpoint_addresses",
+        "//:grpc",
+        "//:grpc_base",
+        "//:ref_counted_ptr",
+        "//src/core:channel_args",
+        "//src/core:grpc_lb_address_filtering",
+        "//src/core:grpc_lb_policy_pick_first",
+        "//src/core:grpc_lb_policy_weighted_target",
+        "//src/core:json",
+        "//src/core:lb_policy",
+        "//src/core:ref_counted_string",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "outlier_detection_lb_config_parser_test",
     srcs = ["outlier_detection_lb_config_parser_test.cc"],
     external_deps = [

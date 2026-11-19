@@ -415,7 +415,8 @@ AutoshardingLbPolicy::Picker::PickFromEndpointIndices(
   // triggering at most one connection attempt on an IDLE endpoint.
   size_t first_index = absl::Uniform<size_t>(SharedBitGen(), 0, indices.size());
   bool requested_connection = false;
-  std::optional<size_t> connecting_or_idle_index;
+  std::optional<size_t> connecting_index;
+  std::optional<size_t> idle_index;
   const absl::Status* last_failure = nullptr;
   for (size_t i = 0; i < indices.size(); ++i) {
     const size_t index = indices[(first_index + i) % indices.size()];
@@ -424,18 +425,17 @@ AutoshardingLbPolicy::Picker::PickFromEndpointIndices(
       case GRPC_CHANNEL_READY:
         return endpoint_info.picker->Pick(args);
       case GRPC_CHANNEL_CONNECTING:
-        if (!connecting_or_idle_index.has_value()) {
-          connecting_or_idle_index = index;
-        }
+        if (!connecting_index.has_value()) connecting_index = index;
         break;
       case GRPC_CHANNEL_IDLE:
         if (!requested_connection) {
           RequestConnectionForEndpoint(endpoint_info.endpoint);
           requested_connection = true;
         }
-        if (!connecting_or_idle_index.has_value()) {
-          connecting_or_idle_index = index;
-        }
+        if (!idle_index.has_value()) idle_index = index;
+        break;
+      case GRPC_CHANNEL_TRANSIENT_FAILURE:
+        last_failure = &endpoint_info.status;
         break;
       case GRPC_CHANNEL_TRANSIENT_FAILURE:
         last_failure = &endpoint_info.status;
@@ -447,8 +447,9 @@ AutoshardingLbPolicy::Picker::PickFromEndpointIndices(
   // If we found a CONNECTING or IDLE endpoint, delegate to it.
   // Otherwise, all endpoints are in TRANSIENT_FAILURE, so delegate to
   // the first endpoint's picker to yield a detailed error message.
-  const auto& endpoint_info =
-      endpoints_[connecting_or_idle_index.value_or(indices[first_index])];
+  const size_t selected_index =
+      connecting_index.value_or(idle_index.value_or(indices[first_index]));
+  const auto& endpoint_info = endpoints_[selected_index];
   PickResult result =
       endpoint_info.picker == nullptr
           ? PickResult::Queue(kDelayTypeConnecting,
@@ -457,9 +458,10 @@ AutoshardingLbPolicy::Picker::PickFromEndpointIndices(
   auto* queue = std::get_if<PickResult::Queue>(&result.result);
   if (queue != nullptr) {
     if (last_failure != nullptr && !last_failure->ok()) {
+      // last_failure->message() already includes the subchannel status code.
       queue->delay_reason = absl::StrCat(
           "autosharding: ", queue->delay_reason,
-          " (recent endpoint failure: ", last_failure->ToString(), ")");
+          " (recent endpoint failure: ", last_failure->message(), ")");
     } else {
       queue->delay_reason = absl::StrCat("autosharding: ", queue->delay_reason);
     }

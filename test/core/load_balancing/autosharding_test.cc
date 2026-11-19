@@ -1246,9 +1246,8 @@ TEST_F(AutoShardingTest, MultipleAddressesPerEndpoint) {
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   ExpectStateAndQueuingPicker(
       GRPC_CHANNEL_CONNECTING,
-      AnyOf(kDelayReasonNoChildPicker,
-            absl::StrCat("autosharding: pick_first: connecting to ",
-                         subchannel->address(), " (subchannel 1 of 2)")),
+      absl::StrCat("autosharding: pick_first: connecting to ",
+                   subchannel->address(), " (subchannel 1 of 2)"),
       LoadBalancingPolicy::kDelayTypeConnecting, absl::OkStatus(), metadata);
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   auto picker = ExpectState(GRPC_CHANNEL_READY);

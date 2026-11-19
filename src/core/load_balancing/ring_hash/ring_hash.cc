@@ -259,7 +259,7 @@ class RingHash final : public LoadBalancingPolicy {
     void RequestConnectionForEndpoint(
         const RefCountedPtr<RingHashEndpoint>& endpoint);
 
-    void MaybeModifyDelayReason(bool is_first_index,
+    void MaybeModifyDelayReason(bool is_first_index, bool using_random_hash,
                                 const absl::Status* last_failure,
                                 PickResult& child_pick);
 
@@ -367,21 +367,24 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       const auto& entry = ring[(index + i) % ring.size()];
       const auto& endpoint_info = endpoints_[entry.endpoint_index];
       switch (endpoint_info.state) {
+        case GRPC_CHANNEL_READY:
+          return endpoint_info.picker->Pick(args);
         case GRPC_CHANNEL_IDLE:
           RequestConnectionForEndpoint(endpoint_info.endpoint);
           if (endpoint_info.picker == nullptr) {
             PickResult result =
                 PickResult::Queue{kDelayTypeConnecting,
                                   "child policy has not yet returned a picker"};
-            MaybeModifyDelayReason(/*is_first_index=*/i == 0, last_failure,
+            MaybeModifyDelayReason(/*is_first_index=*/i == 0,
+                                   /*using_random_hash=*/false, last_failure,
                                    result);
             return result;
           }
           [[fallthrough]];
-        case GRPC_CHANNEL_CONNECTING:
-        case GRPC_CHANNEL_READY: {
+        case GRPC_CHANNEL_CONNECTING: {
           auto child_pick = endpoint_info.picker->Pick(args);
-          MaybeModifyDelayReason(/*is_first_index=*/i == 0, last_failure,
+          MaybeModifyDelayReason(/*is_first_index=*/i == 0,
+                                 /*using_random_hash=*/false, last_failure,
                                  child_pick);
           return child_pick;
         }
@@ -426,8 +429,8 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
               ? PickResult::Queue{kDelayTypeConnecting,
                                   "child policy has not yet returned a picker"}
               : endpoint_info.picker->Pick(args);
-      MaybeModifyDelayReason(/*is_first_index=*/last_failure == nullptr,
-                             last_failure, result);
+      MaybeModifyDelayReason(/*is_first_index=*/false,
+                             /*using_random_hash=*/true, last_failure, result);
       return result;
     }
   }
@@ -450,17 +453,24 @@ void RingHash::Picker::RequestConnectionForEndpoint(
 }
 
 void RingHash::Picker::MaybeModifyDelayReason(bool is_first_index,
+                                              bool using_random_hash,
                                               const absl::Status* last_failure,
                                               PickResult& child_pick) {
   auto* queue = std::get_if<PickResult::Queue>(&child_pick.result);
   if (queue == nullptr) return;
-  absl::string_view prefix = is_first_index
-                                 ? "ring_hash: primary endpoint connecting: "
-                                 : "ring_hash: fallback endpoint connecting: ";
+  absl::string_view prefix;
+  if (using_random_hash) {
+    prefix = "ring_hash: random endpoint connecting: ";
+  } else if (is_first_index) {
+    prefix = "ring_hash: primary endpoint connecting: ";
+  } else {
+    prefix = "ring_hash: fallback endpoint connecting: ";
+  }
   if (last_failure != nullptr && !last_failure->ok()) {
+    // last_failure->message() already includes the subchannel status code.
     queue->delay_reason = absl::StrCat(
         prefix, queue->delay_reason,
-        " (recent endpoint failure: ", last_failure->ToString(), ")");
+        " (recent endpoint failure: ", last_failure->message(), ")");
   } else {
     queue->delay_reason = absl::StrCat(prefix, queue->delay_reason);
   }

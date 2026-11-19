@@ -146,6 +146,30 @@ class WeightedTargetLb final : public LoadBalancingPolicy {
     std::string delay_reason_prefix_;
   };
 
+  // Delegates to a single CONNECTING (or IDLE child picker while no children
+  // are READY), prepending its delay reason prefix on Queue picks.
+  class ConnectingPicker final : public SubchannelPicker {
+   public:
+    ConnectingPicker(RefCountedPtr<SubchannelPicker> child_picker,
+                     std::string delay_reason_prefix)
+        : child_picker_(std::move(child_picker)),
+          delay_reason_prefix_(std::move(delay_reason_prefix)) {}
+
+    PickResult Pick(PickArgs args) override {
+      PickResult result = child_picker_->Pick(args);
+      auto* queue = std::get_if<PickResult::Queue>(&result.result);
+      if (queue != nullptr) {
+        queue->delay_reason =
+            absl::StrCat(delay_reason_prefix_, queue->delay_reason);
+      }
+      return result;
+    }
+
+   private:
+    const RefCountedPtr<SubchannelPicker> child_picker_;
+    const std::string delay_reason_prefix_;
+  };
+
   // Each WeightedChild holds a ref to its parent WeightedTargetLb.
   class WeightedChild final : public InternallyRefCounted<WeightedChild> {
    public:
@@ -163,6 +187,7 @@ class WeightedTargetLb final : public LoadBalancingPolicy {
     void DeactivateLocked();
 
     uint32_t weight() const { return weight_; }
+    const std::string& name() const { return name_; }
     grpc_connectivity_state connectivity_state() const {
       return connectivity_state_;
     }
@@ -276,10 +301,8 @@ WeightedTargetLb::PickResult WeightedTargetLb::WeightedPicker::Pick(
   PickResult result = pickers_[index].second->Pick(args);
   auto* queue = std::get_if<PickResult::Queue>(&result.result);
   if (queue != nullptr) {
-    absl::string_view prefix = delay_reason_prefix_.empty()
-                                   ? absl::string_view("weighted_target: ")
-                                   : delay_reason_prefix_;
-    queue->delay_reason = absl::StrCat(prefix, queue->delay_reason);
+    queue->delay_reason =
+        absl::StrCat("weighted_target: ", queue->delay_reason);
   }
   return result;
 }
@@ -384,10 +407,10 @@ void WeightedTargetLb::UpdateStateLocked() {
       << "[weighted_target_lb " << this
       << "] scanning children to determine connectivity state";
   // Construct lists of child pickers with associated weights: one for
-  // children in state READY, one for children in state CONNECTING or IDLE, and
-  // one for children in state TRANSIENT_FAILURE.  Each child is represented by
-  // a portion of the range proportional to its weight, such that the total
-  // range is the sum of the weights of all children.
+  // children in state READY and one for children in state TRANSIENT_FAILURE.
+  // Each child is represented by a portion of the range proportional to its
+  // weight, such that the total range is the sum of the weights of all
+  // children.
   WeightedPicker::PickerList ready_picker_list;
   uint64_t ready_end = 0;
   WeightedPicker::PickerList connecting_or_idle_picker_list;
@@ -398,6 +421,8 @@ void WeightedTargetLb::UpdateStateLocked() {
   // the aggregated state.
   size_t num_connecting = 0;
   size_t num_idle = 0;
+  const WeightedChild* connecting_child = nullptr;
+  const WeightedChild* idle_child = nullptr;
   const absl::Status* last_failure = nullptr;
   for (const auto& [child_name, child] : targets_) {
     // Skip the targets that are not in the latest update.
@@ -418,18 +443,12 @@ void WeightedTargetLb::UpdateStateLocked() {
       }
       case GRPC_CHANNEL_CONNECTING: {
         ++num_connecting;
-        GRPC_CHECK_GT(child->weight(), 0u);
-        connecting_or_idle_end += child->weight();
-        connecting_or_idle_picker_list.emplace_back(connecting_or_idle_end,
-                                                    std::move(child_picker));
+        if (connecting_child == nullptr) connecting_child = child.get();
         break;
       }
       case GRPC_CHANNEL_IDLE: {
         ++num_idle;
-        GRPC_CHECK_GT(child->weight(), 0u);
-        connecting_or_idle_end += child->weight();
-        connecting_or_idle_picker_list.emplace_back(connecting_or_idle_end,
-                                                    std::move(child_picker));
+        if (idle_child == nullptr) idle_child = child.get();
         break;
       }
       case GRPC_CHANNEL_TRANSIENT_FAILURE: {
@@ -465,15 +484,20 @@ void WeightedTargetLb::UpdateStateLocked() {
       break;
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE: {
+      const WeightedChild* selected_child =
+          connecting_child != nullptr ? connecting_child : idle_child;
+      GRPC_CHECK_NE(selected_child, nullptr);
       std::string last_failure_str =
           last_failure == nullptr ? "" : last_failure->ToString();
-      picker = MakeRefCounted<WeightedPicker>(
-          std::move(connecting_or_idle_picker_list),
-          absl::StrCat("weighted_target: connecting to targets (num_targets=",
-                       config_->target_map().size(), " num_connecting=",
-                       num_connecting, " num_idle=", num_idle,
-                       last_failure == nullptr ? "" : "; last failure: ",
-                       last_failure_str, "): "));
+      picker = MakeRefCounted<ConnectingPicker>(
+          selected_child->picker(),
+          absl::StrCat(
+              "weighted_target: connecting to targets (num_targets=",
+              config_->target_map().size(), " num_connecting=", num_connecting,
+              " num_idle=", num_idle,
+              " num_transient_failure=", tf_picker_list.size(),
+              last_failure == nullptr ? "" : "; last failure: ",
+              last_failure_str, "), target ", selected_child->name(), ": "));
       break;
     }
     default:
@@ -649,7 +673,9 @@ void WeightedTargetLb::WeightedChild::OnConnectivityStateUpdateLocked(
       state == GRPC_CHANNEL_READY) {
     connectivity_state_ = state;
   }
-  if (state == GRPC_CHANNEL_TRANSIENT_FAILURE && !status.ok()) {
+  if (state == GRPC_CHANNEL_READY) {
+    last_failure_ = absl::OkStatus();
+  } else if (!status.ok()) {
     last_failure_ = status;
   }
   // Update the LB policy's state if this child is not deactivated.

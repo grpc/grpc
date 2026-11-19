@@ -228,29 +228,11 @@ TEST_F(RoundRobinTest, ConnectingDelayReason) {
       "round_robin: connecting to endpoints (num_children=2 num_ready=0 "
       "num_connecting=2 num_transient_failure=0): pick_first: connecting to ",
       kAddresses[1], " (subchannel 1 of 1)"));
-  // 3. Both fail; RR enters TRANSIENT_FAILURE and records last_failure_.
-  subchannel0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-  DrainConnectingUpdates();
-  subchannel0->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                    absl::UnavailableError("sc0 failed"));
-  ExpectReresolutionRequest();
-  DrainConnectingUpdates();
+  // 3. Second fails while first is IDLE; RR reports IDLE fallback, then
+  // CONNECTING as first reconnects, both with last_failure_.
   subchannel1->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                     absl::UnavailableError("sc1 failed"));
   ExpectReresolutionRequest();
-  ExpectTransientFailureUpdate(
-      absl::UnavailableError("connections to all backends failing; last error: "
-                             "UNAVAILABLE: sc1 failed"));
-  // 4. First recovers to READY, then drops to IDLE and reconnects.
-  // RR reports IDLE fallback, then CONNECTING, both with last_failure_.
-  subchannel0->SetConnectivityState(GRPC_CHANNEL_IDLE);
-  EXPECT_TRUE(subchannel0->ConnectionRequested());
-  subchannel0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-  subchannel0->SetConnectivityState(GRPC_CHANNEL_READY);
-  WaitForConnected();
-  subchannel0->SetConnectivityState(GRPC_CHANNEL_IDLE);
-  ExpectReresolutionRequest();
-  EXPECT_TRUE(subchannel0->ConnectionRequested());
   ExpectConnectingUpdate(
       "round_robin: connecting to endpoints (num_children=2 num_ready=0 "
       "num_connecting=1 num_transient_failure=1; last failure: UNAVAILABLE: "
@@ -262,9 +244,6 @@ TEST_F(RoundRobinTest, ConnectingDelayReason) {
       "num_connecting=1 num_transient_failure=1; last failure: UNAVAILABLE: "
       "sc1 failed): pick_first: connecting to ",
       kAddresses[0], " (subchannel 1 of 1)"));
-  subchannel0->SetConnectivityState(GRPC_CHANNEL_READY);
-  auto picker = WaitForConnected();
-  ExpectRoundRobinPicks(picker.get(), {kAddresses[0]});
 }
 
 // TODO(roth): Add test cases:

@@ -224,7 +224,14 @@ class CdsLb final : public LoadBalancingPolicy {
                 kBackendService,
             cluster_name_);
       }
-      return child_picker_->Pick(args);
+      PickResult result = child_picker_->Pick(args);
+      auto* queue = std::get_if<PickResult::Queue>(&result.result);
+      if (queue != nullptr) {
+        queue->delay_reason =
+            absl::StrCat("cds: cluster ", cluster_name_.as_string_view(), ": ",
+                         queue->delay_reason);
+      }
+      return result;
     }
 
    private:

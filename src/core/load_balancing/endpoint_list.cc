@@ -47,6 +47,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -243,33 +244,39 @@ class ConnectingPicker final : public LoadBalancingPolicy::SubchannelPicker {
 
 }  // namespace
 
-RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
-EndpointList::MakeConnectingPicker(std::string delay_reason) const {
+void EndpointList::ReportConnecting(absl::string_view counters,
+                                    const absl::Status& last_failure) const {
   // Prefer an actively CONNECTING endpoint over an IDLE one so we report
   // active connection progress when available.
-  const Endpoint* idle_endpoint = nullptr;
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> child_picker;
   for (const auto& endpoint : endpoints_) {
     if (endpoint == nullptr) continue;
     const auto state = endpoint->connectivity_state();
     if (state == GRPC_CHANNEL_CONNECTING) {
       if (auto picker = endpoint->picker(); picker != nullptr) {
-        return MakeRefCounted<ConnectingPicker>(std::move(picker),
-                                                std::move(delay_reason));
+        child_picker = std::move(picker);
+        break;
       }
-    } else if (state == GRPC_CHANNEL_IDLE && idle_endpoint == nullptr) {
-      idle_endpoint = endpoint.get();
+    } else if (state == GRPC_CHANNEL_IDLE && child_picker == nullptr) {
+      child_picker = endpoint->picker();
     }
   }
-  if (idle_endpoint != nullptr) {
-    if (auto picker = idle_endpoint->picker(); picker != nullptr) {
-      return MakeRefCounted<ConnectingPicker>(std::move(picker),
-                                              std::move(delay_reason));
-    }
+  // last_failure.message() already includes the subchannel status code.
+  std::string reason =
+      absl::StrCat(policy_->name(), ": connecting to endpoints (", counters,
+                   last_failure.ok() ? "" : "; last failure: ",
+                   last_failure.ok() ? "" : last_failure.message(), ")");
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
+  if (child_picker != nullptr) {
+    picker = MakeRefCounted<ConnectingPicker>(std::move(child_picker),
+                                              std::move(reason));
+  } else {
+    // No child picker available to delegate to; queue with just our own reason.
+    picker = MakeRefCounted<LoadBalancingPolicy::QueuePicker>(
+        nullptr, LoadBalancingPolicy::kDelayTypeConnecting, std::move(reason));
   }
-  // No child picker available to delegate to; queue with just our own reason.
-  return MakeRefCounted<LoadBalancingPolicy::QueuePicker>(
-      nullptr, LoadBalancingPolicy::kDelayTypeConnecting,
-      std::move(delay_reason));
+  channel_control_helper()->UpdateState(GRPC_CHANNEL_CONNECTING,
+                                        absl::OkStatus(), std::move(picker));
 }
 
 }  // namespace grpc_core

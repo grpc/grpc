@@ -456,10 +456,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
         : parent_(std::move(parent)),
           queue_(std::move(delay_type), std::move(delay_reason)) {}
 
-    QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent,
-                PickResult::Queue queue)
-        : parent_(std::move(parent)), queue_(std::move(queue)) {}
-
     ~QueuePicker() override { parent_.reset(DEBUG_LOCATION, "QueuePicker"); }
 
     PickResult Pick(PickArgs args) override;
