@@ -1,7 +1,6 @@
 matrix:
   platform:
     - debian11
-    - macos
     - macos_arm64
     - ubuntu2204
     - ubuntu2404
