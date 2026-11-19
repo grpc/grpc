@@ -45,6 +45,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/host_port.h"
 #include "src/core/util/http_client/format_request.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/status_helper.h"
@@ -345,6 +346,18 @@ void HttpRequest::DoHandshake(const EventEngine::ResolvedAddress& addr) {
   }
   args = args.SetObject(std::move(sc))
              .Set(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS, address.value());
+  if (!args.Contains(GRPC_ARG_HTTP_CONNECT_SERVER)) {
+    absl::string_view host;
+    absl::string_view port;
+    SplitHostPort(uri_.authority(), &host, &port);
+    std::string connect_server;
+    if (port.empty()) {
+      connect_server = JoinHostPort(host, uri_.scheme() == "http" ? 80 : 443);
+    } else {
+      connect_server = uri_.authority();
+    }
+    args = args.Set(GRPC_ARG_HTTP_CONNECT_SERVER, std::move(connect_server));
+  }
   // Start the handshake
   handshake_mgr_ = MakeRefCounted<HandshakeManager>();
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
