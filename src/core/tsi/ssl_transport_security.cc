@@ -579,16 +579,16 @@ tsi_result SetKeyExchangeGroups(
       return TSI_INTERNAL_ERROR;
     }
 #elif OPENSSL_VERSION_NUMBER < 0x10101000L
-    if (!SSL_CTX_set1_curves_list(context,
-                                  kDefaultOpenSSL1_0_2KeyExchangeGroups)) {
-      LOG(ERROR)
-          << "Could not set default key exchange groups for OpenSSL 1.0.2.";
-      return TSI_INTERNAL_ERROR;
-    }
-    if (!SSL_CTX_set_ecdh_auto(context, /*onoff=*/1)) {
-      LOG(ERROR) << "Could not set ecdh auto for OpenSSL 1.0.2.";
-      return TSI_INTERNAL_ERROR;
-    }
+      if (!SSL_CTX_set1_curves_list(context,
+                                    kDefaultOpenSSL1_0_2KeyExchangeGroups)) {
+        LOG(ERROR)
+            << "Could not set default key exchange groups for OpenSSL 1.0.2.";
+        return TSI_INTERNAL_ERROR;
+      }
+      if (!SSL_CTX_set_ecdh_auto(context, /*onoff=*/1)) {
+        LOG(ERROR) << "Could not set ecdh auto for OpenSSL 1.0.2.";
+        return TSI_INTERNAL_ERROR;
+      }
 #endif
   }
   return TSI_OK;
