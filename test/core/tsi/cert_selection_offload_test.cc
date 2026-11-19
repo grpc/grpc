@@ -20,11 +20,16 @@
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 
+#include <condition_variable>
 #include <cstdint>
+#include <functional>
 #include <memory>
+#include <mutex>
+#include <optional>
 #include <string>
 #include <utility>
 #include <variant>
+#include <vector>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -173,9 +178,11 @@ class HandshakeHintsCertificateSelector : public SyncTestCertificateSelector {
       absl::string_view pem_cert_chain,
       std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
           pem_private_key,
-      tsi_tls_version tls_version)
+      tsi_tls_version tls_version,
+      std::weak_ptr<PrivateKeySigner>* signer_weak = nullptr)
       : SyncTestCertificateSelector(pem_cert_chain, std::move(pem_private_key)),
-        tls_version_(tls_version) {}
+        tls_version_(tls_version),
+        signer_weak_(signer_weak) {}
 
   std::variant<absl::StatusOr<SelectCertificateResult>,
                std::shared_ptr<AsyncCertificateSelectionHandle>>
@@ -220,8 +227,12 @@ class HandshakeHintsCertificateSelector : public SyncTestCertificateSelector {
                 }));
             // This signer ensures test will fail if handshake hints don't work
             // properly.
-            result->private_key = std::make_shared<SyncTestPrivateKeySigner>(
+            auto signer = std::make_shared<SyncTestPrivateKeySigner>(
                 "", SyncTestPrivateKeySigner::Mode::kError);
+            if (signer_weak_ != nullptr) {
+              *signer_weak_ = signer;
+            }
+            result->private_key = std::move(signer);
             // Use AssignCertificate to configure hints generation.
             uint16_t version =
                 (tls_version_ == TSI_TLS1_2) ? TLS1_2_VERSION : TLS1_3_VERSION;
@@ -292,6 +303,7 @@ class HandshakeHintsCertificateSelector : public SyncTestCertificateSelector {
 
  private:
   tsi_tls_version tls_version_;
+  std::weak_ptr<PrivateKeySigner>* signer_weak_ = nullptr;
 };
 
 class SslCertSelectorTsiTestFixture {
@@ -633,6 +645,464 @@ TEST_P(CertSelectionOffloadTest, HandshakeHintsSucceeds) {
   fixture->SetCertSelector(std::make_shared<HandshakeHintsCertificateSelector>(
       server_cert, server_key, GetParam()));
   fixture->Run(/*expect_success=*/true, event_engine_.get());
+}
+
+class TrackingPrivateKeySigner final : public PrivateKeySigner {
+ public:
+  TrackingPrivateKeySigner(std::shared_ptr<PrivateKeySigner> inner,
+                           std::shared_ptr<std::mutex> shared_mu,
+                           std::atomic<bool>* cancelled,
+                           std::atomic<bool>* destroyed)
+      : inner_(std::move(inner)),
+        shared_mu_(std::move(shared_mu)),
+        cancelled_(cancelled),
+        destroyed_(destroyed) {}
+
+  ~TrackingPrivateKeySigner() override {
+    if (shared_mu_ != nullptr) {
+      std::lock_guard<std::mutex> lock(*shared_mu_);
+      if (destroyed_ != nullptr) destroyed_->store(true);
+    } else if (destroyed_ != nullptr) {
+      destroyed_->store(true);
+    }
+  }
+
+  std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
+  Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
+       OnSignComplete on_sign_complete) override {
+    return inner_->Sign(data_to_sign, signature_algorithm,
+                        std::move(on_sign_complete));
+  }
+
+  void Cancel(std::shared_ptr<AsyncSigningHandle> handle) override {
+    if (shared_mu_ != nullptr) {
+      std::lock_guard<std::mutex> lock(*shared_mu_);
+      inner_->Cancel(std::move(handle));
+    } else {
+      inner_->Cancel(std::move(handle));
+    }
+    if (cancelled_ != nullptr) cancelled_->store(true);
+  }
+
+ private:
+  std::shared_ptr<PrivateKeySigner> inner_;
+  std::shared_ptr<std::mutex> shared_mu_;
+  std::atomic<bool>* cancelled_;
+  std::atomic<bool>* destroyed_;
+};
+
+class FactorySignerCertificateSelector final : public CertificateSelector {
+ public:
+  using SignerFactory = std::function<std::shared_ptr<PrivateKeySigner>()>;
+
+  FactorySignerCertificateSelector(
+      absl::string_view pem_cert_chain, SignerFactory signer_factory,
+      std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+          event_engine,
+      std::shared_ptr<std::mutex> shared_mu, bool is_async,
+      std::weak_ptr<PrivateKeySigner>* signer_weak)
+      : pem_cert_chain_(pem_cert_chain),
+        signer_factory_(std::move(signer_factory)),
+        event_engine_(std::move(event_engine)),
+        shared_mu_(std::move(shared_mu)),
+        is_async_(is_async),
+        signer_weak_(signer_weak) {}
+
+  std::variant<absl::StatusOr<SelectCertificateResult>,
+               std::shared_ptr<AsyncCertificateSelectionHandle>>
+  SelectCertificate(const SelectCertificateInfo& /*info*/,
+                    OnSelectCertificateComplete on_complete) override {
+    if (!is_async_) {
+      auto signer = signer_factory_();
+      if (signer_weak_ != nullptr) *signer_weak_ = signer;
+      return CreateSelectCertificateResult(pem_cert_chain_, std::move(signer));
+    }
+    event_engine_->RunAfter(
+        Duration::Seconds(2),
+        [this, on_complete = std::move(on_complete)]() mutable {
+          auto signer = signer_factory_();
+          if (signer_weak_ != nullptr) *signer_weak_ = signer;
+          auto res =
+              CreateSelectCertificateResult(pem_cert_chain_, std::move(signer));
+          if (shared_mu_ != nullptr) {
+            std::lock_guard<std::mutex> lock(*shared_mu_);
+            on_complete(std::move(res));
+          } else {
+            on_complete(std::move(res));
+          }
+        });
+    return std::make_shared<AsyncCertificateSelectionHandle>();
+  }
+
+  void Cancel(
+      std::shared_ptr<AsyncCertificateSelectionHandle> /*handle*/) override {}
+
+ private:
+  absl::string_view pem_cert_chain_;
+  SignerFactory signer_factory_;
+  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+      event_engine_;
+  std::shared_ptr<std::mutex> shared_mu_;
+  bool is_async_;
+  std::weak_ptr<PrivateKeySigner>* signer_weak_;
+};
+
+struct StepResult {
+  tsi_result status = TSI_INTERNAL_ERROR;
+  std::vector<unsigned char> bytes_to_send;
+  tsi_handshaker_result* handshaker_result = nullptr;
+};
+
+struct PendingStepState {
+  std::mutex mu;
+  std::condition_variable cv;
+  bool done = false;
+  StepResult step;
+};
+
+void OnSteppedNextDone(tsi_result result, void* user_data,
+                       const unsigned char* bytes_to_send,
+                       size_t bytes_to_send_size,
+                       tsi_handshaker_result* handshaker_result) {
+  auto* state = static_cast<PendingStepState*>(user_data);
+  std::lock_guard<std::mutex> lock(state->mu);
+  state->step.status = result;
+  if (bytes_to_send != nullptr && bytes_to_send_size > 0) {
+    state->step.bytes_to_send.assign(bytes_to_send,
+                                     bytes_to_send + bytes_to_send_size);
+  }
+  state->step.handshaker_result = handshaker_result;
+  state->done = true;
+  state->cv.notify_all();
+}
+
+class SteppedCertSelectorSession {
+ public:
+  SteppedCertSelectorSession(
+      tsi_tls_version tls_version,
+      std::shared_ptr<CertificateSelector> cert_selector,
+      grpc_event_engine::experimental::FuzzingEventEngine* event_engine)
+      : event_engine_(event_engine) {
+    std::string ca_cert =
+        GetFileContents(absl::StrCat(kTestCredsRelativePath, "ca.pem"));
+
+    tsi_ssl_client_handshaker_options client_options;
+    client_options.root_cert_info =
+        std::make_shared<tsi::RootCertInfo>(ca_cert);
+    client_options.min_tls_version = tls_version;
+    client_options.max_tls_version = tls_version;
+    CHECK_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
+                 &client_options, &client_factory_),
+             TSI_OK);
+
+    tsi_ssl_server_handshaker_options server_options;
+    server_options.client_certificate_request =
+        TSI_DONT_REQUEST_CLIENT_CERTIFICATE;
+    server_options.min_tls_version = tls_version;
+    server_options.max_tls_version = tls_version;
+    server_options.key_cert_pairs_or_selector = std::move(cert_selector);
+    CHECK_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
+                 &server_options, &server_factory_),
+             TSI_OK);
+
+    CHECK_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
+                 client_factory_, kServerName, 0, 0, std::nullopt,
+                 /*collection_scope=*/nullptr, /*target=*/kServerName,
+                 /*locality=*/"", /*backend_service=*/"", &client_hs_),
+             TSI_OK);
+    CHECK_EQ(
+        tsi_ssl_server_handshaker_factory_create_handshaker(
+            server_factory_, 0, 0, /*collection_scope=*/nullptr, &server_hs_),
+        TSI_OK);
+  }
+
+  ~SteppedCertSelectorSession() {
+    if (client_result_ != nullptr) {
+      tsi_handshaker_result_destroy(client_result_);
+    }
+    if (server_result_ != nullptr) {
+      tsi_handshaker_result_destroy(server_result_);
+    }
+    if (client_hs_ != nullptr) tsi_handshaker_destroy(client_hs_);
+    if (server_hs_ != nullptr) tsi_handshaker_destroy(server_hs_);
+    if (client_factory_ != nullptr) {
+      tsi_ssl_client_handshaker_factory_unref(client_factory_);
+    }
+    if (server_factory_ != nullptr) {
+      tsi_ssl_server_handshaker_factory_unref(server_factory_);
+    }
+  }
+
+  StepResult Step(tsi_handshaker* hs, const std::vector<unsigned char>& in) {
+    PendingStepState state;
+    const unsigned char* out_bytes = nullptr;
+    size_t out_bytes_size = 0;
+    tsi_handshaker_result* hs_result = nullptr;
+    tsi_result res = tsi_handshaker_next(
+        hs, in.empty() ? nullptr : in.data(), in.size(), &out_bytes,
+        &out_bytes_size, &hs_result, &OnSteppedNextDone, &state);
+    if (res != TSI_ASYNC) {
+      state.step.status = res;
+      if (out_bytes != nullptr && out_bytes_size > 0) {
+        state.step.bytes_to_send.assign(out_bytes, out_bytes + out_bytes_size);
+      }
+      state.step.handshaker_result = hs_result;
+      return std::move(state.step);
+    }
+    event_engine_->TickUntilIdle();
+    std::unique_lock<std::mutex> lock(state.mu);
+    state.cv.wait(lock, [&state]() { return state.done; });
+    return std::move(state.step);
+  }
+
+  void DriveRemainingHandshake(
+      std::vector<unsigned char> pending_to_client,
+      std::vector<unsigned char> pending_to_server = {}) {
+    while (client_result_ == nullptr || server_result_ == nullptr) {
+      bool progressed = false;
+      if (client_result_ == nullptr && !pending_to_client.empty()) {
+        progressed = true;
+        StepResult c = Step(client_hs_, pending_to_client);
+        pending_to_client.clear();
+        ASSERT_EQ(c.status, TSI_OK);
+        if (c.handshaker_result != nullptr) {
+          client_result_ = c.handshaker_result;
+        }
+        pending_to_server.insert(pending_to_server.end(),
+                                 c.bytes_to_send.begin(),
+                                 c.bytes_to_send.end());
+      }
+      if (server_result_ == nullptr && !pending_to_server.empty()) {
+        progressed = true;
+        StepResult s = Step(server_hs_, pending_to_server);
+        pending_to_server.clear();
+        ASSERT_EQ(s.status, TSI_OK);
+        if (s.handshaker_result != nullptr) {
+          server_result_ = s.handshaker_result;
+        }
+        pending_to_client.insert(pending_to_client.end(),
+                                 s.bytes_to_send.begin(),
+                                 s.bytes_to_send.end());
+      }
+      ASSERT_TRUE(progressed);
+    }
+    tsi_peer peer;
+    EXPECT_EQ(tsi_handshaker_result_extract_peer(client_result_, &peer),
+              TSI_OK);
+    tsi_peer_destruct(&peer);
+    EXPECT_EQ(tsi_handshaker_result_extract_peer(server_result_, &peer),
+              TSI_OK);
+    tsi_peer_destruct(&peer);
+  }
+
+  tsi_handshaker* client_hs() { return client_hs_; }
+  tsi_handshaker* server_hs() { return server_hs_; }
+  tsi_handshaker_result* client_result() { return client_result_; }
+  tsi_handshaker_result* server_result() { return server_result_; }
+
+ private:
+  grpc_event_engine::experimental::FuzzingEventEngine* event_engine_;
+  tsi_ssl_client_handshaker_factory* client_factory_ = nullptr;
+  tsi_ssl_server_handshaker_factory* server_factory_ = nullptr;
+  tsi_handshaker* client_hs_ = nullptr;
+  tsi_handshaker* server_hs_ = nullptr;
+  tsi_handshaker_result* client_result_ = nullptr;
+  tsi_handshaker_result* server_result_ = nullptr;
+};
+
+TEST_P(CertSelectionOffloadTest, ServerReleasesKeySignerBeforeClientFinished) {
+  std::string server_key =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.key"));
+  std::string server_cert =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.pem"));
+  auto shared_mu = std::make_shared<std::mutex>();
+  std::atomic<bool> cancelled{false};
+  std::atomic<bool> destroyed{false};
+  std::weak_ptr<PrivateKeySigner> signer_weak;
+
+  auto selector = std::make_shared<FactorySignerCertificateSelector>(
+      server_cert,
+      [&, this]() {
+        auto inner = std::make_shared<AsyncTestPrivateKeySigner>(server_key,
+                                                                 event_engine_);
+        return std::make_shared<TrackingPrivateKeySigner>(
+            std::move(inner), shared_mu, &cancelled, &destroyed);
+      },
+      event_engine_, shared_mu, /*is_async=*/true, &signer_weak);
+  SteppedCertSelectorSession session(GetParam(), std::move(selector),
+                                     event_engine_.get());
+
+  StepResult client_hello = session.Step(session.client_hs(), {});
+  ASSERT_EQ(client_hello.status, TSI_OK);
+  ASSERT_FALSE(client_hello.bytes_to_send.empty());
+
+  // Server produces ServerHello..ServerFinished (or ServerHelloDone) and waits
+  // for ClientFinished/ClientKeyExchange. The key signer must already be
+  // released and destroyed outside handshaker::mu before peer response arrives.
+  StepResult server_flight =
+      session.Step(session.server_hs(), client_hello.bytes_to_send);
+  ASSERT_EQ(server_flight.status, TSI_OK);
+  EXPECT_EQ(server_flight.handshaker_result, nullptr);
+  EXPECT_FALSE(server_flight.bytes_to_send.empty());
+  EXPECT_TRUE(signer_weak.expired());
+  EXPECT_TRUE(destroyed.load());
+  EXPECT_FALSE(cancelled.load());
+
+  session.DriveRemainingHandshake(std::move(server_flight.bytes_to_send));
+}
+
+TEST_P(CertSelectionOffloadTest,
+       HandshakeHintsWithKeySignerReleasesSignerEarly) {
+  std::string server_key =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.key"));
+  std::string server_cert =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.pem"));
+  std::weak_ptr<PrivateKeySigner> signer_weak;
+  auto selector = std::make_shared<HandshakeHintsCertificateSelector>(
+      server_cert, server_key, GetParam(), &signer_weak);
+  SteppedCertSelectorSession session(GetParam(), std::move(selector),
+                                     event_engine_.get());
+
+  StepResult client_hello = session.Step(session.client_hs(), {});
+  ASSERT_EQ(client_hello.status, TSI_OK);
+  ASSERT_FALSE(client_hello.bytes_to_send.empty());
+
+  // With handshake hints, PrivateKeySigner::Sign() is skipped; verify the
+  // signer is still released right after ServerFinished is produced.
+  StepResult server_flight =
+      session.Step(session.server_hs(), client_hello.bytes_to_send);
+  ASSERT_EQ(server_flight.status, TSI_OK);
+  EXPECT_EQ(server_flight.handshaker_result, nullptr);
+  EXPECT_FALSE(server_flight.bytes_to_send.empty());
+  EXPECT_TRUE(signer_weak.expired());
+
+  session.DriveRemainingHandshake(std::move(server_flight.bytes_to_send));
+}
+
+TEST_P(CertSelectionOffloadTest,
+       ShutdownReleasesKeySignerWithoutSigningHandle) {
+  std::string server_cert =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.pem"));
+  std::atomic<bool> cancelled{false};
+  std::atomic<bool> destroyed{false};
+  std::weak_ptr<PrivateKeySigner> signer_weak;
+
+  // Synchronous signer failure fails SSL_do_handshake before
+  // SSL_can_release_private_key() turns true and leaves signing_handle null.
+  auto selector = std::make_shared<FactorySignerCertificateSelector>(
+      server_cert,
+      [&]() {
+        auto inner = std::make_shared<SyncTestPrivateKeySigner>(
+            "", SyncTestPrivateKeySigner::Mode::kError);
+        return std::make_shared<TrackingPrivateKeySigner>(
+            std::move(inner), nullptr, &cancelled, &destroyed);
+      },
+      event_engine_, nullptr, /*is_async=*/false, &signer_weak);
+  SteppedCertSelectorSession session(GetParam(), std::move(selector),
+                                     event_engine_.get());
+
+  StepResult client_hello = session.Step(session.client_hs(), {});
+  ASSERT_EQ(client_hello.status, TSI_OK);
+
+  StepResult server_flight =
+      session.Step(session.server_hs(), client_hello.bytes_to_send);
+  EXPECT_NE(server_flight.status, TSI_OK);
+  EXPECT_EQ(server_flight.handshaker_result, nullptr);
+  EXPECT_FALSE(signer_weak.expired());
+  EXPECT_FALSE(destroyed.load());
+
+  // Shutdown must release key_signer even when signing_handle is null, without
+  // waiting for tsi_handshaker_destroy().
+  tsi_handshaker_shutdown(session.server_hs(), /*peer_closed=*/false);
+  EXPECT_TRUE(signer_weak.expired());
+  EXPECT_TRUE(destroyed.load());
+  EXPECT_FALSE(cancelled.load());
+}
+
+TEST_P(CertSelectionOffloadTest,
+       ShutdownWhileAsyncSignPendingCancelsAndReleasesKeySigner) {
+  std::string server_key =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.key"));
+  std::string server_cert =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.pem"));
+  auto shared_mu = std::make_shared<std::mutex>();
+  std::atomic<bool> cancelled{false};
+  std::atomic<bool> destroyed{false};
+  std::weak_ptr<PrivateKeySigner> signer_weak;
+
+  auto selector = std::make_shared<FactorySignerCertificateSelector>(
+      server_cert,
+      [&, this]() {
+        auto inner = std::make_shared<AsyncTestPrivateKeySigner>(
+            server_key, event_engine_,
+            AsyncTestPrivateKeySigner::Mode::kCancellation);
+        return std::make_shared<TrackingPrivateKeySigner>(
+            std::move(inner), shared_mu, &cancelled, &destroyed);
+      },
+      event_engine_, shared_mu, /*is_async=*/true, &signer_weak);
+  SteppedCertSelectorSession session(GetParam(), std::move(selector),
+                                     event_engine_.get());
+
+  StepResult client_hello = session.Step(session.client_hs(), {});
+  ASSERT_EQ(client_hello.status, TSI_OK);
+
+  PendingStepState server_state;
+  const unsigned char* out_bytes = nullptr;
+  size_t out_bytes_size = 0;
+  tsi_handshaker_result* hs_result = nullptr;
+  ASSERT_EQ(tsi_handshaker_next(
+                session.server_hs(), client_hello.bytes_to_send.data(),
+                client_hello.bytes_to_send.size(), &out_bytes, &out_bytes_size,
+                &hs_result, &OnSteppedNextDone, &server_state),
+            TSI_ASYNC);
+  event_engine_->TickUntilIdle();
+  EXPECT_FALSE(signer_weak.expired());
+  EXPECT_FALSE(destroyed.load());
+
+  tsi_handshaker_shutdown(session.server_hs(), /*peer_closed=*/false);
+  EXPECT_TRUE(cancelled.load());
+  EXPECT_TRUE(signer_weak.expired());
+  EXPECT_TRUE(destroyed.load());
+
+  event_engine_->TickUntilIdle();
+  std::unique_lock<std::mutex> lock(server_state.mu);
+  server_state.cv.wait(lock, [&server_state]() { return server_state.done; });
+  EXPECT_EQ(server_state.step.status, TSI_HANDSHAKE_SHUTDOWN);
+  EXPECT_EQ(server_state.step.handshaker_result, nullptr);
+}
+
+TEST_P(CertSelectionOffloadTest,
+       CompleteHandshakeReleasesKeySignerWithoutShutdown) {
+  std::string server_key =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.key"));
+  std::string server_cert =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.pem"));
+  std::atomic<bool> cancelled{false};
+  std::atomic<bool> destroyed{false};
+  std::weak_ptr<PrivateKeySigner> signer_weak;
+
+  auto selector = std::make_shared<FactorySignerCertificateSelector>(
+      server_cert,
+      [&, this]() {
+        auto inner = std::make_shared<AsyncTestPrivateKeySigner>(server_key,
+                                                                 event_engine_);
+        return std::make_shared<TrackingPrivateKeySigner>(
+            std::move(inner), nullptr, &cancelled, &destroyed);
+      },
+      event_engine_, nullptr, /*is_async=*/false, &signer_weak);
+  SteppedCertSelectorSession session(GetParam(), std::move(selector),
+                                     event_engine_.get());
+
+  StepResult client_hello = session.Step(session.client_hs(), {});
+  ASSERT_EQ(client_hello.status, TSI_OK);
+  session.DriveRemainingHandshake({}, std::move(client_hello.bytes_to_send));
+  // Both server_hs and client_hs remain alive inside |session| until teardown,
+  // yet the key_signer is already destroyed without needing shutdown().
+  EXPECT_NE(session.server_result(), nullptr);
+  EXPECT_NE(session.client_result(), nullptr);
+  EXPECT_TRUE(signer_weak.expired());
+  EXPECT_TRUE(destroyed.load());
+  EXPECT_FALSE(cancelled.load());
 }
 
 std::string TestNameSuffix(
