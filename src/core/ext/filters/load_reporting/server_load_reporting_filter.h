@@ -19,7 +19,9 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_LOAD_REPORTING_SERVER_LOAD_REPORTING_FILTER_H
 #define GRPC_SRC_CORE_EXT_FILTERS_LOAD_REPORTING_SERVER_LOAD_REPORTING_FILTER_H
 
+#include <grpc/status.h>
 #include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <stddef.h>
 
 #include <string>
@@ -65,6 +67,8 @@ class ServerLoadReportingFilter
    private:
     std::string client_ip_and_lr_token_;
     std::string target_host_;
+    const gpr_timespec start_time_ = gpr_now(GPR_CLOCK_MONOTONIC);
+    grpc_status_code final_status_ = GRPC_STATUS_OK;
   };
 
  private:

@@ -44,6 +44,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/call_final_info.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/sync.h"
@@ -481,6 +482,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     size_t flow_control_tokens_consumed = 0u;
     // Bitmask of the dequeue flags.
     DequeueFlags flags;
+    grpc_transport_one_way_stats outgoing_stats;
 
     // Returns true if the reset stream was dequeued.
     bool IsResetStreamDequeued() const { return flags.IsResetStreamDequeued(); }
@@ -570,7 +572,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
         priority_,
         /*flow_control_tokens_consumed=*/
         handle_dequeue.GetFlowControlTokensConsumed(),
-        /*flags=*/handle_dequeue.GetDequeueFlags()};
+        /*flags=*/handle_dequeue.GetDequeueFlags(),
+        /*outgoing_stats=*/handle_dequeue.GetOutgoingStats()};
   }
 
   // Needs to be invoked when the peer sends stream flow control window update.
@@ -635,6 +638,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
     void operator()(MessageHandle message) {
       GRPC_STREAM_DATA_QUEUE_DEBUG << "Preparing message for sending";
+      stream_data_queue_.pending_grpc_header_bytes_ += kGrpcHeaderSizeInBytes;
       stream_data_queue_.message_disassembler_.PrepareBatchedMessageForSending(
           std::move(message));
     }
@@ -662,6 +666,9 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       return flow_control_tokens_consumed_;
     }
     DequeueFlags GetDequeueFlags() const { return dequeue_flags_; }
+    grpc_transport_one_way_stats GetOutgoingStats() const {
+      return outgoing_stats_;
+    }
 
    private:
     void MaybeAppendInitialMetadataFrames() {
@@ -754,6 +761,18 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
         AppendFrame(std::move(frame));
         dequeue_flags_.set_message_dequeued();
       }
+      if (flow_control_tokens_consumed_ > 0u) {
+        const uint64_t grpc_header_bytes =
+            stream_data_queue_.message_disassembler_.GetBufferedLength() == 0u
+                ? stream_data_queue_.pending_grpc_header_bytes_
+                : std::min<uint64_t>(
+                      flow_control_tokens_consumed_,
+                      stream_data_queue_.pending_grpc_header_bytes_);
+        stream_data_queue_.pending_grpc_header_bytes_ -= grpc_header_bytes;
+        outgoing_stats_.framing_bytes += grpc_header_bytes;
+        outgoing_stats_.data_bytes +=
+            flow_control_tokens_consumed_ - grpc_header_bytes;
+      }
     }
 
     void AppendResetStreamFrame(Http2ErrorCode error_code)
@@ -775,6 +794,23 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     }
 
     void AppendFrame(Http2Frame&& frame) {
+      // record per-frame HTTP/2 framing and HPACK header
+      // bytes before moving the frame into FrameSender.
+      if (const Http2HeaderFrame* const header_frame =
+              std::get_if<Http2HeaderFrame>(&frame);
+          header_frame != nullptr) {
+        outgoing_stats_.framing_bytes += kFrameHeaderSize;
+        outgoing_stats_.header_bytes += header_frame->payload.Length();
+      } else if (const Http2ContinuationFrame* const continuation_frame =
+                     std::get_if<Http2ContinuationFrame>(&frame);
+                 continuation_frame != nullptr) {
+        outgoing_stats_.framing_bytes += kFrameHeaderSize;
+        outgoing_stats_.header_bytes += continuation_frame->payload.Length();
+      } else if (std::holds_alternative<Http2DataFrame>(frame)) {
+        outgoing_stats_.framing_bytes += kFrameHeaderSize;
+      } else if (std::holds_alternative<Http2RstStreamFrame>(frame)) {
+        outgoing_stats_.framing_bytes += kFrameHeaderSize + 4u;
+      }
       // FrameSender automatically accounts for the frame size in write quota.
       // We do tend to overestimate the bytes consumed here but should be good
       // enough for our purposes.
@@ -788,6 +824,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     HPackCompressor& encoder_;
     FrameSender& frame_sender_;
     DequeueFlags dequeue_flags_;
+    grpc_transport_one_way_stats outgoing_stats_;
   };
 
   // Updates the writable state and priority of the stream. MUST only be called
@@ -894,15 +931,18 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
                "dequeuing.";
         is_writable_ = false;
         DequeueFlags flags;
+        grpc_transport_one_way_stats outgoing_stats;
         if (can_send_reset_stream) {
           frame_sender.AddRegularFrame(
               Http2RstStreamFrame{stream_id_, reset_stream_error_code_});
           flags.set_reset_stream_dequeued();
+          outgoing_stats.framing_bytes = kFrameHeaderSize + 4u;
         }
         queue_.Clear();
         reset_stream_state_ = ResetStreamState::kDequeued;
         return DequeueResult{is_writable_, priority_,
-                             /*flow_control_tokens_consumed=*/0u, flags};
+                             /*flow_control_tokens_consumed=*/0u, flags,
+                             outgoing_stats};
       }
       case ResetStreamState::kNotQueued:
         return std::nullopt;
@@ -965,6 +1005,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   HeaderDisassembler initial_metadata_disassembler_;
   HeaderDisassembler trailing_metadata_disassembler_;
   GrpcMessageDisassembler message_disassembler_;
+  uint64_t pending_grpc_header_bytes_ = 0u;
 };
 
 }  // namespace http2
