@@ -69,7 +69,7 @@ popd
 # Install OpenTelemetry
 mkdir -p "third_party/opentelemetry-cpp/cmake/build"
 pushd "third_party/opentelemetry-cpp/cmake/build"
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 -DWITH_ABSEIL=ON -DBUILD_TESTING=OFF -DWITH_BENCHMARK=OFF ../..
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 -DOTELCPP_WITH_STL=CXX17 -DBUILD_TESTING=OFF -DOTELCPP_WITH_BENCHMARK=OFF -DOTELCPP_WITH_EXAMPLES=OFF ../..
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
 

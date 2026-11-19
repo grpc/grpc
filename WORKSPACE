@@ -121,15 +121,27 @@ bind(
     actual = "@com_github_cares_cares//:ares",
 )
 
-load("@io_opentelemetry_cpp//bazel:repository.bzl", "opentelemetry_cpp_deps")
+# opentelemetry-cpp 1.27+ dropped legacy WORKSPACE helper macros; declare
+# prometheus-cpp directly for //examples/cpp/otel/... under WORKSPACE builds.
+http_archive(
+    name = "com_github_jupp0r_prometheus_cpp",
+    sha256 = "ac6e958405a29fbbea9db70b00fa3c420e16ad32e1baf941ab233ba031dd72ee",
+    strip_prefix = "prometheus-cpp-1.3.0",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/jupp0r/prometheus-cpp/archive/refs/tags/v1.3.0.tar.gz",
+        "https://github.com/jupp0r/prometheus-cpp/archive/refs/tags/v1.3.0.tar.gz",
+    ],
+)
 
-opentelemetry_cpp_deps()
+load("@com_github_jupp0r_prometheus_cpp//bazel:repositories.bzl", "prometheus_cpp_repositories")
 
-load("@io_opentelemetry_cpp//bazel:extra_deps.bzl", "opentelemetry_extra_deps")
+prometheus_cpp_repositories()
 
-opentelemetry_extra_deps()
+load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 
-# Transitive dependency of opentelemetry_extra_deps()
+bazel_skylib_workspace()
+
+# Transitive dependency of prometheus_cpp_repositories()
 bind(
     name = "madler_zlib",
     actual = "@zlib//:zlib",

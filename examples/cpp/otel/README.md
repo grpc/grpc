@@ -45,7 +45,7 @@ The following libraries need to be installed before building the example with CM
 * absl
 * protobuf
 * prometheus-cpp
-* opentelemetry-cpp (with the options `-DWITH_ABSEIL=ON` `-DWITH_PROMETHEUS=ON`)
+* opentelemetry-cpp (with the options `-DCMAKE_CXX_STANDARD=17` `-DOTELCPP_WITH_STL=CXX17` `-DOTELCPP_WITH_PROMETHEUS=ON`)
 * grpc (with the option `-DgRPC_BUILD_GRPCPP_OTEL_PLUGIN=ON`)
 
 You can find a complete set of instructions for building gRPC and running the

@@ -1,0 +1,11 @@
+diff --git a/sdk/include/opentelemetry/sdk/metrics/view/predicate_factory.h b/sdk/include/opentelemetry/sdk/metrics/view/predicate_factory.h
+--- a/sdk/include/opentelemetry/sdk/metrics/view/predicate_factory.h
++++ b/sdk/include/opentelemetry/sdk/metrics/view/predicate_factory.h
+@@ -3,6 +3,7 @@
+ 
+ #pragma once
+ 
++#include <cstdint>
+ #include <memory>
+ 
+ #include "opentelemetry/nostd/string_view.h"
