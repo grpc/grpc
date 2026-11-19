@@ -277,8 +277,9 @@ auto Http2ServerTransport::SerializeAndWrite() {
             << "Http2ServerTransport::SerializeAndWrite frame count: "
             << frame_count;
         ztrace_collector_->Append(PromiseEndpointWriteTrace{frame_count});
-        return EndpointWrite(write_cycle.SerializeRegularFrames(
-            WriteCycle::SerializeStats{should_reset_ping_clock_}));
+        return EndpointWrite(
+            write_cycle.SerializeRegularFrames(WriteCycle::SerializeStats{
+                should_reset_ping_clock_, http2_transport_stats_}));
       },
       []() { return absl::OkStatus(); }));
 }
@@ -294,6 +295,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
       << ", payload length=" << frame.payload.Length() << "}";
 
   ping_manager_->ReceivedDataFrame();
+  http2_transport_stats_.RecordReadDataFrameSize(frame.payload.Length());
 
   const RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
 
@@ -658,7 +660,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
   }
 
   const bool should_trigger_write = ProcessIncomingWindowUpdateFrameFlowControl(
-      frame, flow_control_, stream.get());
+      frame, flow_control_, stream.get(), http2_transport_stats_);
 
   if (should_trigger_write) {
     return ToHttpOkOrConnError(TriggerWriteCycle());
@@ -930,8 +932,9 @@ auto Http2ServerTransport::MaybeWriteUrgentFrames() {
         GRPC_HTTP2_SERVER_DLOG
             << "Http2ServerTransport::MaybeWriteUrgentFrames frame count: "
             << buffer_length;
-        return EndpointWrite(write_cycle.SerializeUrgentFrames(
-            WriteCycle::SerializeStats{should_reset_ping_clock_}));
+        return EndpointWrite(
+            write_cycle.SerializeUrgentFrames(WriteCycle::SerializeStats{
+                should_reset_ping_clock_, http2_transport_stats_}));
       },
       []() { return absl::OkStatus(); }));
 }
@@ -962,14 +965,22 @@ absl::Status Http2ServerTransport::DequeueStreamFrames(
   const uint32_t stream_flow_control_tokens =
       static_cast<uint32_t>(GetStreamFlowControlTokens(
           stream->GetStreamFlowControl(), settings_->peer()));
-  stream->GetStreamFlowControl().ReportIfStalled(
-      /*is_client=*/kIsClient, stream->GetStreamId(), settings_->peer());
   StreamDataQueue<ServerMetadataHandle>::DequeueResult result =
       stream->DequeueFrames(tokens, stream_flow_control_tokens,
                             settings_->peer().max_frame_size(), encoder_,
                             frame_sender);
   ProcessOutgoingDataFrameFlowControl(stream->GetStreamFlowControl(),
                                       result.flow_control_tokens_consumed);
+  // Only checks for flow control stalls when the stream still has pending DATA
+  // frame bytes to send. Non-DATA frames (such as metadata or RST_STREAM) do
+  // not consume flow control tokens, and a stream with no remaining DATA bytes
+  // is not blocked by flow control even if the window is exhausted.
+  if (result.is_next_frame_data) {
+    http2_transport_stats_.MaybeRecordStall(
+        stream->GetStreamFlowControl().ReportIfStalled(
+            /*is_client=*/kIsClient, stream->GetStreamId(), settings_->peer()));
+  }
+
   if (result.is_writable) {
     // Stream is still writable. Enqueue it back to the writable
     // stream list.
@@ -1033,7 +1044,8 @@ auto Http2ServerTransport::MultiplexerLoop() {
               if (GPR_UNLIKELY(!status.ok())) {
                 return status.status();
               }
-              transport_write_context_.StartWriteCycle();
+              StartWriteCycle();
+
               GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::MultiplexerLoop "
                                         "Start Iteration: "
                                      << transport_write_context_.DebugString();
@@ -1301,6 +1313,7 @@ absl::Status Http2ServerTransport::MaybeAddStreamToWritableStreamList(
 auto Http2ServerTransport::HandleMetadataAndMessages(
     RefCountedPtr<Stream> stream) {
   auto send_message = [this, stream](MessageHandle&& message) mutable {
+    http2_transport_stats_.RecordSendMessageSize(message->payload()->Length());
     return TrySeq(HandleStreamErrorOnFailure(
                       stream->EnqueueMessage(std::move(message)), stream),
                   [this, stream](const StreamWritabilityUpdate result) mutable {

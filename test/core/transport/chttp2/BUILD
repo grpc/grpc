@@ -1257,6 +1257,7 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
+        ":http2_common_test_inputs",
         ":http2_frame_test_helper",
         "//:chttp2_frame",
         "//:config",
@@ -1639,6 +1640,7 @@ grpc_cc_test(
         "//:chttp2_frame",
         "//:exec_ctx",
         "//src/core:channel_args",
+        "//src/core:chttp2_flow_control",
         "//src/core:http2_transport_stats",
         "//src/core:slice",
         "//src/core:slice_buffer",

@@ -22,6 +22,7 @@
 #include <memory>
 #include <tuple>
 
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -85,6 +86,20 @@ class TransportTargetWindowEstimatesMocker
 
 class FlowControlTest : public ::testing::Test {
  protected:
+  void VerifyStallState(const TransportFlowControl& tfc,
+                        const StreamFlowControl& sfc,
+                        const Http2Settings& peer_settings,
+                        const bool is_client,
+                        const int64_t expected_stream_remote_window,
+                        const int64_t expected_transport_remote_window,
+                        const StallType expected_stall_type) const {
+    EXPECT_EQ(sfc.remote_window_delta() + peer_settings.initial_window_size(),
+              expected_stream_remote_window);
+    EXPECT_EQ(tfc.remote_window(), expected_transport_remote_window);
+    EXPECT_EQ(sfc.ReportIfStalled(is_client, /*stream_id=*/1u, peer_settings),
+              expected_stall_type);
+  }
+
   MemoryOwner memory_owner_ = MemoryOwner(
       ResourceQuota::Default()->memory_quota()->CreateMemoryOwner());
 };
@@ -323,6 +338,79 @@ TEST_F(FlowControlTest, OnStreamClosedDecreasesAnnouncedDeltaFromTransport) {
   EXPECT_EQ(sfc2.test_only_announced_window_delta(), 0);
 }
 
+// Tests that StreamFlowControl::ReportIfStalled accurately reports stream and
+// transport flow control stalls across all window states.
+// Assertions:
+// - When both transport and stream remote windows are > 0, returns
+//   StallType::kNone.
+// - When transport remote window is > 0 and stream remote window is <= 0
+//   (both == 0 and < 0), returns StallType::kStreamStalled.
+// - When both transport remote window and stream remote window are <= 0,
+//   transport stall takes precedence and returns StallType::kTransportStalled.
+// - When transport remote window is <= 0 and stream remote window is > 0,
+//   returns StallType::kTransportStalled.
+TEST_F(FlowControlTest, ReportIfStalledReturnsExpectedStallType) {
+  TransportFlowControl tfc(/*peer_name=*/"test",
+                           /*enable_bdp_probe=*/true, &memory_owner_);
+  StreamFlowControl sfc(&tfc);
+  Http2Settings peer_settings;
+
+  // Step 1: Both transport_remote_window (65535) and stream_remote_window
+  // (0 + 65535 = 65535) are > 0. No stall should be reported.
+  VerifyStallState(tfc, sfc, peer_settings, /*is_client=*/true,
+                   /*expected_stream_remote_window=*/65535,
+                   /*expected_transport_remote_window=*/65535,
+                   StallType::kNone);
+
+  // Step 2: Set peer initial_window_size to 0 so stream_remote_window is 0
+  // (0 + 0 = 0), while transport_remote_window remains 65535 (> 0).
+  // Should report kStreamStalled.
+  peer_settings.SetInitialWindowSize(0u);
+  VerifyStallState(tfc, sfc, peer_settings, /*is_client=*/true,
+                   /*expected_stream_remote_window=*/0,
+                   /*expected_transport_remote_window=*/65535,
+                   StallType::kStreamStalled);
+
+  // Step 3: Send 1000 bytes (remote_window_delta = -1000,
+  // transport_remote_window = 64535) while initial_window_size remains 0,
+  // making stream_remote_window negative (-1000 + 0 = -1000 < 0) while
+  // transport_remote_window is 64535 (> 0).
+  // Should report kStreamStalled.
+  {
+    StreamFlowControl::OutgoingUpdateContext sfc_upd(&sfc);
+    sfc_upd.SentData(1000u);
+  }
+  VerifyStallState(tfc, sfc, peer_settings, /*is_client=*/false,
+                   /*expected_stream_remote_window=*/-1000,
+                   /*expected_transport_remote_window=*/64535,
+                   StallType::kStreamStalled);
+
+  // Step 4: Send the remaining 64535 bytes and restore peer initial_window_size
+  // to 65535, so BOTH transport_remote_window (0) and stream_remote_window
+  // (-65535 + 65535 = 0) are <= 0 simultaneously.
+  // Transport stall takes precedence: should report kTransportStalled.
+  {
+    StreamFlowControl::OutgoingUpdateContext sfc_upd(&sfc);
+    sfc_upd.SentData(64535u);
+  }
+  peer_settings.SetInitialWindowSize(65535u);
+  VerifyStallState(tfc, sfc, peer_settings, /*is_client=*/true,
+                   /*expected_stream_remote_window=*/0,
+                   /*expected_transport_remote_window=*/0,
+                   StallType::kTransportStalled);
+
+  // Step 5: Receive a stream-level WINDOW_UPDATE of 65535 so
+  // stream_remote_window is 65535 (> 0) while transport_remote_window is still
+  // 0. Should report kTransportStalled.
+  {
+    StreamFlowControl::OutgoingUpdateContext sfc_upd(&sfc);
+    sfc_upd.RecvUpdate(65535u);
+  }
+  VerifyStallState(tfc, sfc, peer_settings, /*is_client=*/false,
+                   /*expected_stream_remote_window=*/65535,
+                   /*expected_transport_remote_window=*/0,
+                   StallType::kTransportStalled);
+}
 }  // namespace chttp2
 }  // namespace grpc_core
 
