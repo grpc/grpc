@@ -80,7 +80,7 @@ class XdsClient : public XdsClientInterface {
   void CancelResourceWatch(const XdsResourceType* type,
                            absl::string_view listener_name,
                            ResourceWatcherInterface* watcher,
-                           bool delay_unsubscription = false) override;
+                           bool delay_unsubscription) override;
 
   // Resets connection backoff state.
   void ResetBackoff() override;
