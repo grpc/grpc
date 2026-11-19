@@ -19,6 +19,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -54,6 +55,10 @@ RegionalAccessBoundaryFetcher::Create(
     absl::string_view lookup_url,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
     std::optional<BackOff::Options> backoff_options) {
+  if (!IsExperimentEnvVarEnabled(
+          "GRPC_EXPERIMENTAL_REGIONAL_ACCESS_BOUNDARY_LOOKUP")) {
+    return nullptr;
+  }
   auto uri = URI::Parse(lookup_url);
   if (!uri.ok()) {
     LOG(INFO) << "Invalid RegionalAccessBoundary lookup URI \"" << lookup_url

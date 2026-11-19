@@ -64,7 +64,7 @@ class RegionalAccessBoundaryFetcher final
   void Orphaned() override;
 
  private:
-  friend class RegionalAccessBoundaryFetcherTest;
+  friend class RegionalAccessBoundaryFetcherTestBase;
 
   struct RegionalAccessBoundary {
     Slice encoded_locations;

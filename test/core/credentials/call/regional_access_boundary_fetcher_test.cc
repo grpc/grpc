@@ -35,6 +35,7 @@
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -48,7 +49,7 @@
 
 namespace grpc_core {
 
-class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
+class RegionalAccessBoundaryFetcherTestBase : public ::testing::Test {
  protected:
   using RegionalAccessBoundary =
       RegionalAccessBoundaryFetcher::RegionalAccessBoundary;
@@ -135,7 +136,20 @@ class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
       fuzzing_event_engine_;
 };
 
+class RegionalAccessBoundaryFetcherTest
+    : public RegionalAccessBoundaryFetcherTestBase {
+ protected:
+  testing::ScopedExperimentalEnvVar env_{
+      "GRPC_EXPERIMENTAL_REGIONAL_ACCESS_BOUNDARY_LOOKUP"};
+};
+
 namespace {
+
+// This uses RegionalAccessBoundaryFetcherTestBase instead of
+// RegionalAccessBoundaryFetcherTest, so the experimental env var is not set.
+TEST_F(RegionalAccessBoundaryFetcherTestBase, DisabledByDefault) {
+  EXPECT_EQ(fetcher_, nullptr);
+}
 
 grpc_closure* g_stalled_on_done = nullptr;
 grpc_http_response* g_stalled_response = nullptr;
@@ -654,6 +668,8 @@ class EmailFetcherTest : public ::testing::Test {
     grpc_shutdown();
   }
 
+  testing::ScopedExperimentalEnvVar env_{
+      "GRPC_EXPERIMENTAL_REGIONAL_ACCESS_BOUNDARY_LOOKUP"};
   RefCountedPtr<EmailFetcher> email_fetcher_;
   RefCountedPtr<Arena> arena_;
   ClientMetadataHandle metadata_;
