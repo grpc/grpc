@@ -42,6 +42,7 @@
 #include "src/core/util/load_file.h"
 #include "src/core/util/match.h"
 #include "src/core/util/stat.h"
+#include "src/core/util/status_helper.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -523,6 +524,13 @@ absl::Status InMemoryCertificateProvider::ValidateCredentials() const {
 absl::Status InMemoryCertificateProvider::UpdateRoot(
     std::shared_ptr<tsi::RootCertInfo> root_certificates) {
   return Update(root_certificates, std::nullopt);
+}
+
+absl::Status InMemoryCertificateProvider::UpdateSpiffeBundleMap(
+    absl::string_view spiffe_bundle_map) {
+  auto map = SpiffeBundleMap::FromString(spiffe_bundle_map);
+  GRPC_RETURN_IF_ERROR(map.status());
+  return UpdateRoot(std::make_shared<tsi::RootCertInfo>(std::move(*map)));
 }
 
 absl::Status InMemoryCertificateProvider::UpdateIdentityKeyCertPair(

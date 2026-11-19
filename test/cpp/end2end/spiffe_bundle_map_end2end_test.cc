@@ -31,6 +31,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "src/cpp/client/secure_credentials.h"
@@ -124,6 +125,12 @@ class SpiffeBundleMapTest : public ::testing::Test {
         std::make_shared<experimental::FileWatcherCertificateProvider>(
             std::string(key_path), std::string(cert_path),
             std::string(root_path), std::string(spiffe_bundle_map_path), 1);
+    RunServer(notification, std::move(certificate_provider));
+  }
+
+  void RunServer(absl::Notification* notification,
+                 std::shared_ptr<experimental::CertificateProviderInterface>
+                     certificate_provider) {
     grpc::experimental::TlsServerCredentialsOptions options(
         certificate_provider);
     options.watch_root_certs();
@@ -458,6 +465,70 @@ TEST_F(SpiffeBundleMapTest, ClientSideSpiffeVerificationFailure) {
   auto verifier = std::make_shared<experimental::NoOpCertificateVerifier>();
   options.set_certificate_verifier(verifier);
 
+  constexpr absl::string_view expected_message_start =
+      "failed to connect to all addresses; last error: ";
+  const StatusCode expected_status = StatusCode::UNAVAILABLE;
+  DoRpc(server_addr_, options, false,
+        MakeTlsHandshakeFailureRegex(expected_message_start), expected_status);
+}
+
+TEST_F(SpiffeBundleMapTest, InMemorySpiffeMTLSAndReload) {
+  std::string server_key =
+      grpc_core::testing::GetFileContents(std::string(kServerChainKeyPath));
+  std::string server_cert =
+      grpc_core::testing::GetFileContents(std::string(kServerChainCertPath));
+  std::string server_bundle_map = grpc_core::testing::GetFileContents(
+      std::string(kServerSpiffeBundleMapPath));
+  std::string client_key =
+      grpc_core::testing::GetFileContents(std::string(kClientKeyPath));
+  std::string client_cert =
+      grpc_core::testing::GetFileContents(std::string(kClientCertPath));
+  std::string client_bundle_map = grpc_core::testing::GetFileContents(
+      std::string(kClientSpiffeBundleMapPath));
+
+  auto server_provider =
+      std::make_shared<experimental::InMemoryCertificateProvider>();
+  EXPECT_FALSE(server_provider->UpdateSpiffeBundleMap("invalid json").ok());
+  ASSERT_TRUE(server_provider->UpdateSpiffeBundleMap(server_bundle_map).ok());
+  std::vector<experimental::IdentityKeyOrSignerCertPair> server_identities = {
+      {server_key, server_cert}};
+  ASSERT_TRUE(
+      server_provider->UpdateIdentityKeyCertPair(std::move(server_identities))
+          .ok());
+  EXPECT_TRUE(server_provider->ValidateCredentials().ok());
+
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ =
+      new std::thread([&]() { RunServer(&notification, server_provider); });
+  notification.WaitForNotification();
+
+  auto client_provider =
+      std::make_shared<experimental::InMemoryCertificateProvider>();
+  ASSERT_TRUE(client_provider->UpdateSpiffeBundleMap(client_bundle_map).ok());
+  std::vector<experimental::IdentityKeyOrSignerCertPair> client_identities = {
+      {client_key, client_cert}};
+  ASSERT_TRUE(
+      client_provider->UpdateIdentityKeyCertPair(std::move(client_identities))
+          .ok());
+  EXPECT_TRUE(client_provider->ValidateCredentials().ok());
+
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(client_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name("root");
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name("identity");
+  options.set_check_call_host(false);
+  auto verifier = std::make_shared<experimental::NoOpCertificateVerifier>();
+  options.set_certificate_verifier(verifier);
+
+  DoRpc(server_addr_, options, true);
+
+  // Dynamically update the client's SPIFFE bundle map in-memory to a bundle
+  // map that does not trust the server's trust domain.
+  ASSERT_TRUE(client_provider->UpdateSpiffeBundleMap(server_bundle_map).ok());
   constexpr absl::string_view expected_message_start =
       "failed to connect to all addresses; last error: ";
   const StatusCode expected_status = StatusCode::UNAVAILABLE;
