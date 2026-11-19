@@ -21,6 +21,8 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 
 #include <list>
 #include <memory>
@@ -33,10 +35,10 @@
 #include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
-#include "upb/mem/arena.hpp"
 #include "absl/log/log.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_split.h"
+#include "upb/mem/arena.hpp"
 
 #define TSI_ALTS_INITIAL_BUFFER_SIZE 256
 
@@ -130,7 +132,13 @@ static bool is_handshake_finished_properly(grpc_gcp_HandshakerResp* resp) {
 
 static void alts_grpc_handshaker_client_unref(
     alts_grpc_handshaker_client* client) {
+  fprintf(stderr, "Jetski: UNREF client=%p refs=%d pid=%d tid=%d\n", client,
+          (int)client->refs.count, (int)getpid(), (int)syscall(SYS_gettid));
+  fflush(stderr);
   if (gpr_unref(&client->refs)) {
+    fprintf(stderr, "Jetski: DELETE client=%p pid=%d tid=%d\n", client,
+            (int)getpid(), (int)syscall(SYS_gettid));
+    fflush(stderr);
     if (client->base.vtable != nullptr &&
         client->base.vtable->destruct != nullptr) {
       client->base.vtable->destruct(&client->base);
@@ -196,30 +204,38 @@ static void handle_response_done(alts_grpc_handshaker_client* client,
                           p /* pending_recv_message_result */);
 }
 
-void alts_handshaker_client_handle_response(alts_handshaker_client* c,
-                                            bool is_ok) {
+// Workaround compiler optimization bug with HWASan build (b/533806293).
+__attribute__((optnone)) static void
+alts_handshaker_client_handle_response_inner(alts_handshaker_client* c,
+                                             bool is_ok) {
   GRPC_CHECK_NE(c, nullptr);
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
+
   grpc_byte_buffer* recv_buffer = client->recv_buffer;
-  alts_tsi_handshaker* handshaker = client->handshaker;
   // Invalid input check.
   if (client->cb == nullptr) {
     LOG(ERROR)
         << "client->cb is nullptr in alts_tsi_handshaker_handle_response()";
     return;
   }
-  if (handshaker == nullptr) {
-    LOG(ERROR)
-        << "handshaker is nullptr in alts_tsi_handshaker_handle_response()";
-    handle_response_done(
-        client, TSI_INTERNAL_ERROR,
-        "handshaker is nullptr in alts_tsi_handshaker_handle_response()",
-        nullptr, 0, nullptr);
+  bool handshaker_is_null = false;
+  bool handshaker_has_shutdown = false;
+  {
+    grpc_core::MutexLock lock(&client->mu);
+    alts_tsi_handshaker* handshaker = client->handshaker;
+    if (handshaker == nullptr) {
+      handshaker_is_null = true;
+    } else {
+      handshaker_has_shutdown = alts_tsi_handshaker_has_shutdown(handshaker);
+    }
+  }
+  if (handshaker_is_null) {
+    VLOG(2) << "handshaker is already destroyed";
     return;
   }
   // TSI handshake has been shutdown.
-  if (alts_tsi_handshaker_has_shutdown(handshaker)) {
+  if (handshaker_has_shutdown) {
     VLOG(2) << "TSI handshake shutdown";
     handle_response_done(client, TSI_HANDSHAKE_SHUTDOWN,
                          "TSI handshake shutdown", nullptr, 0, nullptr);
@@ -310,6 +326,21 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
                        result);
 }
 
+void alts_handshaker_client_handle_response(alts_handshaker_client* c,
+                                            bool is_ok) {
+  fprintf(stderr, "Jetski: HANDLE_RESP c=%p is_ok=%d pid=%d tid=%d\n", c, is_ok,
+          (int)getpid(), (int)syscall(SYS_gettid));
+  fflush(stderr);
+  alts_handshaker_client_handle_response_inner(c, is_ok);
+  if (c != nullptr) {
+    alts_grpc_handshaker_client* client =
+        reinterpret_cast<alts_grpc_handshaker_client*>(c);
+    if (client->call != nullptr) {
+      alts_grpc_handshaker_client_unref(client);
+    }
+  }
+}
+
 static tsi_result continue_make_grpc_call(alts_grpc_handshaker_client* client,
                                           bool is_start) {
   GRPC_CHECK_NE(client, nullptr);
@@ -327,6 +358,10 @@ static tsi_result continue_make_grpc_call(alts_grpc_handshaker_client* client,
     op++;
     GRPC_CHECK(op - ops <= kHandshakerClientOpNum);
     gpr_ref(&client->refs);
+    fprintf(stderr, "Jetski: REF_STATUS client=%p refs=%d pid=%d tid=%d\n",
+            client, (int)client->refs.count, (int)getpid(),
+            (int)syscall(SYS_gettid));
+    fflush(stderr);
     grpc_call_error call_error =
         client->grpc_caller(client->call, ops, static_cast<size_t>(op - ops),
                             &client->on_status_received);
@@ -353,10 +388,21 @@ static tsi_result continue_make_grpc_call(alts_grpc_handshaker_client* client,
   op++;
   GRPC_CHECK(op - ops <= kHandshakerClientOpNum);
   GRPC_CHECK_NE(client->grpc_caller, nullptr);
+  const bool has_call = client->call != nullptr;
+  if (has_call) {
+    gpr_ref(&client->refs);
+    fprintf(stderr, "Jetski: REF_READ client=%p refs=%d pid=%d tid=%d\n",
+            client, (int)client->refs.count, (int)getpid(),
+            (int)syscall(SYS_gettid));
+    fflush(stderr);
+  }
   if (client->grpc_caller(client->call, ops, static_cast<size_t>(op - ops),
                           &client->on_handshaker_service_resp_recv) !=
       GRPC_CALL_OK) {
     LOG(ERROR) << "Start batch operation failed";
+    if (has_call) {
+      alts_grpc_handshaker_client_unref(client);
+    }
     return TSI_INTERNAL_ERROR;
   }
   return TSI_OK;
@@ -780,6 +826,9 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
   client->base.vtable =
       vtable_for_testing == nullptr ? &vtable : vtable_for_testing;
   gpr_ref_init(&client->refs, 1);
+  fprintf(stderr, "Jetski: CREATE client=%p refs=%d pid=%d tid=%d\n", client,
+          (int)client->refs.count, (int)getpid(), (int)syscall(SYS_gettid));
+  fflush(stderr);
   client->handshaker = handshaker;
   client->grpc_caller = grpc_call_start_batch_and_execute;
   grpc_metadata_array_init(&client->recv_initial_metadata);
@@ -989,6 +1038,19 @@ void alts_handshaker_client_destroy(alts_handshaker_client* c) {
     alts_grpc_handshaker_client* client =
         reinterpret_cast<alts_grpc_handshaker_client*>(c);
     alts_grpc_handshaker_client_unref(client);
+  }
+}
+
+void alts_handshaker_client_clear_handshaker(alts_handshaker_client* c) {
+  fprintf(stderr, "Jetski: CLEAR_HANDSHAKER client=%p pid=%d tid=%d\n", c,
+          (int)getpid(), (int)syscall(SYS_gettid));
+  fflush(stderr);
+  if (c != nullptr) {
+    alts_grpc_handshaker_client* client =
+        reinterpret_cast<alts_grpc_handshaker_client*>(c);
+    grpc_core::MutexLock lock(&client->mu);
+    client->handshaker = nullptr;
+    client->error = nullptr;
   }
 }
 
