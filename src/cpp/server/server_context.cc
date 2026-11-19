@@ -426,9 +426,6 @@ ServerContextBase::~ServerContextBase() {
   if (default_reactor_used_.load(std::memory_order_relaxed)) {
     reinterpret_cast<Reactor*>(&default_reactor_)->~Reactor();
   }
-  if (call_metric_recorder_ != nullptr) {
-    call_metric_recorder_->~CallMetricRecorder();
-  }
 }
 
 ServerContextBase::CallWrapper::~CallWrapper() {
@@ -528,6 +525,16 @@ std::string ServerContextBase::peer() const {
   return peer;
 }
 
+std::string ServerContextBase::local_address() const {
+  std::string local_address;
+  if (call_.call) {
+    char* c_local_address = grpc_call_get_local_address(call_.call);
+    local_address = c_local_address;
+    gpr_free(c_local_address);
+  }
+  return local_address;
+}
+
 const struct census_context* ServerContextBase::census_context() const {
   return call_.call == nullptr ? nullptr
                                : grpc_census_call_get_context(call_.call);
@@ -546,8 +553,12 @@ void ServerContextBase::CreateCallMetricRecorder(
   if (call_.call == nullptr) return;
   GRPC_CHECK_EQ(call_metric_recorder_, nullptr);
   grpc_core::Arena* arena = grpc_call_get_arena(call_.call);
+  // The arena owns the BackendMetricState rather than this ServerContext,
+  // because the backend metric filter may still read it via the arena context
+  // after the ServerContext is destroyed (e.g., in a v3 server stack, trailing
+  // metadata filters run after the send-status op has completed).
   auto* backend_metric_state =
-      arena->New<BackendMetricState>(server_metric_recorder);
+      arena->ManagedNew<BackendMetricState>(server_metric_recorder);
   call_metric_recorder_ = backend_metric_state;
   arena->SetContext<grpc_core::BackendMetricProvider>(backend_metric_state);
 }

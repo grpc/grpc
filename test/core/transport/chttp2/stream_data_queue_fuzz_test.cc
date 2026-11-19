@@ -33,9 +33,11 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
@@ -299,7 +301,8 @@ class StreamDataQueueFuzzTest : public YodelTest {
   void MaybeFlushWriteBuffer() {
     if (GetWriteCycle().CanSerializeRegularFrames()) {
       bool unused;
-      SliceBuffer discard = GetWriteCycle().SerializeRegularFrames({unused});
+      SliceBuffer discard = GetWriteCycle().SerializeRegularFrames(
+          {unused, http2_transport_stats_});
     }
   }
 
@@ -312,7 +315,7 @@ class StreamDataQueueFuzzTest : public YodelTest {
     // Discard the connection preface
     SliceBuffer discard =
         transport_write_context_.GetWriteCycle().SerializeRegularFrames(
-            {unused});
+            {unused, http2_transport_stats_});
   }
 
   void Shutdown() override {
@@ -325,6 +328,7 @@ class StreamDataQueueFuzzTest : public YodelTest {
   RefCountedPtr<Party> party2_;
   HPackCompressor encoder_;
   http2::TransportWriteContext transport_write_context_{/*is_client=*/true};
+  http2::Http2TransportStats http2_transport_stats_{ChannelArgs()};
 };
 
 // TODO(akshitpatel) : [PH2][P3] : Add a test for server side.

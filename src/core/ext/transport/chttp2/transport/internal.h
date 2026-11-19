@@ -309,6 +309,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
 
   void MaybeNotifyOnReceiveSettingsLocked(
       absl::StatusOr<uint32_t> max_concurrent_streams);
+  void MaybeNotifyOnCloseLocked();
 
   // We depend on the ep being available for the life of the transport in
   // at least one place - event callback in WriteEventSink. Hence, this should
@@ -317,6 +318,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_core::Mutex ep_destroy_mu;  // Guards endpoint destruction only.
 
   grpc_core::Slice peer_string;
+  grpc_core::Slice local_address_string;
 
   grpc_core::TransportFramingEndpointExtension*
       transport_framing_endpoint_extension = nullptr;
@@ -340,7 +342,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_pollset_set* interested_parties_until_recv_settings = nullptr;
 
   absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> notify_on_receive_settings;
-  grpc_closure* notify_on_close = nullptr;
+  absl::AnyInvocable<void()> notify_on_close;
 
   /// has the upper layer closed the transport?
   grpc_error_handle closed_with_error;

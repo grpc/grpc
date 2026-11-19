@@ -220,7 +220,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
       state_ = SettingsState::kFirstPeerSettingsReceived;
     }
     ++num_acks_to_send_;
-    for (const auto& setting : settings) {
+    for (const Http2SettingsFrame::Setting& setting : settings) {
       // RFC9113: An endpoint that receives a SETTINGS frame with any unknown or
       // unsupported identifier MUST ignore that setting.
       if (Http2Settings::IsKnownSettingId(setting.id)) {
@@ -393,7 +393,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
 
   inline bool HasReceivedAck() {
     GRPC_SETTINGS_TIMEOUT_DLOG
-        << "SettingsPromiseManager::DidReceiveAck did_register_waker_ "
+        << "SettingsPromiseManager::HasReceivedAck did_register_waker_ "
         << did_register_ack_timeout_waker_
         << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
     return number_of_acks_unprocessed_ > 0;
@@ -429,7 +429,8 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   }
   inline void MarkReceivedAckAsProcessed() {
     GRPC_SETTINGS_TIMEOUT_DLOG
-        << "SettingsPromiseManager::RemoveReceivedAck did_register_waker_ "
+        << "SettingsPromiseManager::MarkReceivedAckAsProcessed "
+           "did_register_waker_ "
         << did_register_ack_timeout_waker_
         << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
     --number_of_acks_unprocessed_;

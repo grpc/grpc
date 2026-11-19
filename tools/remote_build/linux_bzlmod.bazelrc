@@ -18,3 +18,11 @@
 import %workspace%/tools/remote_build/include/test_config_common.bazelrc
 
 build --jobs=200
+
+# The RBE toolchain uses a pre-release clang 19 that does not enable sized
+# deallocation by default. riegeli (a fuzztest dependency) needs it.
+#
+# See also tools/dockerfile/test/rbe_ubuntu2004/Dockerfile
+# TODO(weizheyuan): Update docker image to use 19.1.7 (last patch release)
+build --cxxopt=-fsized-deallocation
+build --host_cxxopt=-fsized-deallocation

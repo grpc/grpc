@@ -14,7 +14,6 @@ The gRPC server is responsible for listening for incoming connections, handling 
 - **`server_call_tracer_filter.h` / `server_call_tracer_filter.cc`**: Defines a filter that can be used to trace server-side calls.
 - **`server_config_selector.h`**: Defines the `ServerConfigSelector` class, which is used to select the server configuration for a given request.
 - **`server_config_selector_filter.h` / `server_config_selector_filter.cc`**: Defines a filter that uses the `ServerConfigSelector` to select the server configuration.
-- **`xds_channel_stack_modifier.h` / `xds_channel_stack_modifier.cc`**: Defines a class that can be used to modify the channel stack for XDS-enabled servers.
 - **`xds_server_config_fetcher.cc`**: Fetches server configuration from an XDS server.
 
 ## Major Classes

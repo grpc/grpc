@@ -272,7 +272,7 @@ void AsyncConnect::OnWritable(absl::Status status)
   EventHandle* fd;
   absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep;
 
-  mu_.Lock();
+  mu_.lock();
   GRPC_CHECK_NE(fd_, nullptr);
   fd = std::exchange(fd_, nullptr);
   bool connect_cancelled = connect_cancelled_;
@@ -288,14 +288,12 @@ void AsyncConnect::OnWritable(absl::Status status)
       status = absl::FailedPreconditionError("Connection cancelled");
     }
   }
-  mu_.Unlock();
-
-  if (engine_->Cancel(alarm_handle_)) {
-    ++consumed_refs;
-  }
 
   auto on_writable_finish = absl::MakeCleanup([&]() -> void {
     mu_.AssertHeld();
+    if (engine_->Cancel(alarm_handle_)) {
+      ++consumed_refs;
+    }
     if (!connect_cancelled) {
       reinterpret_cast<PosixEventEngine*>(engine_.get())
           ->OnConnectFinishInternal(connection_handle_);
@@ -318,13 +316,12 @@ void AsyncConnect::OnWritable(absl::Status status)
           });
     }
     done = ((refs_ -= consumed_refs) == 0);
-    mu_.Unlock();
+    mu_.unlock();
     if (done) {
       delete this;
     }
   });
 
-  mu_.Lock();
   if (!status.ok() || connect_cancelled) {
     return;
   }
@@ -369,10 +366,13 @@ void AsyncConnect::OnWritable(absl::Status status)
       // opened too many network connections.  The "easy" fix:
       // don't do that!
       LOG(ERROR) << "kernel out of buffers";
-      mu_.Unlock();
-      fd->NotifyOnWrite(on_writable_);
       // Don't run the cleanup function for this case.
       std::move(on_writable_finish).Cancel();
+      // Set fd_ back to the original value so that when the OnWritable method
+      // executes again, it will use the correct fd_ value.
+      fd_ = fd;
+      fd->NotifyOnWrite(on_writable_);
+      mu_.unlock();
       return;
     case ECONNREFUSED:
       // This error shouldn't happen for anything other than connect().
@@ -683,7 +683,7 @@ bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
   if (ac == nullptr) {
     return false;
   }
-  ac->mu_.Lock();
+  ac->mu_.lock();
   bool connection_cancel_success = (ac->fd_ != nullptr);
   if (connection_cancel_success) {
     // Connection is still pending. The OnWritable callback hasn't executed
@@ -697,7 +697,7 @@ bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
         absl::FailedPreconditionError("Connection cancelled"));
   }
   bool done = (--ac->refs_ == 0);
-  ac->mu_.Unlock();
+  ac->mu_.unlock();
   if (done) {
     delete ac;
   }

@@ -322,7 +322,7 @@ inline constexpr absl::string_view kHeaderStreamIdMustBeNonZero =
 inline constexpr absl::string_view kContinuationStreamIdMustBeNonZero =
     "RFC9113: CONTINUATION frames MUST be associated with a stream";
 inline constexpr absl::string_view kRstStreamStreamIdMustBeNonZero =
-    "RFC9113: RST_STREAM frames frames MUST be associated with a stream";
+    "RFC9113: RST_STREAM frames MUST be associated with a stream";
 
 // Zero Stream Identifier
 inline constexpr absl::string_view kPingStreamIdMustBeZero =

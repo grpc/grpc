@@ -250,7 +250,7 @@ class UnstartedCallDestinationFixture {
           this));
       auto h = std::move(*handler_);
       handler_.reset();
-      mu_.Unlock();
+      mu_.unlock();
       return h;
     }
 
@@ -335,7 +335,7 @@ class TransportFixture {
           this));
       auto h = std::move(*handler_);
       handler_.reset();
-      mu_.Unlock();
+      mu_.unlock();
       return h;
     }
 

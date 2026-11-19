@@ -107,20 +107,23 @@ class PingManagerTest : public YodelTest {
     }
   }
 
-  void MaybeSpawnTimeout(PingManager& ping_system,
-                         std::optional<uint64_t> opaque_data) {
-    if (opaque_data.has_value()) {
-      GetContext<Party>()->Spawn(
-          "PingTimeout",
-          [&ping_system, opaque_data = *opaque_data]() {
-            return ping_system.TimeoutPromise(opaque_data);
-          },
-          [](auto) {});
+  void MaybeSpawnTimeout(
+      PingManager& ping_system,
+      std::optional<PingManager::PingTimeoutArgs> ping_timeout_args) {
+    if (!ping_timeout_args.has_value()) {
+      return;
     }
+    GetContext<Party>()->Spawn(
+        "PingTimeout",
+        [&ping_system,
+         ping_timeout_args = std::move(*ping_timeout_args)]() mutable {
+          return ping_system.TimeoutPromise(std::move(ping_timeout_args));
+        },
+        [](auto) {});
   }
 
-  void MaybeSendPing(PingManager& ping_system,
-                     Duration next_allowed_ping_interval) {
+  void MaybeSendPingAndSpawnTimeout(PingManager& ping_system,
+                                    Duration next_allowed_ping_interval) {
     http2::FrameSender frame_sender =
         transport_write_context_.GetWriteCycle().GetFrameSender();
     std::optional<Duration> delayed_ping_wait =
@@ -130,19 +133,32 @@ class PingManagerTest : public YodelTest {
     MaybeSpawnTimeout(ping_system, ping_system.NotifyPingSent());
   }
 
-  std::optional<uint64_t> MaybeSendPingAndReturnID(
-      PingManager& ping_system, Duration next_allowed_ping_interval,
-      bool trigger_ping_timeout = true) {
+  // Sends a ping if needed and returns the PingTimeoutArgs from
+  // NotifyPingSent(), without spawning the ping timeout promise.
+  std::optional<PingManager::PingTimeoutArgs>
+  MaybeSendPingWithoutSpawningTimeout(PingManager& ping_system,
+                                      Duration next_allowed_ping_interval) {
     http2::FrameSender frame_sender =
         transport_write_context_.GetWriteCycle().GetFrameSender();
     std::optional<Duration> delayed_ping_wait =
         ping_system.MaybeGetSerializedPingFrames(frame_sender,
                                                  next_allowed_ping_interval);
     MaybeSpawnDelayedPing(ping_system, delayed_ping_wait);
-    std::optional<uint64_t> opaque_data = ping_system.NotifyPingSent();
-    if (trigger_ping_timeout) {
-      MaybeSpawnTimeout(ping_system, opaque_data);
+    return ping_system.NotifyPingSent();
+  }
+
+  // Sends a ping if needed, spawns the ping timeout promise for it, and
+  // returns the opaque data of the ping.
+  std::optional<uint64_t> MaybeSendPingSpawnTimeoutAndReturnID(
+      PingManager& ping_system, Duration next_allowed_ping_interval) {
+    std::optional<PingManager::PingTimeoutArgs> ping_timeout_args =
+        MaybeSendPingWithoutSpawningTimeout(ping_system,
+                                            next_allowed_ping_interval);
+    std::optional<uint64_t> opaque_data;
+    if (ping_timeout_args.has_value()) {
+      opaque_data = ping_timeout_args->opaque_data;
     }
+    MaybeSpawnTimeout(ping_system, std::move(ping_timeout_args));
     return opaque_data;
   }
 
@@ -392,8 +408,9 @@ PING_MANAGER_TEST(TestPingManagerNoAck) {
   party->Spawn(
       "PingManager",
       [&] {
-        MaybeSendPing(ping_system, /*next_allowed_ping_interval=*/
-                      Duration::Seconds(100));
+        MaybeSendPingAndSpawnTimeout(
+            ping_system, /*next_allowed_ping_interval=*/
+            Duration::Seconds(100));
       },
       [](auto) { LOG(INFO) << "Reached PingManager end"; });
 
@@ -412,7 +429,7 @@ PING_MANAGER_TEST(DISABLED_TestPingManagerDelayedPing) {
   //    both pings within next_allowed_ping_interval.
   // 3. The ping timeout is triggered for the first ping.
   // 4. Write cycle is triggered only once even if there are multiple calls to
-  //    MaybeSendPing within the next_allowed_ping_interval.
+  //    MaybeSendPingAndSpawnTimeout within the next_allowed_ping_interval.
 
   std::unique_ptr<StrictMock<MockPingInterface>> ping_interface =
       std::make_unique<StrictMock<MockPingInterface>>();
@@ -443,8 +460,9 @@ PING_MANAGER_TEST(DISABLED_TestPingManagerDelayedPing) {
   party->Spawn(
       "PingManager",
       [&] {
-        MaybeSendPing(ping_system, /*next_allowed_ping_interval=*/
-                      kLongInterval);
+        MaybeSendPingAndSpawnTimeout(
+            ping_system, /*next_allowed_ping_interval=*/
+            kLongInterval);
       },
       [](auto) { LOG(INFO) << "Reached PingManager end"; });
 
@@ -462,15 +480,17 @@ PING_MANAGER_TEST(DISABLED_TestPingManagerDelayedPing) {
   party->Spawn(
       "PingManager2",
       [&] {
-        MaybeSendPing(ping_system, /*next_allowed_ping_interval=*/
-                      kLongInterval);
+        MaybeSendPingAndSpawnTimeout(
+            ping_system, /*next_allowed_ping_interval=*/
+            kLongInterval);
       },
       [](auto) { LOG(INFO) << "Reached PingManager end"; });
   party->Spawn(
       "PingManager3",
       [&] {
-        MaybeSendPing(ping_system, /*next_allowed_ping_interval=*/
-                      kLongInterval);
+        MaybeSendPingAndSpawnTimeout(
+            ping_system, /*next_allowed_ping_interval=*/
+            kLongInterval);
       },
       [](auto) { LOG(INFO) << "Reached PingManager end"; });
 
@@ -512,9 +532,10 @@ PING_MANAGER_TEST(TestPingManagerAck) {
   party->Spawn(
       "PingManager",
       [&] {
-        std::optional<uint64_t> recv_opaque_data = MaybeSendPingAndReturnID(
-            ping_system, /*next_allowed_ping_interval=*/
-            Duration::Seconds(100));
+        std::optional<uint64_t> recv_opaque_data =
+            MaybeSendPingSpawnTimeoutAndReturnID(
+                ping_system, /*next_allowed_ping_interval=*/
+                Duration::Seconds(100));
         EXPECT_TRUE(recv_opaque_data.has_value());
         opaque_data = recv_opaque_data.value();
       },
@@ -566,9 +587,10 @@ PING_MANAGER_TEST(TestPingManagerDelayedAck) {
   party->Spawn(
       "PingManager",
       [&] {
-        std::optional<uint64_t> recv_opaque_data = MaybeSendPingAndReturnID(
-            ping_system, /*next_allowed_ping_interval=*/
-            Duration::Seconds(100));
+        std::optional<uint64_t> recv_opaque_data =
+            MaybeSendPingSpawnTimeoutAndReturnID(
+                ping_system, /*next_allowed_ping_interval=*/
+                Duration::Seconds(100));
         EXPECT_TRUE(recv_opaque_data.has_value());
         opaque_data = recv_opaque_data.value();
       },
@@ -588,8 +610,8 @@ PING_MANAGER_TEST(TestPingManagerDelayedAck) {
 }
 
 PING_MANAGER_TEST(TestPingManagerNoPingRequest) {
-  // Tests that MaybeSendPing returns immediately if no ping request has been
-  // made.
+  // Tests that MaybeSendPingAndSpawnTimeout returns immediately if no ping
+  // request has been made.
 
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   std::unique_ptr<StrictMock<MockPingInterface>> ping_interface =
@@ -604,8 +626,9 @@ PING_MANAGER_TEST(TestPingManagerNoPingRequest) {
   party->Spawn(
       "PingManager",
       [&] {
-        MaybeSendPing(ping_system, /*next_allowed_ping_interval=*/
-                      Duration::Seconds(100));
+        MaybeSendPingAndSpawnTimeout(
+            ping_system, /*next_allowed_ping_interval=*/
+            Duration::Seconds(100));
       },
       [&on_done](auto) {
         on_done.Call(absl::OkStatus());
@@ -674,8 +697,9 @@ PING_MANAGER_TEST(TestPingManagerImportantPing) {
   GetParty()->Spawn(
       "PingManager",
       [&] {
-        MaybeSendPing(ping_system, /*next_allowed_ping_interval=*/
-                      kShortInterval);
+        MaybeSendPingAndSpawnTimeout(
+            ping_system, /*next_allowed_ping_interval=*/
+            kShortInterval);
       },
       [&on_done, &ping_system](auto) {
         on_done.Call(absl::OkStatus());
@@ -719,13 +743,18 @@ PING_MANAGER_TEST(TestPingManagerPingTimeoutAfterAck) {
       "PingManager",
       [&] {
         return TrySeq([&]() {
-          auto recv_opaque_data = MaybeSendPingAndReturnID(
-              ping_system, /*next_allowed_ping_interval=*/kShortInterval,
-              /*trigger_ping_timeout=*/false);
-          EXPECT_TRUE(recv_opaque_data.has_value());
-          uint64_t opaque_data = recv_opaque_data.value();
-          EXPECT_TRUE(ping_system.AckPing(opaque_data));
-          MaybeSpawnTimeout(ping_system, recv_opaque_data);
+          // Send the ping, but do not spawn the ping timeout promise yet.
+          std::optional<PingManager::PingTimeoutArgs> ping_timeout_args =
+              MaybeSendPingWithoutSpawningTimeout(
+                  ping_system, /*next_allowed_ping_interval=*/kShortInterval);
+          EXPECT_TRUE(ping_timeout_args.has_value());
+          if (!ping_timeout_args.has_value()) {
+            return absl::InternalError("Ping was not sent");
+          }
+          EXPECT_TRUE(ping_system.AckPing(ping_timeout_args->opaque_data));
+          // The ping timeout promise must resolve through the already set ack
+          // latch, without triggering PingInterface::PingTimeout().
+          MaybeSpawnTimeout(ping_system, std::move(ping_timeout_args));
           return absl::OkStatus();
         });
       },

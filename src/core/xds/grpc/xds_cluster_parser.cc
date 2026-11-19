@@ -487,7 +487,11 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
     errors.AddError("unknown discovery type");
   }
   // Check the LB policy.
-  ParseLbPolicyConfig(context, cluster, cds_update.get(), &errors);
+  // Skip this for aggregate clusters, as per gRFC A75.
+  if (!std::holds_alternative<XdsClusterResource::Aggregate>(
+          cds_update->type)) {
+    ParseLbPolicyConfig(context, cluster, cds_update.get(), &errors);
+  }
   // transport_socket
   auto* transport_socket =
       envoy_config_cluster_v3_Cluster_transport_socket(cluster);

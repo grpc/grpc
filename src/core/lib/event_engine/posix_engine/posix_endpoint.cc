@@ -481,12 +481,12 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 }
 
 void PosixEndpointImpl::PerformReclamation() {
-  read_mu_.Lock();
+  read_mu_.lock();
   if (incoming_buffer_ != nullptr) {
     incoming_buffer_->Clear();
   }
   has_posted_reclaimer_ = false;
-  read_mu_.Unlock();
+  read_mu_.unlock();
 }
 
 void PosixEndpointImpl::MaybePostReclaimer() {
@@ -628,7 +628,7 @@ void PosixEndpointImpl::HandleRead(absl::Status status) {
 bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                              SliceBuffer* buffer,
                              EventEngine::Endpoint::ReadArgs args) {
-  grpc_core::ReleasableMutexLock lock(&read_mu_);
+  grpc_core::ReleasableMutexLock lock(read_mu_);
   GRPC_TRACE_LOG(event_engine_endpoint, INFO)
       << "Endpoint[" << this << "]: Read";
   GRPC_CHECK(read_cb_ == nullptr);
@@ -1285,9 +1285,9 @@ void PosixEndpointImpl::MaybeShutdown(
   }
   on_release_fd_ = std::move(on_release_fd);
   handle_->ShutdownHandle(why);
-  read_mu_.Lock();
+  read_mu_.lock();
   memory_owner_.Reset();
-  read_mu_.Unlock();
+  read_mu_.unlock();
   Unref();
 }
 

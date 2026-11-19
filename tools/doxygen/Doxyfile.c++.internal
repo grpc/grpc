@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.86.0-dev
+PROJECT_NUMBER         = 1.87.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -880,6 +880,7 @@ include/grpc++/support/time.h \
 include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
+include/grpc/channel_factory.h \
 include/grpc/compression.h \
 include/grpc/context_types.h \
 include/grpc/create_channel_from_endpoint.h \
@@ -1157,6 +1158,8 @@ src/core/client_channel/backup_poller.cc \
 src/core/client_channel/backup_poller.h \
 src/core/client_channel/buffered_call.cc \
 src/core/client_channel/buffered_call.h \
+src/core/client_channel/channel_factory.cc \
+src/core/client_channel/channel_factory.h \
 src/core/client_channel/client_channel.cc \
 src/core/client_channel/client_channel.h \
 src/core/client_channel/client_channel_args.h \
@@ -1176,6 +1179,8 @@ src/core/client_channel/dynamic_filters.cc \
 src/core/client_channel/dynamic_filters.h \
 src/core/client_channel/global_subchannel_pool.cc \
 src/core/client_channel/global_subchannel_pool.h \
+src/core/client_channel/lame_channel.cc \
+src/core/client_channel/lame_channel.h \
 src/core/client_channel/lb_metadata.cc \
 src/core/client_channel/lb_metadata.h \
 src/core/client_channel/load_balanced_call_destination.cc \
@@ -1355,8 +1360,6 @@ src/core/ext/filters/message_size/message_size_filter.cc \
 src/core/ext/filters/message_size/message_size_filter.h \
 src/core/ext/filters/rbac/rbac_filter.cc \
 src/core/ext/filters/rbac/rbac_filter.h \
-src/core/ext/filters/rbac/rbac_service_config_parser.cc \
-src/core/ext/filters/rbac/rbac_service_config_parser.h \
 src/core/ext/filters/stateful_session/stateful_session_filter.cc \
 src/core/ext/filters/stateful_session/stateful_session_filter.h \
 src/core/ext/transport/chttp2/alpn/alpn.cc \
@@ -1858,6 +1861,9 @@ src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.h \
 src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb.h \
 src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c \
 src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.h \
+src/core/ext/upb-gen/google/api/field_behavior.upb.h \
+src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.c \
+src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.h \
 src/core/ext/upb-gen/google/api/http.upb.h \
 src/core/ext/upb-gen/google/api/http.upb_minitable.c \
 src/core/ext/upb-gen/google/api/http.upb_minitable.h \
@@ -1909,6 +1915,9 @@ src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.h \
 src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb.h \
 src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.c \
 src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.h \
+src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb.h \
+src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.c \
+src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.h \
 src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h \
 src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
 src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h \
@@ -2823,6 +2832,10 @@ src/core/load_balancing/address_filtering.cc \
 src/core/load_balancing/address_filtering.h \
 src/core/load_balancing/autosharding/autosharding.cc \
 src/core/load_balancing/autosharding/autosharding.h \
+src/core/load_balancing/autosharding/autosharding_assignment.cc \
+src/core/load_balancing/autosharding/autosharding_assignment.h \
+src/core/load_balancing/autosharding/autosharding_client.cc \
+src/core/load_balancing/autosharding/autosharding_client.h \
 src/core/load_balancing/backend_metric_data.h \
 src/core/load_balancing/backend_metric_parser.cc \
 src/core/load_balancing/backend_metric_parser.h \
@@ -2919,11 +2932,8 @@ src/core/server/server_config_selector.h \
 src/core/server/server_config_selector_filter.cc \
 src/core/server/server_config_selector_filter.h \
 src/core/server/server_interface.h \
-src/core/server/xds_channel_stack_modifier.cc \
-src/core/server/xds_channel_stack_modifier.h \
 src/core/server/xds_server_config_fetcher.cc \
 src/core/server/xds_server_config_fetcher.h \
-src/core/server/xds_server_config_fetcher_legacy.cc \
 src/core/service_config/service_config.h \
 src/core/service_config/service_config_call_data.h \
 src/core/service_config/service_config_channel_arg_filter.cc \
@@ -3271,6 +3281,8 @@ src/core/xds/grpc/xds_tls_context.cc \
 src/core/xds/grpc/xds_tls_context.h \
 src/core/xds/grpc/xds_tls_context_parser.cc \
 src/core/xds/grpc/xds_tls_context_parser.h \
+src/core/xds/grpc/xds_transport_factory_grpc.cc \
+src/core/xds/grpc/xds_transport_factory_grpc.h \
 src/core/xds/grpc/xds_transport_grpc.cc \
 src/core/xds/grpc/xds_transport_grpc.h \
 src/core/xds/xds_client/lrs_client.cc \
@@ -3289,6 +3301,7 @@ src/core/xds/xds_client/xds_metrics.h \
 src/core/xds/xds_client/xds_resource_type.h \
 src/core/xds/xds_client/xds_resource_type_impl.h \
 src/core/xds/xds_client/xds_transport.h \
+src/core/xds/xds_client/xds_transport_factory.h \
 src/cpp/README.md \
 src/cpp/client/call_context_registry.cc \
 src/cpp/client/call_credentials.cc \

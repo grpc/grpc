@@ -308,6 +308,66 @@ class HealthServicerTest(AioTestBase):
 
         self.assertTrue(queue.empty())
 
+    async def test_watch_multiple_calls_remain_active_after_one_is_cancelled(
+        self,
+    ):
+        service_name = "test_service"
+
+        call1 = self._stub.Watch(
+            health_pb2.HealthCheckRequest(service=service_name)
+        )
+        response1 = await call1.read()
+        self.assertNotEqual(aio.EOF, response1)
+        self.assertEqual(
+            health_pb2.HealthCheckResponse.SERVICE_UNKNOWN,
+            response1.status,
+        )
+
+        call2 = self._stub.Watch(
+            health_pb2.HealthCheckRequest(service=service_name)
+        )
+        response2 = await call2.read()
+        self.assertNotEqual(aio.EOF, response2)
+        self.assertEqual(
+            health_pb2.HealthCheckResponse.SERVICE_UNKNOWN,
+            response2.status,
+        )
+        self.assertEqual(
+            self._servicer._watcher_count_by_service.get(service_name), 2
+        )
+
+        # Client 1 disconnects
+        call1.cancel()
+
+        await self._servicer.set(
+            service_name, health_pb2.HealthCheckResponse.SERVICE_UNKNOWN
+        )
+
+        # Wait for server to notice cancellation.
+        timeout = time.monotonic() + test_constants.TIME_ALLOWANCE
+        while (
+            time.monotonic() < timeout
+            and self._servicer._watcher_count_by_service.get(service_name) == 2
+        ):
+            await asyncio.sleep(0)
+        self.assertEqual(
+            self._servicer._watcher_count_by_service.get(service_name), 1
+        )
+
+        # Server updates status
+        await self._servicer.set(
+            service_name, health_pb2.HealthCheckResponse.NOT_SERVING
+        )
+
+        # Client 2 should receive update
+        try:
+            response = await asyncio.wait_for(call2.read(), timeout=2.0)
+        except asyncio.TimeoutError:
+            self.fail("Client 2 timed out! Orphanage occurred.")
+        self.assertEqual(
+            response.status, health_pb2.HealthCheckResponse.NOT_SERVING
+        )
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)

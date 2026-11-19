@@ -24,6 +24,7 @@
 #include <limits.h>
 #include <string.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -90,6 +91,7 @@
 #include "absl/functional/bind_front.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -106,6 +108,15 @@
 const size_t kMaxChainLength = 100;
 const char kDefaultBoringSSLKeyExchangeGroups[] =
     "X25519MLKEM768:X25519:P-256:P-384:P-521";
+// Matches the BoringSSL default verify signature algorithms list:
+// https://github.com/google/boringssl/blob/fbb876dcee91c83a78d930dc9fab79db0c12053e/ssl/extensions.cc#L286-L302
+// Uses standard TLS 1.3 IANA signature scheme names accepted by
+// SSL_CTX_set1_sigalgs_list in both BoringSSL and OpenSSL >= 1.1.1.
+[[maybe_unused]] const char kDefaultSignatureAlgorithms[] =
+    "ecdsa_secp256r1_sha256:rsa_pss_rsae_sha256:rsa_pkcs1_sha256:"
+    "ecdsa_secp384r1_sha384:rsa_pss_rsae_sha384:rsa_pkcs1_sha384:"
+    "rsa_pss_rsae_sha512:rsa_pkcs1_sha512:"
+    "rsa_pkcs1_sha1";
 [[maybe_unused]] const char kDefaultOpenSSL1_1_1KeyExchangeGroups[] =
     "X25519:P-256:P-384:P-521";
 [[maybe_unused]] const char kDefaultOpenSSL1_0_2KeyExchangeGroups[] =
@@ -159,6 +170,8 @@ struct tsi_ssl_client_handshaker_factory {
 #if defined(OPENSSL_IS_BORINGSSL)
   std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
 #endif
+  std::string exported_keying_material_label;
+  size_t exported_keying_material_length;
 };
 
 // Wrapper of the SSL_CTX for use on the server side. In addition to the
@@ -193,6 +206,8 @@ struct tsi_ssl_server_handshaker_factory {
 #if defined(OPENSSL_IS_BORINGSSL)
   std::shared_ptr<grpc_core::CertificateSelector> certificate_selector;
 #endif  // defined(OPENSSL_IS_BORINGSSL)
+  std::string exported_keying_material_label;
+  size_t exported_keying_material_length;
 };
 
 // Tracks the arguments for a pending call to tsi_handshaker_next().
@@ -210,12 +225,13 @@ struct HandshakerNextArgs {
   tsi_handshaker_result* handshaker_result = nullptr;
 };
 
-struct tsi_ssl_handshaker_result {
-  tsi_handshaker_result base;
-  SSL* ssl;
-  BIO* network_io;
-  unsigned char* unused_bytes;
-  size_t unused_bytes_size;
+struct tsi_ssl_handshaker_result : public tsi_handshaker_result {
+  SSL* ssl = nullptr;
+  BIO* network_io = nullptr;
+  unsigned char* unused_bytes = nullptr;
+  size_t unused_bytes_size = 0;
+  std::string exported_keying_material_label;
+  size_t exported_keying_material_length = 0;
 };
 
 struct SslHandshakeResult {
@@ -231,7 +247,9 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
       tsi_ssl_handshaker_factory* factory_ref,
       grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
       bool is_client, std::shared_ptr<grpc_core::PrivateKeySigner> signer,
-      std::string target, std::string locality, std::string backend_service)
+      std::string target, std::string locality, std::string backend_service,
+      std::string exported_keying_material_label,
+      size_t exported_keying_material_length)
       : tsi_handshaker(handshaker_vtable),
         ssl(ssl),
         network_io(network_io),
@@ -245,7 +263,10 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
         is_client(is_client),
         target(std::move(target)),
         locality(std::move(locality)),
-        backend_service(std::move(backend_service)) {
+        backend_service(std::move(backend_service)),
+        exported_keying_material_label(
+            std::move(exported_keying_material_label)),
+        exported_keying_material_length(exported_keying_material_length) {
 #if defined(OPENSSL_IS_BORINGSSL)
     key_signer = std::move(signer);
 #endif
@@ -281,6 +302,8 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
   std::string target;
   std::string locality;
   std::string backend_service;
+  std::string exported_keying_material_label;
+  size_t exported_keying_material_length;
   bool metric_recorded ABSL_GUARDED_BY(mu) = false;
 
   void MaybeRecordTelemetry(const SslHandshakeResult& handshake_result)
@@ -324,7 +347,7 @@ void tsi_ssl_handshaker::MaybeRecordTelemetry(
   SSL* active_ssl = ssl;
   if (active_ssl == nullptr && handshaker_next_args.has_value() &&
       handshaker_next_args->handshaker_result != nullptr) {
-    auto* res = reinterpret_cast<tsi_ssl_handshaker_result*>(
+    auto* res = static_cast<tsi_ssl_handshaker_result*>(
         handshaker_next_args->handshaker_result);
     active_ssl = res->ssl;
   }
@@ -552,6 +575,53 @@ tsi_result SetKeyExchangeGroups(
     }
     if (!SSL_CTX_set_ecdh_auto(context, /*onoff=*/1)) {
       LOG(ERROR) << "Could not set ecdh auto for OpenSSL 1.0.2.";
+      return TSI_INTERNAL_ERROR;
+    }
+#endif
+  }
+  return TSI_OK;
+}
+
+// Populates the signature algorithms.
+// Prefers the signature algorithms (input argument) configured by the user,
+// otherwise uses our defaults.
+tsi_result SetSignatureAlgorithms(
+    [[maybe_unused]] SSL_CTX* context,
+    const std::vector<grpc_tls_signature_algorithm>& signature_algorithms) {
+  if (!signature_algorithms.empty()) {
+    std::vector<absl::string_view> algorithm_names;
+    algorithm_names.reserve(signature_algorithms.size());
+    for (const grpc_tls_signature_algorithm algorithm : signature_algorithms) {
+      absl::StatusOr<absl::string_view> algorithm_name =
+          tsi::ConvertSignatureAlgorithmToString(algorithm);
+      if (!algorithm_name.ok()) {
+        LOG(ERROR) << "Could not convert signature algorithm to string: "
+                   << algorithm;
+        return TSI_INVALID_ARGUMENT;
+      }
+      if (std::find(algorithm_names.begin(), algorithm_names.end(),
+                    *algorithm_name) != algorithm_names.end()) {
+        LOG(ERROR) << "Duplicate signature algorithm: " << *algorithm_name;
+        return TSI_INVALID_ARGUMENT;
+      }
+      algorithm_names.push_back(*algorithm_name);
+    }
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+    std::string sigalg_list_str = absl::StrJoin(algorithm_names, ":");
+    if (!SSL_CTX_set1_sigalgs_list(context, sigalg_list_str.c_str())) {
+      LOG(ERROR) << "Could not set signature algorithms: " << sigalg_list_str;
+      return TSI_INVALID_ARGUMENT;
+    }
+#else
+    LOG(ERROR) << "Setting TLS signature algorithms is not supported when "
+                  "building against OpenSSL versions < 1.1.1.";
+    return TSI_FAILED_PRECONDITION;
+#endif  // OPENSSL_VERSION_NUMBER >= 0x10101000
+  } else {
+// Use defaults
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+    if (!SSL_CTX_set1_sigalgs_list(context, kDefaultSignatureAlgorithms)) {
+      LOG(ERROR) << "Could not set default signature algorithms.";
       return TSI_INTERNAL_ERROR;
     }
 #endif
@@ -1082,32 +1152,16 @@ static tsi_result peer_property_from_x509_common_name(
 static tsi_result peer_property_from_x509_subject(X509* cert,
                                                   tsi_peer_property* property,
                                                   bool is_verified_root_cert) {
-  auto* subject_name = X509_get_subject_name(cert);
-  if (subject_name == nullptr) {
-    GRPC_TRACE_LOG(tsi, INFO) << "Could not get subject name from certificate.";
-    return TSI_NOT_FOUND;
-  }
-  BIO* bio = BIO_new(BIO_s_mem());
-  X509_NAME_print_ex(bio, subject_name, 0, XN_FLAG_RFC2253);
-  char* contents;
-  long len = BIO_get_mem_data(bio, &contents);
-  if (len < 0) {
-    LOG(ERROR) << "Could not get subject entry from certificate.";
-    BIO_free(bio);
+  absl::StatusOr<std::string> subject = tsi::X509SubjectRfc2253(cert);
+  if (!subject.ok()) {
+    LOG(ERROR) << "Could not get subject from certificate: "
+               << subject.status();
     return TSI_INTERNAL_ERROR;
   }
-  tsi_result result;
-  if (!is_verified_root_cert) {
-    result = tsi_construct_string_peer_property(
-        TSI_X509_SUBJECT_PEER_PROPERTY, contents, static_cast<size_t>(len),
-        property);
-  } else {
-    result = tsi_construct_string_peer_property(
-        TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY, contents,
-        static_cast<size_t>(len), property);
-  }
-  BIO_free(bio);
-  return result;
+  return tsi_construct_string_peer_property(
+      is_verified_root_cert ? TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY
+                            : TSI_X509_SUBJECT_PEER_PROPERTY,
+      subject->data(), subject->size(), property);
 }
 
 // Gets the X509 cert in PEM format as a tsi_peer_property.
@@ -1543,11 +1597,12 @@ static tsi_result ssl_ctx_load_verification_certs(SSL_CTX* context,
 }
 
 // Populates the SSL context with a private key and a cert chain, and sets the
-// cipher list and the ephemeral ECDH key.
+// cipher list, the ephemeral ECDH key, and the signature algorithms.
 static tsi_result populate_ssl_context(
     SSL_CTX* context, const grpc_core::PemKeyCertPair* key_cert_pair,
     const char* cipher_list,
-    const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups) {
+    const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
+    const std::vector<grpc_tls_signature_algorithm>& signature_algorithms) {
   tsi_result result = TSI_OK;
   if (key_cert_pair != nullptr) {
     if (!key_cert_pair->cert_chain().empty()) {
@@ -1592,6 +1647,10 @@ static tsi_result populate_ssl_context(
     return TSI_INVALID_ARGUMENT;
   }
   result = SetKeyExchangeGroups(context, key_exchange_groups);
+  if (result != TSI_OK) {
+    return result;
+  }
+  result = SetSignatureAlgorithms(context, signature_algorithms);
   if (result != TSI_OK) {
     return result;
   }
@@ -2272,7 +2331,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
   const unsigned char* alpn_selected = nullptr;
   unsigned int alpn_selected_len;
   const tsi_ssl_handshaker_result* impl =
-      reinterpret_cast<const tsi_ssl_handshaker_result*>(self);
+      static_cast<const tsi_ssl_handshaker_result*>(self);
   X509* peer_cert = SSL_get_peer_certificate(impl->ssl);
   if (peer_cert != nullptr) {
     result = peer_from_x509(peer_cert, 1, peer);
@@ -2297,6 +2356,26 @@ static tsi_result ssl_handshaker_result_extract_peer(
   const char* tls_version = SSL_get_version(impl->ssl);
   X509* verified_root_cert = static_cast<X509*>(
       SSL_get_ex_data(impl->ssl, g_ssl_ex_verified_root_cert_index));
+  // Only servers report the principal of their own certificate: it backs
+  // AttributeContext.destination.principal in the ext_authz filter, which is
+  // populated only for incoming calls.  SSL_get_certificate() returns the leaf
+  // actually used on this connection, taking SNI and certificate selection
+  // into account; it is owned by the SSL object.
+  std::optional<std::string> local_principal;
+  if (SSL_is_server(impl->ssl)) {
+    X509* local_cert = SSL_get_certificate(impl->ssl);
+    if (local_cert != nullptr) {
+      absl::StatusOr<std::string> principal = tsi::X509Principal(local_cert);
+      if (principal.ok()) {
+        if (!principal->empty()) local_principal = *std::move(principal);
+      } else {
+        // Not fatal: the handshake has already succeeded, and this property
+        // is informational only.
+        LOG(ERROR) << "Could not get principal of local certificate: "
+                   << principal.status();
+      }
+    }
+  }
   // 1 is for session reused property.
   size_t new_property_count = peer->property_count + 3;
   if (alpn_selected != nullptr) new_property_count++;
@@ -2304,6 +2383,8 @@ static tsi_result ssl_handshaker_result_extract_peer(
   if (verified_root_cert != nullptr) new_property_count++;
   if (server_name != nullptr) new_property_count++;
   if (tls_version != nullptr) new_property_count++;
+  if (local_principal.has_value()) new_property_count++;
+  if (!impl->exported_keying_material_label.empty()) new_property_count++;
 #if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30000000L
   int nid = SSL_get_negotiated_group(impl->ssl);
   const char* negotiated_group_name =
@@ -2363,10 +2444,21 @@ static tsi_result ssl_handshaker_result_extract_peer(
   if (verified_root_cert != nullptr) {
     result = peer_property_from_x509_subject(
         verified_root_cert, &peer->properties[peer->property_count], true);
-    if (result != TSI_OK) {
+    if (result == TSI_OK) {
+      peer->property_count++;
+    } else {
+      // Not fatal: the handshake has already succeeded, and this property is
+      // informational only.  Leave the slot unpopulated and carry on.
       VLOG(2) << "Problem extracting subject from verified_root_cert. result: "
               << result;
+      result = TSI_OK;
     }
+  }
+  if (local_principal.has_value()) {
+    result = tsi_construct_string_peer_property(
+        TSI_X509_LOCAL_PRINCIPAL_PEER_PROPERTY, local_principal->data(),
+        local_principal->size(), &peer->properties[peer->property_count]);
+    if (result != TSI_OK) return result;
     peer->property_count++;
   }
 
@@ -2379,6 +2471,33 @@ static tsi_result ssl_handshaker_result_extract_peer(
     peer->property_count++;
   }
 #endif
+
+  if (!impl->exported_keying_material_label.empty()) {
+    size_t ekm_len = impl->exported_keying_material_length;
+    result = tsi_construct_allocated_string_peer_property(
+        TSI_SSL_EXPORTED_KEYING_MATERIAL, ekm_len,
+        &peer->properties[peer->property_count]);
+    if (result != TSI_OK) {
+      tsi_peer_destruct(peer);
+      return result;
+    }
+    // The exporter context is not part of the public API, so the keying
+    // material is derived without one.
+    if (SSL_export_keying_material(
+            impl->ssl,
+            reinterpret_cast<unsigned char*>(
+                peer->properties[peer->property_count].value.data),
+            ekm_len, impl->exported_keying_material_label.data(),
+            impl->exported_keying_material_label.size(), /*context=*/nullptr,
+            /*context_len=*/0, /*use_context=*/0) != 1) {
+      LOG(ERROR) << "Failed to export keying material.";
+      tsi_peer_property_destruct(&peer->properties[peer->property_count]);
+      // Callers don't destruct the peer when extraction fails.
+      tsi_peer_destruct(peer);
+      return TSI_INTERNAL_ERROR;
+    }
+    peer->property_count++;
+  }
 
   return result;
 }
@@ -2395,9 +2514,8 @@ static tsi_result ssl_handshaker_result_create_frame_protector(
     tsi_frame_protector** protector) {
   size_t actual_max_output_protected_frame_size =
       TSI_SSL_MAX_PROTECTED_FRAME_SIZE_UPPER_BOUND;
-  tsi_ssl_handshaker_result* impl =
-      reinterpret_cast<tsi_ssl_handshaker_result*>(
-          const_cast<tsi_handshaker_result*>(self));
+  tsi_ssl_handshaker_result* impl = static_cast<tsi_ssl_handshaker_result*>(
+      const_cast<tsi_handshaker_result*>(self));
   tsi_ssl_frame_protector* protector_impl =
       static_cast<tsi_ssl_frame_protector*>(
           gpr_zalloc(sizeof(*protector_impl)));
@@ -2439,7 +2557,7 @@ static tsi_result ssl_handshaker_result_get_unused_bytes(
     const tsi_handshaker_result* self, const unsigned char** bytes,
     size_t* bytes_size) {
   const tsi_ssl_handshaker_result* impl =
-      reinterpret_cast<const tsi_ssl_handshaker_result*>(self);
+      static_cast<const tsi_ssl_handshaker_result*>(self);
   *bytes_size = impl->unused_bytes_size;
   *bytes = impl->unused_bytes;
   return TSI_OK;
@@ -2447,11 +2565,11 @@ static tsi_result ssl_handshaker_result_get_unused_bytes(
 
 static void ssl_handshaker_result_destroy(tsi_handshaker_result* self) {
   tsi_ssl_handshaker_result* impl =
-      reinterpret_cast<tsi_ssl_handshaker_result*>(self);
+      static_cast<tsi_ssl_handshaker_result*>(self);
   SSL_free(impl->ssl);
   BIO_free(impl->network_io);
   gpr_free(impl->unused_bytes);
-  gpr_free(impl);
+  delete impl;
 }
 
 static const tsi_handshaker_result_vtable handshaker_result_vtable = {
@@ -2472,9 +2590,13 @@ static tsi_result ssl_handshaker_result_create(tsi_ssl_handshaker* handshaker,
     handshaker->MaybeSetError("invalid argument");
     return TSI_INVALID_ARGUMENT;
   }
-  tsi_ssl_handshaker_result* result =
-      grpc_core::Zalloc<tsi_ssl_handshaker_result>();
-  result->base.vtable = &handshaker_result_vtable;
+  auto* result = new tsi_ssl_handshaker_result();
+  result->vtable = &handshaker_result_vtable;
+  result->exported_keying_material_label =
+      handshaker->exported_keying_material_label;
+  result->exported_keying_material_length =
+      handshaker->exported_keying_material_length;
+
   // Transfer ownership of ssl and network_io to the handshaker result.
   result->ssl = handshaker->ssl;
   handshaker->ssl = nullptr;
@@ -2483,7 +2605,7 @@ static tsi_result ssl_handshaker_result_create(tsi_ssl_handshaker* handshaker,
   // Transfer ownership of |unused_bytes| to the handshaker result.
   result->unused_bytes = unused_bytes;
   result->unused_bytes_size = unused_bytes_size;
-  handshaker->handshaker_next_args->handshaker_result = &result->base;
+  handshaker->handshaker_next_args->handshaker_result = result;
   return TSI_OK;
 }
 
@@ -2769,7 +2891,7 @@ static SslHandshakeResult ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
       // Output Cipher information
       if (GRPC_TRACE_FLAG_ENABLED(tsi)) {
         tsi_ssl_handshaker_result* result =
-            reinterpret_cast<tsi_ssl_handshaker_result*>(
+            static_cast<tsi_ssl_handshaker_result*>(
                 self->handshaker_next_args->handshaker_result);
         auto cipher = SSL_get_current_cipher(result->ssl);
         if (cipher != nullptr) {
@@ -2943,7 +3065,8 @@ static tsi_result create_tsi_ssl_handshaker(
     tsi_ssl_handshaker_factory* factory,
     grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
     std::string target, std::string locality, std::string backend_service,
-    tsi_handshaker** handshaker) {
+    std::string exported_keying_material_label,
+    size_t exported_keying_material_length, tsi_handshaker** handshaker) {
   SSL* ssl = SSL_new(ctx);
   BIO* network_io = nullptr;
   BIO* ssl_io = nullptr;
@@ -3040,7 +3163,8 @@ static tsi_result create_tsi_ssl_handshaker(
       &handshaker_vtable, ssl, network_io,
       tsi_ssl_handshaker_factory_ref(factory), std::move(collection_scope),
       is_client, std::move(key_signer), std::move(target), std::move(locality),
-      std::move(backend_service));
+      std::move(backend_service), std::move(exported_keying_material_label),
+      exported_keying_material_length);
   *handshaker = impl;
 
   if (!SSL_set_ex_data(ssl, g_ssl_ex_handshaker_index, impl)) {
@@ -3099,7 +3223,8 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
       network_bio_buf_size, ssl_bio_buf_size, alpn_preferred_protocol_list,
       std::move(key_signer), &factory->base, std::move(collection_scope),
       std::move(target), std::move(locality), std::move(backend_service),
-      handshaker);
+      factory->exported_keying_material_label,
+      factory->exported_keying_material_length, handshaker);
 }
 
 void tsi_ssl_client_handshaker_factory_unref(
@@ -3156,7 +3281,9 @@ tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
       /*server_name_indication=*/nullptr, network_bio_buf_size,
       ssl_bio_buf_size, std::nullopt, std::move(key_signer), &factory->base,
       std::move(collection_scope), /*target=*/"",
-      /*locality=*/"", /*backend_service=*/"", handshaker);
+      /*locality=*/"", /*backend_service=*/"",
+      factory->exported_keying_material_label,
+      factory->exported_keying_material_length, handshaker);
 }
 
 void tsi_ssl_server_handshaker_factory_unref(
@@ -3315,6 +3442,22 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
                                                                factory);
 }
 
+// Exported keying material is an opt-in feature, so leaving both the label and
+// the length unset is valid. If it's requested, then both values must be valid.
+static bool exported_keying_material_options_are_valid(const std::string& label,
+                                                       size_t length) {
+  if (label.empty() && length == 0) return true;
+  if (label.empty()) {
+    LOG(ERROR) << "Exported keying material label must not be empty.";
+    return false;
+  }
+  if (length == 0) {
+    LOG(ERROR) << "Exported keying material length must be greater than 0.";
+    return false;
+  }
+  return true;
+}
+
 tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     const tsi_ssl_client_handshaker_options* options,
     tsi_ssl_client_handshaker_factory** factory) {
@@ -3328,6 +3471,11 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   *factory = nullptr;
   if (options->root_store == nullptr && options->root_cert_info == nullptr &&
       !options->skip_server_certificate_verification) {
+    return TSI_INVALID_ARGUMENT;
+  }
+  if (!exported_keying_material_options_are_valid(
+          options->exported_keying_material_label,
+          options->exported_keying_material_length)) {
     return TSI_INVALID_ARGUMENT;
   }
 
@@ -3352,6 +3500,10 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   impl = new tsi_ssl_client_handshaker_factory();
   tsi_ssl_handshaker_factory_init(&impl->base);
   impl->base.vtable = &client_handshaker_factory_vtable;
+  impl->exported_keying_material_label =
+      options->exported_keying_material_label;
+  impl->exported_keying_material_length =
+      options->exported_keying_material_length;
   impl->ssl_context = ssl_context;
   if (options->session_cache != nullptr) {
     // Unref is called manually on factory destruction.
@@ -3383,9 +3535,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   }
 
   do {
-    result = populate_ssl_context(ssl_context, options->pem_key_cert_pair,
-                                  options->cipher_suites,
-                                  options->key_exchange_groups);
+    result = populate_ssl_context(
+        ssl_context, options->pem_key_cert_pair, options->cipher_suites,
+        options->key_exchange_groups, options->signature_algorithms);
     if (result != TSI_OK) break;
 
 #if defined(OPENSSL_IS_BORINGSSL)
@@ -3555,9 +3707,9 @@ tsi_result tsi_configure_server_ssl_context(
       ssl_context.ssl_ctx, options->min_tls_version, options->max_tls_version);
   if (result != TSI_OK) return result;
 
-  result = populate_ssl_context(ssl_context.ssl_ctx, pem_key_cert_pair,
-                                options->cipher_suites,
-                                options->key_exchange_groups);
+  result = populate_ssl_context(
+      ssl_context.ssl_ctx, pem_key_cert_pair, options->cipher_suites,
+      options->key_exchange_groups, options->signature_algorithms);
 #if defined(OPENSSL_IS_BORINGSSL)
   if (pem_key_cert_pair != nullptr) {
     grpc_core::Match(
@@ -3709,10 +3861,19 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
   *factory = nullptr;
+  if (!exported_keying_material_options_are_valid(
+          options->exported_keying_material_label,
+          options->exported_keying_material_length)) {
+    return TSI_INVALID_ARGUMENT;
+  }
 
   impl = new tsi_ssl_server_handshaker_factory();
   tsi_ssl_handshaker_factory_init(&impl->base);
   impl->base.vtable = &server_handshaker_factory_vtable;
+  impl->exported_keying_material_label =
+      options->exported_keying_material_label;
+  impl->exported_keying_material_length =
+      options->exported_keying_material_length;
 
   tsi_result result = grpc_core::Match(
       options->key_cert_pairs_or_selector,

@@ -24,6 +24,7 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 
+#include <chrono>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -42,11 +43,13 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -56,6 +59,7 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/transport/chttp2/http2_common_test_inputs.h"
 #include "test/core/transport/chttp2/http2_frame_test_helper.h"
 #include "test/core/transport/util/transport_test.h"
@@ -72,6 +76,8 @@ namespace testing {
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
 using ::testing::MockFunction;
+using ::testing::Pointee;
+using ::testing::Property;
 using ::testing::StrictMock;
 using util::testing::EventSequenceEndpoint;
 
@@ -90,7 +96,7 @@ const std::vector<uint8_t> kGrpcStatusCancelledOnly = {
 class Http2ServerTransportTest : public Http2TransportTest {
  public:
   Http2ServerTransportTest() = default;
-  // Http2TransportTest is not copyable or movable.
+
   Http2ServerTransportTest(const Http2ServerTransportTest&) = delete;
   Http2ServerTransportTest& operator=(const Http2ServerTransportTest&) = delete;
   Http2ServerTransportTest(Http2ServerTransportTest&&) = delete;
@@ -251,6 +257,12 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportWriteFromCall) {
           call_handler.PullClientInitialMetadata(),
           [call_handler](ClientMetadataHandle metadata) mutable {
             LOG(INFO) << "Client initial metadata: " << metadata->DebugString();
+            EXPECT_THAT(metadata->get_pointer(PeerString()),
+                        Pointee(Property(&Slice::as_string_view,
+                                         "ipv4:127.0.0.1:12345")));
+            EXPECT_THAT(metadata->get_pointer(LocalAddressString()),
+                        Pointee(Property(&Slice::as_string_view,
+                                         "ipv4:127.0.0.1:6789")));
             return call_handler.PushServerInitialMetadata(
                 ServerMetadataFromStatus(absl::OkStatus()));
           },
@@ -260,8 +272,10 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportWriteFromCall) {
             return call_handler.PushMessage(std::move(message));
           },
           [call_handler]() mutable {
-            return call_handler.PushServerTrailingMetadata(
-                ServerMetadataFromStatus(absl::CancelledError()));
+            const StatusFlag push_status =
+                call_handler.PushServerTrailingMetadata(
+                    ServerMetadataFromStatus(absl::CancelledError()));
+            EXPECT_TRUE(push_status.ok());
           });
     };
   };
@@ -808,6 +822,48 @@ TEST_F(Http2ServerTransportTest, TestServerInitiatedGoAway) {
   step->Wait();
 }
 
+TEST_F(Http2ServerTransportTest,
+       TestCloseBeforeClientPrefaceClosesImmediately) {
+  // Test to validate that closing the transport before receiving the client
+  // preface completes immediately without sending GOAWAY or waiting for
+  // kGoawaySendTimeoutSeconds.
+  ExecCtx ctx;
+  std::shared_ptr<std::optional<absl::Status>> on_receive_settings_status =
+      std::make_shared<std::optional<absl::Status>>();
+
+  // 1. Initialize and start the transport without sending the client preface.
+  InitTransport(GetChannelArgs(),
+                [on_receive_settings_status](absl::StatusOr<uint32_t> status) {
+                  *on_receive_settings_status = status.status();
+                });
+  // Empty step parks the preface read and fails on any write.
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
+  server_transport()->SetCallDestination(
+      MakeRefCounted<TestCallDestination>(this));
+  event_engine()->TickUntilIdle();
+  ASSERT_FALSE(on_receive_settings_status->has_value());
+
+  // 2. Disconnect the transport.
+  grpc_transport_op* op = grpc_make_transport_op(/*on_complete=*/nullptr);
+  op->disconnect_with_error = absl::UnavailableError(
+      "Did not receive HTTP/2 settings before handshake timeout");
+  server_transport()->PerformOp(op);
+
+  // 3. Verify the close completes without waiting kGoawaySendTimeoutSeconds.
+  const grpc_event_engine::experimental::FuzzingEventEngine::Time
+      close_start_time = event_engine()->Now();
+  event_engine()->TickUntilIdle();
+  ASSERT_TRUE(on_receive_settings_status->has_value());
+  EXPECT_EQ(on_receive_settings_status->value().code(),
+            absl::StatusCode::kUnavailable);
+  const int64_t close_elapsed_ms =
+      std::chrono::duration_cast<std::chrono::milliseconds>(
+          event_engine()->Now() - close_start_time)
+          .count();
+  EXPECT_LT(close_elapsed_ms,
+            static_cast<int64_t>(kGoawaySendTimeoutSeconds) * 1000);
+}
+
 TEST_F(Http2ServerTransportTest, TestKeepAliveTimeout) {
   // Test to validate that the transport is closed when keepalive ping times
   // out. This test asserts the following:
@@ -1150,8 +1206,10 @@ TEST_F(Http2ServerTransportTest, TestBdpPingIsSentWithStreamWithoutAck) {
             return call_handler.PushMessage(std::move(message));
           },
           [call_handler]() mutable {
-            return call_handler.PushServerTrailingMetadata(
-                ServerMetadataFromStatus(absl::CancelledError()));
+            const StatusFlag push_status =
+                call_handler.PushServerTrailingMetadata(
+                    ServerMetadataFromStatus(absl::CancelledError()));
+            EXPECT_TRUE(push_status.ok());
           });
     };
   };
@@ -1258,8 +1316,10 @@ TEST_F(Http2ServerTransportTest, TestBdpProbeEnabledWithAck) {
             return call_handler.PushMessage(std::move(message));
           },
           [call_handler]() mutable {
-            return call_handler.PushServerTrailingMetadata(
-                ServerMetadataFromStatus(absl::CancelledError()));
+            const StatusFlag push_status =
+                call_handler.PushServerTrailingMetadata(
+                    ServerMetadataFromStatus(absl::CancelledError()));
+            EXPECT_TRUE(push_status.ok());
           });
     };
   };
@@ -1493,8 +1553,10 @@ TEST_F(Http2ServerTransportTest, ReadGoawayWithActiveStream) {
             return call_handler.PushMessage(std::move(message));
           },
           [call_handler]() mutable {
-            return call_handler.PushServerTrailingMetadata(
-                ServerMetadataFromStatus(absl::CancelledError()));
+            const StatusFlag push_status =
+                call_handler.PushServerTrailingMetadata(
+                    ServerMetadataFromStatus(absl::CancelledError()));
+            EXPECT_TRUE(push_status.ok());
           });
     };
   };
@@ -1644,7 +1706,9 @@ TEST_F(Http2ServerTransportTest, ServerTrailingMetadataTarpitTest) {
                 Arena::MakePooledForOverwrite<ServerMetadata>();
             trailers->Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
             trailers->Set(GrpcTarPit(), Empty());
-            return call_handler.PushServerTrailingMetadata(std::move(trailers));
+            const StatusFlag push_status =
+                call_handler.PushServerTrailingMetadata(std::move(trailers));
+            EXPECT_TRUE(push_status.ok());
           });
     };
   };
@@ -2960,6 +3024,218 @@ TEST_F(Http2ServerTransportTest,
   const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
       endpoint()->NewStep();
   AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/5u);
+  teardown_step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportRecordsStats) {
+  // Verifies that Http2ServerTransport records all Http2TransportStats metrics
+  // (excluding window update periods):
+  // 1. BeginWrite (http2_writes_begun and http2_write_target_size).
+  // 2. RecordSettingsWrites (non-ACK SETTINGS only).
+  // 3. RecordPingsSent (non-ACK PING only).
+  // 4. RecordSendMessageSize, RecordWriteDataFrameSize, and
+  //    RecordReadDataFrameSize.
+  // 5. MaybeRecordStall (http2_stream_stalls and http2_transport_stalls).
+  // 6. RecordStreamWindowUpdate and RecordTransportWindowUpdate increments.
+  ExecCtx ctx;
+  const Http2GlobalStatsTestHelper stats_helper;
+
+  // Step 1: Initialize the server transport with BDP probe and keepalive
+  // disabled, and exchange initial settings.
+  InitTransport(
+      GetChannelArgs()
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, std::numeric_limits<int>::max())
+          .Set(GRPC_ARG_HTTP2_BDP_PROBE, false));
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // Step 2: Client sets INITIAL_WINDOW_SIZE = 0 and MAX_FRAME_SIZE = 65535.
+  const std::shared_ptr<EventSequenceEndpoint::Step> settings_step =
+      endpoint()->NewStep();
+  const std::vector<Http2SettingsFrame::Setting> peer_settings = {
+      {Http2Settings::kInitialWindowSizeWireId, 0u},
+      {Http2Settings::kMaxFrameSizeWireId, 65535u},
+  };
+  settings_step->ThenPerformRead({
+      helper_.SerializedSettingsFrame(peer_settings),
+  });
+  settings_step->ThenExpectWrite({
+      helper_.SerializedSettingsFrameAck(),
+  });
+  settings_step->Wait();
+
+  // Step 3: Server sends an outgoing PING and receives PING ACK.
+  StrictMock<MockFunction<void()>> ping_ack_received;
+  EXPECT_CALL(ping_ack_received, Call());
+  uint64_t opaque_id = 0u;
+  const std::shared_ptr<EventSequenceEndpoint::Step> ping_step =
+      endpoint()->NewStep();
+  ping_step->ThenExpectWrite([this, &opaque_id](SliceBuffer& buffer) {
+    opaque_id = VerifyPingFrameAndReturnOpaqueId(buffer, /*is_ack=*/false);
+  });
+  server_transport()->TestOnlySpawnPromise("PingRequest", [this,
+                                                           &ping_ack_received] {
+    return Map(
+        TrySeq(
+            [this] { return server_transport()->TestOnlyTriggerWriteCycle(); },
+            [this] { return server_transport()->TestOnlySendPing([] {}); }),
+        [&ping_ack_received](const absl::Status status) {
+          EXPECT_TRUE(status.ok());
+          ping_ack_received.Call();
+          return Empty{};
+        });
+  });
+  ping_step->Wait();
+  event_engine()->Tick();
+
+  const std::shared_ptr<EventSequenceEndpoint::Step> ping_ack_step =
+      endpoint()->NewStep();
+  ping_ack_step->ThenPerformRead(
+      {helper_.SerializedPingFrame(/*ack=*/true, /*opaque=*/opaque_id)});
+  ping_ack_step->Wait();
+  event_engine()->Tick();
+
+  // Step 4: Register a server stream handler that pulls client initial metadata
+  // and request message, then pushes server initial metadata, two response
+  // messages, and trailing metadata.
+  const std::string large_server_message_payload(
+      Http2Settings::kDefaultInitialWindowSize - kGrpcHeaderSizeInBytes, 'a');
+
+  AddStream([large_server_message_payload](CallHandler call_handler) {
+    return [call_handler, large_server_message_payload]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler](ClientMetadataHandle /*metadata*/) mutable {
+            return Map(call_handler.PullMessage(),
+                       [](ClientToServerNextMessage next_msg) -> StatusFlag {
+                         EXPECT_TRUE(next_msg.ok());
+                         EXPECT_TRUE(next_msg.has_value());
+                         return Success{};
+                       });
+          },
+          [call_handler]() mutable {
+            return call_handler.PushServerInitialMetadata(
+                ServerMetadataFromStatus(absl::OkStatus()));
+          },
+          [call_handler, large_server_message_payload]() mutable {
+            return call_handler.PushMessage(Arena::MakePooled<Message>(
+                SliceBuffer(
+                    Slice::FromCopiedString(large_server_message_payload)),
+                0u));
+          },
+          [call_handler]() mutable {
+            return call_handler.PushMessage(Arena::MakePooled<Message>(
+                SliceBuffer(Slice::FromCopiedString(kString1)), 0u));
+          },
+          [call_handler]() mutable {
+            const StatusFlag push_status =
+                call_handler.PushServerTrailingMetadata(
+                    ServerMetadataFromStatus(absl::CancelledError()));
+            EXPECT_TRUE(push_status.ok());
+          });
+    };
+  });
+
+  // Step 5: Client sends HEADERS, a request DATA frame, and an empty
+  // end-of-stream DATA frame. Server writes transport WINDOW_UPDATE and initial
+  // metadata HEADERS, recording a stream stall because the client's initial
+  // stream window is 0 while the transport window is 65535.
+  const size_t expected_read_data_frame_size =
+      kString3.size() + kGrpcHeaderSizeInBytes;
+  const std::shared_ptr<EventSequenceEndpoint::Step> headers_step =
+      endpoint()->NewStep();
+  headers_step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+      helper_.SerializedDataFrame(kString3, /*stream_id=*/1u,
+                                  /*end_stream=*/false),
+      helper_.SerializedEmptyDataFrame(/*stream_id=*/1u, /*end_stream=*/true),
+  });
+  headers_step->ThenExpectWrite({
+      helper_.SerializedWindowUpdateFrame(
+          /*stream_id=*/0u,
+          /*increment=*/static_cast<uint32_t>(expected_read_data_frame_size)),
+      helper_.SerializedHeaderFrame(
+          std::string(kGrpcStatusOK.begin(), kGrpcStatusOK.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  headers_step->Wait();
+
+  // Step 6: Client sends stream WINDOW_UPDATE(stream_id=1, increment=131070).
+  // Sending the first DATA frame consumes the entire 65535 transport window
+  // while the second message is still queued, recording a transport stall.
+  const std::shared_ptr<EventSequenceEndpoint::Step> first_data_step =
+      endpoint()->NewStep();
+  first_data_step->ThenPerformRead({
+      helper_.SerializedWindowUpdateFrame(/*stream_id=*/1u,
+                                          /*increment=*/131070u),
+  });
+  first_data_step->ThenExpectWrite({
+      helper_.SerializedDataFrame(large_server_message_payload,
+                                  /*stream_id=*/1u, /*end_stream=*/false),
+  });
+  first_data_step->Wait();
+
+  // Step 7: Client sends transport WINDOW_UPDATE(stream_id=0, increment=65535).
+  // Server writes the remaining DATA frame, trailing metadata HEADERS, and
+  // RST_STREAM(NO_ERROR).
+  const std::shared_ptr<EventSequenceEndpoint::Step> finish_step =
+      endpoint()->NewStep();
+  finish_step->ThenPerformRead({
+      helper_.SerializedWindowUpdateFrame(/*stream_id=*/0u,
+                                          /*increment=*/65535u),
+  });
+  finish_step->ThenExpectWrite({
+      helper_.SerializedDataFrame(kString1, /*stream_id=*/1u,
+                                  /*end_stream=*/false),
+      helper_.SerializedHeaderFrame(
+          std::string(kGrpcStatusCancelled.begin(), kGrpcStatusCancelled.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/true),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError)),
+  });
+  finish_step->Wait();
+
+  // Step 8: Validate all recorded transport stats.
+  constexpr int kInitialWriteTargetSize = 128 * 1024;
+  stats_helper.ExpectWritesBegun(/*expected_count=*/6u);
+  stats_helper.ExpectWriteTargetSize(/*value=*/kInitialWriteTargetSize,
+                                     /*expected_count=*/6u);
+  stats_helper.ExpectSettingsWrites(/*expected_count=*/1u);
+  stats_helper.ExpectPingsSent(/*expected_count=*/1u);
+
+  stats_helper.ExpectSendMessageSize(
+      /*value=*/static_cast<int>(large_server_message_payload.size()),
+      /*expected_count=*/1u);
+  stats_helper.ExpectSendMessageSize(
+      /*value=*/static_cast<int>(kString1.size()),
+      /*expected_count=*/1u);
+
+  stats_helper.ExpectWriteDataFrameSize(
+      /*value=*/static_cast<int>(large_server_message_payload.size() +
+                                 kGrpcHeaderSizeInBytes),
+      /*expected_count=*/1u);
+  stats_helper.ExpectWriteDataFrameSize(
+      /*value=*/static_cast<int>(kString1.size() + kGrpcHeaderSizeInBytes),
+      /*expected_count=*/1u);
+
+  stats_helper.ExpectReadDataFrameSize(
+      /*value=*/static_cast<int>(expected_read_data_frame_size),
+      /*expected_count=*/1u);
+  stats_helper.ExpectReadDataFrameSize(/*value=*/0, /*expected_count=*/1u);
+
+  stats_helper.ExpectStreamStalls(/*expected_count=*/1u);
+  stats_helper.ExpectTransportStalls(/*expected_count=*/1u);
+  stats_helper.ExpectStreamRemoteWindowUpdate(/*value=*/131070,
+                                              /*expected_count=*/1u);
+  stats_helper.ExpectTransportRemoteWindowUpdate(/*value=*/65535,
+                                                 /*expected_count=*/1u);
+
+  // Step 9: Teardown the transport.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/1u);
   teardown_step->Wait();
 }
 

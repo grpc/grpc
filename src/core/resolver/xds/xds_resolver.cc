@@ -79,7 +79,7 @@
 #include "src/core/xds/grpc/xds_route_config.h"
 #include "src/core/xds/grpc/xds_routing.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
-#include "src/core/xds/xds_client/xds_transport.h"
+#include "src/core/xds/xds_client/xds_transport_factory.h"
 #include "absl/log/log.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"

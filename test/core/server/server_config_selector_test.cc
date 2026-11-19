@@ -31,10 +31,8 @@ namespace {
 
 class TestServerConfigSelectorProvider : public ServerConfigSelectorProvider {
  public:
-  absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
-      std::shared_ptr<ServerConfigSelectorWatcher> /*watcher*/) override {
-    return absl::UnavailableError("Test ServerConfigSelector");
-  }
+  void Watch(
+      std::shared_ptr<ServerConfigSelectorWatcher> /*watcher*/) override {}
   void CancelWatch(
       std::shared_ptr<ServerConfigSelectorWatcher> /*watcher*/) override {}
 

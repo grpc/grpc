@@ -350,8 +350,6 @@ TEST_F(XdsOverrideHostTest, DrainingState) {
                                  {kAddresses[2], XdsHealthStatus::kHealthy}},
                                 {"UNKNOWN", "HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
-  // Make sure subchannels get orphaned in the WorkSerializer.
-  WaitForWorkSerializerToFlush();
   // Picks without an override will round-robin over the two endpoints
   // that are not in draining state.
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
@@ -388,8 +386,6 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   auto subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
   picker = ExpectState(GRPC_CHANNEL_READY);
-  // Make sure subchannels get orphaned in the WorkSerializer.
-  WaitForWorkSerializerToFlush();
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   // Now the connection to the draining host gets dropped.
@@ -406,7 +402,6 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   // picks where the override host is CONNECTING.  All picks without an
   // override host should not use this host.
   LOG(INFO) << "### subchannel starts reconnecting";
-  WaitForWorkSerializerToFlush();
   EXPECT_TRUE(subchannel->ConnectionRequested());
   ExpectQueueEmpty();
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -438,8 +433,6 @@ TEST_F(XdsOverrideHostTest, DrainingToHealthy) {
                                  {kAddresses[2], XdsHealthStatus::kHealthy}},
                                 {"UNKNOWN", "HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
-  // Make sure subchannels get orphaned in the WorkSerializer.
-  WaitForWorkSerializerToFlush();
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
   ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kHealthy},
@@ -469,8 +462,6 @@ TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
                                 {"UNKNOWN", "HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
-  // Make sure subchannels get orphaned in the WorkSerializer.
-  WaitForWorkSerializerToFlush();
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]});
   ExpectOverridePicks(picker.get(), address0_attribute, kAddresses[0]);
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
@@ -573,7 +564,6 @@ TEST_F(XdsOverrideHostTest, ChildPolicyNeverCreatedSubchannel) {
   // queue the pick and trigger subchannel creation.
   auto* address1_attribute = MakeOverrideHostAttribute(kAddresses[1]);
   ExpectPickQueued(picker.get(), {address1_attribute});
-  WaitForWorkSerializerToFlush();
   subchannel2 = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel2, nullptr);
   EXPECT_EQ(subchannel2->NumWatchers(), 1);
@@ -585,7 +575,6 @@ TEST_F(XdsOverrideHostTest, ChildPolicyNeverCreatedSubchannel) {
   // Trying the pick again with the new picker will trigger a connection
   // attempt on the new subchannel.
   ExpectPickQueued(picker.get(), {address1_attribute});
-  WaitForWorkSerializerToFlush();
   EXPECT_TRUE(subchannel2->ConnectionRequested());
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // Subchannel state change will trigger returning a new picker.
@@ -619,8 +608,6 @@ TEST_F(XdsOverrideHostTest,
                                  {kAddresses[2], XdsHealthStatus::kHealthy}},
                                 {"UNKNOWN", "HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
-  // Make sure subchannels get orphaned in the WorkSerializer.
-  WaitForWorkSerializerToFlush();
   // Picks without an override will round-robin over the two endpoints
   // that are not in draining state.
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
@@ -679,8 +666,6 @@ TEST_F(XdsOverrideHostTest, IdleTimer) {
   EXPECT_THAT(timer_durations, ::testing::ElementsAre(Duration::Seconds(55)));
   timer_durations.clear();
   picker = ExpectState(GRPC_CHANNEL_READY);
-  // Make sure subchannels get orphaned in the WorkSerializer.
-  WaitForWorkSerializerToFlush();
   // Picks without an override will use only the endpoint that is not in
   // draining state.
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0]});
@@ -712,6 +697,56 @@ TEST_F(XdsOverrideHostTest, IdleTimer) {
   // The timer should now be set for 55 seconds, which is how long it
   // will be until endpoint 1 should be unreffed.
   EXPECT_THAT(timer_durations, ::testing::ElementsAre(Duration::Seconds(55)));
+}
+
+// Tests a race condition where the subchannel sends an IDLE state update
+// right as the channel is shutting down when a petiole policy is being
+// used.  The pick_first leaf policy will see the subchannel go IDLE, so
+// it will report IDLE to the petiole policy, and the petiole policy will
+// tell it to reconnect, which will cause it to try to recreate the
+// subchannel -- but the channel will return null for that, since it is
+// shutting down.  The test ensures that we don't crash in that case.
+TEST_F(XdsOverrideHostTest, SubchannelCreationFails) {
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  auto* subchannel = CreateSubchannel(kAddresses[0]);
+  subchannel->set_fail_creation(true);
+  EXPECT_EQ(UpdateXdsOverrideHostPolicy(kAddresses), absl::OkStatus());
+  ExpectReresolutionRequest();
+  ExpectRoundRobinStartup(
+      absl::Span<const absl::string_view>(kAddresses).subspan(1));
+}
+
+// Tests a race condition where the picker gets a pick for a subchannel
+// that is in the resolver list but the child policy has not created a
+// subchannel.  However, that pick races with the channel shutting down,
+// which means that creating that subchannel returns null.  This test
+// ensures that we don't crash.
+TEST_F(XdsOverrideHostTest,
+       ChildPolicyNeverCreatedSubchannelAndSubchannelCreationFails) {
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kUnknown},
+                                 {kAddresses[1], XdsHealthStatus::kDraining},
+                                 {kAddresses[2], XdsHealthStatus::kHealthy}},
+                                {"UNKNOWN", "HEALTHY", "DRAINING"});
+  // The draining endpoint is not passed down to the child policy.
+  // Picks without an override will round-robin over the two endpoints
+  // that are not in draining state.
+  auto picker = ExpectRoundRobinStartup({kAddresses[0], kAddresses[2]});
+  // No subchannel should exist for the draining endpoint.
+  auto* subchannel = FindSubchannel(kAddresses[1]);
+  EXPECT_EQ(subchannel, nullptr);
+  // Make sure creation fails for this subchannel.
+  // Note: CreateSubchannel() creates the entry in the test framework's
+  // subchannel map; it does not actually create the subchannel itself.
+  subchannel = CreateSubchannel(kAddresses[1]);
+  subchannel->set_fail_creation(true);
+  // A pick with an override pointing to the draining endpoint should
+  // queue the pick and trigger subchannel creation, which will fail.
+  auto* address1_attribute = MakeOverrideHostAttribute(kAddresses[1]);
+  ExpectPickQueued(picker.get(), {address1_attribute});
+  EXPECT_EQ(subchannel->NumWatchers(), 0);
 }
 
 }  // namespace

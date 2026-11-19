@@ -15,13 +15,17 @@
 #include "src/core/call/evaluate_args.h"
 
 #include <grpc/grpc_security_constants.h>
-#include <grpc/support/port_platform.h>
-#include <string.h>
 
+#include <optional>
+#include <vector>
+
+#include "src/core/call/metadata_batch.h"
 #include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/transport/auth_context.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/uri.h"
 #include "absl/log/log.h"
@@ -29,6 +33,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -48,15 +53,16 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
     VLOG(2) << "Failed to split " << uri->path() << " into host and port.";
     return address;
   }
-  if (!absl::SimpleAtoi(port_view, &address.port)) {
-    VLOG(2) << "Port " << port_view << " is out of range or null.";
+  if (port_view.empty()) {
+    VLOG(2) << "Port is empty.";
+  } else if (!absl::SimpleAtoi(port_view, &address.port)) {
+    VLOG(2) << "Port " << port_view << " is out of range.";
   }
   address.address_str = std::string(host_view);
   auto resolved_address = StringToSockaddr(uri->path());
   if (!resolved_address.ok()) {
     VLOG(2) << "Address \"" << uri->path()
             << "\" is not IPv4/IPv6. Error: " << resolved_address.status();
-    memset(&address.address, 0, sizeof(address.address));
   } else {
     address.address = *resolved_address;
   }
@@ -100,16 +106,10 @@ absl::string_view EvaluateArgs::GetPath() const {
 }
 
 absl::string_view EvaluateArgs::GetAuthority() const {
-  absl::string_view authority;
-  if (metadata_ != nullptr) {
-    if (auto* authority_md = metadata_->get_pointer(HttpAuthorityMetadata())) {
-      authority = authority_md->as_string_view();
-    } else if (auto* host_md = metadata_->get_pointer(HostMetadata())) {
-      // Fall back to the legacy host header.
-      authority = host_md->as_string_view();
-    }
-  }
-  return authority;
+  if (metadata_ == nullptr) return absl::string_view();
+  const Slice* authority = GetAuthorityOrHost(*metadata_);
+  if (authority == nullptr) return absl::string_view();
+  return authority->as_string_view();
 }
 
 absl::string_view EvaluateArgs::GetMethod() const {
@@ -130,9 +130,10 @@ std::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
   if (absl::EqualsIgnoreCase(key, "te")) {
     return std::nullopt;
   }
-  if (absl::EqualsIgnoreCase(key, "host")) {
-    // Maps legacy host header to :authority.
-    return GetAuthority();
+  if (IsAuthorityHeaderName(key)) {
+    const Slice* authority = GetAuthorityOrHost(*metadata_);
+    if (authority == nullptr) return std::nullopt;
+    return authority->as_string_view();
   }
   return metadata_->GetStringValue(key, concatenated_value);
 }

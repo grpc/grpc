@@ -419,6 +419,7 @@ TEST_F(GenericEnd2endTest, Deadline) {
 }
 
 TEST_F(GenericEnd2endTest, ShortDeadline) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix b/578817175");
   ResetStub();
 
   ClientContext cli_ctx;

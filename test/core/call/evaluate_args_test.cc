@@ -14,10 +14,14 @@
 
 #include "src/core/call/evaluate_args.h"
 
-#include <grpc/support/port_platform.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security_constants.h>
+
+#include <optional>
 
 #include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "test/core/test_util/evaluate_args_test_util.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
@@ -89,6 +93,36 @@ TEST_F(EvaluateArgsTest, GetHeaderValueAliasesHost) {
   EXPECT_EQ(value.value(), "test.google.com");
 }
 
+TEST_F(EvaluateArgsTest, GetHeaderValueHostPrefersAuthority) {
+  util_.AddPairToMetadata("host", "host.google.com");
+  util_.AddPairToMetadata(":authority", "test.google.com");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  std::string concatenated_value;
+  EXPECT_EQ(args.GetAuthority(), "test.google.com");
+  EXPECT_EQ(args.GetHeaderValue("host", &concatenated_value),
+            "test.google.com");
+  EXPECT_EQ(args.GetHeaderValue(":authority", &concatenated_value),
+            "test.google.com");
+}
+
+TEST_F(EvaluateArgsTest, GetHeaderValueAuthorityFallsBackToHost) {
+  util_.AddPairToMetadata("host", "host.google.com");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  std::string concatenated_value;
+  EXPECT_EQ(args.GetHeaderValue(":authority", &concatenated_value),
+            "host.google.com");
+  EXPECT_EQ(args.GetHeaderValue("host", &concatenated_value),
+            "host.google.com");
+}
+
+TEST_F(EvaluateArgsTest, GetHeaderValueHostAndAuthorityAbsent) {
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  std::string concatenated_value;
+  EXPECT_EQ(args.GetHeaderValue(":authority", &concatenated_value),
+            std::nullopt);
+  EXPECT_EQ(args.GetHeaderValue("host", &concatenated_value), std::nullopt);
+}
+
 TEST_F(EvaluateArgsTest, TestLocalAddressAndPort) {
   util_.SetLocalEndpoint("ipv6:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:456");
   EvaluateArgs args = util_.MakeEvaluateArgs();
@@ -108,6 +142,28 @@ TEST_F(EvaluateArgsTest, TestPeerAddressAndPort) {
             "ipv4:255.255.255.255:123");
   EXPECT_EQ(args.GetPeerAddressString(), "255.255.255.255");
   EXPECT_EQ(args.GetPeerPort(), 123);
+}
+
+// An endpoint address that is absent is reported as an empty (zero-length)
+// sockaddr, not as indeterminate bytes.
+TEST_F(EvaluateArgsTest, TestUnsetAddresses) {
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetLocalAddress().len, 0);
+  EXPECT_EQ(args.GetPeerAddress().len, 0);
+  EXPECT_EQ(args.GetLocalPort(), 0);
+  EXPECT_EQ(args.GetPeerPort(), 0);
+  EXPECT_TRUE(args.GetLocalAddressString().empty());
+  EXPECT_TRUE(args.GetPeerAddressString().empty());
+}
+
+// Same for an address that is not an IPv4 or IPv6 address, such as a unix
+// domain socket, which EvaluateArgs does not convert to a sockaddr.
+TEST_F(EvaluateArgsTest, TestNonIpAddresses) {
+  util_.SetLocalEndpoint("unix:/tmp/grpc-evaluate-args-test.sock");
+  util_.SetPeerEndpoint("unix:/tmp/grpc-evaluate-args-test.sock");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetLocalAddress().len, 0);
+  EXPECT_EQ(args.GetPeerAddress().len, 0);
 }
 
 TEST_F(EvaluateArgsTest, EmptyAuthContext) {
