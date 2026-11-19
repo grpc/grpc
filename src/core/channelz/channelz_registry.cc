@@ -77,7 +77,7 @@ void ChannelzRegistry::InternalRegister(BaseNode* node) {
 void ChannelzRegistry::InternalUnregister(BaseNode* node) {
   const size_t node_shard_index = NodeShardIndex(node);
   NodeShard& node_shard = node_shards_[node_shard_index];
-  node_shard.mu.Lock();
+  node_shard.mu.lock();
   CHECK_EQ(node->orphaned_index_, 0u);
   intptr_t uuid = node->uuid_.load(std::memory_order_relaxed);
   NodeList& remove_list = uuid == -1 ? node_shard.nursery : node_shard.numbered;
@@ -85,7 +85,7 @@ void ChannelzRegistry::InternalUnregister(BaseNode* node) {
   if (max_orphaned_per_shard_ == 0) {
     // We are not tracking orphaned nodes... remove from the index
     // if necessary, then exit out.
-    node_shard.mu.Unlock();
+    node_shard.mu.unlock();
     if (uuid != -1) {
       MutexLock lock(index_mu_);
       index_.erase(uuid);
@@ -103,7 +103,7 @@ void ChannelzRegistry::InternalUnregister(BaseNode* node) {
   add_list.AddToHead(node);
   if (node_shard.TotalOrphaned() <= max_orphaned_per_shard_) {
     // Below recycling thresholds: just exit out
-    node_shard.mu.Unlock();
+    node_shard.mu.unlock();
     return;
   }
   CHECK_EQ(node_shard.TotalOrphaned(), max_orphaned_per_shard_ + 1);
@@ -126,7 +126,7 @@ void ChannelzRegistry::InternalUnregister(BaseNode* node) {
   // Note: we capture the reference to n previously added here, and release
   // it when this smart pointer is destroyed, outside of any locks.
   WeakRefCountedPtr<BaseNode> gcd_node(n);
-  node_shard.mu.Unlock();
+  node_shard.mu.unlock();
   if (gc_list == &node_shard.orphaned_numbered) {
     MutexLock lock(index_mu_);
     intptr_t uuid = n->uuid_.load(std::memory_order_relaxed);

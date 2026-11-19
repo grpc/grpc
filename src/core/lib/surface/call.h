@@ -106,6 +106,7 @@ class Call : public CppImplOf<Call, grpc_call>,
   virtual void CancelWithError(grpc_error_handle error) = 0;
   virtual void SetCompletionQueue(grpc_completion_queue* cq) = 0;
   virtual char* GetPeer() = 0;
+  virtual char* GetLocalAddress() = 0;
   virtual grpc_call_error StartBatch(const grpc_op* ops, size_t nops,
                                      void* notify_tag,
                                      bool is_notify_tag_closure) = 0;
@@ -194,16 +195,30 @@ class Call : public CppImplOf<Call, grpc_call>,
   }
 
   Slice GetPeerString() const {
-    MutexLock lock(peer_mu_);
+    MutexLock lock(address_mu_);
     return peer_string_.Ref();
   }
 
   void SetPeerString(Slice peer_string) {
-    MutexLock lock(peer_mu_);
+    MutexLock lock(address_mu_);
     peer_string_ = std::move(peer_string);
   }
 
+  Slice GetLocalAddressString() const {
+    MutexLock lock(address_mu_);
+    return local_address_string_.Ref();
+  }
+
+  void SetLocalAddressString(Slice local_address_string) {
+    MutexLock lock(address_mu_);
+    local_address_string_ = std::move(local_address_string);
+  }
+
   void ClearPeerString() { SetPeerString(Slice(grpc_empty_slice())); }
+
+  void ClearLocalAddressString() {
+    SetLocalAddressString(Slice(grpc_empty_slice()));
+  }
 
   // TODO(ctiller): cancel_func is for cancellation of the call - filter stack
   // holds no mutexes here, promise stack does, and so locking is different.
@@ -239,11 +254,13 @@ class Call : public CppImplOf<Call, grpc_call>,
   // Supported encodings (compression algorithms), a bitset.
   // Always support no compression.
   CompressionAlgorithmSet encodings_accepted_by_peer_{GRPC_COMPRESS_NONE};
-  // Peer name is protected by a mutex because it can be accessed by the
-  // application at the same moment as it is being set by the completion
-  // of the recv_initial_metadata op.  The mutex should be mostly uncontended.
-  mutable Mutex peer_mu_;
+  // Peer and local address are protected by a mutex because they can be
+  // accessed by the application at the same moment as they are being set by
+  // the completion of the recv_initial_metadata op.  The mutex should be
+  // mostly uncontended.
+  mutable Mutex address_mu_;
   Slice peer_string_;
+  Slice local_address_string_;
   // Current deadline.
   Mutex deadline_mu_;
   Timestamp deadline_ ABSL_GUARDED_BY(deadline_mu_) = Timestamp::InfFuture();

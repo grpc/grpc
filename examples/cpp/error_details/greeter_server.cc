@@ -81,7 +81,7 @@ class GreeterServiceImpl final : public Greeter::CallbackService {
 
  private:
   bool CheckRequestDuplicate(const std::string& name) {
-    absl::MutexLock lock(&mu_);
+    absl::MutexLock lock(mu_);
     return !request_name_set_.insert(name).second;
   }
 

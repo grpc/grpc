@@ -143,8 +143,7 @@ pip_install() {
 }
 
 pip_install --upgrade pip
-pip_install --upgrade wheel
-pip_install --upgrade setuptools==77.0.1
+pip_install --upgrade wheel 'setuptools==77.0.1'
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
@@ -164,15 +163,11 @@ pip_install_dir_and_deps() {
   cd "${workdir}"
 }
 
-pip_install -U gevent
-
-pip_install --upgrade 'cython==3.2.8'
-pip_install --upgrade six 'protobuf>=7.35.1,<8.0.0'
-
-if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
-then
-  pip_install --upgrade futures enum34
-fi
+# Core build dependencies for grpcio testing. On macOS, these and the
+# pip/wheel/setuptools upgrades above are pre-warmed with network retries into
+# PIP_CACHE_DIR by prepare_build_macos_rc. gevent is pre-built into
+# PIP_FIND_LINKS, because it lacks upstream macOS wheels for Python 3.10.
+pip_install --upgrade gevent 'cython==3.2.8' 'protobuf>=7.35.1,<8.0.0'
 
 pip_install_dir "$ROOT"
 

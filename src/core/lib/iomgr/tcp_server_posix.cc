@@ -278,11 +278,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->shutdown = false;
   s->shutdown_starting.head = nullptr;
   s->shutdown_starting.tail = nullptr;
-  if (!grpc_event_engine::experimental::UseEventEngineListener()) {
-    s->shutdown_complete = shutdown_complete;
-  } else {
-    s->shutdown_complete = nullptr;
-  }
+  s->shutdown_complete = nullptr;
   s->on_accept_cb = on_accept_cb;
   s->on_accept_cb_arg = on_accept_cb_arg;
   s->head = nullptr;
@@ -299,10 +295,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   new (&s->listen_fd_to_index_map)
       absl::flat_hash_map<int, std::tuple<int, int>>();
   *server = s;
-  if (grpc_event_engine::experimental::UseEventEngineListener()) {
-    return CreateEventEngineListener(s, shutdown_complete, config, server);
-  }
-  return absl::OkStatus();
+  return CreateEventEngineListener(s, shutdown_complete, config, server);
 }
 
 static void destroyed_port(void* server, grpc_error_handle /*error*/) {
@@ -342,13 +335,9 @@ static void deactivated_all_ports(grpc_tcp_server* s) {
     gpr_mu_unlock(&s->mu);
   } else {
     gpr_mu_unlock(&s->mu);
-    if (grpc_event_engine::experimental::UseEventEngineListener()) {
-      // This will trigger asynchronous execution of the on_shutdown_complete
-      // callback when appropriate. That callback will delete the server.
-      s->ee_listener.reset();
-    } else {
-      finish_shutdown(s);
-    }
+    // This will trigger asynchronous execution of the on_shutdown_complete
+    // callback when appropriate. That callback will delete the server.
+    s->ee_listener.reset();
   }
 }
 
@@ -623,96 +612,37 @@ static grpc_error_handle clone_port(grpc_tcp_listener* listener,
 static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
                                              const grpc_resolved_address* addr,
                                              int* out_port) {
-  if (grpc_event_engine::experimental::UseEventEngineListener()) {
-    gpr_mu_lock(&s->mu);
-    if (s->shutdown_listeners) {
-      gpr_mu_unlock(&s->mu);
-      return absl::UnknownError("Server already shutdown");
-    }
-    int fd_index = 0;
-    absl::StatusOr<int> port;
-    auto* listener_supports_fd =
-        grpc_event_engine::experimental::QueryExtension<
-            grpc_event_engine::experimental::ListenerSupportsFdExtension>(
-            s->ee_listener.get());
-    if (listener_supports_fd != nullptr) {
-      port = listener_supports_fd->BindWithFd(
-          grpc_event_engine::experimental::CreateResolvedAddress(*addr),
-          [s, &fd_index](absl::StatusOr<int> listen_fd) {
-            if (!listen_fd.ok()) {
-              return;
-            }
-            GRPC_DCHECK_GE(*listen_fd, 0);
-            s->listen_fd_to_index_map.insert_or_assign(
-                *listen_fd, std::tuple(s->n_bind_ports, fd_index++));
-          });
-    } else {
-      port = s->ee_listener->Bind(
-          grpc_event_engine::experimental::CreateResolvedAddress(*addr));
-    }
-    if (port.ok()) {
-      s->n_bind_ports++;
-      *out_port = *port;
-    }
+  gpr_mu_lock(&s->mu);
+  if (s->shutdown_listeners) {
     gpr_mu_unlock(&s->mu);
-    return port.status();
+    return absl::UnknownError("Server already shutdown");
   }
-  GRPC_CHECK(addr->len <= GRPC_MAX_SOCKADDR_SIZE);
-  grpc_tcp_listener* sp;
-  grpc_resolved_address sockname_temp;
-  grpc_resolved_address addr6_v4mapped;
-  int requested_port = grpc_sockaddr_get_port(addr);
-  unsigned port_index = 0;
-  grpc_dualstack_mode dsmode;
-  grpc_error_handle err;
-  *out_port = -1;
-  if (s->tail != nullptr) {
-    port_index = s->tail->port_index + 1;
+  int fd_index = 0;
+  absl::StatusOr<int> port;
+  auto* listener_supports_fd = grpc_event_engine::experimental::QueryExtension<
+      grpc_event_engine::experimental::ListenerSupportsFdExtension>(
+      s->ee_listener.get());
+  if (listener_supports_fd != nullptr) {
+    port = listener_supports_fd->BindWithFd(
+        grpc_event_engine::experimental::CreateResolvedAddress(*addr),
+        [s, &fd_index](absl::StatusOr<int> listen_fd) {
+          if (!listen_fd.ok()) {
+            return;
+          }
+          GRPC_DCHECK_GE(*listen_fd, 0);
+          s->listen_fd_to_index_map.insert_or_assign(
+              *listen_fd, std::tuple(s->n_bind_ports, fd_index++));
+        });
+  } else {
+    port = s->ee_listener->Bind(
+        grpc_event_engine::experimental::CreateResolvedAddress(*addr));
   }
-
-  // Check if this is a wildcard port, and if so, try to keep the port the same
-  // as some previously created listener.
-  if (requested_port == 0) {
-    for (sp = s->head; sp; sp = sp->next) {
-      sockname_temp.len =
-          static_cast<socklen_t>(sizeof(struct sockaddr_storage));
-      if (0 ==
-          getsockname(sp->fd,
-                      reinterpret_cast<grpc_sockaddr*>(&sockname_temp.addr),
-                      &sockname_temp.len)) {
-        int used_port = grpc_sockaddr_get_port(&sockname_temp);
-        if (used_port > 0) {
-          memcpy(&sockname_temp, addr, sizeof(grpc_resolved_address));
-          grpc_sockaddr_set_port(&sockname_temp, used_port);
-          requested_port = used_port;
-          addr = &sockname_temp;
-          break;
-        }
-      }
-    }
+  if (port.ok()) {
+    s->n_bind_ports++;
+    *out_port = *port;
   }
-
-  /* Check if systemd has pre-allocated valid FDs */
-  set_matching_sd_fds(s, addr, requested_port);
-
-  /* Do not unlink if there are pre-allocated FDs, or it will stop
-     working after the first client connects */
-  if (grpc_tcp_server_pre_allocated_fd(s) < 0) {
-    grpc_unlink_if_unix_domain_socket(addr);
-  }
-
-  if (grpc_sockaddr_is_wildcard(addr, &requested_port)) {
-    return add_wildcard_addrs_to_server(s, port_index, requested_port,
-                                        out_port);
-  }
-  if (grpc_sockaddr_to_v4mapped(addr, &addr6_v4mapped)) {
-    addr = &addr6_v4mapped;
-  }
-  if ((err = grpc_tcp_server_add_addr(s, addr, port_index, 0, &dsmode, &sp)) ==
-      absl::OkStatus()) {
-    *out_port = sp->port;
-  }
-  return err;
+  gpr_mu_unlock(&s->mu);
+  return port.status();
 }
 
 // Return listener at port_index or NULL. Should only be called with s->mu
@@ -734,20 +664,12 @@ static grpc_tcp_listener* get_port_index(grpc_tcp_server* s,
 unsigned tcp_server_port_fd_count(grpc_tcp_server* s, unsigned port_index) {
   unsigned num_fds = 0;
   gpr_mu_lock(&s->mu);
-  if (grpc_event_engine::experimental::UseEventEngineListener()) {
-    // This doesn't need to be very fast. Used in tests.
-    for (auto it = s->listen_fd_to_index_map.begin();
-         it != s->listen_fd_to_index_map.end(); it++) {
-      if (std::get<0>(it->second) == static_cast<int>(port_index)) {
-        num_fds++;
-      }
+  // This doesn't need to be very fast. Used in tests.
+  for (auto it = s->listen_fd_to_index_map.begin();
+       it != s->listen_fd_to_index_map.end(); it++) {
+    if (std::get<0>(it->second) == static_cast<int>(port_index)) {
+      num_fds++;
     }
-    gpr_mu_unlock(&s->mu);
-    return num_fds;
-  }
-  grpc_tcp_listener* sp = get_port_index(s, port_index);
-  for (; sp; sp = sp->sibling) {
-    ++num_fds;
   }
   gpr_mu_unlock(&s->mu);
   return num_fds;
@@ -756,24 +678,13 @@ unsigned tcp_server_port_fd_count(grpc_tcp_server* s, unsigned port_index) {
 static int tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
                               unsigned fd_index) {
   gpr_mu_lock(&s->mu);
-  if (grpc_event_engine::experimental::UseEventEngineListener()) {
-    // This doesn't need to be very fast. Used in tests.
-    for (auto it = s->listen_fd_to_index_map.begin();
-         it != s->listen_fd_to_index_map.end(); it++) {
-      if (std::get<0>(it->second) == static_cast<int>(port_index) &&
-          std::get<1>(it->second) == static_cast<int>(fd_index)) {
-        gpr_mu_unlock(&s->mu);
-        return it->first;
-      }
-    }
-    gpr_mu_unlock(&s->mu);
-    return -1;
-  }
-  grpc_tcp_listener* sp = get_port_index(s, port_index);
-  for (; sp; sp = sp->sibling, --fd_index) {
-    if (fd_index == 0) {
+  // This doesn't need to be very fast. Used in tests.
+  for (auto it = s->listen_fd_to_index_map.begin();
+       it != s->listen_fd_to_index_map.end(); it++) {
+    if (std::get<0>(it->second) == static_cast<int>(port_index) &&
+        std::get<1>(it->second) == static_cast<int>(fd_index)) {
       gpr_mu_unlock(&s->mu);
-      return sp->fd;
+      return it->first;
     }
   }
   gpr_mu_unlock(&s->mu);
@@ -782,43 +693,12 @@ static int tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
 
 static void tcp_server_start(grpc_tcp_server* s,
                              const std::vector<grpc_pollset*>* pollsets) {
-  size_t i;
-  grpc_tcp_listener* sp;
   gpr_mu_lock(&s->mu);
   GRPC_CHECK(s->on_accept_cb);
   GRPC_CHECK_EQ(s->active_ports, 0u);
   s->pollsets = pollsets;
-  if (grpc_event_engine::experimental::UseEventEngineListener()) {
-    GRPC_CHECK(!s->shutdown_listeners);
-    GRPC_CHECK(GRPC_LOG_IF_ERROR("listener_start", s->ee_listener->Start()));
-    gpr_mu_unlock(&s->mu);
-    return;
-  }
-  sp = s->head;
-  while (sp != nullptr) {
-    if (s->so_reuseport && !grpc_is_unix_socket(&sp->addr) &&
-        !grpc_is_vsock(&sp->addr) && pollsets->size() > 1) {
-      GRPC_CHECK(GRPC_LOG_IF_ERROR(
-          "clone_port", clone_port(sp, (unsigned)(pollsets->size() - 1))));
-      for (i = 0; i < pollsets->size(); i++) {
-        grpc_pollset_add_fd((*pollsets)[i], sp->emfd);
-        GRPC_CLOSURE_INIT(&sp->read_closure, on_read, sp,
-                          grpc_schedule_on_exec_ctx);
-        grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
-        s->active_ports++;
-        sp = sp->next;
-      }
-    } else {
-      for (i = 0; i < pollsets->size(); i++) {
-        grpc_pollset_add_fd((*pollsets)[i], sp->emfd);
-      }
-      GRPC_CLOSURE_INIT(&sp->read_closure, on_read, sp,
-                        grpc_schedule_on_exec_ctx);
-      grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
-      s->active_ports++;
-      sp = sp->next;
-    }
-  }
+  GRPC_CHECK(!s->shutdown_listeners);
+  GRPC_CHECK(GRPC_LOG_IF_ERROR("listener_start", s->ee_listener->Start()));
   gpr_mu_unlock(&s->mu);
 }
 
@@ -853,22 +733,11 @@ static void tcp_server_unref(grpc_tcp_server* s) {
 static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
   s->shutdown_listeners = true;
-  if (grpc_event_engine::experimental::UseEventEngineListener()) {
-    auto* listener_supports_fd =
-        grpc_event_engine::experimental::QueryExtension<
-            grpc_event_engine::experimental::ListenerSupportsFdExtension>(
-            s->ee_listener.get());
-    if (listener_supports_fd != nullptr) {
-      listener_supports_fd->ShutdownListeningFds();
-    }
-  }
-  /* shutdown all fd's */
-  if (s->active_ports) {
-    grpc_tcp_listener* sp;
-    for (sp = s->head; sp; sp = sp->next) {
-      grpc_timer_cancel(&sp->retry_timer);
-      grpc_fd_shutdown(sp->emfd, GRPC_ERROR_CREATE("Server shutdown"));
-    }
+  auto* listener_supports_fd = grpc_event_engine::experimental::QueryExtension<
+      grpc_event_engine::experimental::ListenerSupportsFdExtension>(
+      s->ee_listener.get());
+  if (listener_supports_fd != nullptr) {
+    listener_supports_fd->ShutdownListeningFds();
   }
   gpr_mu_unlock(&s->mu);
 }
@@ -890,67 +759,20 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
 
   // TODO(yangg) resolve duplicate code with on_read
   void Handle(int listener_fd, int fd, grpc_byte_buffer* buf) override {
-    if (grpc_event_engine::experimental::UseEventEngineListener()) {
-      auto* listener_supports_fd =
-          grpc_event_engine::experimental::QueryExtension<
-              grpc_event_engine::experimental::ListenerSupportsFdExtension>(
-              s_->ee_listener.get());
-      GRPC_CHECK_NE(listener_supports_fd, nullptr);
-      grpc_event_engine::experimental::SliceBuffer pending_data;
-      if (buf != nullptr) {
-        pending_data =
-            grpc_event_engine::experimental::SliceBuffer::TakeCSliceBuffer(
-                buf->data.raw.slice_buffer);
-      }
-      GRPC_LOG_IF_ERROR("listener_handle_external_connection",
-                        listener_supports_fd->HandleExternalConnection(
-                            listener_fd, fd, &pending_data));
-      return;
+    auto* listener_supports_fd =
+        grpc_event_engine::experimental::QueryExtension<
+            grpc_event_engine::experimental::ListenerSupportsFdExtension>(
+            s_->ee_listener.get());
+    GRPC_CHECK_NE(listener_supports_fd, nullptr);
+    grpc_event_engine::experimental::SliceBuffer pending_data;
+    if (buf != nullptr) {
+      pending_data =
+          grpc_event_engine::experimental::SliceBuffer::TakeCSliceBuffer(
+              buf->data.raw.slice_buffer);
     }
-    grpc_pollset* read_notifier_pollset;
-    grpc_resolved_address addr;
-    memset(&addr, 0, sizeof(addr));
-    addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
-    grpc_core::ExecCtx exec_ctx;
-
-    if (getpeername(fd, reinterpret_cast<struct sockaddr*>(addr.addr),
-                    &(addr.len)) < 0) {
-      LOG(ERROR) << "Failed getpeername: " << grpc_core::StrError(errno);
-      close(fd);
-      return;
-    }
-    (void)grpc_set_socket_no_sigpipe_if_possible(fd);
-    auto addr_uri = grpc_sockaddr_to_uri(&addr);
-    if (!addr_uri.ok()) {
-      LOG(ERROR) << "Invalid address: " << addr_uri.status();
-      return;
-    }
-    GRPC_TRACE_LOG(tcp, INFO)
-        << "SERVER_CONNECT: incoming external connection: " << *addr_uri;
-    std::string name = absl::StrCat("tcp-server-connection:", addr_uri.value());
-    grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
-    read_notifier_pollset =
-        (*(s_->pollsets))[static_cast<size_t>(gpr_atm_no_barrier_fetch_add(
-                              &s_->next_pollset_to_assign, 1)) %
-                          s_->pollsets->size()];
-    grpc_pollset_add_fd(read_notifier_pollset, fdobj);
-    grpc_tcp_server_acceptor* acceptor =
-        static_cast<grpc_tcp_server_acceptor*>(gpr_malloc(sizeof(*acceptor)));
-    acceptor->from_server = s_;
-    acceptor->port_index = -1;
-    acceptor->fd_index = -1;
-    acceptor->external_connection = true;
-    acceptor->listener_fd = listener_fd;
-    if (buf != nullptr && buf->data.raw.slice_buffer.length > 0) {
-      acceptor->pending_data = grpc_raw_byte_buffer_create(nullptr, 0);
-      grpc_slice_buffer_swap(&acceptor->pending_data->data.raw.slice_buffer,
-                             &buf->data.raw.slice_buffer);
-    } else {
-      acceptor->pending_data = nullptr;
-    }
-    s_->on_accept_cb(s_->on_accept_cb_arg,
-                     grpc_tcp_create(fdobj, s_->options, addr_uri.value()),
-                     read_notifier_pollset, acceptor);
+    GRPC_LOG_IF_ERROR("listener_handle_external_connection",
+                      listener_supports_fd->HandleExternalConnection(
+                          listener_fd, fd, &pending_data));
   }
 
  private:

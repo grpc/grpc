@@ -497,7 +497,8 @@ class AdaptMethod<
   explicit AdaptMethod(Call* call, Derived* filter)
       : call_(call), filter_(filter) {}
   auto operator()(Hdl<T> x) {
-    return Map((call_->*method)(*x, filter_),
+    R promise = (call_->*method)(*x, filter_);
+    return Map(std::move(promise),
                [hdl = std::move(x)](absl::Status status) mutable {
                  if (status.ok()) {
                    return ServerMetadataOrHandle<T>::Ok(std::move(hdl));
@@ -1181,20 +1182,6 @@ class FusedFilter
 
     explicit Call(FusedFilter<ep, kFlags, Filters...>* filter)
         : filter_calls_(filter->get_wrapper()) {};
-
-    using FuseOnClientInitialMetadata<FusedFilter,
-                                      Filters...>::OnClientInitialMetadata;
-    using FuseOnServerInitialMetadata<FusedFilter,
-                                      Filters...>::OnServerInitialMetadata;
-    using FuseOnClientToServerMessage<FusedFilter,
-                                      Filters...>::OnClientToServerMessage;
-    using FuseOnServerToClientMessage<FusedFilter,
-                                      Filters...>::OnServerToClientMessage;
-    using FuseOnServerTrailingMetadata<FusedFilter,
-                                       Filters...>::OnServerTrailingMetadata;
-    using FuseOnClientToServerHalfClose<FusedFilter,
-                                        Filters...>::OnClientToServerHalfClose;
-    using FuseOnFinalize<FusedFilter, Filters...>::OnFinalize;
 
    private:
     CallWrapper<Typelist<Filters...>> filter_calls_;

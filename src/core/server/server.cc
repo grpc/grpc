@@ -887,6 +887,11 @@ class Server::AllocatingRequestMatcherBatch
 
   ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
       size_t /*start_request_queue_index*/) override {
+    const bool still_running = server()->ShutdownRefOnRequest();
+    absl::Cleanup cleanup_ref = [this] { server()->ShutdownUnrefOnRequest(); };
+    if (!still_running) {
+      return Immediate(absl::UnavailableError("Server shutdown"));
+    }
     BatchCallAllocation call_info = allocator_();
     GRPC_CHECK(server()->ValidateServerRequest(
                    cq(), static_cast<void*>(call_info.tag), nullptr, nullptr) ==
@@ -934,6 +939,11 @@ class Server::AllocatingRequestMatcherRegistered
 
   ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
       size_t /*start_request_queue_index*/) override {
+    const bool still_running = server()->ShutdownRefOnRequest();
+    absl::Cleanup cleanup_ref = [this] { server()->ShutdownUnrefOnRequest(); };
+    if (!still_running) {
+      return Immediate(absl::UnavailableError("Server shutdown"));
+    }
     RegisteredCallAllocation call_info = allocator_();
     GRPC_CHECK(server()->ValidateServerRequest(
                    cq(), call_info.tag, call_info.optional_payload,

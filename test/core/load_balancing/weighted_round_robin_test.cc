@@ -1330,11 +1330,7 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
               ::testing::Optional(::testing::ElementsAre(
                   // Picker created for first endpoint becoming READY.
                   0,
-                  // Picker update for second endpoint CONNECTING.
-                  0,
                   // Picker update for second endpoint READY.
-                  0, 0,
-                  // Picker update for third endpoint CONNECTING.
                   0, 0,
                   // Picker update for third endpoint READY.
                   0, 0, 0,
@@ -1345,17 +1341,17 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
                   ::testing::DoubleNear(111.111115, 0.000001),
                   ::testing::DoubleNear(333.333344, 0.000001),
                   ::testing::DoubleNear(333.333344, 0.000001))));
-  // RR fallback should trigger for the first 5 updates above, because
+  // RR fallback should trigger for the first 3 updates above, because
   // there are less than two endpoints with valid weights.
   EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kRrFallback, kLabelValues,
                                                   kOptionalLabelValues),
-              ::testing::Optional(5));
+              ::testing::Optional(3));
   // Endpoint-not-yet-usable will be incremented once for every endpoint
   // with weight 0 above.
   EXPECT_THAT(
       stats_plugin->GetUInt64CounterValue(kEndpointWeightNotYetUsable,
                                           kLabelValues, kOptionalLabelValues),
-      ::testing::Optional(10));
+      ::testing::Optional(7));
   // There are no stale endpoint weights so far.
   EXPECT_THAT(stats_plugin->GetUInt64CounterValue(
                   kEndpointWeightStale, kLabelValues, kOptionalLabelValues),

@@ -68,6 +68,8 @@ enum class HpackParseStatus : uint8_t {
   // Hard metadata limit exceeded by a single value string
   kHardMetadataLimitExceededByValue,
   kMetadataParseError,
+  // Duplicate header received for a non-repeatable metadata key
+  kDuplicateHeader,
   // Parse failed due to a base64 decode error
   kUnbase64Failed,
   // Error triggered by the mitigation engine (stream error)
@@ -174,6 +176,12 @@ class HpackParseResult {
 
   static HpackParseResult MetadataParseError(absl::string_view key) {
     HpackParseResult r{HpackParseStatus::kMetadataParseError};
+    r.state_->key = std::string(key);
+    return r;
+  }
+
+  static HpackParseResult DuplicateHeaderError(absl::string_view key) {
+    HpackParseResult r{HpackParseStatus::kDuplicateHeader};
     r.state_->key = std::string(key);
     return r;
   }

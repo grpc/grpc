@@ -16,6 +16,14 @@ For transport internals, see
 *   **Verify:** Before finishing, re-check every table, list, and count you
     touched against the source. Do not leave stale references behind.
 
+## Issue, Nit, and Bug Guidelines
+
+Before reporting bugs or nits, proposing fixes, or filing issues, you MUST read
+and follow these sections in `chttp2/AGENTS.md`:
+
+*   [Pragmatic Issue and Nit Guidelines](../../../../src/core/ext/transport/chttp2/AGENTS.md#pragmatic-issue-and-nit-guidelines)
+*   [Known Issues, Bugs, TODOs, and WIP CLs](../../../../src/core/ext/transport/chttp2/AGENTS.md#known-issues-bugs-todos-and-wip-cls)
+
 ## Must-Run PH2 Tests
 
 Run these after any PH2 code change:

@@ -25,11 +25,6 @@ namespace grpc_event_engine::experimental {
 // may disable the poller in some builds.
 bool UseEventEngineClient();
 
-// Returns true if the EventEngine listener shim should be used.
-// This is based on the experiment state, and compile-time configurations that
-// may disable the poller in some builds.
-bool UseEventEngineListener();
-
 // Returns true if the pollset alternative experiment should be used.
 // This is based on the experiment state, and compile-time configurations that
 // may disable the poller in some builds.

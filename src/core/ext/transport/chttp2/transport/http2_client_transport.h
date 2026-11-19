@@ -115,7 +115,7 @@ class Http2ClientTransport final : public ClientTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Deprecated Stuff
 
-  // TODO(tjagtap) : [PH2][EXT] : Remove after event engine rollout
+  // TODO(tjagtap) [PH2][P4][EXT] Remove after event engine rollout
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
 
@@ -524,7 +524,8 @@ class Http2ClientTransport final : public ClientTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Ping Keepalive and Goaway
 
-  void MaybeSpawnPingTimeout(std::optional<uint64_t> opaque_data);
+  void MaybeSpawnPingTimeout(
+      std::optional<PingManager::PingTimeoutArgs> ping_timeout_args);
   void MaybeSpawnDelayedPing(std::optional<Duration> delayed_ping_wait);
 
   auto SendPing(absl::AnyInvocable<void()> on_initiate, bool important) {

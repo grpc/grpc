@@ -272,9 +272,12 @@ std::string XdsMatcherExactMap::ToString() const {
 bool XdsMatcherExactMap::FindMatches(const MatchContext& context,
                                      Result& result) const {
   auto input = input_->GetValue(context);
-  auto it = map_.find(input.value_or(""));
-  if (it != map_.end()) {
-    if (it->second.FindMatches(context, result)) return true;
+  // An absent input matches no key, as in Envoy.
+  if (input.has_value()) {
+    auto it = map_.find(*input);
+    if (it != map_.end()) {
+      if (it->second.FindMatches(context, result)) return true;
+    }
   }
   if (on_no_match_.has_value()) {
     if (on_no_match_->FindMatches(context, result)) return true;
@@ -326,14 +329,17 @@ std::string XdsMatcherPrefixMap::ToString() const {
 bool XdsMatcherPrefixMap::FindMatches(const MatchContext& context,
                                       Result& result) const {
   auto input = input_->GetValue(context);
-  std::vector<const OnMatch*> on_match_results;
-  root_.ForEachPrefixMatch(input.value_or(""), [&](const OnMatch& on_match) {
-    on_match_results.push_back(&on_match);
-  });
-  for (auto it = on_match_results.rbegin(); it != on_match_results.rend();
-       ++it) {
-    if ((*it)->FindMatches(context, result)) {
-      return true;
+  // An absent input matches no prefix (not even ""), as in Envoy.
+  if (input.has_value()) {
+    std::vector<const OnMatch*> on_match_results;
+    root_.ForEachPrefixMatch(*input, [&](const OnMatch& on_match) {
+      on_match_results.push_back(&on_match);
+    });
+    for (auto it = on_match_results.rbegin(); it != on_match_results.rend();
+         ++it) {
+      if ((*it)->FindMatches(context, result)) {
+        return true;
+      }
     }
   }
   if (on_no_match_.has_value()) {

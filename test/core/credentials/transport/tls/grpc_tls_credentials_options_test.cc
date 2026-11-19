@@ -626,6 +626,43 @@ TEST_F(GrpcTlsCredentialsOptionsTest, SetKeyExchangeGroups) {
   EXPECT_EQ(options->key_exchange_groups(), groups);
 }
 
+TEST_F(GrpcTlsCredentialsOptionsTest, SetExportedKeyingMaterialOptions) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  grpc_tls_credentials_options_set_exported_keying_material_options(
+      options.get(), "test_label", 32);
+  EXPECT_EQ(options->exported_keying_material_label(), "test_label");
+  EXPECT_EQ(options->exported_keying_material_length(), 32);
+}
+
+using GrpcTlsCredentialsOptionsDeathTest = GrpcTlsCredentialsOptionsTest;
+
+TEST_F(GrpcTlsCredentialsOptionsDeathTest,
+       SetExportedKeyingMaterialOptionsWithNullLabel) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  ASSERT_DEATH_IF_SUPPORTED(
+      grpc_tls_credentials_options_set_exported_keying_material_options(
+          options.get(), nullptr, 32),
+      "");
+}
+
+TEST_F(GrpcTlsCredentialsOptionsDeathTest,
+       SetExportedKeyingMaterialOptionsWithEmptyLabel) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  ASSERT_DEATH_IF_SUPPORTED(
+      grpc_tls_credentials_options_set_exported_keying_material_options(
+          options.get(), "", 32),
+      "");
+}
+
+TEST_F(GrpcTlsCredentialsOptionsDeathTest,
+       SetExportedKeyingMaterialOptionsWithZeroLength) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  ASSERT_DEATH_IF_SUPPORTED(
+      grpc_tls_credentials_options_set_exported_keying_material_options(
+          options.get(), "test_label", 0),
+      "");
+}
+
 }  // namespace testing
 
 }  // namespace grpc_core
@@ -636,6 +673,7 @@ int main(int argc, char** argv) {
   overrides.default_ssl_roots_file_path = CA_CERT_PATH;
   grpc_core::ConfigVars::SetOverrides(overrides);
   ::testing::InitGoogleTest(&argc, argv);
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();

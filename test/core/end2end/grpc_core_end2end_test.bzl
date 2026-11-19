@@ -87,6 +87,7 @@ _DEPS = [
     "//src/core:status_helper",
     "//src/core:tcp_tracer",
     "//src/core:time",
+    "//src/core:transport_common",
     "//src/core:unique_type_name",
     "//test/core/test_util:fail_first_call_filter",
     "//test/core/test_util:fake_stats_plugin",

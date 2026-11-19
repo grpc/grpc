@@ -23,12 +23,9 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
-#include "src/core/util/ref_counted_string.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
 #include "absl/strings/string_view.h"
-
-// TODO(bpawan): Expose Channel Factory types once defined for C++ (gRFC A119).
 
 namespace grpc_core {
 
@@ -44,18 +41,10 @@ class AutoShardingLbConfig final : public LoadBalancingPolicy::Config {
 
   absl::string_view name() const override;
 
-  const std::string& channel_factory_key() const {
-    return channel_factory_key_;
-  }
-  const std::string& autosharding_target() const {
-    return autosharding_target_;
-  }
-  const RefCountedStringValue& key_header_name() const {
-    return key_header_name_;
-  }
+  absl::string_view channel_factory_key() const { return channel_factory_key_; }
+  absl::string_view autosharding_target() const { return autosharding_target_; }
+  absl::string_view key_header_name() const { return key_header_name_; }
   bool enable_fallback() const { return enable_fallback_; }
-  // TODO(bpawan): Pass this to the autosharding client, which will own the
-  // initial assignment timer (gRFC A119).
   Duration initial_assignment_timeout() const {
     return initial_assignment_timeout_;
   }
@@ -68,7 +57,7 @@ class AutoShardingLbConfig final : public LoadBalancingPolicy::Config {
  private:
   std::string channel_factory_key_;
   std::string autosharding_target_;
-  RefCountedStringValue key_header_name_;
+  std::string key_header_name_;
   bool enable_fallback_ = false;
   Duration initial_assignment_timeout_ = Duration::Seconds(60);
 };

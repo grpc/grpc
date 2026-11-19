@@ -86,6 +86,7 @@ EXPORTS
     grpc_tls_credentials_options_set_check_call_host
     grpc_tls_credentials_options_set_tls_session_key_log_file_path
     grpc_tls_credentials_options_set_key_exchange_groups
+    grpc_tls_credentials_options_set_exported_keying_material_options
     grpc_metadata_array_init
     grpc_metadata_array_destroy
     grpc_call_details_init
@@ -116,6 +117,7 @@ EXPORTS
     grpc_call_arena_alloc
     grpc_call_start_batch
     grpc_call_get_peer
+    grpc_call_get_local_address
     grpc_census_call_set_context
     grpc_census_call_get_context
     grpc_channel_get_target

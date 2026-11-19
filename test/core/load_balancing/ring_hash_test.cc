@@ -98,8 +98,6 @@ TEST_F(RingHashTest, Basic) {
                    "not yet returned a picker",
                    LoadBalancingPolicy::kDelayTypeConnecting,
                    {address0_attribute});
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
@@ -132,8 +130,6 @@ TEST_F(RingHashTest, SameAddressListedMultipleTimes) {
                    "not yet returned a picker",
                    LoadBalancingPolicy::kDelayTypeConnecting,
                    {address0_attribute});
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
@@ -170,8 +166,6 @@ TEST_F(RingHashTest, MultipleAddressesPerEndpoint) {
                    "not yet returned a picker",
                    LoadBalancingPolicy::kDelayTypeConnecting,
                    {address0_attribute});
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   auto* subchannel = FindSubchannel(kEndpoint1Addresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
@@ -203,8 +197,6 @@ TEST_F(RingHashTest, MultipleAddressesPerEndpoint) {
                    "reconnect",
                    LoadBalancingPolicy::kDelayTypeConnecting,
                    {address0_attribute});
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_CONNECTING);
@@ -258,8 +250,6 @@ TEST_F(RingHashTest,
                    "not yet returned a picker",
                    LoadBalancingPolicy::kDelayTypeConnecting,
                    {address0_attribute});
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   EXPECT_TRUE(subchannels[0]->ConnectionRequested());
   for (size_t i = 1; i < subchannels.size(); ++i) {
     EXPECT_FALSE(subchannels[i]->ConnectionRequested()) << "index " << i;
@@ -391,8 +381,6 @@ TEST_F(RingHashTest, EndpointHashKeys) {
                    "ring_hash: primary endpoint connecting: child policy has "
                    "not yet returned a picker",
                    LoadBalancingPolicy::kDelayTypeConnecting, {hash_attribute});
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   auto* subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
@@ -453,8 +441,6 @@ TEST_F(RingHashTest, RequestHashHeader) {
                    "not yet returned a picker",
                    LoadBalancingPolicy::kDelayTypeConnecting,
                    /*call_attributes=*/{}, metadata);
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
@@ -484,8 +470,6 @@ TEST_F(RingHashTest, RequestHashHeaderNotPresent) {
   ExpectPickQueued(picker.get(),
                    "ring_hash: primary endpoint connecting: child policy has "
                    "not yet returned a picker");
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   // It will randomly pick one.
   size_t index = 0;
   SubchannelState* subchannel = nullptr;
