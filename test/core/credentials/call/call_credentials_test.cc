@@ -72,6 +72,7 @@
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
@@ -1432,6 +1433,8 @@ int httpcli_get_valid_json_regional_access_boundary(
 }
 
 TEST_F(CredentialsTest, TestJwtCredsWithRegionalAccessBoundary) {
+  testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_REGIONAL_ACCESS_BOUNDARY_LOOKUP");
   const char expected_creds_debug_string_prefix[] =
       "JWTAccessCredentials{ExpirationTime:";
   char* json_key_string = test_json_key_str();
@@ -1467,6 +1470,8 @@ TEST_F(CredentialsTest, TestJwtCredsWithRegionalAccessBoundary) {
 }
 
 TEST_F(CredentialsTest, TestJwtCredsFetchRegionalAccessBoundaryRespectsCache) {
+  testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_REGIONAL_ACCESS_BOUNDARY_LOOKUP");
   const char expected_creds_debug_string_prefix[] =
       "JWTAccessCredentials{ExpirationTime:";
   char* json_key_string = test_json_key_str();
@@ -1527,7 +1532,32 @@ char* encode_and_sign_jwt_any_email(const grpc_auth_json_key* json_key,
   return gpr_strdup(test_signed_jwt);
 }
 
+TEST_F(CredentialsTest, TestJwtCredsWithRabDisabled) {
+  char* json_key = test_json_key_str();
+  ExecCtx exec_ctx;
+  grpc_call_credentials* creds =
+      grpc_service_account_jwt_access_credentials_create(
+          json_key, grpc_max_auth_token_lifetime(), nullptr);
+  gpr_free(json_key);
+  GRPC_CHECK_NE(creds, nullptr);
+  // Expectation: JWT token is generated, but RAB fetcher is null.
+  std::string expected_md_value = absl::StrCat("Bearer ", test_signed_jwt);
+  // Only authorization header expected.
+  std::string emd = absl::StrCat("authorization: ", expected_md_value);
+  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_any_email);
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called, nullptr, nullptr);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  creds->Unref();
+  grpc_jwt_encode_and_sign_set_override(nullptr);
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
 TEST_F(CredentialsTest, TestJwtCredsWithInvalidRabUri) {
+  testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_REGIONAL_ACCESS_BOUNDARY_LOOKUP");
   // Key with invalid email (space in email) to trigger invalid RAB URI.
   char* original_json_key = test_json_key_str();
   ExecCtx exec_ctx;
@@ -1558,6 +1588,8 @@ TEST_F(CredentialsTest, TestJwtCredsWithInvalidRabUri) {
 }
 
 TEST_F(CredentialsTest, TestJwtCredsSuccess) {
+  testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_REGIONAL_ACCESS_BOUNDARY_LOOKUP");
   const char expected_creds_debug_string_prefix[] =
       "JWTAccessCredentials{ExpirationTime:";
   char* json_key_string = test_json_key_str();
@@ -4528,6 +4560,8 @@ int external_account_creds_httpcli_get_rab_500(
 }
 
 TEST_F(ExternalAccountCredentialsTest, SuccessWithWorkforcePoolRab) {
+  testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_REGIONAL_ACCESS_BOUNDARY_LOOKUP");
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::ServiceAccountImpersonation
@@ -4577,6 +4611,8 @@ TEST_F(ExternalAccountCredentialsTest, SuccessWithWorkforcePoolRab) {
 }
 
 TEST_F(ExternalAccountCredentialsTest, SuccessWithWorkloadIdentityPoolRab) {
+  testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_REGIONAL_ACCESS_BOUNDARY_LOOKUP");
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::ServiceAccountImpersonation
@@ -4662,6 +4698,8 @@ int external_account_creds_httpcli_post_success_impersonated(
 
 TEST_F(ExternalAccountCredentialsTest,
        SuccessWithServiceAccountImpersonationRab) {
+  testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_REGIONAL_ACCESS_BOUNDARY_LOOKUP");
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::ServiceAccountImpersonation
@@ -4709,7 +4747,45 @@ TEST_F(ExternalAccountCredentialsTest,
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
+TEST_F(ExternalAccountCredentialsTest, SuccessWithRabDisabled) {
+  ExecCtx exec_ctx;
+  Json credential_source = Json::FromString("");
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  TestExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+      "test_workforce_pool",              // workforce_pool_id;
+      "",                                 // workload_pool_project;
+      "",                                 // workload_pool_id;
+  };
+  auto creds = MakeRefCounted<TestExternalAccountCredentials>(
+      options, std::vector<std::string>(), event_engine_);
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           external_account_creds_httpcli_post_success,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme,
+                                kGoogleTestAuthority, kTestPath);
+  event_engine_->TickUntilIdle();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
 TEST_F(ExternalAccountCredentialsTest, SuccessWithRab401) {
+  testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_REGIONAL_ACCESS_BOUNDARY_LOOKUP");
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::ServiceAccountImpersonation
@@ -4747,6 +4823,8 @@ TEST_F(ExternalAccountCredentialsTest, SuccessWithRab401) {
 }
 
 TEST_F(ExternalAccountCredentialsTest, SuccessWithRab500NoHeader) {
+  testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_REGIONAL_ACCESS_BOUNDARY_LOOKUP");
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::ServiceAccountImpersonation
@@ -5106,6 +5184,8 @@ int compute_engine_with_rab_401_httpcli_get_override(
 }
 
 TEST_F(CredentialsTest, TestComputeEngineCredsWithRabSuccess) {
+  testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_REGIONAL_ACCESS_BOUNDARY_LOOKUP");
   ExecCtx exec_ctx;
   std::string emd_cached =
       "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_, "
@@ -5133,7 +5213,27 @@ TEST_F(CredentialsTest, TestComputeEngineCredsWithRabSuccess) {
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
+TEST_F(CredentialsTest, TestComputeEngineCredsWithRabDisabled) {
+  ExecCtx exec_ctx;
+  std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
+  grpc_call_credentials* creds =
+      grpc_google_compute_engine_credentials_create(nullptr);
+  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  HttpRequest::SetOverride(compute_engine_with_rab_httpcli_get_success_override,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  creds->Unref();
+}
+
 TEST_F(CredentialsTest, TestComputeEngineCredsWithRab401) {
+  testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_REGIONAL_ACCESS_BOUNDARY_LOOKUP");
   ExecCtx exec_ctx;
   std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
   grpc_call_credentials* creds =
@@ -5163,6 +5263,8 @@ int compute_engine_concurrent_fetch_override(const grpc_http_request* request,
 }
 
 TEST_F(CredentialsTest, TestComputeEngineCredsConcurrentFetch) {
+  testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_REGIONAL_ACCESS_BOUNDARY_LOOKUP");
   ExecCtx exec_ctx;
   g_email_fetch_count = 0;
   std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
@@ -5200,6 +5302,8 @@ int compute_engine_httpcli_get_stalled_email_override(
 }
 
 TEST_F(CredentialsTest, TestComputeEngineCredsEmailFetchCancellation) {
+  testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_REGIONAL_ACCESS_BOUNDARY_LOOKUP");
   g_email_request_cancelled = false;
   g_stalled_email_fetch_on_done = nullptr;
   ExecCtx exec_ctx;

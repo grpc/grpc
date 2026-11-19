@@ -12495,6 +12495,7 @@ grpc_cc_library(
         "dual_ref_counted",
         "env",
         "error",
+        "experiment_env_var",
         "grpc_check",
         "httpcli_ssl_credentials",
         "json",
