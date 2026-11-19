@@ -202,7 +202,6 @@ grpc_cc_test(
     name = "xds_dependency_manager_test",
     srcs = ["xds_dependency_manager_test.cc"],
     external_deps = [
-        "absl/base:core_headers",
         "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
@@ -236,7 +235,6 @@ grpc_cc_test(
         "//src/core:grpc_check",
         "//src/core:grpc_lb_xds_channel_args",
         "//src/core:resolved_address",
-        "//src/core:sync",
         "//src/core:time",
         "//src/core:wait_for_single_owner",
         "//src/core:xds_cluster",

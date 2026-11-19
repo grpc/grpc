@@ -46,7 +46,6 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/wait_for_single_owner.h"
@@ -67,7 +66,6 @@
 #include "test/core/xds/fake_xds_client.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -294,15 +292,11 @@ std::shared_ptr<const XdsEndpointResource> MakeDefaultEndpointResource(
 class TestDnsResolver;
 
 struct TestDnsState {
-  mutable Mutex mu;
-  std::map<std::string /*hostname*/, TestDnsResolver*> active_resolvers
-      ABSL_GUARDED_BY(mu);
-  std::map<std::string /*hostname*/, int> create_counts ABSL_GUARDED_BY(mu);
-  std::map<std::string /*hostname*/, int> reresolution_counts
-      ABSL_GUARDED_BY(mu);
-  std::map<std::string /*hostname*/, int> reset_backoff_counts
-      ABSL_GUARDED_BY(mu);
-  std::set<std::string /*hostname*/> fail_create_hostnames ABSL_GUARDED_BY(mu);
+  std::map<std::string /*hostname*/, TestDnsResolver*> active_resolvers;
+  std::map<std::string /*hostname*/, int> create_counts;
+  std::map<std::string /*hostname*/, int> reresolution_counts;
+  std::map<std::string /*hostname*/, int> reset_backoff_counts;
+  std::set<std::string /*hostname*/> fail_create_hostnames;
 };
 
 class TestDnsResolver final : public Resolver {
@@ -313,7 +307,6 @@ class TestDnsResolver final : public Resolver {
         hostname_(std::move(hostname)),
         work_serializer_(std::move(args.work_serializer)),
         result_handler_(std::move(args.result_handler)) {
-    MutexLock lock(state_->mu);
     ++state_->create_counts[hostname_];
     auto [_, inserted] = state_->active_resolvers.emplace(hostname_, this);
     EXPECT_TRUE(inserted) << "Duplicate DNS resolver for " << hostname_;
@@ -325,18 +318,15 @@ class TestDnsResolver final : public Resolver {
   }
 
   void RequestReresolutionLocked() override {
-    MutexLock lock(state_->mu);
     ++state_->reresolution_counts[hostname_];
   }
 
   void ResetBackoffLocked() override {
-    MutexLock lock(state_->mu);
     ++state_->reset_backoff_counts[hostname_];
   }
 
   void ShutdownLocked() override {
     shutdown_ = true;
-    MutexLock lock(state_->mu);
     auto it = state_->active_resolvers.find(hostname_);
     if (it != state_->active_resolvers.end() && it->second == this) {
       state_->active_resolvers.erase(it);
@@ -379,11 +369,8 @@ class TestDnsResolverFactory final : public ResolverFactory {
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     std::string hostname(absl::StripPrefix(args.uri.path(), "/"));
-    {
-      MutexLock lock(state_->mu);
-      if (state_->fail_create_hostnames.count(hostname) > 0) {
-        return nullptr;
-      }
+    if (state_->fail_create_hostnames.count(hostname) > 0) {
+      return nullptr;
     }
     return MakeOrphanable<TestDnsResolver>(state_, std::move(hostname),
                                            std::move(args));
@@ -410,17 +397,12 @@ class XdsDependencyManagerTest : public ::testing::Test {
   class WatcherState {
    public:
     void Push(absl::StatusOr<RefCountedPtr<const XdsConfig>> config) {
-      MutexLock lock(mu_);
       updates_.push_back(std::move(config));
     }
 
-    bool Empty() const {
-      MutexLock lock(mu_);
-      return updates_.empty();
-    }
+    bool Empty() const { return updates_.empty(); }
 
     std::optional<absl::StatusOr<RefCountedPtr<const XdsConfig>>> Pop() {
-      MutexLock lock(mu_);
       if (updates_.empty()) return std::nullopt;
       auto update = std::move(updates_.front());
       updates_.pop_front();
@@ -428,7 +410,6 @@ class XdsDependencyManagerTest : public ::testing::Test {
     }
 
     std::string RemainingUpdatesSummary() const {
-      MutexLock lock(mu_);
       std::string out;
       for (const auto& u : updates_) {
         absl::StrAppend(&out, u.ok() ? (*u)->ToString() : u.status().ToString(),
@@ -438,9 +419,7 @@ class XdsDependencyManagerTest : public ::testing::Test {
     }
 
    private:
-    mutable Mutex mu_;
-    std::deque<absl::StatusOr<RefCountedPtr<const XdsConfig>>> updates_
-        ABSL_GUARDED_BY(mu_);
+    std::deque<absl::StatusOr<RefCountedPtr<const XdsConfig>>> updates_;
   };
 
   class RecordingWatcher final : public XdsDependencyManager::Watcher {
@@ -687,7 +666,6 @@ class XdsDependencyManagerTest : public ::testing::Test {
 
   // DNS test helpers.
   std::set<std::string> GetActiveDnsResolvers() const {
-    MutexLock lock(dns_state_->mu);
     std::set<std::string> names;
     for (const auto& [name, _] : dns_state_->active_resolvers) {
       names.insert(name);
@@ -697,7 +675,6 @@ class XdsDependencyManagerTest : public ::testing::Test {
 
   RefCountedPtr<TestDnsResolver> GetActiveDnsResolver(
       absl::string_view hostname) const {
-    MutexLock lock(dns_state_->mu);
     auto it = dns_state_->active_resolvers.find(std::string(hostname));
     return it == dns_state_->active_resolvers.end() ? nullptr
                                                     : it->second->RefForTest();
@@ -706,33 +683,25 @@ class XdsDependencyManagerTest : public ::testing::Test {
   void SendDnsResult(absl::string_view hostname, Resolver::Result result,
                      bool allow_after_shutdown = false,
                      SourceLocation location = SourceLocation()) {
-    RefCountedPtr<TestDnsResolver> resolver;
-    {
-      MutexLock lock(dns_state_->mu);
-      auto it = dns_state_->active_resolvers.find(std::string(hostname));
-      ASSERT_NE(it, dns_state_->active_resolvers.end())
-          << "No active DNS resolver for " << hostname << " at "
-          << location.file() << ":" << location.line();
-      EXPECT_TRUE(it->second->started());
-      resolver = it->second->RefForTest();
-    }
-    resolver->SendResult(std::move(result), allow_after_shutdown);
+    auto it = dns_state_->active_resolvers.find(std::string(hostname));
+    ASSERT_NE(it, dns_state_->active_resolvers.end())
+        << "No active DNS resolver for " << hostname << " at "
+        << location.file() << ":" << location.line();
+    EXPECT_TRUE(it->second->started());
+    it->second->SendResult(std::move(result), allow_after_shutdown);
   }
 
   int GetDnsCreateCount(absl::string_view hostname) const {
-    MutexLock lock(dns_state_->mu);
     auto it = dns_state_->create_counts.find(std::string(hostname));
     return it == dns_state_->create_counts.end() ? 0 : it->second;
   }
 
   int GetDnsReresolutionCount(absl::string_view hostname) const {
-    MutexLock lock(dns_state_->mu);
     auto it = dns_state_->reresolution_counts.find(std::string(hostname));
     return it == dns_state_->reresolution_counts.end() ? 0 : it->second;
   }
 
   int GetDnsResetBackoffCount(absl::string_view hostname) const {
-    MutexLock lock(dns_state_->mu);
     auto it = dns_state_->reset_backoff_counts.find(std::string(hostname));
     return it == dns_state_->reset_backoff_counts.end() ? 0 : it->second;
   }
@@ -2061,10 +2030,7 @@ TEST_F(XdsDependencyManagerTest, LogicalDnsFakeResolverResponseGeneratorArg) {
 }
 
 TEST_F(XdsDependencyManagerTest, LogicalDnsCreateResolverFailure) {
-  {
-    MutexLock lock(dns_state_->mu);
-    dns_state_->fail_create_hostnames.insert("bad.example.com:443");
-  }
+  dns_state_->fail_create_hostnames.insert("bad.example.com:443");
   Init();
   TriggerListenerUpdate(
       kDefaultListenerName,
