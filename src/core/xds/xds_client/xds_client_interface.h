@@ -78,7 +78,7 @@ class XdsClientInterface : public DualRefCounted<XdsClientInterface> {
   virtual void CancelResourceWatch(const XdsResourceType* type,
                                    absl::string_view name,
                                    ResourceWatcherInterface* watcher,
-                                   bool delay_unsubscription = false) = 0;
+                                   bool delay_unsubscription) = 0;
 
   // Resets connection backoff state.
   virtual void ResetBackoff() = 0;
