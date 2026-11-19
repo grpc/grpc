@@ -83,4 +83,4 @@
 - 1.83 'g' stands for ['garden'](https://github.com/grpc/grpc/tree/v1.83.x)
 - 1.84 'g' stands for ['gimbal'](https://github.com/grpc/grpc/tree/v1.84.x)
 - 1.85 'g' stands for ['gimbal'](https://github.com/grpc/grpc/tree/v1.85.x)
-- 1.86 'g' stands for ['googol'](https://github.com/grpc/grpc/tree/master)
+- 1.86 'g' stands for ['googol'](https://github.com/grpc/grpc/tree/v1.86.x)
