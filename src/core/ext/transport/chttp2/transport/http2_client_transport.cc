@@ -59,6 +59,7 @@
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
@@ -1522,6 +1523,7 @@ void Http2ClientTransport::SpawnAddChannelzData(RefCountedPtr<Party> party,
                                                 channelz::DataSink sink) {
   SpawnInfallible(
       std::move(party), "AddData",
+      // This promise may be polled after CloseTransport() has already run.
       [self = RefAsSubclass<Http2ClientTransport>(),
        sink = std::move(sink)]() mutable {
         GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnAddChannelzData";
@@ -1536,8 +1538,8 @@ void Http2ClientTransport::SpawnAddChannelzData(RefCountedPtr<Party> party,
                 .Set("settings", self->settings_->ChannelzProperties())
                 .Set("flow_control",
                      self->flow_control_.stats().ChannelzProperties()));
-        self->transport_party_->ExportToChannelz("Http2ClientTransport Party",
-                                                 sink);
+        GetContext<Party>()->ExportToChannelz("Http2ClientTransport Party",
+                                              std::move(sink));
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport::SpawnAddChannelzData End";
         return Empty{};

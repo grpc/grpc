@@ -63,6 +63,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/all_ok.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
@@ -158,6 +159,7 @@ void Http2ServerTransport::SpawnAddChannelzData(RefCountedPtr<Party> party,
                                                 channelz::DataSink sink) {
   SpawnInfallible(
       std::move(party), "AddData",
+      // This promise may be polled after CloseTransport() has already run.
       [self = RefAsSubclass<Http2ServerTransport>(),
        sink = std::move(sink)]() mutable {
         GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SpawnAddChannelzData";
@@ -173,8 +175,8 @@ void Http2ServerTransport::SpawnAddChannelzData(RefCountedPtr<Party> party,
                 .Set("flow_control",
                      self->flow_control_.stats().ChannelzProperties())
                 .Set("tarpit", self->tarpit_manager_.ChannelzProperties()));
-        self->transport_party_->ExportToChannelz("Http2ServerTransport Party",
-                                                 sink);
+        GetContext<Party>()->ExportToChannelz("Http2ServerTransport Party",
+                                              std::move(sink));
         GRPC_HTTP2_SERVER_DLOG
             << "Http2ServerTransport::SpawnAddChannelzData End";
         return Empty{};
