@@ -902,7 +902,7 @@ TEST_F(LbPolicyTest, AutoshardingPolicyFillsGrpcServiceMap) {
   const auto& [key, grpc_service] = *resource.lb_policy_grpc_services.begin();
   EXPECT_EQ(key,
             "{server_uri=dns:///autosharding.example.com, "
-            "channel_creds={type=insecure, config={}}, timeout=\u221e}");
+            "channel_creds={type=insecure, config={}}, timeout=\xE2\x88\x9E}");
   EXPECT_EQ(grpc_service->server_uri(), "dns:///autosharding.example.com");
   // The LB policy config refers to the map entry by its key.
   EXPECT_THAT(JsonDump(Json::FromArray(resource.lb_policy_config)),

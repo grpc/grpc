@@ -605,7 +605,7 @@ TEST_F(AutoshardingTest, TrustedXdsServerUsesResourceGrpcService) {
   const auto& [key, grpc_service] = *grpc_services.begin();
   EXPECT_EQ(key,
             "{server_uri=dns:///autosharding.example.com, "
-            "channel_creds={type=insecure, config={}}, timeout=\u221e}");
+            "channel_creds={type=insecure, config={}}, timeout=\xE2\x88\x9E}");
   EXPECT_EQ(grpc_service->server_uri(), "dns:///autosharding.example.com");
   ASSERT_NE(grpc_service->channel_creds_config(), nullptr);
   EXPECT_EQ(grpc_service->channel_creds_config()->type(), "insecure");
@@ -652,9 +652,10 @@ TEST_F(AutoshardingTest, UntrustedXdsServerUsesAllowedGrpcService) {
   ASSERT_EQ(grpc_services.size(), 1);
   const auto& [key, grpc_service] = *grpc_services.begin();
   // The creds come from the bootstrap, not from the resource.
-  EXPECT_EQ(key,
-            "{server_uri=dns:///autosharding.example.com, "
-            "channel_creds={type=google_default, config={}}, timeout=\u221e}");
+  EXPECT_EQ(
+      key,
+      "{server_uri=dns:///autosharding.example.com, "
+      "channel_creds={type=google_default, config={}}, timeout=\xE2\x88\x9E}");
   EXPECT_EQ(grpc_service->server_uri(), "dns:///autosharding.example.com");
   ASSERT_NE(grpc_service->channel_creds_config(), nullptr);
   EXPECT_EQ(grpc_service->channel_creds_config()->type(), "google_default");
@@ -775,7 +776,7 @@ TEST_F(AutoshardingTest, UnderWrrLocality) {
   const auto& [key, grpc_service] = *grpc_services.begin();
   EXPECT_EQ(key,
             "{server_uri=dns:///autosharding.example.com, "
-            "channel_creds={type=insecure, config={}}, timeout=\u221e}");
+            "channel_creds={type=insecure, config={}}, timeout=\xE2\x88\x9E}");
   EXPECT_EQ(grpc_service->server_uri(), "dns:///autosharding.example.com");
 }
 

@@ -117,7 +117,8 @@ class AutoshardingServiceImpl::Reactor final
 
   // Starts sending the latest assignment for the target of the stream, if
   // one is available and no write is in flight.  service_->mu_ must be held.
-  void SendAssignmentLocked() {
+  void SendAssignmentLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&AutoshardingServiceImpl::mu_) {
     if (called_finish_ || writing_ || service_->shutdown_) return;
     if (!target_.has_value()) return;
     auto it = service_->assignments_.find(*target_);
