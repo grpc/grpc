@@ -21,6 +21,7 @@
 #include "envoy/config/core/v3/health_check.pb.h"
 #include "envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.pb.h"
 #include "envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.pb.h"
+#include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.pb.h"
 #include "src/core/config/config_vars.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
@@ -31,6 +32,8 @@
 #include "gtest/gtest.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc {
 namespace testing {
@@ -41,6 +44,8 @@ using ::envoy::extensions::grpc_service::channel_credentials::insecure::v3::
     InsecureCredentials;
 using ::envoy::extensions::load_balancing_policies::autosharding::v3::
     Autosharding;
+using ::envoy::extensions::load_balancing_policies::wrr_locality::v3::
+    WrrLocality;
 
 constexpr absl::string_view kKeyHeaderName = "x-shard-key";
 constexpr absl::string_view kAutoshardingTarget = "autosharding-target";
@@ -129,6 +134,41 @@ TEST_P(XdsAutoshardingTest, TopLevel) {
   EXPECT_EQ(backends_[1]->backend_service()->request_count(), 1u);
   EXPECT_THAT(autosharding_server_->service().targets(),
               ::testing::ElementsAre(kAutoshardingTarget));
+}
+
+// Autosharding picks the endpoint under wrr_locality.  "%s" in the target
+// is replaced with the locality.
+TEST_P(XdsAutoshardingTest, UnderWrrLocality) {
+  CreateAndStartBackends(1);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(
+      EdsResourceArgs({{"locality0", {CreateNamedEndpoint(0)}}})));
+  const std::string expected_target =
+      absl::StrCat("shard-", LocalityNameString("locality0"));
+  autosharding_server_->service().SetAssignment(
+      expected_target, {{"", {0}}}, {BackendName(0)}, /*generation=*/1);
+  WrrLocality wrr_locality;
+  wrr_locality.mutable_endpoint_picking_policy()
+      ->add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(MakeAutoshardingConfigProto("shard-%s"));
+  balancer_->ads_service()->SetCdsResource(
+      MakeClusterWithLbPolicy(wrr_locality));
+  // Trigger channel connection so xDS creates the wrr_locality and
+  // autosharding policies and opens the stream to the autosharding server.
+  // TODO(pawbhard): Replace this wait with CheckRpcSendOk() and verify that
+  // backends_[0] receives the RPC once initial connection / ExitIdleLocked()
+  // support is added.
+  channel_->GetState(/*try_to_connect=*/true);
+  const absl::Time deadline =
+      absl::Now() + absl::Seconds(10 * grpc_test_slowdown_factor());
+  while (autosharding_server_->service().targets().empty()) {
+    ASSERT_LT(absl::Now(), deadline)
+        << "timed out waiting for autosharding stream";
+    absl::SleepFor(absl::Milliseconds(10));
+  }
+  EXPECT_THAT(autosharding_server_->service().targets(),
+              ::testing::ElementsAre(expected_target));
 }
 
 // When a locality moves to another priority, a new autosharding policy is
