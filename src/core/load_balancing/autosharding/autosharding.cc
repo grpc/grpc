@@ -27,8 +27,10 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "src/core/client_channel/channel_factory.h"
@@ -414,7 +416,6 @@ AutoshardingLbPolicy::Picker::PickFromEndpointIndices(
   // Scan the pool for a READY endpoint, starting from a random index and
   // triggering at most one connection attempt on an IDLE endpoint.
   size_t first_index = absl::Uniform<size_t>(SharedBitGen(), 0, indices.size());
-  bool requested_connection = false;
   std::optional<size_t> connecting_index;
   std::optional<size_t> idle_index;
   const absl::Status* last_failure = nullptr;
@@ -428,11 +429,10 @@ AutoshardingLbPolicy::Picker::PickFromEndpointIndices(
         if (!connecting_index.has_value()) connecting_index = index;
         break;
       case GRPC_CHANNEL_IDLE:
-        if (!requested_connection) {
+        if (!idle_index.has_value()) {
           RequestConnectionForEndpoint(endpoint_info.endpoint);
-          requested_connection = true;
+          idle_index = index;
         }
-        if (!idle_index.has_value()) idle_index = index;
         break;
       case GRPC_CHANNEL_TRANSIENT_FAILURE:
         last_failure = &endpoint_info.status;

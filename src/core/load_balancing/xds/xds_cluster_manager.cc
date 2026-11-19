@@ -363,6 +363,15 @@ void XdsClusterManagerLb::UpdateStateLocked() {
   for (const auto& [cluster_name, _] : config_->cluster_map()) {
     RefCountedPtr<SubchannelPicker>& child_picker = cluster_map[cluster_name];
     child_picker = children_[cluster_name]->picker();
+    if (child_picker == nullptr) {
+      GRPC_TRACE_LOG(xds_cluster_manager_lb, INFO)
+          << "[xds_cluster_manager_lb " << this << "] child " << cluster_name
+          << " has not yet returned a picker; creating a QueuePicker.";
+      child_picker = MakeRefCounted<QueuePicker>(
+          Ref(DEBUG_LOCATION, "QueuePicker"), kDelayTypeConnecting,
+          absl::StrCat("xds_cluster_manager: cluster '", cluster_name,
+                       "' waiting for initial picker"));
+    }
   }
   auto picker = MakeRefCounted<ClusterPicker>(std::move(cluster_map));
   absl::Status status;

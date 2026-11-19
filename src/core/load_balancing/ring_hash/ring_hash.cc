@@ -30,6 +30,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "src/core/client_channel/client_channel_internal.h"
@@ -359,7 +360,6 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       break;
     }
   }
-  const size_t first_endpoint_index = ring[index].endpoint_index;
   // Find the first endpoint we can use from the selected index.
   if (!using_random_hash) {
     const absl::Status* last_failure = nullptr;
@@ -371,18 +371,14 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
           return endpoint_info.picker->Pick(args);
         case GRPC_CHANNEL_IDLE:
           RequestConnectionForEndpoint(endpoint_info.endpoint);
-          if (endpoint_info.picker == nullptr) {
-            PickResult result =
-                PickResult::Queue{kDelayTypeConnecting,
-                                  "child policy has not yet returned a picker"};
-            MaybeModifyDelayReason(/*is_first_index=*/i == 0,
-                                   /*using_random_hash=*/false, last_failure,
-                                   result);
-            return result;
-          }
           [[fallthrough]];
         case GRPC_CHANNEL_CONNECTING: {
-          auto child_pick = endpoint_info.picker->Pick(args);
+          PickResult child_pick =
+              endpoint_info.picker == nullptr
+                  ? PickResult::Queue{kDelayTypeConnecting,
+                                      "child policy has not yet returned a "
+                                      "picker"}
+                  : endpoint_info.picker->Pick(args);
           MaybeModifyDelayReason(/*is_first_index=*/i == 0,
                                  /*using_random_hash=*/false, last_failure,
                                  child_pick);
@@ -436,7 +432,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   }
   std::string message = absl::StrCat(
       "ring hash cannot find a connected endpoint; first failure: ",
-      endpoints_[first_endpoint_index].status.message());
+      endpoints_[ring[index].endpoint_index].status.message());
   if (!resolution_note_.empty()) {
     absl::StrAppend(&message, " (", resolution_note_, ")");
   }

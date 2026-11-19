@@ -406,11 +406,11 @@ void WeightedTargetLb::UpdateStateLocked() {
   GRPC_TRACE_LOG(weighted_target_lb, INFO)
       << "[weighted_target_lb " << this
       << "] scanning children to determine connectivity state";
-  // Construct lists of child pickers with associated weights: one for
-  // children in state READY and one for children in state TRANSIENT_FAILURE.
-  // Each child is represented by a portion of the range proportional to its
-  // weight, such that the total range is the sum of the weights of all
-  // children.
+  // Construct lists of child pickers with associated weights, one for
+  // children that are in state READY and another for children that are
+  // in state TRANSIENT_FAILURE.  Each child is represented by a portion of
+  // the range proportional to its weight, such that the total range is the
+  // sum of the weights of all children.
   WeightedPicker::PickerList ready_picker_list;
   uint64_t ready_end = 0;
   WeightedPicker::PickerList connecting_or_idle_picker_list;
