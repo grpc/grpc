@@ -130,7 +130,8 @@ int RunCallBenchmark(int port, char* root,
           : grpc_core::LocalIpAndPort(port),
       "--grpc_experiments",
       std::string(grpc_core::ConfigVars::Get().Experiments()),
-      absl::StrCat("--warmup=", 10000),
+      // Warmup iterations must not be larger than benchmark iterations
+      absl::StrCat("--warmup=", std::min(10000, absl::GetFlag(FLAGS_size))),
       absl::StrCat("--benchmark=", absl::GetFlag(FLAGS_size))};
   // Add scenario-specific client flags to the end of the client_flags
   absl::c_move(client_scenario_flags, std::back_inserter(client_flags));
