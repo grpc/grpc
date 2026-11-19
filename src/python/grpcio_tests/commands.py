@@ -205,10 +205,11 @@ class RunInterop(setuptools.Command):
         if self.use_asyncio:
             import asyncio
 
+            from tests.interop import server as interop_server_lib
             from tests_aio.interop import server
 
             sys.argv[1:] = self.args.split()
-            args = server.parse_interop_server_arguments(sys.argv)
+            args = interop_server_lib.parse_interop_server_arguments(sys.argv)
             asyncio.get_event_loop().run_until_complete(server.serve(args))
         else:
             from tests.interop import server
