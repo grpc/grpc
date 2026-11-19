@@ -45,6 +45,7 @@ grpc_fuzz_test(
     ],
     deps = [
         "batch_builder",
+        "//:call_tracer",
         "//:debug_location",
         "//:grpc_base",
         "//src/core:arena",

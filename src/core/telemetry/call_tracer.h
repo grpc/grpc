@@ -242,8 +242,10 @@ class ClientCallTracerInterface : public CallTracerAnnotationInterface {
   // RecordEnd() serves as an indication that the call stack is done with all
   // API calls, and the tracer library is free to destroy it after that.
   virtual CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) = 0;
-  // Should be the last API call to the object. Once invoked, the tracer
-  // library is free to destroy the object.
+  // Records the final status of the call when received by the client.
+  // Note: Unlike CallAttemptTracer::RecordEnd(), the tracer library MUST NOT
+  // destroy this object in RecordEnd(). Its lifetime must remain tied to the
+  // call's Arena.
   virtual void RecordEnd(const absl::Status& status) = 0;
 };
 
