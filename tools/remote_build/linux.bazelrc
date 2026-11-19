@@ -16,6 +16,7 @@
 # bazelrc file for running gRPC tests with RBE (on Linux)
 
 import %workspace%/tools/remote_build/include/rbe_remote_execution.bazelrc
+import %workspace%/tools/remote_build/include/rbe_clang19_copts.bazelrc
 
 # Next section is linux-specific RBE configuration
 build --crosstool_top=//third_party/toolchains:rbe_linux_default_toolchain_suite
@@ -24,15 +25,6 @@ build --extra_toolchains=//third_party/toolchains:rbe_linux_default_cc_toolchain
 build --extra_execution_platforms=//third_party/toolchains:rbe_linux_default_platform
 build --host_platform=//third_party/toolchains:rbe_linux_default_platform
 build --platforms=//third_party/toolchains:rbe_linux_default_platform
-
-
-# The RBE toolchain uses a pre-release clang 19 that does not enable sized
-# deallocation by default. riegeli (a fuzztest dependency) needs it.
-#
-# See also tools/dockerfile/test/rbe_ubuntu2004/Dockerfile
-# TODO(weizheyuan): Update docker image to use 19.1.7 (last patch release)
-build --cxxopt=-fsized-deallocation
-build --host_cxxopt=-fsized-deallocation
 
 # we assume the default bazel RBE build is on linux,
 # so filter out stuff that should not be built or run there.
