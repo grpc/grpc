@@ -523,20 +523,6 @@ class Server : public ServerInterface,
                                    grpc_channel_stack_type channel_stack_type)
       ABSL_LOCKS_EXCLUDED(mu_global_);
 
-  // TODO(roth): Remove this as part of removing the
-  // server_connection_management experiment.
-  grpc_error_handle LegacySetupTransport(
-      Transport* transport, grpc_pollset* accepting_pollset,
-      const ChannelArgs& args, grpc_channel_stack_type channel_stack_type)
-      ABSL_LOCKS_EXCLUDED(mu_global_);
-
-  // TODO(roth): After the v3 migration, the caller should already have
-  // an OrphanablePtr<ServerTransport>, so this can take the parameter as
-  // ServerTransport& and just return absl::Status.
-  absl::StatusOr<OrphanablePtr<ServerTransport>> SetupCallLinkageForTransport(
-      Transport* transport, grpc_pollset* accepting_pollset,
-      const ChannelArgs& args, grpc_channel_stack_type channel_stack_type);
-
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 
   // Functions to specify that a specific registered method or the unregistered
@@ -815,6 +801,20 @@ class Server : public ServerInterface,
 
   void StartDrainingAllConnectionsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
+
+  // TODO(roth): Remove this as part of removing the
+  // server_connection_management experiment.
+  grpc_error_handle LegacySetupTransport(
+      Transport* transport, grpc_pollset* accepting_pollset,
+      const ChannelArgs& args, grpc_channel_stack_type channel_stack_type)
+      ABSL_LOCKS_EXCLUDED(mu_global_);
+
+  // TODO(roth): After the v3 migration, the caller should already have
+  // an OrphanablePtr<ServerTransport>, so this can take the parameter as
+  // ServerTransport& and just return absl::Status.
+  absl::StatusOr<OrphanablePtr<ServerTransport>> SetupCallLinkageForTransport(
+      Transport* transport, grpc_pollset* accepting_pollset,
+      const ChannelArgs& args, grpc_channel_stack_type channel_stack_type);
 
   RegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
                                         const absl::string_view& path);
