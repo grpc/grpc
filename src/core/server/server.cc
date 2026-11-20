@@ -1412,10 +1412,7 @@ Server::SetupCallLinkageForTransport(
         args.SetObject(transport).SetObject<channelz::BaseNode>(
             transport->GetSocketNode()),
         channel_stack_type);
-    if (!channel.ok()) {
-      transport->Orphan();
-      return channel.status();
-    }
+    if (!channel.ok()) return channel.status();
     GRPC_CHECK(*channel != nullptr);
     auto* channel_stack = (*channel)->channel_stack();
     GRPC_CHECK(channel_stack != nullptr);
