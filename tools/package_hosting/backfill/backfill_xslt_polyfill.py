@@ -392,14 +392,7 @@ def patch_build_index_xml(raw_bytes: bytes, source_label: str) -> bytes | None:
         msg = f"{source_label}: patched XML missing expected first <script>"
         raise ValueError(msg)
 
-    patched_bytes = patched_text.encode("utf-8")
-    if len(patched_bytes) > MAX_INDEX_XML_BYTES:
-        msg = (
-            f"{source_label}: patched size {len(patched_bytes)} bytes exceeds "
-            f"limit ({MAX_INDEX_XML_BYTES} bytes)"
-        )
-        raise ValueError(msg)
-    return patched_bytes
+    return patched_text.encode("utf-8")
 
 
 def _read_local_target(
@@ -473,12 +466,7 @@ class LocalArchiveBackend:
         """Returns sorted YYYY/MM partitions in archive_dir matching bounds."""
         partitions: set[YearMonth] = set()
         for year_dir in sorted(self._archive_dir.iterdir()):
-            if not _YEAR_RE.match(year_dir.name):
-                continue
-            if year_dir.is_symlink():
-                msg = f"Refusing to traverse symlinked directory: {year_dir}"
-                raise OSError(msg)
-            if not year_dir.is_dir():
+            if not _YEAR_RE.match(year_dir.name) or not year_dir.is_dir():
                 continue
             year = int(year_dir.name)
             if bounds.start_from is not None and year < bounds.start_from.year:
@@ -486,15 +474,10 @@ class LocalArchiveBackend:
             if bounds.end_at is not None and year > bounds.end_at.year:
                 continue
             for month_dir in sorted(year_dir.iterdir()):
-                if not _MONTH_RE.match(month_dir.name):
-                    continue
-                if month_dir.is_symlink():
-                    msg = (
-                        "Refusing to traverse symlinked directory: "
-                        f"{month_dir}"
-                    )
-                    raise OSError(msg)
-                if not month_dir.is_dir():
+                if (
+                    not _MONTH_RE.match(month_dir.name)
+                    or not month_dir.is_dir()
+                ):
                     continue
                 partitions.add(
                     YearMonth(
@@ -507,19 +490,13 @@ class LocalArchiveBackend:
     def list_targets(self, ym: YearMonth) -> list[str]:
         """Returns sorted build-root index.xml paths for a YYYY/MM partition."""
         month_dir = self._archive_dir / f"{ym.year:04d}" / f"{ym.month:02d}"
-        if month_dir.is_symlink():
-            msg = f"Refusing to traverse symlinked directory: {month_dir}"
-            raise OSError(msg)
         if not month_dir.is_dir():
             return []
-        targets: list[str] = []
-        for child in sorted(month_dir.iterdir()):
-            if child.is_symlink():
-                msg = f"Refusing to traverse symlinked directory: {child}"
-                raise OSError(msg)
-            if child.is_dir():
-                targets.append(str(child / INDEX_FILENAME))
-        return targets
+        return [
+            str(child / INDEX_FILENAME)
+            for child in sorted(month_dir.iterdir())
+            if child.is_dir()
+        ]
 
     def process_target(
         self,
@@ -556,16 +533,8 @@ class LocalArchiveBackend:
             )
 
 
-def _reject_symlink(path: pathlib.Path) -> None:
-    """Raises ValueError if path is a symbolic link."""
-    if path.is_symlink():
-        msg = f"Refusing to write to symlink: {path}"
-        raise ValueError(msg)
-
-
 def _atomic_write_file(target_path: pathlib.Path, data: bytes) -> None:
     """Writes data to a sibling temp file and atomically replaces target."""
-    _reject_symlink(target_path)
     tmp_path: pathlib.Path | None = None
     try:
         with tempfile.NamedTemporaryFile(
@@ -577,9 +546,6 @@ def _atomic_write_file(target_path: pathlib.Path, data: bytes) -> None:
         ) as handle:
             tmp_path = pathlib.Path(handle.name)
             handle.write(data)
-            handle.flush()
-            os.fsync(handle.fileno())
-        _reject_symlink(target_path)
         shutil.copymode(target_path, tmp_path)
         tmp_path.replace(target_path)
     except BaseException:
@@ -981,13 +947,6 @@ class GcsArchiveBackend:
         generation: int,
     ) -> None:
         """Uploads patched XML via a fresh Blob with generation precondition."""
-        if len(patched_bytes) > MAX_INDEX_XML_BYTES:
-            msg = (
-                f"Refusing to upload {len(patched_bytes)} bytes "
-                f"(exceeds {MAX_INDEX_XML_BYTES} byte limit)"
-            )
-            raise ValueError(msg)
-
         uri = f"gs://{self._bucket_name}/{target}"
         _LOGGER.info(
             "UPLOADING patched XML to %s (if_generation_match=%d)",
@@ -1556,54 +1515,6 @@ def _run_with_backend(
     )
 
 
-def _check_log_file_stat(path: pathlib.Path) -> None:
-    """Validates that an existing --debug-log target is a regular/char file."""
-    try:
-        st = path.lstat()
-    except FileNotFoundError:
-        return
-
-    if stat.S_ISLNK(st.st_mode):
-        msg = f"Refusing to write to symlink: {path}"
-        raise ValueError(msg)
-    if stat.S_ISDIR(st.st_mode):
-        msg = f"--debug-log path is a directory: {path}"
-        raise ValueError(msg)
-    if not (stat.S_ISREG(st.st_mode) or stat.S_ISCHR(st.st_mode)):
-        msg = f"--debug-log must be a regular file (got special file): {path}"
-        raise ValueError(msg)
-
-
-def _prepare_debug_log_path(debug_log: pathlib.Path) -> pathlib.Path:
-    """Validates and normalizes --debug-log without creating directories."""
-    if not debug_log.name or debug_log.name == "..":
-        msg = f"--debug-log must name a file, not a directory: {debug_log}"
-        raise ValueError(msg)
-    _check_log_file_stat(debug_log)
-    normalized = debug_log.parent.resolve() / debug_log.name
-    _check_log_file_stat(normalized)
-    return normalized
-
-
-def _is_path_within_directory(
-    candidate: pathlib.Path,
-    directory: pathlib.Path,
-) -> bool:
-    """Returns True if candidate resolves inside directory (even case-folded)."""
-    resolved_dir = directory.resolve()
-    if candidate.is_relative_to(resolved_dir):
-        return True
-    dir_stat = resolved_dir.stat()
-    for ancestor in (candidate, *candidate.parents):
-        try:
-            anc_stat = ancestor.stat()
-        except OSError:
-            continue
-        if os.path.samestat(anc_stat, dir_stat):
-            return True
-    return False
-
-
 @contextlib.contextmanager
 def _configure_logging(
     *,
@@ -1612,80 +1523,54 @@ def _configure_logging(
     cli_args: Sequence[str],
     shutdown_state: _ShutdownState,
 ) -> Generator[None]:
-    """Configures absl-style console logging and optional debug file logging."""
-    # absl-style logging.
-    logging.basicConfig(
-        level=logging.INFO,
-        style="{",
-        format=_LOG_FORMAT,
-        datefmt=_LOG_DATEFMT,
-    )
+    """Configures console verbosity and optional debug file logging."""
     root_logger = logging.getLogger()
-    prev_logger_level = _LOGGER.level
-    prev_handler_levels = [(h, h.level) for h in root_logger.handlers]
-    file_handler: logging.FileHandler | None = None
+    console_level = logging.DEBUG if verbose else logging.INFO
+    for handler in root_logger.handlers:
+        handler.setLevel(console_level)
 
-    try:
-        console_level = logging.DEBUG if verbose else logging.INFO
-        for handler in root_logger.handlers:
-            handler.setLevel(console_level)
+    _LOGGER.setLevel(
+        logging.DEBUG if (verbose or debug_log is not None) else logging.INFO
+    )
+    if debug_log is None:
+        yield
+        return
 
-        _LOGGER.setLevel(
-            logging.DEBUG
-            if (verbose or debug_log is not None)
-            else logging.INFO
+    debug_log.parent.mkdir(parents=True, exist_ok=True)
+    file_handler = logging.FileHandler(
+        debug_log,
+        mode="a",
+        encoding="utf-8",
+        errors="backslashreplace",
+    )
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(
+        logging.Formatter(
+            fmt=_LOG_FORMAT,
+            datefmt=_LOG_DATEFMT,
+            style="{",
         )
-        if debug_log is not None:
-            _check_log_file_stat(debug_log)
-            debug_log.parent.mkdir(parents=True, exist_ok=True)
-            _check_log_file_stat(debug_log)
-            file_handler = logging.FileHandler(
-                debug_log,
-                mode="a",
-                encoding="utf-8",
-                errors="backslashreplace",
-            )
-            file_handler.setLevel(logging.DEBUG)
-            file_handler.setFormatter(
-                logging.Formatter(
-                    fmt=_LOG_FORMAT,
-                    datefmt=_LOG_DATEFMT,
-                    style="{",
-                )
-            )
-            root_logger.addHandler(file_handler)
-            now_utc = datetime.datetime.now(datetime.UTC).strftime(
-                "%Y-%m-%dT%H:%M:%SZ"
-            )
-            _LOGGER.debug(
-                "=== Run start utc=%s pid=%d argv=%r ===",
-                now_utc,
-                os.getpid(),
-                list(cli_args),
-            )
-            _LOGGER.info("Appending debug logs to %s", debug_log)
+    )
+    root_logger.addHandler(file_handler)
+    try:
+        now_utc = datetime.datetime.now(datetime.UTC).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
+        _LOGGER.debug(
+            "=== Run start utc=%s pid=%d argv=%r ===",
+            now_utc,
+            os.getpid(),
+            list(cli_args),
+        )
+        _LOGGER.info("Appending debug logs to %s", debug_log)
         yield
     finally:
         if not shutdown_state.unjoined_workers:
-            try:
-                if file_handler is not None:
-                    root_logger.removeHandler(file_handler)
-                    file_handler.close()
-            finally:
-                _LOGGER.setLevel(prev_logger_level)
-                for handler, level in prev_handler_levels:
-                    handler.setLevel(level)
+            root_logger.removeHandler(file_handler)
+            file_handler.close()
 
 
-@dataclasses.dataclass(frozen=True)
-class _ValidatedInputs:
-    """Validated CLI bounds and normalized optional debug log path."""
-
-    bounds: PartitionBounds
-    debug_log: pathlib.Path | None
-
-
-def _validate_inputs(args: argparse.Namespace) -> _ValidatedInputs | None:
+def _validate_inputs(args: argparse.Namespace) -> PartitionBounds | None:
     """Validates bounds, --debug-log, and --local-dir before opening files."""
     try:
         bounds = resolve_bounds(args)
@@ -1693,29 +1578,23 @@ def _validate_inputs(args: argparse.Namespace) -> _ValidatedInputs | None:
         _LOGGER.error("%s", exc)
         return None
 
-    debug_log: pathlib.Path | None = None
     if args.debug_log is not None:
         try:
-            debug_log = _prepare_debug_log_path(args.debug_log)
-        except (OSError, ValueError) as exc:
+            if args.debug_log.is_dir():
+                _LOGGER.error(
+                    "--debug-log path is a directory: %s",
+                    args.debug_log,
+                )
+                return None
+        except OSError as exc:
             _LOGGER.error("%s", exc)
             return None
 
     if args.local_dir is not None:
         try:
-            if args.local_dir.is_symlink() or not args.local_dir.is_dir():
+            if not args.local_dir.is_dir():
                 _LOGGER.error(
-                    "Local archive directory not found or is a symlink: %s",
-                    args.local_dir,
-                )
-                return None
-            if debug_log is not None and _is_path_within_directory(
-                debug_log,
-                args.local_dir,
-            ):
-                _LOGGER.error(
-                    "--debug-log (%s) must not reside inside --local-dir (%s).",
-                    args.debug_log,
+                    "Local archive directory not found: %s",
                     args.local_dir,
                 )
                 return None
@@ -1723,7 +1602,7 @@ def _validate_inputs(args: argparse.Namespace) -> _ValidatedInputs | None:
             _LOGGER.error("%s", exc)
             return None
 
-    return _ValidatedInputs(bounds=bounds, debug_log=debug_log)
+    return bounds
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -1736,15 +1615,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     try:
         args = parse_args(argv)
-        validated = _validate_inputs(args)
-        if validated is None:
+        bounds = _validate_inputs(args)
+        if bounds is None:
             return 2
 
         cli_args = list(sys.argv[1:] if argv is None else argv)
         shutdown_state = _ShutdownState()
         with _configure_logging(
             verbose=args.verbose,
-            debug_log=validated.debug_log,
+            debug_log=args.debug_log,
             cli_args=cli_args,
             shutdown_state=shutdown_state,
         ):
@@ -1767,7 +1646,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     return _run_with_backend(
                         backend,
                         args,
-                        validated.bounds,
+                        bounds,
                         shutdown_state=shutdown_state,
                     )
             except (ValueError, *_GCS_OPERATION_ERRORS) as exc:
@@ -1776,7 +1655,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             except KeyboardInterrupt:
                 _LOGGER.warning("Interrupted.")
                 return 130
-    except (ValueError, OSError) as exc:
+    except OSError as exc:
         _LOGGER.error("Debug log error: %s", exc)
         return 1
     except KeyboardInterrupt:
