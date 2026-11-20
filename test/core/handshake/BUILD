@@ -235,3 +235,31 @@ grpc_cc_test(
         "//test/core/test_util:test_memory_allocator",
     ],
 )
+
+grpc_cc_test(
+    name = "security_handshaker_buffer_test",
+    srcs = ["security_handshaker_buffer_test.cc"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+    ],
+    tags = ["no_test_ios"],
+    deps = [
+        "//:exec_ctx",
+        "//:grpc",
+        "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+        "//:handshaker",
+        "//:transport_auth_context",
+        "//:tsi_base",
+        "//src/core:default_event_engine",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+        "//src/core:unique_type_name",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+    ],
+)
