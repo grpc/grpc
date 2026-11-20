@@ -29,6 +29,9 @@
 
 namespace grpc_core {
 
+// TODO(bpawan): Remove this once the feature has proven stable (gRFC A119).
+bool AutoshardingLbEnabled();
+
 class AutoShardingLbConfig final : public LoadBalancingPolicy::Config {
  public:
   AutoShardingLbConfig() = default;

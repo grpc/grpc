@@ -74,9 +74,7 @@ class GrpcXdsTransportFactory final : public XdsTransportFactory {
 // with other xDS users.
 class XdsTransportFactoryWrapper final : public experimental::ChannelFactory {
  public:
-  using TargetMap =
-      absl::flat_hash_map<std::string /*key*/,
-                          std::shared_ptr<const GrpcXdsServerInterface>>;
+  using TargetMap = XdsGrpcServiceMap;
 
   XdsTransportFactoryWrapper(
       RefCountedPtr<GrpcXdsTransportFactory> transport_factory,

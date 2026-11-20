@@ -20,6 +20,7 @@
 #include <string>
 
 #include "src/core/config/experiment_env_var.h"
+#include "src/core/load_balancing/autosharding/autosharding.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_reader.h"
@@ -223,7 +224,9 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
     bool IsEnabled(absl::string_view key) const override {
       if (key == "federation") return XdsFederationEnabled();
       if (key == "grpc_service") {
-        return XdsExtProcOnClientEnabled() || XdsExtProcOnServerEnabled();
+        // The autosharding LB policy parses a GrpcService (gRFC A119).
+        return XdsExtProcOnClientEnabled() || XdsExtProcOnServerEnabled() ||
+               AutoshardingLbEnabled();
       }
       return true;
     }
