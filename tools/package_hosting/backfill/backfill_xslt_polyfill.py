@@ -18,10 +18,13 @@ Iterates through YYYY/MM partitions in chronological order (either in a local
 archive mirror or directly in GCS), validates each build-root index.xml,
 inserts the XHTML <script> element for /web-assets/xslt-polyfill.min.js if not
 already present, verifies the resulting XML, and writes or uploads it safely.
+Also supports --rollback on versioned GCS buckets to restore modified objects
+to their immediately preceding unpatched object version.
 
 Prerequisites:
   Requires `google-cloud-storage>=3.0.0`:
     pip install "google-cloud-storage>=3.0.0"
+  `--rollback` requires GCS Object Versioning enabled on the target bucket.
 
 Examples:
   1. Local archive mirror testing (never touches GCS):
@@ -940,7 +943,7 @@ class GcsArchiveBackend:
         uri: str,
         live_generation: int,
     ) -> int | None:
-        """Returns the generation preceding live_generation, or None if first."""
+        """Returns the generation before live_generation, or None if first."""
         version_iter = self._client.list_blobs(
             self._bucket_name,
             prefix=target,
@@ -969,8 +972,10 @@ class GcsArchiveBackend:
         uri: str,
         live: _DownloadedBlob,
     ) -> _DownloadedBlob | ItemResult:
-        """Loads and validates the predecessor version for a rollback target."""
+        """Validates live XML and loads the unpatched predecessor version."""
         try:
+            if patch_build_index_xml(live.raw_bytes, uri) is not None:
+                return ItemResult(target=uri, outcome=Outcome.ALREADY_PATCHED)
             prev_gen = self._find_predecessor_generation(
                 target,
                 uri,
@@ -989,7 +994,7 @@ class GcsArchiveBackend:
             ).download_as_bytes(checksum="auto")
             repatched = patch_build_index_xml(prev_bytes, f"{uri}#{prev_gen}")
         except (ValueError, *_GCS_OPERATION_ERRORS) as exc:
-            _LOGGER.error("Failed inspecting versions for %s: %s", uri, exc)
+            _LOGGER.error("Failed validating rollback target %s: %s", uri, exc)
             return ItemResult(
                 target=uri, outcome=Outcome.FAILED, error=str(exc)
             )
@@ -1019,15 +1024,7 @@ class GcsArchiveBackend:
         cancel_event: threading.Event | None = None,
     ) -> ItemResult:
         """Validates version history and restores the unpatched predecessor."""
-        try:
-            live_patch_check = patch_build_index_xml(live.raw_bytes, uri)
-        except ValueError as exc:
-            _LOGGER.error("Failed validating %s: %s", uri, exc)
-            return ItemResult(
-                target=uri, outcome=Outcome.FAILED, error=str(exc)
-            )
-
-        if live_patch_check is not None:
+        if POLYFILL_SRC.encode("utf-8") not in live.raw_bytes:
             return ItemResult(target=uri, outcome=Outcome.ALREADY_PATCHED)
         if cancel_event is not None and cancel_event.is_set():
             return ItemResult(target=uri, outcome=Outcome.CANCELLED)
@@ -1055,22 +1052,13 @@ class GcsArchiveBackend:
         if self._dry_run:
             return ItemResult(target=uri, outcome=Outcome.PATCHED)
         try:
-            _LOGGER.info(
-                "ROLLING BACK %s to generation %d (if_generation_match=%d)",
-                uri,
+            self._restore_predecessor(
+                target,
                 predecessor.generation,
                 live_generation,
             )
-            source_blob = self._bucket.blob(target)
-            self._bucket.copy_blob(
-                source_blob,
-                self._bucket,
-                new_name=target,
-                source_generation=predecessor.generation,
-                if_generation_match=live_generation,
-            )
         except gcs_exceptions.PreconditionFailed as exc:
-            return self._recover_rollback_precondition_failure(
+            return self._recover_precondition_failure(
                 target,
                 uri,
                 predecessor.raw_bytes,
@@ -1083,43 +1071,27 @@ class GcsArchiveBackend:
             )
         return ItemResult(target=uri, outcome=Outcome.PATCHED)
 
-    def _recover_rollback_precondition_failure(
+    def _restore_predecessor(
         self,
         target: str,
-        uri: str,
-        expected_unpatched_bytes: bytes,
-        original_exc: gcs_exceptions.PreconditionFailed,
-    ) -> ItemResult:
-        """Checks whether a 412 retry error occurred after rollback landed."""
-        try:
-            latest_bytes = self._bucket.blob(target).download_as_bytes(
-                checksum="auto"
-            )
-            if latest_bytes == expected_unpatched_bytes:
-                _LOGGER.warning(
-                    "Rollback retry for %s received 412 PreconditionFailed, "
-                    "but exact predecessor payload is already live; "
-                    "counting as rolled_back.",
-                    uri,
-                )
-                return ItemResult(target=uri, outcome=Outcome.PATCHED)
-            if patch_build_index_xml(latest_bytes, uri) is not None:
-                _LOGGER.warning(
-                    "Rollback for %s received 412 PreconditionFailed because "
-                    "another process already restored it; counting as "
-                    "skipped.",
-                    uri,
-                )
-                return ItemResult(target=uri, outcome=Outcome.ALREADY_PATCHED)
-        except (ValueError, *_GCS_OPERATION_ERRORS) as verify_exc:
-            _LOGGER.warning(
-                "Post-412 rollback verification failed for %s: %s",
-                uri,
-                verify_exc,
-            )
-        _LOGGER.error("Failed rolling back %s: %s", uri, original_exc)
-        return ItemResult(
-            target=uri, outcome=Outcome.FAILED, error=str(original_exc)
+        predecessor_generation: int,
+        live_generation: int,
+    ) -> None:
+        """Restores predecessor_generation via server-side copy_blob."""
+        uri = f"gs://{self._bucket_name}/{target}"
+        _LOGGER.info(
+            "ROLLING BACK %s to generation %d (if_generation_match=%d)",
+            uri,
+            predecessor_generation,
+            live_generation,
+        )
+        source_blob = self._bucket.blob(target)
+        self._bucket.copy_blob(
+            source_blob,
+            self._bucket,
+            new_name=target,
+            source_generation=predecessor_generation,
+            if_generation_match=live_generation,
         )
 
     def _upload_or_recover(
@@ -1152,35 +1124,33 @@ class GcsArchiveBackend:
         self,
         target: str,
         uri: str,
-        patched_bytes: bytes,
+        expected_bytes: bytes,
         original_exc: gcs_exceptions.PreconditionFailed,
     ) -> ItemResult:
-        """Checks whether a 412 retry error occurred after our upload landed."""
+        """Checks whether a 412 retry error occurred after mutation landed."""
+        action = "Rollback" if self._rollback else "Upload"
+        verb = "rolling back" if self._rollback else "updating"
+        done_label = "rolled_back" if self._rollback else "uploaded"
         try:
             latest_bytes = self._bucket.blob(target).download_as_bytes(
                 checksum="auto"
             )
-            if latest_bytes == patched_bytes:
+            if latest_bytes == expected_bytes:
                 _LOGGER.warning(
-                    "Upload retry for %s received 412 PreconditionFailed, "
-                    "but exact patched payload is already live; "
-                    "counting as uploaded.",
+                    "%s retry for %s received 412 PreconditionFailed, "
+                    "but expected payload is already live; counting as %s.",
+                    action,
                     uri,
+                    done_label,
                 )
                 return ItemResult(target=uri, outcome=Outcome.PATCHED)
-            if patch_build_index_xml(latest_bytes, uri) is None:
-                _LOGGER.warning(
-                    "Upload for %s received 412 PreconditionFailed because "
-                    "another process already patched it; counting as "
-                    "already_patched.",
-                    uri,
-                )
-                return ItemResult(target=uri, outcome=Outcome.ALREADY_PATCHED)
-        except (ValueError, *_GCS_OPERATION_ERRORS) as verify_exc:
+        except _GCS_OPERATION_ERRORS as verify_exc:
             _LOGGER.warning(
-                "Post-412 verification failed for %s: %s", uri, verify_exc
+                "Post-412 verification failed for %s: %s",
+                uri,
+                verify_exc,
             )
-        _LOGGER.error("Failed updating %s: %s", uri, original_exc)
+        _LOGGER.error("Failed %s %s: %s", verb, uri, original_exc)
         return ItemResult(
             target=uri, outcome=Outcome.FAILED, error=str(original_exc)
         )
@@ -1405,8 +1375,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--yes",
         action="store_true",
         help=(
-            "Skip interactive [yN] confirmation prompt when "
-            "writing/uploading."
+            "Skip interactive [yN] confirmation prompt when mutating "
+            "local files or GCS."
         ),
     )
     parser.add_argument(
