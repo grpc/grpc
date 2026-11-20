@@ -343,6 +343,7 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
 
     async def _run_single_client(self, config, request_iterator, context):
         running_tasks = []
+        clients = []
         qps_data = histogram.Histogram(
             config.histogram_params.resolution,
             config.histogram_params.max_possible,
@@ -354,6 +355,7 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
             server = config.server_targets[i % len(config.server_targets)]
             client = _create_client(server, config, qps_data)
             _LOGGER.info("Client created against server [%s]", server)
+            clients.append(client)
             running_tasks.append(self._loop.create_task(client.run()))
 
         snapshotter.snapshot()
@@ -372,6 +374,8 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
             await context.write(status)
 
         # Cleanup the clients
+        for client in clients:
+            await client.stop()
         for task in running_tasks:
             task.cancel()
 

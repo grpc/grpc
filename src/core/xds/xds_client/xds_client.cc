@@ -551,7 +551,7 @@ void XdsClient::XdsChannel::SetHealthyLocked() {
       // before we unref them, or else
       // MaybeRemoveUnsubscribedCacheEntriesForTypeLocked() will try to
       // access the vector while we are modifying it.
-      std::vector<RefCountedPtr<XdsChannel>> channels_to_unref(
+      [[maybe_unused]] std::vector<RefCountedPtr<XdsChannel>> channels_to_unref(
           std::make_move_iterator(channel_it + 1),
           std::make_move_iterator(channels.end()));
       channels.erase(channel_it + 1, channels.end());
@@ -1142,6 +1142,9 @@ void XdsClient::XdsChannel::AdsCall::HandleServerReportedResourceError(
     return;  // Skip resource -- we don't have a subscription for it.
   }
   AuthorityState& authority_state = authority_it->second;
+  // Make sure we're receiving the resource error from a server that is
+  // configured for this authority.
+  if (!authority_state.ContainsChannel(xds_channel())) return;
   // Found authority, so look up type.
   auto type_it = authority_state.type_map.find(context->type);
   if (type_it == authority_state.type_map.end()) {

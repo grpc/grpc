@@ -71,12 +71,12 @@ void AssemblerFuzzer(
       LOG(INFO) << "    AssemblerFuzzer Data : { Step:" << count_steps
                 << ", Length: " << payload.Length()
                 << ", Payload:" << payload.JoinIntoString() << " }";
-      // TODO(tjagtap) : [PH2][P4] : AppendNewDataFrame has a DCHECK which does
-      // not allow for any more calls of AppendNewDataFrame after
-      // AppendNewDataFrame(is_end_stream = true) has been called.
-      // To avoid this test DCHECK, we are always passing is_end_stream as
-      // false. Consider computing the index of the last index payload in each
-      // step and setting is_end_stream to true for the last payload.
+      // AppendNewDataFrame has a DCHECK which does not allow for any more calls
+      // of AppendNewDataFrame after AppendNewDataFrame(is_end_stream = true)
+      // has been called. To avoid this test DCHECK, we are always passing
+      // is_end_stream as false. Consider computing the index of the last index
+      // payload in each step and setting is_end_stream to true for the last
+      // payload.
       Http2Status result =
           assembler.AppendNewDataFrame(payload, /*is_end_stream=*/false);
       VLOG(3) << "      AssemblerFuzzer AppendNewDataFrame result: " << result;
@@ -116,8 +116,8 @@ void AssemblerFuzzer(
             << " Average Input Length: "
             << (static_cast<double>(fuzz_stats_num_inputs) /
                 fuzz_stats_total_len);
-  // TODO(tjagtap) : [PH2][P4] : Currently the average size of the payload is
-  // usually around 0.91. Write more tests to test with :
+  // Currently the average size of the payload is usually around 0.91. Write
+  // more tests to test with :
   // 1. Mixed sized payloads with average payload size 1KB.
   // 2. A mix of valid gRPC messages and malformed gRPC messages. In this test
   // all are malformed gRPC messages.

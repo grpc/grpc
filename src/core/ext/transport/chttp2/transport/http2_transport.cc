@@ -46,6 +46,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
@@ -67,37 +68,6 @@
 
 namespace grpc_core {
 namespace http2 {
-
-// All Promise Based HTTP2 Transport TODOs carry the tag [PH2][Pn] right
-// after the owner ldap, where n = 0 to 5. The priority tag is mandatory.
-// This helps to maintain the uniformity for quick lookup and fixing.
-//
-// [PH2][P0] MUST be fixed before the current PR is submitted.
-// [PH2][P1] MUST be fixed before the current sub-project is considered
-//           complete.
-// [PH2][P2] MUST be fixed before the current Milestone is considered
-//           complete.
-// [PH2][P3] MUST be fixed before Milestone 3 is considered complete.
-// [PH2][P4] Can be fixed after roll out begins. Evaluate these during
-//           Milestone 4. Either do the TODOs or delete them.
-// [PH2][P5] Can be fixed after roll out begins. Evaluate these during
-//           Milestone 4. Either do the TODOs or delete them.
-//
-// Optional category tags follow the priority tag.
-// [PH2][Pn][Client] Affects only the PH2 client.
-// [PH2][Pn][Server] Affects only the PH2 server.
-// [PH2][Pn][EXT] A TODO related to a project unrelated to PH2 but happening
-//                in parallel.
-// [PH2][Pn][CHTTP2] A TODO that is a part of CHTTP2 deletion.
-// [PH2][Pn][FCV3] A TODO related to Flow Control plumbing with the
-//                 Application and the Call V3 stack.
-// [PH2][Pn][Retry] A TODO related to Retry support for PH2. Retry is a
-//                  separate feature that lands after the PH2 roll out.
-//
-// Skipped tests use fixed priorities.
-// SKIP_TEST_FOR_PH2_SERVER messages are currently [PH2][P1].
-// SKIP_TEST_FOR_PH2_CLIENT messages are currently [PH2][P3].
-// SKIP_RETRY_TEST_FOR_PH2_CLIENT messages are currently [PH2][P5][Retry].
 
 constexpr Duration kDefaultPingTimeout = Duration::Minutes(1);
 constexpr bool kDefaultEnablePreferredRxCryptoFrameAdvertisement = false;
@@ -353,12 +323,17 @@ ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame_header,
 
 bool ProcessIncomingWindowUpdateFrameFlowControl(
     const Http2WindowUpdateFrame& frame,
-    chttp2::TransportFlowControl& flow_control, Stream* stream) {
+    chttp2::TransportFlowControl& flow_control, Stream* stream,
+    Http2TransportStats& http2_transport_stats) {
   if (frame.stream_id != 0) {
     if (stream != nullptr) {
       GRPC_HTTP2_COMMON_DLOG
           << "ProcessIncomingWindowUpdateFrameFlowControl stream "
           << frame.stream_id << " increment " << frame.increment;
+      const Timestamp last_window_update_time =
+          http2_transport_stats.RecordStreamWindowUpdate(
+              frame.increment, stream->GetLastWindowUpdateTime());
+      stream->SetLastWindowUpdateTime(last_window_update_time);
       chttp2::StreamFlowControl::OutgoingUpdateContext fc_update(
           &stream->GetStreamFlowControl());
       fc_update.RecvUpdate(frame.increment);
@@ -373,6 +348,7 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
     GRPC_HTTP2_COMMON_DLOG
         << "ProcessIncomingWindowUpdateFrameFlowControl transport increment "
         << frame.increment;
+    http2_transport_stats.RecordTransportWindowUpdate(frame.increment);
     chttp2::TransportFlowControl::OutgoingUpdateContext fc_update(
         &flow_control);
     fc_update.RecvUpdate(frame.increment);

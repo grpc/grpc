@@ -1116,6 +1116,7 @@ grpc_cc_test(
         "//src/core:transport_common",
         "//src/core:try_join",
         "//src/core:try_seq",
+        "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/promise:poll_matcher",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -1256,6 +1257,7 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
+        ":http2_common_test_inputs",
         ":http2_frame_test_helper",
         "//:chttp2_frame",
         "//:config",
@@ -1638,6 +1640,7 @@ grpc_cc_test(
         "//:chttp2_frame",
         "//:exec_ctx",
         "//src/core:channel_args",
+        "//src/core:chttp2_flow_control",
         "//src/core:http2_transport_stats",
         "//src/core:slice",
         "//src/core:slice_buffer",

@@ -40,6 +40,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -66,7 +67,7 @@ namespace http2 {
 // and it is functions. The code will be written iteratively.
 // Do not use or edit any of these functions unless you are
 // familiar with the PH2 project (Moving chttp2 to promises.)
-// TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code when
+// TODO(tjagtap) : [PH2][P5] : Update the experimental status of the code when
 // CHTTP2 is deleted.
 
 #define GRPC_HTTP2_CLIENT_DLOG \
@@ -194,7 +195,8 @@ ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame,
 // Returns true if a write should be triggered
 bool ProcessIncomingWindowUpdateFrameFlowControl(
     const Http2WindowUpdateFrame& frame,
-    chttp2::TransportFlowControl& flow_control, Stream* stream);
+    chttp2::TransportFlowControl& flow_control, Stream* stream,
+    Http2TransportStats& http2_transport_stats);
 
 void MaybeAddTransportWindowUpdateFrame(
     chttp2::TransportFlowControl& flow_control, FrameSender& frame_sender);

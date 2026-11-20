@@ -59,9 +59,11 @@
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/all_ok.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
@@ -82,6 +84,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
@@ -156,6 +159,7 @@ void Http2ServerTransport::SpawnAddChannelzData(RefCountedPtr<Party> party,
                                                 channelz::DataSink sink) {
   SpawnInfallible(
       std::move(party), "AddData",
+      // This promise may be polled after CloseTransport() has already run.
       [self = RefAsSubclass<Http2ServerTransport>(),
        sink = std::move(sink)]() mutable {
         GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SpawnAddChannelzData";
@@ -171,8 +175,8 @@ void Http2ServerTransport::SpawnAddChannelzData(RefCountedPtr<Party> party,
                 .Set("flow_control",
                      self->flow_control_.stats().ChannelzProperties())
                 .Set("tarpit", self->tarpit_manager_.ChannelzProperties()));
-        self->transport_party_->ExportToChannelz("Http2ServerTransport Party",
-                                                 sink);
+        GetContext<Party>()->ExportToChannelz("Http2ServerTransport Party",
+                                              std::move(sink));
         GRPC_HTTP2_SERVER_DLOG
             << "Http2ServerTransport::SpawnAddChannelzData End";
         return Empty{};
@@ -273,8 +277,9 @@ auto Http2ServerTransport::SerializeAndWrite() {
             << "Http2ServerTransport::SerializeAndWrite frame count: "
             << frame_count;
         ztrace_collector_->Append(PromiseEndpointWriteTrace{frame_count});
-        return EndpointWrite(write_cycle.SerializeRegularFrames(
-            WriteCycle::SerializeStats{should_reset_ping_clock_}));
+        return EndpointWrite(
+            write_cycle.SerializeRegularFrames(WriteCycle::SerializeStats{
+                should_reset_ping_clock_, http2_transport_stats_}));
       },
       []() { return absl::OkStatus(); }));
 }
@@ -290,6 +295,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
       << ", payload length=" << frame.payload.Length() << "}";
 
   ping_manager_->ReceivedDataFrame();
+  http2_transport_stats_.RecordReadDataFrameSize(frame.payload.Length());
 
   const RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
 
@@ -654,7 +660,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
   }
 
   const bool should_trigger_write = ProcessIncomingWindowUpdateFrameFlowControl(
-      frame, flow_control_, stream.get());
+      frame, flow_control_, stream.get(), http2_transport_stats_);
 
   if (should_trigger_write) {
     return ToHttpOkOrConnError(TriggerWriteCycle());
@@ -926,8 +932,9 @@ auto Http2ServerTransport::MaybeWriteUrgentFrames() {
         GRPC_HTTP2_SERVER_DLOG
             << "Http2ServerTransport::MaybeWriteUrgentFrames frame count: "
             << buffer_length;
-        return EndpointWrite(write_cycle.SerializeUrgentFrames(
-            WriteCycle::SerializeStats{should_reset_ping_clock_}));
+        return EndpointWrite(
+            write_cycle.SerializeUrgentFrames(WriteCycle::SerializeStats{
+                should_reset_ping_clock_, http2_transport_stats_}));
       },
       []() { return absl::OkStatus(); }));
 }
@@ -958,14 +965,22 @@ absl::Status Http2ServerTransport::DequeueStreamFrames(
   const uint32_t stream_flow_control_tokens =
       static_cast<uint32_t>(GetStreamFlowControlTokens(
           stream->GetStreamFlowControl(), settings_->peer()));
-  stream->GetStreamFlowControl().ReportIfStalled(
-      /*is_client=*/kIsClient, stream->GetStreamId(), settings_->peer());
   StreamDataQueue<ServerMetadataHandle>::DequeueResult result =
       stream->DequeueFrames(tokens, stream_flow_control_tokens,
                             settings_->peer().max_frame_size(), encoder_,
                             frame_sender);
   ProcessOutgoingDataFrameFlowControl(stream->GetStreamFlowControl(),
                                       result.flow_control_tokens_consumed);
+  // Only checks for flow control stalls when the stream still has pending DATA
+  // frame bytes to send. Non-DATA frames (such as metadata or RST_STREAM) do
+  // not consume flow control tokens, and a stream with no remaining DATA bytes
+  // is not blocked by flow control even if the window is exhausted.
+  if (result.is_next_frame_data) {
+    http2_transport_stats_.MaybeRecordStall(
+        stream->GetStreamFlowControl().ReportIfStalled(
+            /*is_client=*/kIsClient, stream->GetStreamId(), settings_->peer()));
+  }
+
   if (result.is_writable) {
     // Stream is still writable. Enqueue it back to the writable
     // stream list.
@@ -1029,7 +1044,8 @@ auto Http2ServerTransport::MultiplexerLoop() {
               if (GPR_UNLIKELY(!status.ok())) {
                 return status.status();
               }
-              transport_write_context_.StartWriteCycle();
+              StartWriteCycle();
+
               GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::MultiplexerLoop "
                                         "Start Iteration: "
                                      << transport_write_context_.DebugString();
@@ -1299,6 +1315,7 @@ absl::Status Http2ServerTransport::MaybeAddStreamToWritableStreamList(
 auto Http2ServerTransport::HandleMetadataAndMessages(
     RefCountedPtr<Stream> stream) {
   auto send_message = [this, stream](MessageHandle&& message) mutable {
+    http2_transport_stats_.RecordSendMessageSize(message->payload()->Length());
     return TrySeq(HandleStreamErrorOnFailure(
                       stream->EnqueueMessage(std::move(message)), stream),
                   [this, stream](const StreamWritabilityUpdate result) mutable {
@@ -1517,14 +1534,22 @@ Http2Status Http2ServerTransport::ValidateIncomingStream(
   return Http2Status::Ok();
 }
 
+RefCountedPtr<Arena> Http2ServerTransport::MakeStreamArena() {
+  RefCountedPtr<Arena> arena = call_arena_allocator_->MakeArena();
+  arena->SetContext<EventEngine>(event_engine_.get());
+  if (IsCallTracerInTransportEnabled() && stats_plugin_group_ != nullptr) {
+    stats_plugin_group_->AddServerCallTracers(arena.get(),
+                                              /*additional_tracers=*/{});
+  }
+  return arena;
+}
+
 Http2Status Http2ServerTransport::IncomingStream(
     ClientMetadataHandle&& metadata, const uint32_t stream_id) {
   GRPC_DCHECK(LookupStream(stream_id) == nullptr);
 
-  RefCountedPtr<Arena> arena = call_arena_allocator_->MakeArena();
-  arena->SetContext<EventEngine>(event_engine_.get());
   CallInitiatorAndHandler call =
-      MakeCallPair(std::move(metadata), std::move(arena));
+      MakeCallPair(std::move(metadata), MakeStreamArena());
 
   // TODO(akshitpatel) : [PH2][P2] : For the server side, MakeStream most likely
   // will not fail. Evaluate this.
@@ -1963,19 +1988,32 @@ auto Http2ServerTransport::CloseTransportFactory(
     self->tarpit_manager_.Shutdown();
     self->CloseAllActiveStreams(std::move(stream_list), http2_status, whence);
 
-    // Sleep for kGoawaySendTimeoutSeconds before closing the transport to
-    // let write buffers drain.
-    return Map(
-        Race(AssertResultType<absl::Status>(self->goaway_manager_.RequestGoaway(
-                 http2_status.GetConnectionErrorCode(),
-                 Slice::FromCopiedString(std::string(
-                     http2_status.GetAbslConnectionError().message())),
-                 self->GetLastStreamId(), /*immediate=*/true)),
-             Sleep(Duration::Seconds(kGoawaySendTimeoutSeconds))),
+    return AssertResultType<Empty>(Map(
+        If(
+            self->is_multiplexer_loop_spawned_,
+            [&self, &http2_status]() {
+              // Race the GOAWAY write against kGoawaySendTimeoutSeconds so
+              // a stuck write cannot delay the close forever.
+              return Race(
+                  AssertResultType<absl::Status>(
+                      self->goaway_manager_.RequestGoaway(
+                          http2_status.GetConnectionErrorCode(),
+                          Slice::FromCopiedString(std::string(
+                              http2_status.GetAbslConnectionError().message())),
+                          self->GetLastStreamId(), /*immediate=*/true)),
+                  Sleep(Duration::Seconds(kGoawaySendTimeoutSeconds)));
+            },
+            []() {
+              // MultiplexerLoop was never spawned. No GOAWAY can be written.
+              GRPC_HTTP2_SERVER_DLOG
+                  << "Http2ServerTransport::CloseTransportFactory "
+                     "MultiplexerLoop not spawned. Closing immediately.";
+              return Immediate(absl::OkStatus());
+            }),
         [self](absl::Status) mutable {
           self->CloseTransport();
           return Empty{};
-        });
+        }));
   };
 }
 
@@ -2189,7 +2227,10 @@ Http2ServerTransport::Http2ServerTransport(
           &memory_owner_),
       security_frame_handler_(MakeRefCounted<SecurityFrameHandler>()),
       ztrace_collector_(std::make_shared<PromiseHttp2ZTraceCollector>()),
-      tarpit_manager_(channel_args) {
+      tarpit_manager_(channel_args),
+      stats_plugin_group_(
+          channel_args
+              .GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>()) {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Constructor Begin";
 
   // Initialize the general party and write party.
@@ -2311,8 +2352,10 @@ void Http2ServerTransport::SpawnTransportLoops() {
   // ReadLoop is spawned after the first write.
   // For Server, read happens before write. So ReadLoop is spawned first.
   SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
+  GRPC_DCHECK(!is_multiplexer_loop_spawned_);
   SpawnGuardedTransportParty("MultiplexerLoop",
                              UntilTransportClosed(MultiplexerLoop()));
+  is_multiplexer_loop_spawned_ = true;
   if (tarpit_manager_.allow_tarpit()) {
     SpawnGuardedTransportParty("TarpitDrainLoop",
                                UntilTransportClosed(MakeTarpitDrainLoop()));

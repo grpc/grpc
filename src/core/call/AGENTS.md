@@ -118,3 +118,11 @@ accessible to the AIs
 *   The `CallFilters` class is responsible for managing the filters for a call.
     See the [channel documentation](../lib/channel/AGENTS.md) for more
     information about filters.
+
+## Issue, Nit, and Bug Guidelines
+
+Before reporting bugs or nits, proposing fixes, or filing issues, you MUST read
+and follow these sections in `chttp2/AGENTS.md`:
+
+*   [Pragmatic Issue and Nit Guidelines](../ext/transport/chttp2/AGENTS.md#pragmatic-issue-and-nit-guidelines)
+*   [Known Issues, Bugs, TODOs, and WIP CLs](../ext/transport/chttp2/AGENTS.md#known-issues-bugs-todos-and-wip-cls)

@@ -43,22 +43,25 @@ const upb_MiniTable envoy__type__metadata__v3__MetadataKey_msg_init = {
 };
 
 typedef struct {
-  upb_MiniTableField fields[1];
+  upb_MiniTableField fields[2];
 } envoy__type__metadata__v3__MetadataKey__PathSegment_msg_init_Fields;
 
 static const envoy__type__metadata__v3__MetadataKey__PathSegment_msg_init_Fields envoy_type_metadata_v3_MetadataKey_PathSegment__fields = {{
   {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 }};
 
 const upb_MiniTable envoy__type__metadata__v3__MetadataKey__PathSegment_msg_init = {
   &envoy_type_metadata_v3_MetadataKey_PathSegment__fields.fields[0],
-  UPB_SIZE(24, 32), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.metadata.v3.MetadataKey.PathSegment",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_DecodeFast_String_Oneof_Tag1Byte},
+    {0x0010000802000010, &upb_DecodeFast_Varint32_Oneof_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
