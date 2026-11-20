@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.22)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.86.0-dev")
-set(gRPC_CORE_VERSION     "58.0.0")
-set(gRPC_CORE_SOVERSION   "58")
-set(gRPC_CPP_VERSION      "1.86.0-dev")
-set(gRPC_CPP_SOVERSION    "1.86")
+set(PACKAGE_VERSION       "1.87.0-dev")
+set(gRPC_CORE_VERSION     "59.0.0")
+set(gRPC_CORE_SOVERSION   "59")
+set(gRPC_CPP_VERSION      "1.87.0-dev")
+set(gRPC_CPP_SOVERSION    "1.87")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -431,10 +431,10 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLO
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/005c18a923f166a793a1c227171398dab883cc5d.tar.gz
-    https://github.com/envoyproxy/data-plane-api/archive/005c18a923f166a793a1c227171398dab883cc5d.tar.gz
-    40ba505a3c8e0d56f10ad5b95c05d54138228ff521cff22393276bb67188dfc3
-    data-plane-api-005c18a923f166a793a1c227171398dab883cc5d
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/0a161d3b6cc400ed14fe35c3e5f95b77fa36376c.tar.gz
+    https://github.com/envoyproxy/data-plane-api/archive/0a161d3b6cc400ed14fe35c3e5f95b77fa36376c.tar.gz
+    6cd4f3ed0f12b4f18780f0a29e38f7f914a73c45d8b70960c7d5ba62b817239b
+    data-plane-api-0a161d3b6cc400ed14fe35c3e5f95b77fa36376c
   )
 endif()
 # Setup external proto library at third_party/googleapis if it doesn't exist
@@ -464,10 +464,10 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate AND g
   # Download the archive via HTTP, validate the checksum, and extract to third_party/protoc-gen-validate.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.tar.gz
-    https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.tar.gz
-    e4718352754df1393b8792b631338aa8562f390e8160783e365454bc11d96328
-    protoc-gen-validate-1.2.1
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.3.3.tar.gz
+    https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.3.3.tar.gz
+    9e47ef41ec0e269a173a94b6766cc4be4e1a1098fcda040b2f0441c51bfb6ae2
+    protoc-gen-validate-1.3.3
   )
 endif()
 # Setup external proto library at third_party/xds if it doesn't exist
@@ -782,6 +782,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   test/core/tsi/alts/fake_handshaker/transport_security_common.proto test/core/tsi/alts/fake_handshaker/transport_security_common.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/autosharding/proto/autosharding/v1/autosharding.proto proto/autosharding/v1/autosharding.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/cel-spec/proto/cel/expr/checked.proto cel/expr/checked.proto
@@ -1192,6 +1195,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/googleapis/google/api/expr/v1alpha1/syntax.proto google/api/expr/v1alpha1/syntax.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/googleapis/google/api/field_behavior.proto google/api/field_behavior.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/googleapis/google/api/http.proto google/api/http.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -1342,6 +1348,8 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx auth_property_iterator_test)
   add_dependencies(buildtests_cxx authorization_matchers_test)
   add_dependencies(buildtests_cxx authorization_policy_provider_test)
+  add_dependencies(buildtests_cxx autosharding_assignment_test)
+  add_dependencies(buildtests_cxx autosharding_client_test)
   add_dependencies(buildtests_cxx autosharding_config_test)
   add_dependencies(buildtests_cxx autosharding_test)
   add_dependencies(buildtests_cxx avl_test)
@@ -2580,6 +2588,7 @@ add_library(grpc
   src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
   src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.c
   src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
+  src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.c
   src/core/ext/upb-gen/google/api/http.upb_minitable.c
   src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
@@ -2597,6 +2606,7 @@ add_library(grpc
   src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c
   src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
   src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.c
+  src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
@@ -3013,6 +3023,8 @@ add_library(grpc
   src/core/lib/transport/transport_op_string.cc
   src/core/load_balancing/address_filtering.cc
   src/core/load_balancing/autosharding/autosharding.cc
+  src/core/load_balancing/autosharding/autosharding_assignment.cc
+  src/core/load_balancing/autosharding/autosharding_client.cc
   src/core/load_balancing/backend_metric_parser.cc
   src/core/load_balancing/child_policy_handler.cc
   src/core/load_balancing/endpoint_list.cc
@@ -3615,6 +3627,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/writing.cc
   src/core/ext/transport/inproc/inproc_transport.cc
   src/core/ext/transport/inproc/legacy_inproc_transport.cc
+  src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.c
   src/core/ext/upb-gen/google/api/http.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
@@ -3629,6 +3642,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c
   src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c
   src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
+  src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
@@ -3846,6 +3860,8 @@ add_library(grpc_unsecure
   src/core/lib/transport/transport_op_string.cc
   src/core/load_balancing/address_filtering.cc
   src/core/load_balancing/autosharding/autosharding.cc
+  src/core/load_balancing/autosharding/autosharding_assignment.cc
+  src/core/load_balancing/autosharding/autosharding_client.cc
   src/core/load_balancing/backend_metric_parser.cc
   src/core/load_balancing/child_policy_handler.cc
   src/core/load_balancing/endpoint_list.cc
@@ -8895,6 +8911,135 @@ target_link_libraries(authorization_policy_provider_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(autosharding_assignment_test
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.h
+  src/cpp/client/global_callback_hook.cc
+  src/cpp/util/status.cc
+  test/core/load_balancing/autosharding_assignment_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(autosharding_assignment_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(autosharding_assignment_test PUBLIC cxx_std_17)
+target_include_directories(autosharding_assignment_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(autosharding_assignment_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::dynamic_annotations
+  absl::prefetch
+  absl::layout
+  absl::absl_check
+  absl::absl_log
+  absl::charset
+  absl::strings_internal
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(autosharding_client_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.h
+  src/cpp/client/global_callback_hook.cc
+  src/cpp/util/status.cc
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/load_balancing/autosharding_client_test.cc
+  test/core/xds/xds_transport_fake.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(autosharding_client_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(autosharding_client_test PUBLIC cxx_std_17)
+target_include_directories(autosharding_client_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(autosharding_client_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::dynamic_annotations
+  absl::prefetch
+  absl::layout
+  absl::absl_check
+  absl::absl_log
+  absl::charset
+  absl::strings_internal
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(autosharding_config_test
   test/core/load_balancing/autosharding_config_test.cc
 )
@@ -8943,9 +9088,20 @@ add_executable(autosharding_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.h
+  src/cpp/client/global_callback_hook.cc
+  src/cpp/util/status.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/load_balancing/autosharding_test.cc
+  test/core/xds/xds_transport_fake.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -8980,6 +9136,13 @@ target_include_directories(autosharding_test
 target_link_libraries(autosharding_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::dynamic_annotations
+  absl::prefetch
+  absl::layout
+  absl::absl_check
+  absl::absl_log
+  absl::charset
+  absl::strings_internal
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -56963,6 +57126,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_transport_grpc_test
+  test/core/test_util/fake_stats_plugin.cc
   test/core/xds/xds_transport_grpc_test.cc
 )
 if(WIN32 AND MSVC)

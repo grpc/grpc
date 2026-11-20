@@ -56,6 +56,11 @@ exports_files(
     ],
 )
 
+exports_files(
+    ["src/cpp/server/load_reporter/constants.h"],
+    visibility = ["//src/core:__pkg__"],
+)
+
 bool_flag(
     name = "small_client",
     build_setting_default = False,
@@ -285,11 +290,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "googol"  # @unused
+g_stands_for = "garfield"  # @unused
 
-core_version = "58.0.0"  # @unused
+core_version = "59.0.0"  # @unused
 
-version = "1.86.0-dev"  # @unused
+version = "1.87.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -3034,7 +3039,6 @@ grpc_cc_library(
         "grpc++_config_proto",
         ":channelz_cc_grpc",
         "//src/core:channelz_v2tov1_convert",
-        "//src/core:experiments",
         "//src/core:notification",
         "//src/proto/grpc/channelz/v2:service_cc_grpc",
     ],

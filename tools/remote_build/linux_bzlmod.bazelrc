@@ -16,5 +16,6 @@
 # see bazel_build_with_bzlmod_linux.sh
 
 import %workspace%/tools/remote_build/include/test_config_common.bazelrc
+import %workspace%/tools/remote_build/include/rbe_clang19_copts.bazelrc
 
 build --jobs=200

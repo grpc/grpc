@@ -73,8 +73,14 @@ class FuzzingEventEngine : public EventEngine {
       ABSL_LOCKS_EXCLUDED(mu_);
   // Repeatedly call Tick() until there is no more work to do.
   void TickUntilIdle() ABSL_LOCKS_EXCLUDED(mu_);
+  // Repeatedly call Tick() until IsIdleIgnoringTimers() is true.
+  void TickUntilIdleIgnoringTimers() ABSL_LOCKS_EXCLUDED(mu_);
   // Returns true if idle.
   bool IsIdle() ABSL_LOCKS_EXCLUDED(mu_);
+  // Returns true if there are no pending immediate (Run() or zero-delay)
+  // callbacks and no outstanding endpoint reads/writes, ignoring pending
+  // future timers scheduled via RunAfter() with positive delay.
+  bool IsIdleIgnoringTimers() ABSL_LOCKS_EXCLUDED(mu_);
   // Tick until some time
   void TickUntil(Time t) ABSL_LOCKS_EXCLUDED(mu_);
   // Tick for some duration
@@ -180,10 +186,11 @@ class FuzzingEventEngine : public EventEngine {
 
   // One pending task to be run.
   struct Task {
-    Task(intptr_t id, absl::AnyInvocable<void()> closure)
-        : id(id), closure(std::move(closure)) {}
+    Task(intptr_t id, absl::AnyInvocable<void()> closure, bool is_immediate)
+        : id(id), closure(std::move(closure)), is_immediate(is_immediate) {}
     intptr_t id;
     absl::AnyInvocable<void()> closure;
+    bool is_immediate;
   };
 
   // Per listener information.
@@ -323,6 +330,7 @@ class FuzzingEventEngine : public EventEngine {
   bool IsPortUsed(int port) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   bool IsIdleLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  bool IsIdleIgnoringTimersLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Called whenever the time is incremented, and used by
   // ThreadedFuzzingEventEngine to insert a sleep so that real time passes at
@@ -363,6 +371,7 @@ class FuzzingEventEngine : public EventEngine {
   std::map<intptr_t, std::shared_ptr<Task>> tasks_by_id_ ABSL_GUARDED_BY(mu_);
   std::multimap<Time, std::shared_ptr<Task>> tasks_by_time_
       ABSL_GUARDED_BY(mu_);
+  size_t num_immediate_tasks_ ABSL_GUARDED_BY(mu_) = 0;
   std::set<std::shared_ptr<ListenerInfo>> listeners_ ABSL_GUARDED_BY(mu_);
   // Fuzzer selected port allocations.
   std::queue<int> free_ports_ ABSL_GUARDED_BY(mu_);

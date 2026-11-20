@@ -34,8 +34,6 @@ EXPERIMENT_ENABLES = {
     "fuse_filters": "fuse_filters",
     "h2_max_deallocating_streams_headroom": "h2_max_deallocating_streams_headroom",
     "header_data_frame": "header_data_frame",
-    "internal_fix": "internal_fix",
-    "internal_fix1": "internal_fix1",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "lame_channel_v3": "lame_channel_v3",
     "local_connector_secure": "local_connector_secure",
