@@ -584,14 +584,14 @@ void NewChttp2ServerListener::HandshakingConnection::OnHandshakeDoneLocked(
     const bool is_callv3 = args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false);
     if (!is_callv3) {
       // v1 stack
-      RefCountedPtr<Transport> transport =
+      OrphanablePtr<Transport> transport(
           grpc_create_chttp2_transport(args, std::move((*result)->endpoint),
-                                       false)
-              ->Ref();
-      if (listener_state_->OnHandshakeDone(this, transport.get(),
+                                       false));
+      auto transport_ref = transport->Ref();
+      if (listener_state_->OnHandshakeDone(this, std::move(transport),
                                            accepting_pollset_, args)) {
         grpc_chttp2_transport_start_reading(
-            transport.get(), (*result)->read_buffer.c_slice_buffer(),
+            transport_ref.get(), (*result)->read_buffer.c_slice_buffer(),
             /*notify_on_receive_settings=*/nullptr, nullptr,
             /*notify_on_close=*/nullptr);
       }
@@ -609,12 +609,12 @@ void NewChttp2ServerListener::HandshakingConnection::OnHandshakeDoneLocked(
                                          std::move((*result)->read_buffer));
         std::shared_ptr<EventEngine> event_engine_ptr =
             args.GetObjectRef<EventEngine>();
-        auto* ph2_transport = new http2::Http2ServerTransport(
+        auto ph2_transport = MakeOrphanable<http2::Http2ServerTransport>(
             std::move(promise_endpoint), args, std::move(event_engine_ptr),
             /*on_receive_settings=*/nullptr,
             /*on_close_callback=*/nullptr);
         // OnHandshakeDone() will spawn the initial transport promises.
-        listener_state_->OnHandshakeDone(this, ph2_transport,
+        listener_state_->OnHandshakeDone(this, std::move(ph2_transport),
                                          accepting_pollset_, args);
         transport_passed_to_server = true;
       }
@@ -1051,18 +1051,33 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
   }
 
   if (!is_callv3) {
-    grpc_core::Transport* transport = grpc_create_chttp2_transport(
-        server_args, std::move(server_endpoint), false  // is_client
-    );
-    grpc_error_handle error =
-        core_server->SetupTransport(transport, nullptr, server_args);
-    if (error.ok()) {
-      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
-                                          nullptr);
+    if (!grpc_core::IsServerConnectionManagementEnabled()) {
+      grpc_core::Transport* transport = grpc_create_chttp2_transport(
+          server_args, std::move(server_endpoint), false  // is_client
+      );
+      grpc_error_handle error =
+          core_server->SetupTransport(transport, nullptr, server_args);
+      if (error.ok()) {
+        grpc_chttp2_transport_start_reading(
+            transport, nullptr, nullptr, nullptr, nullptr);
+      } else {
+        LOG(ERROR) << "Failed to create channel: "
+                   << grpc_core::StatusToString(error);
+        transport->Orphan();
+      }
     } else {
-      LOG(ERROR) << "Failed to create channel: "
-                 << grpc_core::StatusToString(error);
-      transport->Orphan();
+      grpc_core::OrphanablePtr<grpc_core::Transport> transport(
+          grpc_create_chttp2_transport(server_args, std::move(server_endpoint),
+                                       /*is_client=*/false));
+      auto transport_ref = transport->Ref();
+      absl::Status status = core_server->LegacyAddConnection(
+          std::move(transport), nullptr, server_args);
+      if (status.ok()) {
+        grpc_chttp2_transport_start_reading(
+            transport_ref.get(), nullptr, nullptr, nullptr, nullptr);
+      } else {
+        LOG(ERROR) << "Failed to create channel: " << status;
+      }
     }
   } else {
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
@@ -1073,18 +1088,32 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
           std::move(event_engine_endpoint), grpc_core::SliceBuffer());
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine_ptr = server_args.GetObjectRef<grpc_core::EventEngine>();
-      grpc_core::Transport* transport =
-          new grpc_core::http2::Http2ServerTransport(
-              std::move(promise_endpoint), server_args,
-              std::move(event_engine_ptr), [](absl::StatusOr<uint32_t>) {},
-              /*on_close_callback=*/nullptr);
-      grpc_error_handle error =
-          core_server->SetupTransport(transport, nullptr, server_args);
-      // SetupTransport will spawn the initial transport promises.
-      if (!error.ok()) {
-        LOG(ERROR) << "Failed to create channel: "
-                   << grpc_core::StatusToString(error);
-        transport->Orphan();
+      if (!grpc_core::IsServerConnectionManagementEnabled()) {
+        grpc_core::Transport* transport =
+            new grpc_core::http2::Http2ServerTransport(
+                std::move(promise_endpoint), server_args,
+                std::move(event_engine_ptr), [](absl::StatusOr<uint32_t>) {},
+                /*on_close_callback=*/nullptr);
+        grpc_error_handle error =
+            core_server->SetupTransport(transport, nullptr, server_args);
+        // SetupTransport will spawn the initial transport promises.
+        if (!error.ok()) {
+          LOG(ERROR) << "Failed to create channel: "
+                     << grpc_core::StatusToString(error);
+          transport->Orphan();
+        }
+      } else {
+        grpc_core::OrphanablePtr<grpc_core::Transport> transport(
+            new grpc_core::http2::Http2ServerTransport(
+                std::move(promise_endpoint), server_args,
+                std::move(event_engine_ptr), [](absl::StatusOr<uint32_t>) {},
+                /*on_close_callback=*/nullptr));
+        // LegacyAddConnection() will spawn the initial transport promises.
+        absl::Status status = core_server->LegacyAddConnection(
+            std::move(transport), nullptr, server_args);
+        if (!status.ok()) {
+          LOG(ERROR) << "Failed to create connection: " << status;
+        }
       }
     } else {
       LOG(ERROR) << "Failed to take endpoint.";

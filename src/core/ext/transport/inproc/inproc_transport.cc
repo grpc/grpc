@@ -262,15 +262,28 @@ RefCountedPtr<Channel> MakeInprocChannel(Server* server,
   auto transports = MakeInProcessTransportPair(server->channel_args());
   auto client_transport = std::move(transports.first);
   auto server_transport = std::move(transports.second);
-  auto error =
-      server->SetupTransport(server_transport.get(), nullptr,
-                             server->channel_args()
-                                 .Remove(GRPC_ARG_MAX_CONNECTION_IDLE_MS)
-                                 .Remove(GRPC_ARG_MAX_CONNECTION_AGE_MS));
-  if (!error.ok()) {
-    return MakeLameChannel("Failed to create server channel", std::move(error));
+  if (!IsServerConnectionManagementEnabled()) {
+    auto error =
+        server->SetupTransport(server_transport.get(), nullptr,
+                               server->channel_args()
+                                   .Remove(GRPC_ARG_MAX_CONNECTION_IDLE_MS)
+                                   .Remove(GRPC_ARG_MAX_CONNECTION_AGE_MS));
+    if (!error.ok()) {
+      return MakeLameChannel("Failed to create server channel",
+                             std::move(error));
+    }
+    std::ignore = server_transport.release();  // consumed by SetupTransport
+  } else {
+    absl::Status error = server->LegacyAddConnection(
+        std::move(server_transport), nullptr,
+        server->channel_args()
+            .Remove(GRPC_ARG_MAX_CONNECTION_IDLE_MS)
+            .Remove(GRPC_ARG_MAX_CONNECTION_AGE_MS));
+    if (!error.ok()) {
+      return MakeLameChannel("Failed to create server channel",
+                             std::move(error));
+    }
   }
-  std::ignore = server_transport.release();  // consumed by SetupTransport
   auto channel = ChannelCreate(
       "inproc",
       client_channel_args.Set(GRPC_ARG_DEFAULT_AUTHORITY, "inproc.authority")
