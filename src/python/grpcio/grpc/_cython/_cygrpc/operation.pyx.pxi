@@ -12,6 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from cpython.ref cimport Py_INCREF, Py_DECREF
+from libc.string cimport memcpy
+from cpython.bytes cimport PyBytes_FromStringAndSize
+
+cdef void py_decref_destroy(void* user_data) noexcept with gil:
+    Py_DECREF(<object>user_data)
+
 
 cdef class Operation:
 
@@ -61,8 +68,20 @@ cdef class SendMessageOperation(Operation):
   cdef void c(self) except *:
     self.c_op.type = GRPC_OP_SEND_MESSAGE
     self.c_op.flags = self._flags
-    cdef grpc_slice message_slice = grpc_slice_from_copied_buffer(
-        self._message, len(self._message))
+    cdef grpc_slice message_slice
+    if IsPythonZeroCopyEnabled():
+      if len(self._message) > 0:
+        # bytes are immutable, so core can read the buffer in place. The slice
+        # holds a reference that py_decref_destroy releases.
+        Py_INCREF(self._message)
+        message_slice = grpc_slice_new_with_user_data(
+            <void*><char*>self._message, len(self._message),
+            py_decref_destroy, <void*>self._message)
+      else:
+        message_slice = grpc_empty_slice()
+    else:
+      message_slice = grpc_slice_from_copied_buffer(
+          self._message, len(self._message))
     self._c_message_byte_buffer = grpc_raw_byte_buffer_create(
         &message_slice, 1)
     grpc_slice_unref(message_slice)
@@ -162,19 +181,52 @@ cdef class ReceiveMessageOperation(Operation):
     cdef grpc_slice message_slice
     cdef size_t message_slice_length
     cdef list chunks = []
+    cdef grpc_slice_buffer message_slice_buffer
+    cdef size_t i
+    cdef size_t offset
+    cdef char *dest
+    cdef bytes result
 
     if self._c_message_byte_buffer != NULL:
       message_reader_status = grpc_byte_buffer_reader_init(
           &message_reader, self._c_message_byte_buffer)
       if message_reader_status:
-        while grpc_byte_buffer_reader_next(&message_reader, &message_slice):
-          message_slice_length = grpc_slice_length(message_slice)
-          if message_slice_length > 0:
-            chunks.append((<char *>grpc_slice_start_ptr(message_slice))[:message_slice_length])
-          grpc_slice_unref(message_slice)
-
+        if IsPythonZeroCopyEnabled():
+          # When the zero-copy experiment is enabled, gather the slices into a
+          # grpc_slice_buffer (which takes ownership of each slice), then copy
+          # them into a single preallocated bytes object. This creates one
+          # Python object and copies the payload once, regardless of how many
+          # slices the message arrived in.
+          grpc_slice_buffer_init(&message_slice_buffer)
+          while grpc_byte_buffer_reader_next(&message_reader, &message_slice):
+            grpc_slice_buffer_add(&message_slice_buffer, message_slice)
+          if message_slice_buffer.length > 0:
+            # length is the exact total of the buffered slices.
+            result = PyBytes_FromStringAndSize(NULL, message_slice_buffer.length)
+            dest = result
+            offset = 0
+            for i in range(message_slice_buffer.count):
+              # Borrowed from the slice buffer; released by
+              # grpc_slice_buffer_destroy() below.
+              message_slice = message_slice_buffer.slices[i]
+              message_slice_length = grpc_slice_length(message_slice)
+              if message_slice_length > 0:
+                memcpy(dest + offset, grpc_slice_start_ptr(message_slice),
+                       message_slice_length)
+                offset += message_slice_length
+            self._message = result
+          else:
+            self._message = b''
+          grpc_slice_buffer_destroy(&message_slice_buffer)
+        else:
+          while grpc_byte_buffer_reader_next(&message_reader, &message_slice):
+            message_slice_length = grpc_slice_length(message_slice)
+            if message_slice_length > 0:
+              chunks.append((<char *>grpc_slice_start_ptr(message_slice))[:message_slice_length])
+            grpc_slice_unref(message_slice)
+          self._message = b"".join(chunks)
+        
         grpc_byte_buffer_reader_destroy(&message_reader)
-        self._message = b"".join(chunks)
       else:
         self._message = None
       grpc_byte_buffer_destroy(self._c_message_byte_buffer)

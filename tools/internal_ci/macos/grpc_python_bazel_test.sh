@@ -102,3 +102,16 @@ python_bazel_tests_fork_support/bazel_wrapper \
   --runs_per_test=16 \
   ${BAZEL_FLAGS} \
   //src/python/grpcio_tests/tests/fork:fork_test
+
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_zero_copy
+# Run python zero copy tests
+python_bazel_tests_zero_copy/bazel_wrapper \
+  --output_base=.bazel_rbe \
+  --bazelrc=tools/remote_build/mac.bazelrc \
+  test \
+  --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
+  "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
+  --test_env=GRPC_EXPERIMENTS=python_zero_copy \
+  ${BAZEL_FLAGS} \
+  -- \
+  ${TEST_TARGETS}

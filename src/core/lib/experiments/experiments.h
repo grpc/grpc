@@ -119,6 +119,7 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 inline bool IsPromiseFilterClientHalfCloseEnabled() { return false; }
+inline bool IsPythonZeroCopyEnabled() { return false; }
 inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsReplaceAuthFilterEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
@@ -202,6 +203,7 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 inline bool IsPromiseFilterClientHalfCloseEnabled() { return false; }
+inline bool IsPythonZeroCopyEnabled() { return false; }
 inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsReplaceAuthFilterEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
@@ -285,6 +287,7 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 inline bool IsPromiseFilterClientHalfCloseEnabled() { return false; }
+inline bool IsPythonZeroCopyEnabled() { return false; }
 inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsReplaceAuthFilterEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
@@ -350,6 +353,7 @@ enum ExperimentIds {
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdPromiseBatchCleanupOnCancel,
   kExperimentIdPromiseFilterClientHalfClose,
+  kExperimentIdPythonZeroCopy,
   kExperimentIdRecvMessageFilterBypassFix,
   kExperimentIdReplaceAuthFilter,
   kExperimentIdRetryInCallv3,
@@ -539,6 +543,10 @@ inline bool IsPromiseBatchCleanupOnCancelEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_CLIENT_HALF_CLOSE
 inline bool IsPromiseFilterClientHalfCloseEnabled() {
   return IsExperimentEnabled<kExperimentIdPromiseFilterClientHalfClose>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PYTHON_ZERO_COPY
+inline bool IsPythonZeroCopyEnabled() {
+  return IsExperimentEnabled<kExperimentIdPythonZeroCopy>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RECV_MESSAGE_FILTER_BYPASS_FIX
 inline bool IsRecvMessageFilterBypassFixEnabled() {

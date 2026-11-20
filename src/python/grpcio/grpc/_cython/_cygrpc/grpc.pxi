@@ -119,6 +119,8 @@ cdef extern from "grpc/grpc.h":
   grpc_slice grpc_slice_new(void *p, size_t len, void (*destroy)(void *)) nogil
   grpc_slice grpc_slice_new_with_len(
       void *p, size_t len, void (*destroy)(void *, size_t)) nogil
+  grpc_slice grpc_slice_new_with_user_data(
+      void *p, size_t len, void (*destroy)(void *), void *user_data) nogil
   grpc_slice grpc_slice_malloc(size_t length) nogil
   grpc_slice grpc_slice_from_copied_string(const char *source) nogil
   grpc_slice grpc_slice_from_copied_buffer(const char *source, size_t len) nogil
@@ -127,6 +129,16 @@ cdef extern from "grpc/grpc.h":
   # Declare functions for function-like macros (because Cython)...
   void *grpc_slice_start_ptr "GRPC_SLICE_START_PTR" (grpc_slice s) nogil
   size_t grpc_slice_length "GRPC_SLICE_LENGTH" (grpc_slice s) nogil
+
+  ctypedef struct grpc_slice_buffer:
+    # Only the members read from Cython are declared here.
+    grpc_slice *slices
+    size_t count
+    size_t length
+
+  void grpc_slice_buffer_init(grpc_slice_buffer *sb) nogil
+  void grpc_slice_buffer_destroy(grpc_slice_buffer *sb) nogil
+  void grpc_slice_buffer_add(grpc_slice_buffer *sb, grpc_slice slice) nogil
 
   const int GPR_MS_PER_SEC
   const int GPR_US_PER_SEC
@@ -842,3 +854,6 @@ cdef extern from "src/core/config/config_vars.h" namespace "grpc_core":
   cdef cppclass ConfigVars:
     @staticmethod
     void Reset()
+
+cdef extern from "src/core/lib/experiments/experiments.h" namespace "grpc_core" nogil:
+  bint IsPythonZeroCopyEnabled()

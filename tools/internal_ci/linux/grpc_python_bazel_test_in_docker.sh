@@ -30,3 +30,6 @@ python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python
 # TODO(https://github.com/grpc/grpc/issues/32207): Remove from this job once
 # the fork job is in the master dashboard.
 python_bazel_tests_fork_support/bazel_wrapper ${RESULTSTORE_RESULTS_FLAG} test --config=fork_support --runs_per_test=16 ${BAZEL_FLAGS} //src/python/grpcio_tests/tests/fork:fork_test
+
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_zero_copy
+python_bazel_tests_zero_copy/bazel_wrapper ${RESULTSTORE_RESULTS_FLAG} test --test_env=GRPC_EXPERIMENTS=python_zero_copy ${BAZEL_FLAGS} ${TEST_TARGETS}
