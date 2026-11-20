@@ -40883,6 +40883,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/ads.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/ads.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/ads.pb.h

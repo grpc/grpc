@@ -28338,6 +28338,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.proto
+  - third_party/envoy-api/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
   - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
