@@ -356,6 +356,8 @@ grpc_cc_test(
     name = "cds_test",
     srcs = ["cds_test.cc"],
     external_deps = [
+        "absl/status",
+        "absl/strings",
         "gtest",
     ],
     tags = [
@@ -365,6 +367,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":lb_policy_test_lib",
+        "//:channel_arg_names",
         "//:config",
         "//:gpr",
         "//:grpc",

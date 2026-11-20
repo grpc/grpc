@@ -153,6 +153,7 @@ grpc_cc_test(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     tags = ["xds_test"],
     uses_event_engine = False,
@@ -165,6 +166,7 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//:xds_client",
         "//src/core:down_cast",
+        "//src/core:json",
         "//src/core:json_writer",
         "//src/core:lb_policy",
         "//src/core:lb_policy_factory",
@@ -863,6 +865,7 @@ grpc_cc_test(
     external_deps = [
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
         "absl/strings:str_format",
         "gtest",
     ],
