@@ -79,6 +79,16 @@ std::string XdsClusterResource::ToString() const {
       });
   StrAppend(result, ", lb_policy_config=");
   StrAppend(result, JsonDump(Json::FromArray(lb_policy_config)));
+  if (!lb_policy_grpc_services.empty()) {
+    StrAppend(result, ", lb_policy_grpc_services=[");
+    bool is_first = true;
+    for (const auto& [key, grpc_service] : lb_policy_grpc_services) {
+      if (!is_first) StrAppend(result, ", ");
+      StrAppend(result, key);
+      is_first = false;
+    }
+    StrAppend(result, "]");
+  }
   if (lrs_load_reporting_server != nullptr) {
     StrAppend(result, ", lrs_load_reporting_server_name=");
     StrAppend(result, lrs_load_reporting_server->server_uri());

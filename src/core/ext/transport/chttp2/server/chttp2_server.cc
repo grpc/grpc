@@ -581,16 +581,15 @@ void NewChttp2ServerListener::HandshakingConnection::OnHandshakeDoneLocked(
       args.GetObject<Http2SettingsHandshakeResult>();
   if (handshake_mgr_ != nullptr && result.ok() &&
       (*result)->endpoint != nullptr && settings_handshake_result != nullptr) {
-    const bool is_callv3 =
-        args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false);
+    const bool is_callv3 = args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false);
     if (!is_callv3) {
       // v1 stack
       RefCountedPtr<Transport> transport =
           grpc_create_chttp2_transport(args, std::move((*result)->endpoint),
                                        false)
               ->Ref();
-      if (listener_state_->OnHandshakeDone(
-              this, transport.get(), accepting_pollset_, args)) {
+      if (listener_state_->OnHandshakeDone(this, transport.get(),
+                                           accepting_pollset_, args)) {
         grpc_chttp2_transport_start_reading(
             transport.get(), (*result)->read_buffer.c_slice_buffer(),
             /*notify_on_receive_settings=*/nullptr, nullptr,
@@ -611,12 +610,12 @@ void NewChttp2ServerListener::HandshakingConnection::OnHandshakeDoneLocked(
         std::shared_ptr<EventEngine> event_engine_ptr =
             args.GetObjectRef<EventEngine>();
         auto* ph2_transport = new http2::Http2ServerTransport(
-            std::move(promise_endpoint), args,
-            std::move(event_engine_ptr), /*on_receive_settings=*/nullptr,
+            std::move(promise_endpoint), args, std::move(event_engine_ptr),
+            /*on_receive_settings=*/nullptr,
             /*on_close_callback=*/nullptr);
         // OnHandshakeDone() will spawn the initial transport promises.
-        listener_state_->OnHandshakeDone(
-            this, ph2_transport, accepting_pollset_, args);
+        listener_state_->OnHandshakeDone(this, ph2_transport,
+                                         accepting_pollset_, args);
         transport_passed_to_server = true;
       }
     }
@@ -626,8 +625,8 @@ void NewChttp2ServerListener::HandshakingConnection::OnHandshakeDoneLocked(
   }
   // Clean up if we didn't create a transport.
   if (!transport_passed_to_server) {
-    listener_state_->OnHandshakeDone(
-        this, /*transport=*/nullptr, accepting_pollset_, args);
+    listener_state_->OnHandshakeDone(this, /*transport=*/nullptr,
+                                     accepting_pollset_, args);
   }
 }
 

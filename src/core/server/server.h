@@ -311,9 +311,9 @@ class Server : public ServerInterface,
     //   transport selection work)
     // - the chaotic_good transport (needs to be changed to use the
     //   ListenerState APIs)
-    absl::Status LegacyAddActiveConnection(
-        Transport* transport, grpc_pollset* accepting_pollset,
-        const ChannelArgs& args);
+    absl::Status LegacyAddActiveConnection(Transport* transport,
+                                           grpc_pollset* accepting_pollset,
+                                           const ChannelArgs& args);
 
     size_t NumOpenConnectionsLocked()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_) {
@@ -782,9 +782,9 @@ class Server : public ServerInterface,
   void RemoveDrainingConnectionLocked(Connection* connection)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
-  void StartDrainingConnectionLocked(
-      OrphanablePtr<Connection> connections,
-      absl::string_view reason, Duration grace_period)
+  void StartDrainingConnectionLocked(OrphanablePtr<Connection> connections,
+                                     absl::string_view reason,
+                                     Duration grace_period)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   void StartDrainingConnectionsLocked(
