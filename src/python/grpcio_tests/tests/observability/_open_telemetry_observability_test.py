@@ -17,6 +17,7 @@ import datetime
 import logging
 import os
 import sys
+import threading
 import time
 from typing import Any, Callable, Dict, List, Optional, Set
 import unittest
@@ -32,6 +33,7 @@ from grpc_observability._open_telemetry_observability import (
 )
 from grpc_observability._open_telemetry_observability import GRPC_METHOD_LABEL
 from grpc_observability._open_telemetry_observability import GRPC_TARGET_LABEL
+from grpc_observability._open_telemetry_plugin import OpenTelemetryPluginOption
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import AggregationTemporality
 from opentelemetry.sdk.metrics.export import MetricExportResult
@@ -45,6 +47,55 @@ logger = logging.getLogger(__name__)
 
 STREAM_LENGTH = 5
 OTEL_EXPORT_INTERVAL_S = 0.5
+# Generous: these waits only elapse in full if the test is already failing.
+_ACTIVATION_TIMEOUT_S = 10.0
+
+
+class _AlwaysActivePluginOption(OpenTelemetryPluginOption):
+    def is_active_on_client_channel(self, target: str) -> bool:
+        return True
+
+    def is_active_on_server(self, xds: bool) -> bool:
+        return True
+
+
+# The two options below deliberately break the side-effect-free rule that
+# activate_*_plugin_options documents: signalling and blocking from the
+# predicate is the only way to hold an activating thread at a known point in the
+# list. Test scaffolding only -- they touch no plugin state. Real plugin options
+# must not do this.
+class _PausingPluginOption(OpenTelemetryPluginOption):
+    """Blocks activation mid-list until the test lets it continue."""
+
+    def __init__(self, entered: threading.Event, resume: threading.Event):
+        self._entered = entered
+        self._resume = resume
+
+    def _pause(self) -> bool:
+        self._entered.set()
+        self._resume.wait(_ACTIVATION_TIMEOUT_S)
+        return True
+
+    def is_active_on_client_channel(self, target: str) -> bool:
+        return self._pause()
+
+    def is_active_on_server(self, xds: bool) -> bool:
+        return self._pause()
+
+
+class _BarrierPluginOption(OpenTelemetryPluginOption):
+    """Holds every activating thread mid-list until all of them arrive."""
+
+    def __init__(self, barrier: threading.Barrier):
+        self._barrier = barrier
+
+    def is_active_on_client_channel(self, target: str) -> bool:
+        self._barrier.wait()
+        return True
+
+    def is_active_on_server(self, xds: bool) -> bool:
+        self._barrier.wait()
+        return True
 
 
 class OTelMetricExporter(MetricExporter):
@@ -589,6 +640,117 @@ class DecodeLabelsTest(unittest.TestCase):
         self.assertIn(key, decoded)
         self.assertEqual(decoded[key], value)
         self.assertIsInstance(decoded[key], str)
+
+
+@unittest.skipIf(
+    os.name == "nt" or "darwin" in sys.platform,
+    "Observability is not supported in Windows and MacOS",
+)
+class ActivatePluginOptionsSingleAssignmentTest(unittest.TestCase):
+    """Documents why activate_*_plugin_options must publish in one assignment.
+
+    The AsyncIO client path reads the observability plugin without holding
+    _plugin_lock, so activation can run on several threads at once. Assigning
+    the enabled list empty and appending to it would let a concurrent reader
+    observe it half-built: non-empty, so that reader skips activation, but
+    missing options, so it silently builds incomplete exchange labels.
+
+    Each test drives that interleaving deterministically by pausing the
+    activation predicate of one plugin option partway through the list.
+    """
+
+    def _plugin_with_options(
+        self, plugin_options: List[OpenTelemetryPluginOption]
+    ) -> _OpenTelemetryPlugin:
+        return _OpenTelemetryPlugin(
+            grpc_observability.OpenTelemetryPlugin(
+                plugin_options=plugin_options, meter_provider=None
+            )
+        )
+
+    def _assert_never_half_built(self, activate_on_client: bool) -> None:
+        entered = threading.Event()
+        resume = threading.Event()
+        # The pausing option sits in the middle, so a half-built list would be
+        # observably shorter than the full one rather than empty.
+        plugin_options = [
+            _AlwaysActivePluginOption(),
+            _PausingPluginOption(entered, resume),
+            _AlwaysActivePluginOption(),
+        ]
+        plugin = self._plugin_with_options(plugin_options)
+
+        if activate_on_client:
+            activate = lambda: plugin.activate_client_plugin_options(
+                b"localhost:50051"
+            )
+            published = lambda: plugin._enabled_client_plugin_options
+        else:
+            activate = lambda: plugin.activate_server_plugin_options(False)
+            published = lambda: plugin._enabled_server_plugin_options
+
+        activator = threading.Thread(target=activate, daemon=True)
+        activator.start()
+        try:
+            self.assertTrue(
+                entered.wait(_ACTIVATION_TIMEOUT_S),
+                "activation never reached the pausing plugin option",
+            )
+            # Read from this thread while the activating thread is still
+            # iterating. Nothing may be published yet. Snapshot the length now:
+            # a list published early keeps growing, so measuring it after the
+            # activator finishes would hide how short it was here.
+            observed = published()
+            observed_count = None if observed is None else len(observed)
+        finally:
+            resume.set()
+            activator.join(_ACTIVATION_TIMEOUT_S)
+
+        self.assertIsNone(
+            observed,
+            "a concurrent reader saw the enabled list mid-build with "
+            f"{observed_count} of {len(plugin_options)} option(s); it must be "
+            "published in a single assignment",
+        )
+        self.assertEqual(len(published()), len(plugin_options))
+
+    def testClientOptionsAreNeverObservedHalfBuilt(self):
+        self._assert_never_half_built(activate_on_client=True)
+
+    def testServerOptionsAreNeverObservedHalfBuilt(self):
+        self._assert_never_half_built(activate_on_client=False)
+
+    def testConcurrentActivationBothPublishCompleteList(self):
+        # The barrier only clears if both threads actually run the activation.
+        # Publishing early would let the second thread find a non-empty list and
+        # skip activation altogether -- so it never reaches the barrier, and the
+        # options it needed are missing. With a single assignment both threads
+        # build a full list independently and the last writer wins.
+        barrier = threading.Barrier(2, timeout=_ACTIVATION_TIMEOUT_S)
+        plugin_options = [
+            _AlwaysActivePluginOption(),
+            _BarrierPluginOption(barrier),
+            _AlwaysActivePluginOption(),
+        ]
+        plugin = self._plugin_with_options(plugin_options)
+
+        activators = [
+            threading.Thread(
+                target=plugin.activate_client_plugin_options,
+                args=(b"localhost:50051",),
+                daemon=True,
+            )
+            for _ in range(2)
+        ]
+        for activator in activators:
+            activator.start()
+        for activator in activators:
+            activator.join(_ACTIVATION_TIMEOUT_S)
+            self.assertFalse(activator.is_alive(), "activation did not finish")
+
+        self.assertEqual(
+            len(plugin._enabled_client_plugin_options), len(plugin_options)
+        )
 
 
 if __name__ == "__main__":
