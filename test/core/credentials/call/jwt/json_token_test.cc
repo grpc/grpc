@@ -116,6 +116,26 @@ TEST(JsonTokenTest, ParseJsonKeySuccess) {
                      "777-abaslkan11hlb6nmim3bpspl31ud@developer."
                      "gserviceaccount.com") == 0);
   ASSERT_NE(json_key.private_key, nullptr);
+  ASSERT_EQ(json_key.universe_domain, nullptr);
+  gpr_free(json_string);
+  grpc_auth_json_key_destruct(&json_key);
+}
+
+TEST(JsonTokenTest, ParseJsonKeyWithUniverseDomainSuccess) {
+  const char universe_domain_part3[] =
+      "\"private_key_id\": \"e6b5137873db8d2ef81e06a47289e6434ec8a165\", "
+      "\"client_email\": "
+      "\"777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount."
+      "com\", \"client_id\": "
+      "\"777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent."
+      "com\", \"type\": \"service_account\", "
+      "\"universe_domain\": \"apis-tpclp.goog\" }";
+  char* json_string = test_json_key_str(universe_domain_part3);
+  grpc_auth_json_key json_key =
+      grpc_auth_json_key_create_from_string(json_string);
+  ASSERT_TRUE(grpc_auth_json_key_is_valid(&json_key));
+  ASSERT_NE(json_key.universe_domain, nullptr);
+  EXPECT_STREQ(json_key.universe_domain, "apis-tpclp.goog");
   gpr_free(json_string);
   grpc_auth_json_key_destruct(&json_key);
 }

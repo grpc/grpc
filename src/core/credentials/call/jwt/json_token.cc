@@ -102,6 +102,10 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
                                       &result.client_email)) {
     goto end;
   }
+  prop_value = grpc_json_get_string_property(json, "universe_domain", nullptr);
+  if (prop_value != nullptr) {
+    result.universe_domain = gpr_strdup(prop_value);
+  }
 
   prop_value = grpc_json_get_string_property(json, "private_key", &error);
   GRPC_LOG_IF_ERROR("JSON key parsing", error);
@@ -158,6 +162,10 @@ void grpc_auth_json_key_destruct(grpc_auth_json_key* json_key) {
   if (json_key->client_email != nullptr) {
     gpr_free(json_key->client_email);
     json_key->client_email = nullptr;
+  }
+  if (json_key->universe_domain != nullptr) {
+    gpr_free(json_key->universe_domain);
+    json_key->universe_domain = nullptr;
   }
   if (json_key->private_key != nullptr) {
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
