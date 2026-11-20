@@ -46,6 +46,12 @@ T LoadConfig(const absl::Flag<absl::optional<T>>& flag,
   return LoadConfigFromEnv(environment_variable, default_value);
 }
 
+// Double config vars use a string flag (see gen_config_vars.py) that is parsed
+// here, so that binaries do not need to link double formatting for the flag.
+double LoadConfig(const absl::Flag<absl::optional<std::string>>& flag,
+                  absl::string_view environment_variable,
+                  const absl::optional<double>& override, double default_value);
+
 std::string LoadConfig(const absl::Flag<std::vector<std::string>>& flag,
                        absl::string_view environment_variable,
                        const absl::optional<std::string>& override,

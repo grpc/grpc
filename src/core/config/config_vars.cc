@@ -89,11 +89,12 @@ ABSL_FLAG(
 ABSL_FLAG(absl::optional<bool>, grpc_channelz_call_tracer, {},
           "EXPERIMENTAL: If true, channelz will allow inspecting calls as well "
           "as channels.");
-ABSL_FLAG(absl::optional<double>, grpc_experimental_target_memory_pressure, {},
+ABSL_FLAG(absl::optional<std::string>, grpc_experimental_target_memory_pressure,
+          {},
           "EXPERIMENTAL: The target pressure for the memory quota pressure "
           "controller. This is a value between 0 and 1.");
-ABSL_FLAG(absl::optional<double>, grpc_experimental_memory_pressure_threshold,
-          {},
+ABSL_FLAG(absl::optional<std::string>,
+          grpc_experimental_memory_pressure_threshold, {},
           "EXPERIMENTAL: The threshold for the memory quota pressure "
           "controller. This is a value between 0 and 1, and must always be "
           "greater than the target pressure.");
