@@ -46,6 +46,29 @@ grpc_cc_benchmark(
 )
 
 grpc_cc_benchmark(
+    name = "bm_ext_authz_metrics",
+    srcs = ["bm_ext_authz_metrics.cc"],
+    external_deps = [
+        "absl/log:check",
+    ],
+    monitoring = HISTORY,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_base",
+        "//:ref_counted_ptr",
+        "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
+        "//src/core:client_channel_args",
+        "//src/core:ext_authz_filter",
+        "//src/core:filter_args",
+        "//src/core:metrics",
+        "//test/core/test_util:fake_stats_plugin",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_benchmark(
     name = "bm_rng",
     srcs = ["bm_rng.cc"],
     external_deps = [

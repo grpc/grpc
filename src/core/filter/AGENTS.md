@@ -16,7 +16,7 @@ See also: [gRPC Core overview](../AGENTS.md)
 
 *   Provides filter configuration (`FilterConfig`, `FilterArgs`) and chain-building abstractions (`FilterChain`, `FilterChainBuilder`).
 *   Registers fused filter combinations (`RegisterFusedFilters`) for common client and server stacks.
-*   Implements authentication (`auth/`), composite (`composite/`), and external processing (`ext_proc/`) filters.
+*   Implements authentication (`auth/`), composite (`composite/`), external authorization (`ext_authz/`), and external processing (`ext_proc/`) filters.
 *   Core filter interfaces and stack machinery live in [lib/channel](../lib/channel/AGENTS.md) and [call](../call/AGENTS.md).
 
 ## Core Concepts
@@ -39,6 +39,7 @@ See also: [gRPC Core overview](../AGENTS.md)
 *   **`fused_filters.cc`**: Defines and registers fused filter combinations via `RegisterFusedFilters`.
 *   **`auth/`**: Implements `ClientAuthFilter` and `ServerAuthFilter` (`auth_filters.h`, `client_auth_filter.cc`, `server_auth_filter.cc`).
 *   **`composite/`**: Implements `CompositeFilter` for xDS matcher-driven filter execution (`composite_filter.{h,cc}`).
+*   **`ext_authz/`**: Implements `ExtAuthzFilter` for xDS external authorization (gRFC A92) (`ext_authz_filter.{h,cc}`, `ext_authz_messages.{h,cc}`).
 *   **`ext_proc/`**: Implements `ExtProcFilter` for xDS external processing (`ext_proc_filter.{h,cc}`, `ext_proc_messages.{h,cc}`).
 
 ## Notes
