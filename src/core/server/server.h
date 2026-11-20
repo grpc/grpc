@@ -298,7 +298,7 @@ class Server : public ServerInterface,
         grpc_pollset* accepting_pollset, const ChannelArgs& args);
 
     // Legacy code-path for callers that directly call
-    // Server::LegacyAddActionConnection() without having a listener.
+    // Server::LegacyAddConnection() without having a listener.
     absl::Status LegacyAddActiveConnection(
         OrphanablePtr<Transport> transport, grpc_pollset* accepting_pollset,
         const ChannelArgs& args);
@@ -493,7 +493,7 @@ class Server : public ServerInterface,
   // Sets up a transport.  Creates a channel stack and binds the transport to
   // the server.  Called from the listener when a new connection is accepted.
   // Takes ownership of a ref on resource_user from the caller.
-  // TODO(roth): Remove this method as part of removing the
+  // TODO(roth): Remove this as part of removing the
   // server_connection_management experiment.
   grpc_error_handle SetupTransport(Transport* transport,
                                    grpc_pollset* accepting_pollset,
@@ -502,6 +502,8 @@ class Server : public ServerInterface,
 
   // Variant of SetupTransport that allows for specifying the channel stack
   // type.
+  // TODO(roth): Remove this as part of removing the
+  // server_connection_management experiment.
   grpc_error_handle SetupTransport(Transport* transport,
                                    grpc_pollset* accepting_pollset,
                                    const ChannelArgs& args,
@@ -509,17 +511,18 @@ class Server : public ServerInterface,
       ABSL_LOCKS_EXCLUDED(mu_global_);
 
   // TODO(roth): When we have time, migrate all callers to manage
-  // connections in ListenerState and remove this method.  This will require
-  // changing at least the following callers:
+  // connections in ListenerState and remove this method.  This will
+  // require changing at least the following callers:
   // - the legacy grpc_server_add_channel_from_fd() API (should
   //   migrate to the new PassiveListener API)
   // - the inproc transport (needs to use a listener as part of the
   //   transport selection work)
   // - the chaotic_good transport (needs to be changed to use the
   //   ListenerState APIs)
-  absl::Status LegacyAddActiveConnection(
+  absl::Status LegacyAddConnection(
       OrphanablePtr<Transport> transport, grpc_pollset* accepting_pollset,
-      const ChannelArgs& args);
+      const ChannelArgs& args)
+      ABSL_LOCKS_EXCLUDED(mu_global_);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 
@@ -747,8 +750,7 @@ class Server : public ServerInterface,
     static absl::StatusOr<OrphanablePtr<Connection>> Create(
         RefCountedPtr<ListenerState> listener_state,
         OrphanablePtr<Transport> transport, grpc_pollset* accepting_pollset,
-        const ChannelArgs& args, grpc_channel_stack_type channel_stack_type,
-        bool hold_connection_quota);
+        const ChannelArgs& args, bool hold_connection_quota);
 
     ~Connection() override;
 
@@ -789,9 +791,9 @@ class Server : public ServerInterface,
   void RemoveDrainingConnectionLocked(Connection* connection)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
-  void StartDrainingConnectionLocked(
-      OrphanablePtr<Connection> connections,
-      absl::string_view reason, Duration grace_period)
+  void StartDrainingConnectionLocked(OrphanablePtr<Connection> connections,
+                                     absl::string_view reason,
+                                     Duration grace_period)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   void StartDrainingConnectionsLocked(
@@ -814,8 +816,7 @@ class Server : public ServerInterface,
   // ServerTransport& and just return absl::Status.
   absl::StatusOr<OrphanablePtr<ServerTransport>> SetupCallLinkageForTransport(
       Connection* connection, OrphanablePtr<Transport> transport,
-      grpc_pollset* accepting_pollset, const ChannelArgs& args,
-      grpc_channel_stack_type channel_stack_type);
+      grpc_pollset* accepting_pollset, const ChannelArgs& args);
 
   RegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
                                         const absl::string_view& path);
