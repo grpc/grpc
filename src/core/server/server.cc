@@ -1969,8 +1969,8 @@ class Server::ChannelData::ConnectivityWatcher
 
 Server::ChannelData::~ChannelData() {
   if (server_ != nullptr) {
-    server_->stream_quota_->DecrementOpenChannels();
     if (!IsServerConnectionManagementEnabled()) {
+      server_->stream_quota_->DecrementOpenChannels();
       MutexLock lock(server_->mu_global_);
       if (list_position_.has_value()) {
         server_->channels_.erase(*list_position_);
