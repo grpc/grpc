@@ -527,11 +527,10 @@ TEST_F(RingHashTest, FallbackDelayReason) {
   picker = ExpectState(GRPC_CHANNEL_CONNECTING);
   ExpectPickQueued(
       picker.get(),
-      absl::StrCat("ring_hash: fallback endpoint connecting: pick_first: "
+      absl::StrCat("ring_hash: fallback endpoint connecting (recent endpoint "
+                   "failure: UNAVAILABLE: sc0 failed): pick_first: "
                    "connecting to ",
-                   kAddresses[1],
-                   " (subchannel 1 of 1) (recent endpoint failure: "
-                   "UNAVAILABLE: sc0 failed)"),
+                   kAddresses[1], " (subchannel 1 of 1)"),
       LoadBalancingPolicy::kDelayTypeConnecting, {address0_attribute});
 }
 

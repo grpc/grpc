@@ -456,9 +456,9 @@ AutoshardingLbPolicy::Picker::PickFromEndpointIndices(
   if (queue != nullptr) {
     if (last_failure != nullptr && !last_failure->ok()) {
       // last_failure->message() already includes the subchannel status code.
-      queue->delay_reason = absl::StrCat(
-          "autosharding: ", queue->delay_reason,
-          " (recent endpoint failure: ", last_failure->message(), ")");
+      queue->delay_reason =
+          absl::StrCat("autosharding: connecting (recent endpoint failure: ",
+                       last_failure->message(), "): ", queue->delay_reason);
     } else {
       queue->delay_reason = absl::StrCat("autosharding: ", queue->delay_reason);
     }

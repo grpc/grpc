@@ -130,13 +130,12 @@ class PriorityLb final : public LoadBalancingPolicy {
   class PriorityPicker final : public SubchannelPicker {
    public:
     PriorityPicker(uint32_t priority, absl::string_view child_name,
-                   std::string failover_suffix,
+                   absl::string_view failover_info,
                    RefCountedPtr<SubchannelPicker> child_picker)
         : delay_type_prefix_(absl::StrCat(priority, ":")),
           delay_reason_prefix_(absl::StrCat("priority: connecting to priority ",
                                             priority, " (child ", child_name,
-                                            "): ")),
-          failover_suffix_(std::move(failover_suffix)),
+                                            ")", failover_info, ": ")),
           child_picker_(std::move(child_picker)) {}
 
     PickResult Pick(PickArgs args) override {
@@ -144,8 +143,8 @@ class PriorityLb final : public LoadBalancingPolicy {
       auto* queue = std::get_if<PickResult::Queue>(&result.result);
       if (queue != nullptr) {
         queue->delay_type = absl::StrCat(delay_type_prefix_, queue->delay_type);
-        queue->delay_reason = absl::StrCat(
-            delay_reason_prefix_, queue->delay_reason, failover_suffix_);
+        queue->delay_reason =
+            absl::StrCat(delay_reason_prefix_, queue->delay_reason);
       }
       return result;
     }
@@ -153,7 +152,6 @@ class PriorityLb final : public LoadBalancingPolicy {
    private:
     const std::string delay_type_prefix_;
     const std::string delay_reason_prefix_;
-    const std::string failover_suffix_;
     const RefCountedPtr<SubchannelPicker> child_picker_;
   };
 
@@ -515,12 +513,12 @@ void PriorityLb::SetCurrentPriorityLocked(int32_t priority,
   }
   auto& child = children_[config_->priorities()[priority]];
   GRPC_CHECK(child != nullptr);
-  std::string failover_suffix;
+  std::string failover_info;
   if (priority > 0) {
     auto previous_priority =
         children_.find(config_->priorities()[priority - 1]);
     if (previous_priority != children_.end()) {
-      failover_suffix = absl::StrCat(
+      failover_info = absl::StrCat(
           " (priority ", priority - 1, " (child ",
           config_->priorities()[priority - 1], ") failed: ",
           previous_priority->second->connectivity_status().ok()
@@ -531,8 +529,7 @@ void PriorityLb::SetCurrentPriorityLocked(int32_t priority,
   }
   channel_control_helper()->UpdateState(
       child->connectivity_state(), child->connectivity_status(),
-      MakeRefCounted<PriorityPicker>(priority, child->name(),
-                                     std::move(failover_suffix),
+      MakeRefCounted<PriorityPicker>(priority, child->name(), failover_info,
                                      child->GetPicker()));
 }
 

@@ -412,9 +412,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
         requested_connection = true;
         connecting_endpoint_index = entry.endpoint_index;
       }
-      // Store the last failure before the queued RPC.
-      if (!connecting_endpoint_index.has_value() &&
-          endpoint_info.state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      if (endpoint_info.state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         last_failure = &endpoint_info.status;
       }
     }
@@ -456,19 +454,19 @@ void RingHash::Picker::MaybeModifyDelayReason(bool is_first_index,
   if (queue == nullptr) return;
   absl::string_view prefix;
   if (using_random_hash) {
-    prefix = "ring_hash: random endpoint connecting: ";
+    prefix = "ring_hash: random endpoint connecting";
   } else if (is_first_index) {
-    prefix = "ring_hash: primary endpoint connecting: ";
+    prefix = "ring_hash: primary endpoint connecting";
   } else {
-    prefix = "ring_hash: fallback endpoint connecting: ";
+    prefix = "ring_hash: fallback endpoint connecting";
   }
   if (last_failure != nullptr && !last_failure->ok()) {
     // last_failure->message() already includes the subchannel status code.
     queue->delay_reason = absl::StrCat(
-        prefix, queue->delay_reason,
-        " (recent endpoint failure: ", last_failure->message(), ")");
+        prefix, " (recent endpoint failure: ", last_failure->message(),
+        "): ", queue->delay_reason);
   } else {
-    queue->delay_reason = absl::StrCat(prefix, queue->delay_reason);
+    queue->delay_reason = absl::StrCat(prefix, ": ", queue->delay_reason);
   }
 }
 
