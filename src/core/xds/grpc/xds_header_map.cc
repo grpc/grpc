@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/filter/filter_util.h"
+#include "src/core/xds/grpc/xds_header_map.h"
 
 #include <string>
 

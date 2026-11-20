@@ -38,13 +38,13 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/status_util.h"
 #include "src/core/credentials/transport/tls/tls_utils.h"
-#include "src/core/filter/filter_util.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/string.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/xds/grpc/xds_header_map.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.h"
 #include "upb/mem/arena.hpp"
@@ -592,7 +592,7 @@ std::string ComputeSha256PeerCertificateDigest(
 namespace {
 
 envoy_config_core_v3_HeaderMap* CreateUpbHeaderMap(
-    upb_Arena* arena, grpc_metadata_batch& metadata,
+    upb_Arena* arena, const grpc_metadata_batch& metadata,
     const std::vector<StringMatcher>& allowed_headers,
     const std::vector<StringMatcher>& disallowed_headers) {
   auto* upb_headers = envoy_config_core_v3_HeaderMap_new(arena);

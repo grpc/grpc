@@ -14,7 +14,9 @@
 // limitations under the License.
 //
 
-#include "src/core/filter/filter_util.h"
+#include "src/core/xds/grpc/xds_header_map.h"
+
+#include <grpc/status.h>
 
 #include <string>
 #include <vector>
@@ -36,6 +38,9 @@ using ::testing::FieldsAre;
 using ::testing::IsEmpty;
 using ::testing::UnorderedElementsAre;
 
+// A decoded envoy.config.core.v3.HeaderValue. Tests match it with
+// FieldsAre(key, value, raw_value); since PopulateHeaderMap() sets only
+// raw_value (per gRFC A102), the expected value is always "".
 struct Header {
   std::string key;
   std::string value;
@@ -86,10 +91,12 @@ TEST_F(PopulateHeaderMapTest, NoMatchersForwardsAllHeadersAsRawValue) {
   Append("key1", "val1");
   Append("key2", "val2");
   batch_.Set(TeMetadata(), TeMetadata::kTrailers);
+  batch_.Set(GrpcStatusMetadata(), GRPC_STATUS_UNAVAILABLE);
   EXPECT_THAT(Populate(),
               UnorderedElementsAre(FieldsAre("key1", "", "val1"),
                                    FieldsAre("key2", "", "val2"),
-                                   FieldsAre("te", "", "trailers")));
+                                   FieldsAre("te", "", "trailers"),
+                                   FieldsAre("grpc-status", "", "14")));
 }
 
 TEST_F(PopulateHeaderMapTest, OnlyAllowedSet) {

@@ -3938,30 +3938,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "filter_util",
-    srcs = [
-        "filter/filter_util.cc",
-    ],
-    hdrs = [
-        "filter/filter_util.h",
-    ],
-    external_deps = [
-        "@com_google_protobuf//upb/base",
-        "@com_google_protobuf//upb/mem",
-        "absl/base:core_headers",
-        "absl/strings",
-        "absl/types:span",
-    ],
-    deps = [
-        "envoy_config_core_upb",
-        "grpc_matchers",
-        "metadata_batch",
-        "slice",
-        "upb_utils",
-    ],
-)
-
-grpc_cc_library(
     name = "fused_filters",
     srcs = [
         "filter/fused_filters.cc",
@@ -5948,7 +5924,6 @@ grpc_cc_library(
         "envoy_extensions_filters_http_ext_proc_upb",
         "envoy_service_ext_proc_upb",
         "evaluate_args",
-        "filter_util",
         "grpc_matchers",
         "metadata_batch",
         "protobuf_struct_upb",
@@ -5957,6 +5932,7 @@ grpc_cc_library(
         "validation_errors",
         "xds_common_types",
         "xds_common_types_parser",
+        "xds_header_map",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_credentials_util",
@@ -6422,6 +6398,30 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_header_map",
+    srcs = [
+        "xds/grpc/xds_header_map.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_header_map.h",
+    ],
+    external_deps = [
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "absl/base:core_headers",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "envoy_config_core_upb",
+        "grpc_matchers",
+        "metadata_batch",
+        "slice",
+        "upb_utils",
     ],
 )
 

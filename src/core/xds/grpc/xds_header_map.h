@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_FILTER_FILTER_UTIL_H
-#define GRPC_SRC_CORE_FILTER_FILTER_UTIL_H
+#ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_HEADER_MAP_H
+#define GRPC_SRC_CORE_XDS_GRPC_XDS_HEADER_MAP_H
 
 #include "envoy/config/core/v3/base.upb.h"
 #include "src/core/call/metadata_batch.h"
@@ -44,4 +44,4 @@ void PopulateHeaderMap(const grpc_metadata_batch& batch,
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_FILTER_FILTER_UTIL_H
+#endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_HEADER_MAP_H

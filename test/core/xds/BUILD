@@ -988,3 +988,24 @@ grpc_cc_test(
         "//src/core:blackboard",
     ],
 )
+
+grpc_cc_test(
+    name = "xds_header_map_test",
+    srcs = ["xds_header_map_test.cc"],
+    external_deps = [
+        "@com_google_protobuf//upb/mem",
+        "absl/strings",
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:envoy_config_core_upb",
+        "//:grpc_status",
+        "//src/core:grpc_matchers",
+        "//src/core:metadata_batch",
+        "//src/core:slice",
+        "//src/core:upb_utils",
+        "//src/core:xds_header_map",
+    ],
+)
