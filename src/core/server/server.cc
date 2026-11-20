@@ -1353,23 +1353,12 @@ void Server::Start() {
   starting_cv_.Signal();
 }
 
-grpc_error_handle Server::SetupTransport(Transport* transport,
-                                         grpc_pollset* accepting_pollset,
-                                         const ChannelArgs& args) {
-  return SetupTransport(transport, accepting_pollset, args,
-                        GRPC_SERVER_CHANNEL);
-}
-
-grpc_error_handle Server::SetupTransport(
-    Transport* transport, grpc_pollset* accepting_pollset,
-    const ChannelArgs& args, grpc_channel_stack_type channel_stack_type) {
-  GRPC_LATENT_SEE_SCOPE("Server::SetupTransport");
-  if (!IsServerConnectionManagementEnabled()) {
-    return LegacySetupTransport(transport, accepting_pollset, args,
-                                channel_stack_type);
-  }
+absl::Status Server::LegacyAddConnection(
+    OrphanablePtr<Transport> transport, grpc_pollset* accepting_pollset,
+    const ChannelArgs& args) {
+  GRPC_LATENT_SEE_SCOPE("Server::LegacyAddConnection");
   auto owned_transport = SetupCallLinkageForTransport(
-      transport, accepting_pollset, args, channel_stack_type);
+      std::move(transport), accepting_pollset, args, GRPC_SERVER_CHANNEL);
   if (!owned_transport.ok()) return owned_transport.status();
   auto transport_ref = (*owned_transport)->RefAsSubclass<ServerTransport>();
   {
@@ -1392,16 +1381,16 @@ grpc_error_handle Server::SetupTransport(
 
 absl::StatusOr<OrphanablePtr<ServerTransport>>
 Server::SetupCallLinkageForTransport(
-    Transport* transport, grpc_pollset* accepting_pollset,
+    OrphanablePtr<Transport> transport, grpc_pollset* accepting_pollset,
     const ChannelArgs& args, grpc_channel_stack_type channel_stack_type) {
   global_stats().IncrementServerChannelsCreated();
   OrphanablePtr<ServerTransport> owned_transport;
   if (transport->server_transport() != nullptr) {
     // Take ownership.
-    owned_transport.reset(transport->server_transport());
+    owned_transport.reset(transport.release()->server_transport());
     auto destination = MakeCallDestination(
-        args.SetObject(transport).SetObject<channelz::BaseNode>(
-            transport->GetSocketNode()),
+        args.SetObject(owned_transport.get()).SetObject<channelz::BaseNode>(
+            owned_transport->GetSocketNode()),
         channel_stack_type);
     if (!destination.ok()) return destination.status();
     owned_transport->SetCallDestination(std::move(*destination));
@@ -1409,7 +1398,7 @@ Server::SetupCallLinkageForTransport(
     GRPC_CHECK(transport->filter_stack_transport() != nullptr);
     absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
         "",
-        args.SetObject(transport).SetObject<channelz::BaseNode>(
+        args.SetObject(transport.get()).SetObject<channelz::BaseNode>(
             transport->GetSocketNode()),
         channel_stack_type);
     if (!channel.ok()) return channel.status();
@@ -1433,7 +1422,8 @@ Server::SetupCallLinkageForTransport(
     // Wrap the channel in a transport, just to make it look the same as v3.
     owned_transport = MakeOrphanable<ChannelData::V1ChannelTransport>(*channel);
     // Set up call linkage.
-    chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport);
+    chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport.get());
+    transport.release();  // Channel took ownership.
     auto* parent_arena =
         args.GetPointer<Arena>(GRPC_ARG_SERVER_INTERNAL_PARENT_CALL_ARENA);
     if (parent_arena != nullptr) {
@@ -1448,9 +1438,17 @@ Server::SetupCallLinkageForTransport(
   return owned_transport;
 }
 
-grpc_error_handle Server::LegacySetupTransport(
+grpc_error_handle Server::SetupTransport(Transport* transport,
+                                         grpc_pollset* accepting_pollset,
+                                         const ChannelArgs& args) {
+  return SetupTransport(transport, accepting_pollset, args,
+                        GRPC_SERVER_CHANNEL);
+}
+
+grpc_error_handle Server::SetupTransport(
     Transport* transport, grpc_pollset* accepting_pollset,
     const ChannelArgs& args, grpc_channel_stack_type channel_stack_type) {
+  GRPC_LATENT_SEE_SCOPE("Server::SetupTransport");
   // Create channel.
   global_stats().IncrementServerChannelsCreated();
   // Set up channelz node.
