@@ -24,6 +24,7 @@
 #include "envoy/config/cluster/v3/cluster.upb.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/validation_errors.h"
+#include "src/core/xds/grpc/xds_server_grpc_interface.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "absl/strings/string_view.h"
 
@@ -39,8 +40,8 @@ class XdsLbPolicyRegistry final {
     virtual Json::Object ConvertXdsLbPolicyConfig(
         const XdsLbPolicyRegistry* registry,
         const XdsResourceType::DecodeContext& context,
-        absl::string_view configuration, ValidationErrors* errors,
-        int recursion_depth) = 0;
+        absl::string_view configuration, XdsGrpcServiceMap& grpc_services,
+        ValidationErrors* errors, int recursion_depth) = 0;
     virtual absl::string_view type() = 0;
   };
 
@@ -55,11 +56,15 @@ class XdsLbPolicyRegistry final {
   // format. An error is returned if none of the lb policies in the list are
   // supported, or if a supported lb policy configuration conversion fails. \a
   // recursion_depth indicates the current depth of the tree if lb_policy
-  // configuration recursively holds other lb policies.
+  // configuration recursively holds other lb policies.  Converters that
+  // parse a GrpcService proto add it to \a grpc_services, and put the same
+  // key in the generated LB policy config, so that the LB policy can ask
+  // the channel factory for a channel to that service.
   Json::Array ConvertXdsLbPolicyConfig(
       const XdsResourceType::DecodeContext& context,
       const envoy_config_cluster_v3_LoadBalancingPolicy* lb_policy,
-      ValidationErrors* errors, int recursion_depth = 0) const;
+      XdsGrpcServiceMap& grpc_services, ValidationErrors* errors,
+      int recursion_depth = 0) const;
 
  private:
   // A map of config factories that goes from the type of the lb policy config
