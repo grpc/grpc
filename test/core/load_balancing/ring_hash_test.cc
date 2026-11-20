@@ -93,13 +93,22 @@ TEST_F(RingHashTest, Basic) {
       absl::OkStatus());
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   auto* address0_attribute = MakeHashAttribute(kAddresses[0]);
-  ExpectPickQueued(picker.get(), {address0_attribute});
+  ExpectPickQueued(picker.get(),
+                   "ring_hash: primary endpoint connecting: child policy has "
+                   "not yet returned a picker",
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   {address0_attribute});
   auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_CONNECTING);
-  ExpectPickQueued(picker.get(), {address0_attribute});
+  ExpectPickQueued(picker.get(),
+                   absl::StrCat("ring_hash: primary endpoint connecting: "
+                                "pick_first: connecting to ",
+                                kAddresses[0], " (subchannel 1 of 1)"),
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   {address0_attribute});
   EXPECT_EQ(nullptr, FindSubchannel(kAddresses[1]));
   EXPECT_EQ(nullptr, FindSubchannel(kAddresses[2]));
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
@@ -116,13 +125,22 @@ TEST_F(RingHashTest, SameAddressListedMultipleTimes) {
       absl::OkStatus());
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   auto* address0_attribute = MakeHashAttribute(kAddresses[0]);
-  ExpectPickQueued(picker.get(), {address0_attribute});
+  ExpectPickQueued(picker.get(),
+                   "ring_hash: primary endpoint connecting: child policy has "
+                   "not yet returned a picker",
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   {address0_attribute});
   auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_CONNECTING);
-  ExpectPickQueued(picker.get(), {address0_attribute});
+  ExpectPickQueued(picker.get(),
+                   absl::StrCat("ring_hash: primary endpoint connecting: "
+                                "pick_first: connecting to ",
+                                kAddresses[0], " (subchannel 1 of 1)"),
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   {address0_attribute});
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   picker = ExpectState(GRPC_CHANNEL_READY);
   auto address = ExpectPickComplete(picker.get(), {address0_attribute});
@@ -143,7 +161,11 @@ TEST_F(RingHashTest, MultipleAddressesPerEndpoint) {
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   // Normal connection to first address of the first endpoint.
   auto* address0_attribute = MakeHashAttribute(kEndpoint1Addresses[0]);
-  ExpectPickQueued(picker.get(), {address0_attribute});
+  ExpectPickQueued(picker.get(),
+                   "ring_hash: primary endpoint connecting: child policy has "
+                   "not yet returned a picker",
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   {address0_attribute});
   auto* subchannel = FindSubchannel(kEndpoint1Addresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
@@ -152,7 +174,12 @@ TEST_F(RingHashTest, MultipleAddressesPerEndpoint) {
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_CONNECTING);
-  ExpectPickQueued(picker.get(), {address0_attribute});
+  ExpectPickQueued(
+      picker.get(),
+      absl::StrCat("ring_hash: primary endpoint connecting: pick_first: "
+                   "connecting to ",
+                   kEndpoint1Addresses[0], " (subchannel 1 of 2)"),
+      LoadBalancingPolicy::kDelayTypeConnecting, {address0_attribute});
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   picker = ExpectState(GRPC_CHANNEL_READY);
   auto address = ExpectPickComplete(picker.get(), {address0_attribute});
@@ -164,11 +191,21 @@ TEST_F(RingHashTest, MultipleAddressesPerEndpoint) {
   EXPECT_FALSE(subchannel->ConnectionRequested());
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // The LB policy will try to reconnect when it gets another pick.
-  ExpectPickQueued(picker.get(), {address0_attribute});
+  ExpectPickQueued(picker.get(),
+                   "ring_hash: primary endpoint connecting: pick_first: "
+                   "connection closed; waiting for exit-idle signal to "
+                   "reconnect",
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   {address0_attribute});
   EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_CONNECTING);
-  ExpectPickQueued(picker.get(), {address0_attribute});
+  ExpectPickQueued(
+      picker.get(),
+      absl::StrCat("ring_hash: primary endpoint connecting: pick_first: "
+                   "connecting to ",
+                   kEndpoint1Addresses[0], " (subchannel 1 of 2)"),
+      LoadBalancingPolicy::kDelayTypeConnecting, {address0_attribute});
   // The connection attempt fails.
   subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                    absl::UnavailableError("ugh"));
@@ -177,7 +214,14 @@ TEST_F(RingHashTest, MultipleAddressesPerEndpoint) {
   EXPECT_TRUE(subchannel2->ConnectionRequested());
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_CONNECTING);
-  ExpectPickQueued(picker.get(), {address0_attribute});
+  ExpectPickQueued(
+      picker.get(),
+      absl::StrCat("ring_hash: primary endpoint connecting: pick_first: "
+                   "connecting to ",
+                   kEndpoint1Addresses[1],
+                   " (subchannel 2 of 2); last attempt failure: "
+                   "UNAVAILABLE: ugh"),
+      LoadBalancingPolicy::kDelayTypeConnecting, {address0_attribute});
   subchannel2->SetConnectivityState(GRPC_CHANNEL_READY);
   picker = ExpectState(GRPC_CHANNEL_READY);
   address = ExpectPickComplete(picker.get(), {address0_attribute});
@@ -201,7 +245,11 @@ TEST_F(RingHashTest,
   // Do a pick for subchannel 0.  This will trigger a connection attempt,
   // which will fail.
   auto* address0_attribute = MakeHashAttribute(kAddresses[0]);
-  ExpectPickQueued(picker.get(), {address0_attribute});
+  ExpectPickQueued(picker.get(),
+                   "ring_hash: primary endpoint connecting: child policy has "
+                   "not yet returned a picker",
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   {address0_attribute});
   EXPECT_TRUE(subchannels[0]->ConnectionRequested());
   for (size_t i = 1; i < subchannels.size(); ++i) {
     EXPECT_FALSE(subchannels[i]->ConnectionRequested()) << "index " << i;
@@ -329,13 +377,20 @@ TEST_F(RingHashTest, EndpointHashKeys) {
       absl::OkStatus());
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   auto* hash_attribute = MakeHashAttributeForString(kHashKeys[1]);
-  ExpectPickQueued(picker.get(), {hash_attribute});
+  ExpectPickQueued(picker.get(),
+                   "ring_hash: primary endpoint connecting: child policy has "
+                   "not yet returned a picker",
+                   LoadBalancingPolicy::kDelayTypeConnecting, {hash_attribute});
   auto* subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_CONNECTING);
-  ExpectPickQueued(picker.get(), {hash_attribute});
+  ExpectPickQueued(picker.get(),
+                   absl::StrCat("ring_hash: primary endpoint connecting: "
+                                "pick_first: connecting to ",
+                                kAddresses[1], " (subchannel 1 of 1)"),
+                   LoadBalancingPolicy::kDelayTypeConnecting, {hash_attribute});
   EXPECT_EQ(nullptr, FindSubchannel(kAddresses[0]));
   EXPECT_EQ(nullptr, FindSubchannel(kAddresses[2]));
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
@@ -381,13 +436,21 @@ TEST_F(RingHashTest, RequestHashHeader) {
   std::string hash_key =
       absl::StrCat(absl::StripPrefix(kAddresses[0], "ipv4:"), "_0");
   std::map<std::string, std::string> metadata = {{"foo", hash_key}};
-  ExpectPickQueued(picker.get(), /*call_attributes=*/{}, metadata);
+  ExpectPickQueued(picker.get(),
+                   "ring_hash: primary endpoint connecting: child policy has "
+                   "not yet returned a picker",
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   /*call_attributes=*/{}, metadata);
   auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_CONNECTING);
-  ExpectPickQueued(picker.get(), {}, metadata);
+  ExpectPickQueued(picker.get(),
+                   absl::StrCat("ring_hash: primary endpoint connecting: "
+                                "pick_first: connecting to ",
+                                kAddresses[0], " (subchannel 1 of 1)"),
+                   LoadBalancingPolicy::kDelayTypeConnecting, {}, metadata);
   EXPECT_EQ(nullptr, FindSubchannel(kAddresses[1]));
   EXPECT_EQ(nullptr, FindSubchannel(kAddresses[2]));
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
@@ -404,7 +467,9 @@ TEST_F(RingHashTest, RequestHashHeaderNotPresent) {
                   lb_policy()),
       absl::OkStatus());
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
-  ExpectPickQueued(picker.get());
+  ExpectPickQueued(picker.get(),
+                   "ring_hash: random endpoint connecting: child policy has "
+                   "not yet returned a picker");
   // It will randomly pick one.
   size_t index = 0;
   SubchannelState* subchannel = nullptr;
@@ -419,7 +484,10 @@ TEST_F(RingHashTest, RequestHashHeaderNotPresent) {
   EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_CONNECTING);
-  ExpectPickQueued(picker.get());
+  ExpectPickQueued(picker.get(),
+                   absl::StrCat("ring_hash: random endpoint connecting: "
+                                "pick_first: connecting to ",
+                                kAddresses[index], " (subchannel 1 of 1)"));
   // No other subchannels should have been created yet.
   for (size_t i = 0; i < kAddresses.size(); ++i) {
     if (i != index) EXPECT_EQ(nullptr, FindSubchannel(kAddresses[i]));
@@ -428,6 +496,42 @@ TEST_F(RingHashTest, RequestHashHeaderNotPresent) {
   picker = ExpectState(GRPC_CHANNEL_READY);
   auto address = ExpectPickComplete(picker.get());
   EXPECT_EQ(address, kAddresses[index]);
+}
+
+TEST_F(RingHashTest, FallbackDelayReason) {
+  const std::array<absl::string_view, 2> kAddresses = {"ipv4:127.0.0.1:441",
+                                                       "ipv4:127.0.0.1:442"};
+  EXPECT_EQ(
+      ApplyUpdate(BuildUpdate(kAddresses, MakeRingHashConfig()), lb_policy()),
+      absl::OkStatus());
+  auto picker = ExpectState(GRPC_CHANNEL_IDLE);
+  auto* address0_attribute = MakeHashAttribute(kAddresses[0]);
+  ExpectPickQueued(picker.get(),
+                   "ring_hash: primary endpoint connecting: child policy has "
+                   "not yet returned a picker",
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   {address0_attribute});
+  auto* subchannel0 = FindSubchannel(kAddresses[0]);
+  ASSERT_NE(subchannel0, nullptr);
+  EXPECT_TRUE(subchannel0->ConnectionRequested());
+  subchannel0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  picker = ExpectState(GRPC_CHANNEL_CONNECTING);
+  subchannel0->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                    absl::UnavailableError("sc0 failed"));
+  ExpectReresolutionRequest();
+  picker = ExpectState(GRPC_CHANNEL_CONNECTING);
+  auto* subchannel1 = FindSubchannel(kAddresses[1]);
+  ASSERT_NE(subchannel1, nullptr);
+  EXPECT_TRUE(subchannel1->ConnectionRequested());
+  subchannel1->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  picker = ExpectState(GRPC_CHANNEL_CONNECTING);
+  ExpectPickQueued(
+      picker.get(),
+      absl::StrCat("ring_hash: fallback endpoint connecting (recent endpoint "
+                   "failure: UNAVAILABLE: sc0 failed): pick_first: "
+                   "connecting to ",
+                   kAddresses[1], " (subchannel 1 of 1)"),
+      LoadBalancingPolicy::kDelayTypeConnecting, {address0_attribute});
 }
 
 }  // namespace

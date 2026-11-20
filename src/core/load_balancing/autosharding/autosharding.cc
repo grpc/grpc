@@ -27,8 +27,10 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "src/core/client_channel/channel_factory.h"
@@ -77,6 +79,8 @@ namespace grpc_core {
 namespace {
 
 constexpr absl::string_view kAutoSharding = "autosharding_experimental";
+constexpr char kDelayTypeAutoshardingAssignmentPending[] =
+    "autosharding_assignment_pending";
 
 std::string GenerateUuid() {
   SharedBitGen bit_gen;
@@ -412,38 +416,54 @@ AutoshardingLbPolicy::Picker::PickFromEndpointIndices(
   // Scan the pool for a READY endpoint, starting from a random index and
   // triggering at most one connection attempt on an IDLE endpoint.
   size_t first_index = absl::Uniform<size_t>(SharedBitGen(), 0, indices.size());
-  bool requested_connection = false;
-  bool found_connecting = false;
+  std::optional<size_t> connecting_index;
+  std::optional<size_t> idle_index;
+  const absl::Status* last_failure = nullptr;
   for (size_t i = 0; i < indices.size(); ++i) {
-    const auto& endpoint_info =
-        endpoints_[indices[(first_index + i) % indices.size()]];
+    const size_t index = indices[(first_index + i) % indices.size()];
+    const auto& endpoint_info = endpoints_[index];
     switch (endpoint_info.state) {
       case GRPC_CHANNEL_READY:
         return endpoint_info.picker->Pick(args);
       case GRPC_CHANNEL_CONNECTING:
-        found_connecting = true;
+        if (!connecting_index.has_value()) connecting_index = index;
         break;
       case GRPC_CHANNEL_IDLE:
-        if (!requested_connection) {
+        if (!idle_index.has_value()) {
           RequestConnectionForEndpoint(endpoint_info.endpoint);
-          requested_connection = true;
+          idle_index = index;
         }
+        break;
+      case GRPC_CHANNEL_TRANSIENT_FAILURE:
+        last_failure = &endpoint_info.status;
         break;
       default:
         break;
     }
   }
-  if (requested_connection || found_connecting) {
-    return PickResult::Queue();
+  // If we found a CONNECTING or IDLE endpoint, delegate to it.
+  // Otherwise, all endpoints are in TRANSIENT_FAILURE, so delegate to
+  // the first endpoint's picker to yield a detailed error message.
+  const size_t selected_index =
+      connecting_index.value_or(idle_index.value_or(indices[first_index]));
+  const auto& endpoint_info = endpoints_[selected_index];
+  PickResult result =
+      endpoint_info.picker == nullptr
+          ? PickResult::Queue(kDelayTypeConnecting,
+                              "child policy has not yet returned a picker")
+          : endpoint_info.picker->Pick(args);
+  auto* queue = std::get_if<PickResult::Queue>(&result.result);
+  if (queue != nullptr) {
+    if (last_failure != nullptr && !last_failure->ok()) {
+      // last_failure->message() already includes the subchannel status code.
+      queue->delay_reason =
+          absl::StrCat("autosharding: connecting (recent endpoint failure: ",
+                       last_failure->message(), "): ", queue->delay_reason);
+    } else {
+      queue->delay_reason = absl::StrCat("autosharding: ", queue->delay_reason);
+    }
   }
-  // All endpoints in TRANSIENT_FAILURE. Delegate to the first endpoint's
-  // picker to yield a detailed error message (or queue if the child policy
-  // has not yet been created).
-  const auto& endpoint_info = endpoints_[indices[first_index]];
-  if (endpoint_info.picker == nullptr) {
-    return PickResult::Queue();
-  }
-  return endpoint_info.picker->Pick(args);
+  return result;
 }
 
 void AutoshardingLbPolicy::Picker::RequestConnectionForEndpoint(
@@ -817,11 +837,12 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked(
   // TODO(bpawan): The gRFC may change this to report CONNECTING while waiting
   // for the first result (https://github.com/grpc/proposal/pull/551).  Update
   // this when the gRFC decides.
-  // TODO(bpawan): Set delay_type to "autosharding_assignment_pending" per
-  // gRFC A121 once it is supported in C++.
   if (assignment_.ok() && *assignment_ == nullptr) {
-    channel_control_helper()->UpdateState(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                                          MakeRefCounted<QueuePicker>(nullptr));
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_IDLE, absl::OkStatus(),
+        MakeRefCounted<QueuePicker>(
+            nullptr, kDelayTypeAutoshardingAssignmentPending,
+            "autosharding: waiting for initial sharding assignment"));
     return;
   }
   // If there is no assignment and fallback is disabled, we cannot route any

@@ -984,6 +984,11 @@ void WeightedRoundRobin::WrrEndpointList::UpdateStateCountersLocked(
 void WeightedRoundRobin::WrrEndpointList::
     MaybeUpdateAggregatedConnectivityStateLocked(absl::Status status_for_tf) {
   auto* wrr = policy<WeightedRoundRobin>();
+  if (num_transient_failure_ == 0) {
+    last_failure_ = absl::OkStatus();
+  } else if (!status_for_tf.ok()) {
+    last_failure_ = status_for_tf;
+  }
   // If this is latest_pending_endpoint_list_, then swap it into
   // endpoint_list_ in the following cases:
   // - endpoint_list_ has no READY children.
@@ -1020,19 +1025,17 @@ void WeightedRoundRobin::WrrEndpointList::
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
         << "[WRR " << wrr << "] reporting CONNECTING with endpoint list "
         << this;
-    wrr->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-        MakeRefCounted<QueuePicker>(nullptr));
+    ReportConnecting(CountersString(), last_failure_);
   } else if (num_transient_failure_ == size()) {
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
         << "[WRR " << wrr << "] reporting TRANSIENT_FAILURE with endpoint list "
         << this << ": " << status_for_tf;
-    if (!status_for_tf.ok()) {
-      last_failure_ = absl::UnavailableError(
-          absl::StrCat("connections to all backends failing; last error: ",
-                       status_for_tf.ToString()));
-    }
-    ReportTransientFailure(last_failure_);
+    ReportTransientFailure(
+        last_failure_.ok()
+            ? last_failure_
+            : absl::UnavailableError(absl::StrCat(
+                  "connections to all backends failing; last error: ",
+                  last_failure_.message())));
   }
 }
 

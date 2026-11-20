@@ -23,6 +23,7 @@
 
 #include <memory>
 #include <optional>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -38,6 +39,7 @@
 #include "src/core/util/work_serializer.h"
 #include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -212,6 +214,13 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
   bool AllEndpointsSeenInitialState() const {
     return num_endpoints_seen_initial_state_ == size();
   }
+
+  // Reports GRPC_CHANNEL_CONNECTING to the parent policy's helper with a
+  // picker that delegates to an endpoint in state CONNECTING (or IDLE if
+  // none are CONNECTING).  If that pick is queued, our connecting delay
+  // reason is prepended to the child's.
+  void ReportConnecting(absl::string_view counters,
+                        const absl::Status& last_failure) const;
 
  private:
   // Returns the parent policy's helper.  Needed because the accessor

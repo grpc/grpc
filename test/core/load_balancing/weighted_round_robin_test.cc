@@ -48,6 +48,7 @@
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
@@ -155,7 +156,16 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       // The subchannel will connect successfully.
       subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
       // Expect the initial CONNECTNG update with a picker that queues.
-      if (i == 0) ExpectConnectingUpdate(location);
+      if (i == 0) {
+        ExpectConnectingUpdate(
+            absl::StrCat(
+                "weighted_round_robin: connecting to endpoints (num_children=",
+                addresses.size(),
+                " num_ready=0 num_connecting=1 num_transient_failure=0): "
+                "pick_first: connecting to ",
+                addresses[0], " (subchannel 1 of 1)"),
+            LoadBalancingPolicy::kDelayTypeConnecting, location);
+      }
       subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
     }
     return WaitForConnected(location);
@@ -1095,17 +1105,37 @@ TEST_F(WeightedRoundRobinTest, MultipleAddressesPerEndpoint) {
   // In the first endpoint, the first subchannel reports CONNECTING.
   // This causes WRR to report CONNECTING.
   subchannel1_0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-  ExpectConnectingUpdate();
+  ExpectConnectingUpdate(absl::StrCat(
+      "weighted_round_robin: connecting to endpoints (num_children=3 "
+      "num_ready=0 num_connecting=1 num_transient_failure=0): pick_first: "
+      "connecting to ",
+      kEndpoint1Addresses[0], " (subchannel 1 of 2)"));
   // In the second endpoint, the first subchannel reports CONNECTING.
   subchannel2_0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectConnectingUpdate(absl::StrCat(
+      "weighted_round_robin: connecting to endpoints (num_children=3 "
+      "num_ready=0 num_connecting=2 num_transient_failure=0): pick_first: "
+      "connecting to ",
+      kEndpoint1Addresses[0], " (subchannel 1 of 2)"));
   // In the third endpoint, the first subchannel reports CONNECTING.
   subchannel3_0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectConnectingUpdate(absl::StrCat(
+      "weighted_round_robin: connecting to endpoints (num_children=3 "
+      "num_ready=0 num_connecting=3 num_transient_failure=0): pick_first: "
+      "connecting to ",
+      kEndpoint1Addresses[0], " (subchannel 1 of 2)"));
   // In the first endpoint, the first subchannel fails to connect.
   // This causes PF to start a connection attempt on the second subchannel.
   subchannel1_0->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                       absl::UnavailableError("ugh"));
   EXPECT_TRUE(subchannel1_1->ConnectionRequested());
   subchannel1_1->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectConnectingUpdate(absl::StrCat(
+      "weighted_round_robin: connecting to endpoints (num_children=3 "
+      "num_ready=0 num_connecting=3 num_transient_failure=0): pick_first: "
+      "connecting to ",
+      kEndpoint1Addresses[1],
+      " (subchannel 2 of 2); last attempt failure: UNAVAILABLE: ugh"));
   // In the second endpoint, the first subchannel becomes connected.
   // This causes WRR to report READY with all RPCs going to a single address.
   subchannel2_0->SetConnectivityState(GRPC_CHANNEL_READY);
@@ -1359,6 +1389,60 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
   EXPECT_THAT(stats_plugin->GetUInt64CounterValue(
                   kEndpointWeightStale, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(3));
+}
+
+TEST_F(WeightedRoundRobinTest, ConnectingDelayReason) {
+  const std::array<absl::string_view, 2> kAddresses = {"ipv4:127.0.0.1:441",
+                                                       "ipv4:127.0.0.1:442"};
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build()),
+                        lb_policy()),
+            absl::OkStatus());
+  auto* subchannel0 = FindSubchannel(kAddresses[0]);
+  ASSERT_NE(subchannel0, nullptr);
+  auto* subchannel1 = FindSubchannel(kAddresses[1]);
+  ASSERT_NE(subchannel1, nullptr);
+  EXPECT_TRUE(subchannel0->ConnectionRequested());
+  EXPECT_TRUE(subchannel1->ConnectionRequested());
+  // 1. Both connecting.
+  subchannel0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectConnectingUpdate(absl::StrCat(
+      "weighted_round_robin: connecting to endpoints (num_children=2 "
+      "num_ready=0 num_connecting=1 num_transient_failure=0): pick_first: "
+      "connecting to ",
+      kAddresses[0], " (subchannel 1 of 1)"));
+  subchannel1->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectConnectingUpdate(absl::StrCat(
+      "weighted_round_robin: connecting to endpoints (num_children=2 "
+      "num_ready=0 num_connecting=2 num_transient_failure=0): pick_first: "
+      "connecting to ",
+      kAddresses[0], " (subchannel 1 of 1)"));
+  // 2. First is IDLE, second is CONNECTING; WRR prefers CONNECTING second.
+  subchannel0->SetConnectivityState(GRPC_CHANNEL_READY);
+  WaitForConnected();
+  subchannel0->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  ExpectReresolutionRequest();
+  EXPECT_TRUE(subchannel0->ConnectionRequested());
+  ExpectConnectingUpdate(absl::StrCat(
+      "weighted_round_robin: connecting to endpoints (num_children=2 "
+      "num_ready=0 num_connecting=2 num_transient_failure=0): pick_first: "
+      "connecting to ",
+      kAddresses[1], " (subchannel 1 of 1)"));
+  // 3. Second fails while first is IDLE; WRR reports IDLE fallback, then
+  // CONNECTING as first reconnects, both with last_failure_.
+  subchannel1->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                    absl::UnavailableError("sc1 failed"));
+  ExpectReresolutionRequest();
+  ExpectConnectingUpdate(
+      "weighted_round_robin: connecting to endpoints (num_children=2 "
+      "num_ready=0 num_connecting=1 num_transient_failure=1; last failure: "
+      "UNAVAILABLE: sc1 failed): pick_first: connection closed; waiting for "
+      "exit-idle signal to reconnect");
+  subchannel0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectConnectingUpdate(absl::StrCat(
+      "weighted_round_robin: connecting to endpoints (num_children=2 "
+      "num_ready=0 num_connecting=1 num_transient_failure=1; last failure: "
+      "UNAVAILABLE: sc1 failed): pick_first: connecting to ",
+      kAddresses[0], " (subchannel 1 of 1)"));
 }
 
 }  // namespace

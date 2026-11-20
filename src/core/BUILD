@@ -4259,6 +4259,7 @@ grpc_cc_library(
         "dual_ref_counted",
         "error",
         "grpc_backend_metric_data",
+        "grpc_check",
         "iomgr_fwd",
         "metrics",
         "pollset_set",
@@ -8179,6 +8180,7 @@ grpc_cc_library(
         "absl/random",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
     ],
     deps = [
         "channel_args",

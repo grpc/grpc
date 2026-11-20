@@ -48,6 +48,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
@@ -60,6 +61,12 @@ using ::google::cloud::autosharding::v1::WatchShardingAssignmentResponse;
 using ::testing::AnyOf;
 
 constexpr absl::string_view kChannelFactoryKey = "sharding_service";
+constexpr absl::string_view kDelayTypeAssignmentPending =
+    "autosharding_assignment_pending";
+constexpr absl::string_view kDelayReasonWaitingForAssignment =
+    "autosharding: waiting for initial sharding assignment";
+constexpr absl::string_view kDelayReasonNoChildPicker =
+    "autosharding: child policy has not yet returned a picker";
 
 class FakeServerTarget final : public XdsBootstrap::XdsServerTarget {
  public:
@@ -276,8 +283,9 @@ TEST_F(AutoShardingTest, ServerSentEmptySliceDisablesFallback) {
                       ConfigBuilder().SetEnableFallback(true).Build(), args),
           lb_policy()),
       absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   // Server sends ["", "m") to the first endpoint and ["m", +inf) with no
   // endpoints.
   SendAssignment({{"m", {0}}, {"", {}}}, {EndpointName(kAddresses[0])});
@@ -295,14 +303,20 @@ TEST_F(AutoShardingTest, ServerSentEmptySliceDisablesFallback) {
       /*call_attributes=*/{}, MakeMetadata("z"));
   // A key in the first slice triggers a connection attempt on the endpoint
   // assigned to it, and picks complete to that endpoint once it is READY.
-  ExpectPickQueued(picker.get(), {}, MakeMetadata("a"));
+  ExpectPickQueued(picker.get(), kDelayReasonNoChildPicker,
+                   LoadBalancingPolicy::kDelayTypeConnecting, {},
+                   MakeMetadata("a"));
   SubchannelState* subchannel = FindSubchannel(kAddresses[0], args);
   ASSERT_NE(subchannel, nullptr);
   // The other endpoint is not assigned to any slice, so it is not used.
   EXPECT_EQ(FindSubchannel(kAddresses[1], args), nullptr);
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                              MakeMetadata("a"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_CONNECTING,
+      absl::StrCat("autosharding: pick_first: connecting to ", kAddresses[0],
+                   " (subchannel 1 of 1)"),
+      LoadBalancingPolicy::kDelayTypeConnecting, absl::OkStatus(),
+      MakeMetadata("a"));
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   picker = ExpectState(GRPC_CHANNEL_READY);
   auto address = ExpectPickComplete(picker.get(), {}, MakeMetadata("a"));
@@ -317,14 +331,17 @@ TEST_F(AutoShardingTest, GapUsesFallbackPool) {
                       ConfigBuilder().SetEnableFallback(true).Build(), args),
           lb_policy()),
       absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   // The assignment covers only ["", "m"); the rest of the keyspace is a gap.
   SendAssignment({{"m", {0}}}, {EndpointName(kAddresses[0])});
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   // A key in the gap uses the fallback pool, so it queues a connection
   // attempt instead of failing.
-  ExpectPickQueued(picker.get(), {}, MakeMetadata("z"));
+  ExpectPickQueued(picker.get(), kDelayReasonNoChildPicker,
+                   LoadBalancingPolicy::kDelayTypeConnecting, {},
+                   MakeMetadata("z"));
   // The pick creates exactly one subchannel, and requests a connection on it.
   std::vector<SubchannelState*> subchannels;
   for (absl::string_view address : kAddresses) {
@@ -340,8 +357,9 @@ TEST_F(AutoShardingTest, GapFailsWhenFallbackDisabled) {
                                     MakeChannelArgs()),
                         lb_policy()),
             absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   SendAssignment({{"m", {0}}}, {EndpointName(kAddresses[0])});
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   ExpectPickFail(
@@ -361,8 +379,9 @@ TEST_F(AutoShardingTest, StartupFallback) {
           lb_policy()),
       absl::OkStatus());
   // Before the stream fails, picks are queued without creating subchannels.
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   for (absl::string_view address : kAddresses) {
     EXPECT_EQ(FindSubchannel(address, args), nullptr);
   }
@@ -372,8 +391,9 @@ TEST_F(AutoShardingTest, StartupFallback) {
   ASSERT_NE(stream, nullptr);
   stream->MaybeSendStatusToClient(absl::UnavailableError("stream failed"));
   // The pick should trigger a connection attempt on exactly one endpoint.
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, kDelayReasonNoChildPicker,
+                              LoadBalancingPolicy::kDelayTypeConnecting,
+                              absl::OkStatus(), MakeMetadata("some_key"));
   SubchannelState* subchannel = nullptr;
   for (absl::string_view address : kAddresses) {
     subchannel = FindSubchannel(address, args);
@@ -402,8 +422,9 @@ TEST_F(AutoShardingTest, FallbackDisabledQueuesPicksUntilAssignmentTimeout) {
             absl::OkStatus());
   // Before the initial assignment timer fires, we have no result yet, so
   // picks are queued in IDLE.
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   // When the initial assignment timer fires without an assignment, picks
   // fail, because fallback is disabled.
   IncrementTimeBy(Duration::Seconds(2));
@@ -421,8 +442,9 @@ TEST_F(AutoShardingTest, StreamFailureFailsPicksWhenFallbackDisabled) {
                                     MakeChannelArgs()),
                         lb_policy()),
             absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   // When the stream fails before a valid assignment, picks fail with the
   // stream status, because fallback is disabled.
   auto stream = WaitForStream();
@@ -444,8 +466,9 @@ TEST_F(AutoShardingTest, ResolutionNotePropagatedOnFallbackDisabled) {
       BuildUpdate(kAddresses, ConfigBuilder().Build(), MakeChannelArgs());
   update.resolution_note = "DNS resolution note";
   EXPECT_EQ(ApplyUpdate(std::move(update), lb_policy()), absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   IncrementTimeBy(Duration::Seconds(2));
   const absl::Status kTimeout = absl::UnavailableError(
       "timed out waiting for initial assignment from autosharding server "
@@ -466,8 +489,9 @@ TEST_F(AutoShardingTest, TargetChangeRecreatesClient) {
                       args),
           lb_policy()),
       absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   SendAssignment({{"m", {0}}, {"", {}}}, {EndpointName(kAddresses[0])});
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   ExpectPickFail(
@@ -510,8 +534,9 @@ TEST_F(AutoShardingTest, TargetChangeRecreatesClient) {
   // A new assignment from the new client replaces the old one.  The new
   // client starts again at generation 0, so it accepts generation 1.
   SendAssignment({{"", {0}}}, {EndpointName(kAddresses[1])}, 1);
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("z"));
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, kDelayReasonNoChildPicker,
+                              LoadBalancingPolicy::kDelayTypeConnecting,
+                              absl::OkStatus(), MakeMetadata("z"));
 }
 
 TEST_F(AutoShardingTest, LocalitySubstitutedIntoTarget) {
@@ -526,8 +551,9 @@ TEST_F(AutoShardingTest, LocalitySubstitutedIntoTarget) {
               args),
           lb_policy()),
       absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   auto stream = WaitForStream();
   ASSERT_NE(stream, nullptr);
   EXPECT_THAT(ReadRequest(stream.get()), IsInitialClientConfig("svc//tail/%s"));
@@ -543,8 +569,9 @@ TEST_F(AutoShardingTest, LocalitySubstitutedIntoTarget) {
               args_us_east),
           lb_policy()),
       absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   EXPECT_EQ(factory_->num_create_channels(), 2);
   EXPECT_TRUE(stream->IsOrphaned());
   stream = WaitForStream();
@@ -561,8 +588,9 @@ TEST_F(AutoShardingTest, LocalitySubstitutedIntoTarget) {
               args_eu_west),
           lb_policy()),
       absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   EXPECT_EQ(factory_->num_create_channels(), 3);
   EXPECT_TRUE(stream->IsOrphaned());
   stream = WaitForStream();
@@ -579,8 +607,9 @@ TEST_F(AutoShardingTest, ChannelRecreatedWhenFactoryKeyChanges) {
                     ConfigBuilder().SetChannelFactoryKey("key1").Build(), args),
                 lb_policy()),
             absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   SendAssignment({{"m", {0}}, {"", {}}}, {EndpointName(kAddresses[0])}, 1,
                  "key1");
   auto stream = WaitForStream("key1");
@@ -650,8 +679,9 @@ TEST_F(AutoShardingTest, NoChannelFactoryKeepsExistingClient) {
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
                         lb_policy()),
             absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   SendAssignment({{"", {0}}}, {EndpointName(kAddresses[0])});
   auto stream = WaitForStream();
   ASSERT_NE(stream, nullptr);
@@ -664,8 +694,9 @@ TEST_F(AutoShardingTest, NoChannelFactoryKeepsExistingClient) {
   EXPECT_FALSE(stream->IsOrphaned());
   EXPECT_EQ(WaitForStream(), stream);
   // The kept client's assignment routes the pick to the assigned endpoint.
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("a"));
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, kDelayReasonNoChildPicker,
+                              LoadBalancingPolicy::kDelayTypeConnecting,
+                              absl::OkStatus(), MakeMetadata("a"));
   // The last update has no channel factory, so the subchannel uses the
   // default channel args.
   SubchannelState* subchannel = FindSubchannel(kAddresses[0]);
@@ -683,8 +714,9 @@ TEST_F(AutoShardingTest,
                       ConfigBuilder().SetEnableFallback(true).Build(), args),
           lb_policy()),
       absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   SendAssignment({{"m", {0}}, {"", {}}}, {EndpointName(kAddresses[0])});
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   // A key in the slice with no endpoints fails.
@@ -726,8 +758,9 @@ TEST_F(AutoShardingTest,
   auto stream2 = WaitForStream();
   ASSERT_NE(stream2, nullptr);
   EXPECT_NE(stream2, stream);
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("z"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("z"));
 }
 
 TEST_F(AutoShardingTest, ChannelFactoryAddedLaterCreatesClient) {
@@ -747,13 +780,15 @@ TEST_F(AutoShardingTest, ChannelFactoryAddedLaterCreatesClient) {
             absl::OkStatus());
   EXPECT_EQ(factory_->num_create_channels(), 1);
   EXPECT_NE(WaitForStream(), nullptr);
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   // The new client reports its assignment, which routes the pick to the
   // assigned endpoint.
   SendAssignment({{"", {0}}}, {EndpointName(kAddresses[0])});
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("a"));
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, kDelayReasonNoChildPicker,
+                              LoadBalancingPolicy::kDelayTypeConnecting,
+                              absl::OkStatus(), MakeMetadata("a"));
   SubchannelState* subchannel = FindSubchannel(kAddresses[0], args);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
@@ -765,8 +800,9 @@ TEST_F(AutoShardingTest, SameConfigUpdateKeepsClient) {
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
                         lb_policy()),
             absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   SendAssignment({{"", {0}}}, {EndpointName(kAddresses[0])});
   auto stream = WaitForStream();
   ASSERT_NE(stream, nullptr);
@@ -777,8 +813,9 @@ TEST_F(AutoShardingTest, SameConfigUpdateKeepsClient) {
   EXPECT_EQ(factory_->num_create_channels(), 1);
   EXPECT_FALSE(stream->IsOrphaned());
   EXPECT_EQ(WaitForStream(), stream);
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("a"));
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, kDelayReasonNoChildPicker,
+                              LoadBalancingPolicy::kDelayTypeConnecting,
+                              absl::OkStatus(), MakeMetadata("a"));
   SubchannelState* subchannel = FindSubchannel(kAddresses[0], args);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
@@ -795,15 +832,17 @@ TEST_F(AutoShardingTest, InitialAssignmentTimeoutUsesFallbackWhenEnabled) {
       absl::OkStatus());
   // Until the client reports a result, picks are queued in IDLE even though
   // fallback is enabled.
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   for (absl::string_view address : kAddresses) {
     EXPECT_EQ(FindSubchannel(address, args), nullptr);
   }
   // When the initial assignment timer fires, picks use the fallback pool.
   IncrementTimeBy(Duration::Seconds(2));
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, kDelayReasonNoChildPicker,
+                              LoadBalancingPolicy::kDelayTypeConnecting,
+                              absl::OkStatus(), MakeMetadata("some_key"));
   SubchannelState* subchannel = nullptr;
   for (absl::string_view address : kAddresses) {
     subchannel = FindSubchannel(address, args);
@@ -820,8 +859,9 @@ TEST_F(AutoShardingTest, EndpointUpdateRebuildsSliceMap) {
       ApplyUpdate(BuildUpdate(kFirstAddress, ConfigBuilder().Build(), args),
                   lb_policy()),
       absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   // The assignment uses the second address, which the resolver does not
   // report yet.
   SendAssignment({{"", {0}}}, {EndpointName(kAddresses[1])});
@@ -837,8 +877,9 @@ TEST_F(AutoShardingTest, EndpointUpdateRebuildsSliceMap) {
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
                         lb_policy()),
             absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("a"));
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, kDelayReasonNoChildPicker,
+                              LoadBalancingPolicy::kDelayTypeConnecting,
+                              absl::OkStatus(), MakeMetadata("a"));
   SubchannelState* subchannel = FindSubchannel(kAddresses[1], args);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
@@ -850,8 +891,9 @@ TEST_F(AutoShardingTest, EndpointReorderAndRemovalRebuildSliceMap) {
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
                         lb_policy()),
             absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   // Route all keys to kAddresses[1] (initially index 1).
   SendAssignment({{"", {0}}}, {EndpointName(kAddresses[1])});
   ExpectState(GRPC_CHANNEL_IDLE);
@@ -862,8 +904,9 @@ TEST_F(AutoShardingTest, EndpointReorderAndRemovalRebuildSliceMap) {
                 BuildUpdate(kReversedAddresses, ConfigBuilder().Build(), args),
                 lb_policy()),
             absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("a"));
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, kDelayReasonNoChildPicker,
+                              LoadBalancingPolicy::kDelayTypeConnecting,
+                              absl::OkStatus(), MakeMetadata("a"));
   SubchannelState* subchannel = FindSubchannel(kAddresses[1], args);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
@@ -874,8 +917,9 @@ TEST_F(AutoShardingTest, EndpointReorderAndRemovalRebuildSliceMap) {
                         lb_policy()),
             absl::OkStatus());
   // Picks still go to kAddresses[1], so they do not touch kAddresses[0].
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("a"));
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, kDelayReasonNoChildPicker,
+                              LoadBalancingPolicy::kDelayTypeConnecting,
+                              absl::OkStatus(), MakeMetadata("a"));
   EXPECT_EQ(FindSubchannel(kAddresses[0], args), nullptr);
   constexpr std::array<absl::string_view, 1> kFirstAddress = {kAddresses[0]};
   EXPECT_EQ(
@@ -899,13 +943,15 @@ TEST_F(AutoShardingTest, AssignedEndpointMissingFromResolverUsesFallback) {
                       ConfigBuilder().SetEnableFallback(true).Build(), args),
           lb_policy()),
       absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   // The resolver does not know the assigned endpoint.  This is not a
   // server-sent empty slice, so fallback stays enabled for it.
   SendAssignment({{"", {0}}}, {"10.0.0.1:443"});
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("a"));
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, kDelayReasonNoChildPicker,
+                              LoadBalancingPolicy::kDelayTypeConnecting,
+                              absl::OkStatus(), MakeMetadata("a"));
   SubchannelState* subchannel = nullptr;
   for (absl::string_view address : kAddresses) {
     subchannel = FindSubchannel(address, args);
@@ -920,8 +966,9 @@ TEST_F(AutoShardingTest, AssignedEndpointMissingFromResolverFails) {
                                     MakeChannelArgs()),
                         lb_policy()),
             absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   SendAssignment({{"", {0}}}, {"10.0.0.1:443"});
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   ExpectPickFail(
@@ -940,8 +987,9 @@ TEST_F(AutoShardingTest, MissingKeyHeaderDropsPick) {
                       ConfigBuilder().SetEnableFallback(true).Build(), args),
           lb_policy()),
       absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   auto stream = WaitForStream();
   ASSERT_NE(stream, nullptr);
   stream->MaybeSendStatusToClient(absl::UnavailableError("stream failed"));
@@ -969,8 +1017,9 @@ TEST_F(AutoShardingTest,
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
                         lb_policy()),
             absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   // The server sends ["", "m") to the first endpoint and ["m", +inf) with no
   // endpoints.
   SendAssignment({{"m", {0}}, {"", {}}}, {EndpointName(kAddresses[0])});
@@ -1002,8 +1051,9 @@ TEST_F(AutoShardingTest,
   auto stream2 = WaitForStream();
   ASSERT_NE(stream2, nullptr);
   EXPECT_NE(stream2, stream);
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("z"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("z"));
   ExpectQueueEmpty();
 }
 
@@ -1022,22 +1072,28 @@ TEST_F(AutoShardingTest, EndpointsWithDuplicateHostnames) {
                       ConfigBuilder().SetEnableFallback(true).Build(), args),
           lb_policy()),
       absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   auto stream = WaitForStream();
   ASSERT_NE(stream, nullptr);
   stream->MaybeSendStatusToClient(absl::UnavailableError("stream failed"));
   // The pick should trigger a connection attempt on the endpoint that won
   // (the one with index 0).
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, kDelayReasonNoChildPicker,
+                              LoadBalancingPolicy::kDelayTypeConnecting,
+                              absl::OkStatus(), MakeMetadata("some_key"));
   EXPECT_EQ(FindSubchannel(kAddresses[1], args), nullptr);
   auto* subchannel = FindSubchannel(kAddresses[0], args);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_CONNECTING,
+      absl::StrCat("autosharding: pick_first: connecting to ", kAddresses[0],
+                   " (subchannel 1 of 1)"),
+      LoadBalancingPolicy::kDelayTypeConnecting, absl::OkStatus(),
+      MakeMetadata("some_key"));
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   auto picker = ExpectState(GRPC_CHANNEL_READY);
   auto address = ExpectPickComplete(picker.get(), {}, MakeMetadata("some_key"));
@@ -1055,19 +1111,25 @@ TEST_F(AutoShardingTest, RetainsEndpointForHostnameAcrossUpdates) {
                       ConfigBuilder().SetEnableFallback(true).Build(), args),
           lb_policy()),
       absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   auto stream = WaitForStream();
   ASSERT_NE(stream, nullptr);
   stream->MaybeSendStatusToClient(absl::UnavailableError("stream failed"));
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, kDelayReasonNoChildPicker,
+                              LoadBalancingPolicy::kDelayTypeConnecting,
+                              absl::OkStatus(), MakeMetadata("some_key"));
   auto* subchannel = FindSubchannel(kAddresses[0], args);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_CONNECTING,
+      absl::StrCat("autosharding: pick_first: connecting to ", kAddresses[0],
+                   " (subchannel 1 of 1)"),
+      LoadBalancingPolicy::kDelayTypeConnecting, absl::OkStatus(),
+      MakeMetadata("some_key"));
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   auto picker = ExpectState(GRPC_CHANNEL_READY);
   EXPECT_THAT(ExpectPickComplete(picker.get(), {}, MakeMetadata("some_key")),
@@ -1103,13 +1165,15 @@ TEST_F(AutoShardingTest, EmptyKeyHeaderValueIsValidKey) {
                       ConfigBuilder().SetEnableFallback(true).Build(), args),
           lb_policy()),
       absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   auto stream = WaitForStream();
   ASSERT_NE(stream, nullptr);
   stream->MaybeSendStatusToClient(absl::UnavailableError("stream failed"));
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata(""));
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, kDelayReasonNoChildPicker,
+                              LoadBalancingPolicy::kDelayTypeConnecting,
+                              absl::OkStatus(), MakeMetadata(""));
 }
 
 TEST_F(AutoShardingTest, SameAddressListedMultipleTimes) {
@@ -1122,13 +1186,16 @@ TEST_F(AutoShardingTest, SameAddressListedMultipleTimes) {
                       ConfigBuilder().SetEnableFallback(true).Build(), args),
           lb_policy()),
       absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   auto stream = WaitForStream();
   ASSERT_NE(stream, nullptr);
   stream->MaybeSendStatusToClient(absl::UnavailableError("stream failed"));
   const auto metadata = MakeMetadata("some_key");
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(), metadata);
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, kDelayReasonNoChildPicker,
+                              LoadBalancingPolicy::kDelayTypeConnecting,
+                              absl::OkStatus(), metadata);
   SubchannelState* subchannel = nullptr;
   for (absl::string_view address : kAddresses) {
     subchannel = FindSubchannel(address, args);
@@ -1158,13 +1225,16 @@ TEST_F(AutoShardingTest, MultipleAddressesPerEndpoint) {
                       ConfigBuilder().SetEnableFallback(true).Build(), args),
           lb_policy()),
       absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   auto stream = WaitForStream();
   ASSERT_NE(stream, nullptr);
   stream->MaybeSendStatusToClient(absl::UnavailableError("stream failed"));
   const auto metadata = MakeMetadata("some_key");
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(), metadata);
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, kDelayReasonNoChildPicker,
+                              LoadBalancingPolicy::kDelayTypeConnecting,
+                              absl::OkStatus(), metadata);
   SubchannelState* subchannel = nullptr;
   for (absl::string_view address :
        {kEndpoint1Addresses[0], kEndpoint1Addresses[1], kEndpoint2Addresses[0],
@@ -1174,8 +1244,11 @@ TEST_F(AutoShardingTest, MultipleAddressesPerEndpoint) {
   }
   ASSERT_NE(subchannel, nullptr);
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                              metadata);
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_CONNECTING,
+      absl::StrCat("autosharding: pick_first: connecting to ",
+                   subchannel->address(), " (subchannel 1 of 2)"),
+      LoadBalancingPolicy::kDelayTypeConnecting, absl::OkStatus(), metadata);
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   auto picker = ExpectState(GRPC_CHANNEL_READY);
   auto address = ExpectPickComplete(picker.get(), {}, metadata);
@@ -1198,13 +1271,15 @@ TEST_F(AutoShardingTest,
                       ConfigBuilder().SetEnableFallback(true).Build(), args),
           lb_policy()),
       absl::OkStatus());
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, kDelayReasonWaitingForAssignment,
+      kDelayTypeAssignmentPending, absl::OkStatus(), MakeMetadata("some_key"));
   auto stream = WaitForStream();
   ASSERT_NE(stream, nullptr);
   stream->MaybeSendStatusToClient(absl::UnavailableError("stream failed"));
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                              MakeMetadata("some_key"));
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, kDelayReasonNoChildPicker,
+                              LoadBalancingPolicy::kDelayTypeConnecting,
+                              absl::OkStatus(), MakeMetadata("some_key"));
   SubchannelState* subchannel0 = nullptr;
   for (size_t i = 0; i < subchannels.size(); ++i) {
     if (subchannels[i]->ConnectionRequested()) {
