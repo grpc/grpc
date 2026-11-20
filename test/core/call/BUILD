@@ -45,11 +45,17 @@ grpc_fuzz_test(
     ],
     deps = [
         "batch_builder",
+        "//:call_tracer",
         "//:debug_location",
         "//:grpc_base",
+        "//:ref_counted_ptr",
         "//src/core:arena",
         "//src/core:metadata",
+        "//src/core:metrics",
+        "//src/core:slice",
+        "//src/core:time",
         "//test/core/call/yodel:yodel_test",
+        "//test/core/test_util:fake_stats_plugin",
     ],
 )
 
@@ -152,6 +158,7 @@ grpc_cc_benchmark(
         "//src/core:default_event_engine",
         "//src/core:event_engine_context",
         "//src/core:map",
+        "//src/core:metrics",
         "//src/core:resource_quota",
         "//src/core:slice",
     ],

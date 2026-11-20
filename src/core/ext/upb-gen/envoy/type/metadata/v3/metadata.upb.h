@@ -228,6 +228,7 @@ UPB_INLINE char* envoy_type_metadata_v3_MetadataKey_PathSegment_serialize_ex(con
 }
 typedef enum {
   envoy_type_metadata_v3_MetadataKey_PathSegment_segment_key = 1,
+  envoy_type_metadata_v3_MetadataKey_PathSegment_segment_index = 2,
   envoy_type_metadata_v3_MetadataKey_PathSegment_segment_NOT_SET = 0
 } envoy_type_metadata_v3_MetadataKey_PathSegment_segment_oneofcases;
 
@@ -257,9 +258,29 @@ UPB_INLINE bool envoy_type_metadata_v3_MetadataKey_PathSegment_has_key(const env
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_type_metadata_v3_MetadataKey_PathSegment_clear_index(envoy_type_metadata_v3_MetadataKey_PathSegment* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE uint32_t envoy_type_metadata_v3_MetadataKey_PathSegment_index(const envoy_type_metadata_v3_MetadataKey_PathSegment* msg) {
+  uint32_t default_val = (uint32_t)0u;
+  uint32_t ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_type_metadata_v3_MetadataKey_PathSegment_has_index(const envoy_type_metadata_v3_MetadataKey_PathSegment* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
 
 UPB_INLINE void envoy_type_metadata_v3_MetadataKey_PathSegment_set_key(envoy_type_metadata_v3_MetadataKey_PathSegment* msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
+}
+UPB_INLINE void envoy_type_metadata_v3_MetadataKey_PathSegment_set_index(envoy_type_metadata_v3_MetadataKey_PathSegment* msg, uint32_t value) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 

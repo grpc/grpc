@@ -16,6 +16,8 @@
 
 #include <grpc/grpc.h>
 
+#include <cstdint>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -278,5 +280,72 @@ TEST(ZTraceCollectorTest, ExhaustionTest) {
   }
   grpc_shutdown();
 }
+
+struct MemoryCapTestScenario {
+  int64_t memory_cap;
+  bool should_have_trace;
+
+  friend std::ostream& operator<<(std::ostream& os,
+                                  const MemoryCapTestScenario& scenario) {
+    return os << "{memory_cap=" << scenario.memory_cap
+              << ", should_have_trace=" << scenario.should_have_trace << "}";
+  }
+};
+
+class ZTraceCollectorMemoryCapTest
+    : public ::testing::TestWithParam<MemoryCapTestScenario> {};
+
+TEST_P(ZTraceCollectorMemoryCapTest, SingleTraceWorks) {
+  grpc_init();
+  ZTraceCollector<TestConfig, TestData> collector;
+  Notification n;
+  std::vector<std::string> result;
+  auto deadline = Timestamp::Now() + Duration::Milliseconds(100);
+  auto ztrace = collector.MakeZTrace();
+  const MemoryCapTestScenario& param = GetParam();
+  ztrace->Run({{"memory_cap", param.memory_cap},
+               {"test_arg", std::string("test_value")}},
+              grpc_event_engine::experimental::GetDefaultEventEngine(),
+              [&n, &result](absl::StatusOr<std::optional<std::string>> r) {
+                if (!r.ok()) {
+                  n.Notify();
+                  return;
+                }
+                if (!r->has_value()) {
+                  n.Notify();
+                  return;
+                }
+                result.push_back(std::move(**r));
+              });
+  int i = 0;
+  while (Timestamp::Now() < deadline && !n.HasBeenNotified()) {
+    collector.Append(TestData{1000 + i});
+    i++;
+  }
+  ztrace.reset();
+  n.WaitForNotification();
+  if (param.should_have_trace) {
+    ValidateSimpleTrace(result, i);
+  } else {
+    int num_events_matched = 0;
+    for (const auto& entry : result) {
+      grpc::channelz::v2::QueryTraceResponse response;
+      ASSERT_TRUE(response.ParseFromString(entry));
+      num_events_matched += response.num_events_matched();
+    }
+    EXPECT_EQ(num_events_matched, 0);
+  }
+  grpc_shutdown();
+}
+
+INSTANTIATE_TEST_SUITE_P(MemoryCapScenarios, ZTraceCollectorMemoryCapTest,
+                         ::testing::ValuesIn(std::vector<MemoryCapTestScenario>{
+                             {1024 * 1024, true},
+                             {0, false},
+                             {1, false},
+                             {-1, false},
+                             {std::numeric_limits<int64_t>::max(), true},
+                             {std::numeric_limits<int64_t>::min(), false},
+                         }));
 
 }  // namespace grpc_core::channelz

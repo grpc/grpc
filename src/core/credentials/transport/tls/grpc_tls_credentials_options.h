@@ -72,7 +72,8 @@ struct grpc_tls_credentials_options
     return nullptr;
   }
   const std::optional<std::string>& sni_override() const { return sni_override_; }
-  std::vector<grpc_tls_key_exchange_group> key_exchange_groups() const { return key_exchange_groups_; }
+  const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups() const { return key_exchange_groups_; }
+  const std::vector<grpc_tls_signature_algorithm>& signature_algorithms() const { return signature_algorithms_; }
   const std::string& exported_keying_material_label() const { return exported_keying_material_label_; }
   size_t exported_keying_material_length() const { return exported_keying_material_length_; }
 
@@ -97,6 +98,7 @@ struct grpc_tls_credentials_options
   // If set to nullopt, do not override. If set to empty string, disable sending SNI. Otherwise, override SNI
   void set_sni_override(std::optional<std::string> sni_override) { sni_override_ = std::move(sni_override); }
   void set_key_exchange_groups(std::vector<grpc_tls_key_exchange_group> key_exchange_groups) { key_exchange_groups_ = std::move(key_exchange_groups); }
+  void set_signature_algorithms(std::vector<grpc_tls_signature_algorithm> signature_algorithms) { signature_algorithms_ = std::move(signature_algorithms); }
   void set_exported_keying_material_label(std::string exported_keying_material_label) { exported_keying_material_label_ = std::move(exported_keying_material_label); }
   void set_exported_keying_material_length(size_t exported_keying_material_length) { exported_keying_material_length_ = exported_keying_material_length; }
 
@@ -117,6 +119,7 @@ struct grpc_tls_credentials_options
       (root_certificate_provider_ == other.root_certificate_provider_ || (root_certificate_provider_ != nullptr && other.root_certificate_provider_ != nullptr && root_certificate_provider_->Compare(other.root_certificate_provider_.get()) == 0)) &&
       sni_override_ == other.sni_override_ &&
       key_exchange_groups_ == other.key_exchange_groups_ &&
+      signature_algorithms_ == other.signature_algorithms_ &&
       exported_keying_material_label_ == other.exported_keying_material_label_ &&
       exported_keying_material_length_ == other.exported_keying_material_length_;
   }
@@ -138,6 +141,7 @@ struct grpc_tls_credentials_options
       root_certificate_provider_(other.root_certificate_provider_),
       sni_override_(other.sni_override_),
       key_exchange_groups_(other.key_exchange_groups_),
+      signature_algorithms_(other.signature_algorithms_),
       exported_keying_material_label_(other.exported_keying_material_label_),
       exported_keying_material_length_(other.exported_keying_material_length_)  {}
 
@@ -158,6 +162,7 @@ struct grpc_tls_credentials_options
   grpc_core::RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider_;
   std::optional<std::string> sni_override_;
   std::vector<grpc_tls_key_exchange_group> key_exchange_groups_;
+  std::vector<grpc_tls_signature_algorithm> signature_algorithms_;
   std::string exported_keying_material_label_;
   size_t exported_keying_material_length_ = 0;
 };

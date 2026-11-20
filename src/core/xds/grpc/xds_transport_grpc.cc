@@ -72,12 +72,18 @@ GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   Timestamp deadline = (timeout == Duration::Infinity())
                            ? Timestamp::InfFuture()
                            : Timestamp::Now() + timeout;
-  // Create call.
+  // Create call.  The parent tracing context, if any, is set on the new
+  // call's arena before the call's tracers are created, so that they see it
+  // as their parent.
   call_ = channel_->channel()->CreateCall(
       /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/nullptr,
       channel_->interested_parties(), Slice::FromStaticString(method),
       /*authority=*/std::nullopt, deadline,
-      /*registered_method=*/true, /*arena_init_function=*/std::nullopt);
+      /*registered_method=*/true, [&](Arena* arena) {
+        if (options_.parent_census_context != nullptr) {
+          arena->SetContext<census_context>(options_.parent_census_context);
+        }
+      });
   GRPC_CHECK_NE(call_, nullptr);
   // Set call creds, if any.
   if (call_creds != nullptr) grpc_call_set_credentials(call_, call_creds);
