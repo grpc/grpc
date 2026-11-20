@@ -1816,13 +1816,12 @@ absl::Status Server::LegacyAddConnection(
       std::move(transport), accepting_pollset, args);
 }
 
-// TODO(roth): When the vrpc code goes away, remove the
-// channel_stack_type argument.
 absl::StatusOr<OrphanablePtr<ServerTransport>>
 Server::SetupCallLinkageForTransport(
     Connection* connection, OrphanablePtr<Transport> transport,
     grpc_pollset* accepting_pollset, const ChannelArgs& args) {
   global_stats().IncrementServerChannelsCreated();
+  auto socket_node = transport->GetSocketNode();  // Will be used below
   OrphanablePtr<ServerTransport> owned_transport;
   if (transport->server_transport() != nullptr) {
     // Take ownership.
@@ -1873,9 +1872,7 @@ Server::SetupCallLinkageForTransport(
   }
   stream_quota_->IncrementOpenChannels();
   // Setup channelz node.
-  if (auto socket_node = transport->GetSocketNode(); socket_node != nullptr) {
-    socket_node->AddParent(channelz_node_.get());
-  }
+  if (socket_node != nullptr) socket_node->AddParent(channelz_node_.get());
   return owned_transport;
 }
 
