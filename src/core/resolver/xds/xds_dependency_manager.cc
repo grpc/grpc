@@ -450,11 +450,7 @@ void XdsDependencyManager::OnRouteConfigUpdate(
                                      << (name.empty() ? "<inline>" : name);
   if (xds_client_ == nullptr) return;
   // Ignore updates for stale names.
-  if (name.empty()) {
-    if (!route_config_name_.empty()) return;
-  } else {
-    if (name != route_config_name_) return;
-  }
+  if (name != route_config_name_) return;
   if (!route_config.ok()) {
     current_virtual_host_ = nullptr;
     ReportError(route_config_name_.empty() ? "LDS" : "RDS",
