@@ -40,12 +40,14 @@
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/metadata_info.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
@@ -55,11 +57,14 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/transport/chttp2/http2_common_test_inputs.h"
 #include "test/core/transport/chttp2/http2_frame_test_helper.h"
 #include "test/core/transport/util/transport_test.h"
@@ -68,6 +73,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -92,6 +98,39 @@ const std::vector<uint8_t> kGrpcStatusCancelled = {
 const std::vector<uint8_t> kGrpcStatusCancelledOnly = {
     0x40, 0x0b, 'g', 'r', 'p', 'c',  '-', 's',
     't',  'a',  't', 'u', 's', 0x01, '1'};
+
+#ifndef GRPC_EXPERIMENTS_ARE_FINAL
+namespace {
+
+// Overrides GRPC_EXPERIMENTS for the duration of a single test (preserving any
+// existing experiment flags) and restores defaults on destruction.
+class ScopedExperimentOverride final {
+ public:
+  explicit ScopedExperimentOverride(const absl::string_view experiments) {
+    const std::string current_experiments(ConfigVars::Get().Experiments());
+    ConfigVars::Overrides overrides;
+    overrides.experiments =
+        current_experiments.empty()
+            ? std::string(experiments)
+            : absl::StrCat(current_experiments, ",", experiments);
+    ConfigVars::SetOverrides(overrides);
+    TestOnlyReloadExperimentsFromConfigVariables();
+  }
+
+  ~ScopedExperimentOverride() {
+    ConfigVars::Reset();
+    TestOnlyReloadExperimentsFromConfigVariables();
+  }
+
+  ScopedExperimentOverride() = delete;
+  ScopedExperimentOverride(const ScopedExperimentOverride&) = delete;
+  ScopedExperimentOverride& operator=(const ScopedExperimentOverride&) = delete;
+  ScopedExperimentOverride(ScopedExperimentOverride&&) = delete;
+  ScopedExperimentOverride& operator=(ScopedExperimentOverride&&) = delete;
+};
+
+}  // namespace
+#endif  // GRPC_EXPERIMENTS_ARE_FINAL
 
 class Http2ServerTransportTest : public Http2TransportTest {
  public:
@@ -3238,6 +3277,230 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportRecordsStats) {
   AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/1u);
   teardown_step->Wait();
 }
+
+#ifndef GRPC_EXPERIMENTS_ARE_FINAL
+// Verifies that when call_tracer_in_transport is enabled and a StatsPluginGroup
+// is present in ChannelArgs, Http2ServerTransport creates and installs a
+// ServerCallTracer (as both CallSpan and CallTracer) on each incoming stream's
+// arena.
+TEST_F(Http2ServerTransportTest,
+       StatsPluginGroupInstallsServerCallTracerWhenExperimentEnabled) {
+  ExecCtx ctx;
+  const ScopedExperimentOverride experiment_override(
+      /*experiments=*/"call_tracer_in_transport");
+
+  // 1. Build a FakeStatsPlugin backed by FakeServerCallTracerFactory and attach
+  // its StatsPluginGroup to the server transport's ChannelArgs.
+  const std::shared_ptr<FakeServerCallTracerFactory>
+      server_call_tracer_factory =
+          std::make_shared<FakeServerCallTracerFactory>();
+  const std::shared_ptr<FakeStatsPlugin> stats_plugin =
+      FakeStatsPluginBuilder()
+          .SetServerCallTracerFactory(server_call_tracer_factory)
+          .Build();
+  const std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group =
+          std::make_shared<GlobalStatsPluginRegistry::StatsPluginGroup>();
+  stats_plugin_group->AddStatsPlugin(stats_plugin, /*config=*/nullptr);
+
+  InitTransport(GetChannelArgs().SetObject(stats_plugin_group));
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // 2. Register a stream handler that verifies both CallSpan and CallTracer on
+  // the stream's arena wrap the FakeServerCallTracer created by the plugin.
+  bool stream_verified = false;
+  AddStream([&stream_verified,
+             &server_call_tracer_factory](CallHandler call_handler) {
+    return [call_handler, &stream_verified,
+            &server_call_tracer_factory]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler, &stream_verified, &server_call_tracer_factory](
+              ClientMetadataHandle /*metadata*/) mutable {
+            const FakeServerCallTracer* const expected_tracer =
+                server_call_tracer_factory->GetLastFakeServerCallTracer();
+            EXPECT_NE(expected_tracer, nullptr);
+            CallSpan* const call_span =
+                call_handler.arena()->GetContext<CallSpan>();
+            CallTracer* const call_tracer =
+                call_handler.arena()->GetContext<CallTracer>();
+            EXPECT_NE(call_span, nullptr);
+            EXPECT_NE(call_tracer, nullptr);
+            if (call_span != nullptr) {
+              EXPECT_EQ(call_span->span_impl(), expected_tracer);
+            }
+            if (call_tracer != nullptr) {
+              EXPECT_EQ(call_tracer->span_impl(), expected_tracer);
+            }
+            stream_verified = true;
+            return Map(call_handler.WasCancelled(),
+                       [](const bool /*cancelled*/) -> absl::Status {
+                         return absl::OkStatus();
+                       });
+          });
+    };
+  });
+
+  // 3. Initiate stream 1 with HEADERS and cancel it cleanly with RST_STREAM.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step =
+      endpoint()->NewStep();
+  step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          /*payload=*/std::string(kPathDemoServiceStep.begin(),
+                                  kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step->ThenPerformRead({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kCancel)),
+  });
+  step->Wait();
+  event_engine()->Tick();
+
+  // 4. Confirm the stream handler ran and the tracer was created.
+  EXPECT_TRUE(stream_verified);
+  EXPECT_NE(server_call_tracer_factory->GetLastFakeServerCallTracer(), nullptr);
+
+  // 5. Teardown the transport.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/1u);
+  teardown_step->Wait();
+}
+
+// Verifies that when call_tracer_in_transport is disabled, Http2ServerTransport
+// does not create or install a ServerCallTracer even when a StatsPluginGroup is
+// present in ChannelArgs.
+TEST_F(Http2ServerTransportTest,
+       ServerCallTracerNotInstalledWhenExperimentDisabled) {
+  ExecCtx ctx;
+  const ScopedExperimentOverride experiment_override(
+      /*experiments=*/"-call_tracer_in_transport");
+
+  // 1. Configure a StatsPluginGroup in ChannelArgs while the experiment is off.
+  const std::shared_ptr<FakeServerCallTracerFactory>
+      server_call_tracer_factory =
+          std::make_shared<FakeServerCallTracerFactory>();
+  const std::shared_ptr<FakeStatsPlugin> stats_plugin =
+      FakeStatsPluginBuilder()
+          .SetServerCallTracerFactory(server_call_tracer_factory)
+          .Build();
+  const std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group =
+          std::make_shared<GlobalStatsPluginRegistry::StatsPluginGroup>();
+  stats_plugin_group->AddStatsPlugin(stats_plugin, /*config=*/nullptr);
+
+  InitTransport(GetChannelArgs().SetObject(stats_plugin_group));
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // 2. Register a stream handler that verifies no CallSpan or CallTracer is set
+  // on the stream's arena.
+  bool stream_verified = false;
+  AddStream([&stream_verified](CallHandler call_handler) {
+    return [call_handler, &stream_verified]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler,
+           &stream_verified](ClientMetadataHandle /*metadata*/) mutable {
+            EXPECT_EQ(call_handler.arena()->GetContext<CallSpan>(), nullptr);
+            EXPECT_EQ(call_handler.arena()->GetContext<CallTracer>(), nullptr);
+            stream_verified = true;
+            return Map(call_handler.WasCancelled(),
+                       [](const bool /*cancelled*/) -> absl::Status {
+                         return absl::OkStatus();
+                       });
+          });
+    };
+  });
+
+  // 3. Initiate stream 1 and cancel it cleanly.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step =
+      endpoint()->NewStep();
+  step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          /*payload=*/std::string(kPathDemoServiceStep.begin(),
+                                  kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step->ThenPerformRead({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kCancel)),
+  });
+  step->Wait();
+  event_engine()->Tick();
+
+  // 4. Assert no FakeServerCallTracer was created.
+  EXPECT_TRUE(stream_verified);
+  EXPECT_EQ(server_call_tracer_factory->GetLastFakeServerCallTracer(), nullptr);
+
+  // 5. Teardown the transport.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/1u);
+  teardown_step->Wait();
+}
+
+// Verifies that when call_tracer_in_transport is enabled but no
+// StatsPluginGroup is passed in ChannelArgs, incoming streams still succeed
+// without installing a ServerCallTracer.
+TEST_F(Http2ServerTransportTest,
+       NoStatsPluginGroupDoesNotInstallServerCallTracer) {
+  ExecCtx ctx;
+  const ScopedExperimentOverride experiment_override(
+      /*experiments=*/"call_tracer_in_transport");
+
+  // 1. Initialize the server transport without a StatsPluginGroup.
+  InitTransport(GetChannelArgs());
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // 2. Register a stream handler that verifies no CallSpan or CallTracer is set
+  // on the stream's arena.
+  bool stream_verified = false;
+  AddStream([&stream_verified](CallHandler call_handler) {
+    return [call_handler, &stream_verified]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler,
+           &stream_verified](ClientMetadataHandle /*metadata*/) mutable {
+            EXPECT_EQ(call_handler.arena()->GetContext<CallSpan>(), nullptr);
+            EXPECT_EQ(call_handler.arena()->GetContext<CallTracer>(), nullptr);
+            stream_verified = true;
+            return Map(call_handler.WasCancelled(),
+                       [](const bool /*cancelled*/) -> absl::Status {
+                         return absl::OkStatus();
+                       });
+          });
+    };
+  });
+
+  // 3. Initiate stream 1 and cancel it cleanly.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step =
+      endpoint()->NewStep();
+  step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          /*payload=*/std::string(kPathDemoServiceStep.begin(),
+                                  kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step->ThenPerformRead({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kCancel)),
+  });
+  step->Wait();
+  event_engine()->Tick();
+
+  EXPECT_TRUE(stream_verified);
+
+  // 4. Teardown the transport.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/1u);
+  teardown_step->Wait();
+}
+#endif  // GRPC_EXPERIMENTS_ARE_FINAL
 
 }  // namespace testing
 }  // namespace http2
