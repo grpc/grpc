@@ -982,6 +982,9 @@ static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t) {
     // effictively removes the limit for the rest of the connection.
     t->num_incoming_streams_before_settings_ack =
         std::numeric_limits<uint32_t>::max();
+    if (t->settings.local() != t->settings.acked()) {
+      grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS);
+    }
   }
   t->parser = grpc_chttp2_transport::Parser{
       "settings", grpc_chttp2_settings_parser_parse, &t->simple.settings};

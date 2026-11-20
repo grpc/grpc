@@ -233,3 +233,28 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
     }
   }
 }
+
+void grpc_chttp2_apply_peer_settings_from_handshake(grpc_chttp2_transport* t) {
+  const grpc_core::Http2Settings& peer_settings = t->settings.peer();
+  t->http2_stats->IncrementHttp2HeaderTableSize(
+      peer_settings.header_table_size());
+  t->http2_stats->IncrementHttp2InitialWindowSize(
+      peer_settings.initial_window_size());
+  t->http2_stats->IncrementHttp2MaxConcurrentStreams(
+      peer_settings.max_concurrent_streams());
+  t->http2_stats->IncrementHttp2MaxFrameSize(peer_settings.max_frame_size());
+  t->http2_stats->IncrementHttp2MaxHeaderListSize(
+      peer_settings.max_header_list_size());
+  t->http2_stats->IncrementHttp2PreferredReceiveCryptoMessageSize(
+      peer_settings.preferred_receive_crypto_message_size());
+  t->http2_ztrace_collector.Append(
+      []() { return grpc_core::H2SettingsTrace<false>{true, {}}; });
+  t->peer_settings_applied = true;
+  t->last_reported_max_concurrent_streams =
+      peer_settings.max_concurrent_streams();
+  t->initial_window_update +=
+      static_cast<int64_t>(peer_settings.initial_window_size()) -
+      static_cast<int64_t>(grpc_core::Http2Settings::kDefaultInitialWindowSize);
+  ++t->num_pending_induced_frames;
+  grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());
+}
