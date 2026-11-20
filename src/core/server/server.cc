@@ -1402,7 +1402,7 @@ absl::Status Server::LegacyAddConnection(
   auto transport_ref = (*owned_transport)->RefAsSubclass<ServerTransport>();
   {
     MutexLock lock(mu_global_);
-    GRPC_TRACE_LOG(server_channel, INFO) << "Adding connection";
+    GRPC_TRACE_LOG(server, INFO) << "Adding connection";
     connections_.emplace(std::move(*owned_transport));
   }
   transport_ref->StartConnectivityWatch(
