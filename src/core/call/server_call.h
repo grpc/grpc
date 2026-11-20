@@ -155,8 +155,11 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   }
 
   bool Completed() final { Crash("unimplemented"); }
+  // Called from the application thread (via
+  // grpc_call_failed_before_recv_message()), so this must not read the call
+  // state owned by the call's party directly.
   bool failed_before_recv_message() const final {
-    return call_handler_.WasCancelledPushed();
+    return message_receiver_.failed_before_recv_message();
   }
 
   uint32_t test_only_message_flags() override {

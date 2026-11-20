@@ -1345,9 +1345,11 @@ grpc_error_handle Server::SetupTransport(
       socket_node->AddParent(channelz_node_.get());
     }
     GRPC_TRACE_LOG(server_channel, INFO) << "Adding connection";
+    ServerTransport* const server_transport = t.get();
     connections_.emplace(std::move(t));
     ++connections_open_;
     stream_quota_->IncrementOpenChannels();
+    server_transport->StartReading();
   } else {
     GRPC_CHECK(transport->filter_stack_transport() != nullptr);
     absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(

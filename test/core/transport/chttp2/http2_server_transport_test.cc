@@ -127,6 +127,7 @@ class Http2ServerTransportTest : public Http2TransportTest {
         endpoint()->NewStep();
     server_transport_->SetCallDestination(
         MakeRefCounted<TestCallDestination>(this));
+    server_transport_->InitializeAndSpawnTransportLoops();
     AddTransportStartExpectations(step.get(), expected_server_settings);
     step->Wait();
     // This tick ensures that settings ack is read by the ReadLoop. This is
@@ -840,6 +841,7 @@ TEST_F(Http2ServerTransportTest,
   std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
   server_transport()->SetCallDestination(
       MakeRefCounted<TestCallDestination>(this));
+  server_transport()->InitializeAndSpawnTransportLoops();
   event_engine()->TickUntilIdle();
   ASSERT_FALSE(on_receive_settings_status->has_value());
 
@@ -1957,6 +1959,7 @@ TEST_F(Http2ServerTransportTest, TestServerStreamFlowControlWindowUpdate) {
       endpoint()->NewStep();
   server_transport()->SetCallDestination(
       MakeRefCounted<TestCallDestination>(this));
+  server_transport()->InitializeAndSpawnTransportLoops();
   settings_step->ThenPerformRead({
       EventEngineSlice(
           grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
@@ -2439,6 +2442,7 @@ TEST_F(Http2ServerTransportTest,
       endpoint()->NewStep();
   server_transport()->SetCallDestination(
       MakeRefCounted<TestCallDestination>(this));
+  server_transport()->InitializeAndSpawnTransportLoops();
   handshake_step->ThenPerformRead({
       EventEngineSlice(
           grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
@@ -2538,6 +2542,7 @@ TEST_F(Http2ServerTransportTest,
       endpoint()->NewStep();
   server_transport()->SetCallDestination(
       MakeRefCounted<TestCallDestination>(this));
+  server_transport()->InitializeAndSpawnTransportLoops();
   handshake_step->ThenPerformRead({
       EventEngineSlice(
           grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
@@ -2687,6 +2692,7 @@ TEST_F(Http2ServerTransportTest,
       endpoint()->NewStep();
   server_transport()->SetCallDestination(
       MakeRefCounted<TestCallDestination>(this));
+  server_transport()->InitializeAndSpawnTransportLoops();
   handshake_step->ThenPerformRead({
       EventEngineSlice(
           grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
