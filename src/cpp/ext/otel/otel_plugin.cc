@@ -779,10 +779,18 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
                   LOG(FATAL) << "Uint gauge shape is not supported yet";
                 },
                 [&](grpc_core::InstrumentMetadata::Int64HistogramShape) {
-                  LOG(FATAL) << "Histogram shape is not supported yet";
+                  uint64_histograms_.emplace(
+                      description, meter->CreateUInt64Histogram(
+                                       std::string(description->name),
+                                       std::string(description->description),
+                                       std::string(description->unit)));
                 },
                 [&](grpc_core::InstrumentMetadata::DoubleHistogramShape) {
-                  LOG(FATAL) << "Double histogram shape is not supported yet";
+                  double_histograms_.emplace(
+                      description, meter->CreateDoubleHistogram(
+                                       std::string(description->name),
+                                       std::string(description->description),
+                                       std::string(description->unit)));
                 });
           });
       grpc_core::InstrumentLabelSet label_set;
@@ -1131,6 +1139,103 @@ void OpenTelemetryPluginImpl::RecordHistogram(
                      descriptor.optional_label_keys, optional_values,
                      instrument_data.optional_labels_bits),
                  opentelemetry::context::Context{});
+  }
+}
+
+namespace {
+
+// ScopedKeyValueIterable filters label keys and values based on a collection
+// scope.
+class ScopedKeyValueIterable final
+    : public opentelemetry::common::KeyValueIterable {
+ public:
+  ScopedKeyValueIterable(const grpc_core::InstrumentLabelList& domain_labels,
+                         absl::Span<const std::string> label_values,
+                         const grpc_core::CollectionScope& collection_scope)
+      : domain_labels_(domain_labels),
+        label_values_(label_values),
+        collection_scope_(collection_scope) {
+    GRPC_CHECK_EQ(domain_labels_.size(), label_values_.size());
+  }
+
+  bool ForEachKeyValue(opentelemetry::nostd::function_ref<
+                       bool(opentelemetry::nostd::string_view,
+                            opentelemetry::common::AttributeValue)>
+                           callback) const noexcept override {
+    for (size_t i = 0; i < domain_labels_.size(); ++i) {
+      if (collection_scope_.ObservesLabel(domain_labels_[i])) {
+        if (!callback(
+                AbslStrViewToOpenTelemetryStrView(domain_labels_[i].label()),
+                AbslStrViewToOpenTelemetryStrView(label_values_[i]))) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  size_t size() const noexcept override {
+    size_t count = 0;
+    for (const grpc_core::InstrumentLabel label : domain_labels_) {
+      if (collection_scope_.ObservesLabel(label)) ++count;
+    }
+    return count;
+  }
+
+ private:
+  const grpc_core::InstrumentLabelList& domain_labels_;
+  const absl::Span<const std::string> label_values_;
+  const grpc_core::CollectionScope& collection_scope_;
+};
+
+}  // namespace
+
+// Filters labels based on the collection scope and records value in the stored
+// histogram. Returns if no histogram with this description exists.
+// OpenTelemetry only has uint64 histograms so negative values are stored in the
+// "0" bucket.
+void OpenTelemetryPluginImpl::RecordHistogram(
+    const grpc_core::InstrumentMetadata::Description* description,
+    int64_t value, absl::Span<const std::string> label_values) {
+  if (meter_provider_ == nullptr || description == nullptr ||
+      collection_scope_ == nullptr) {
+    return;
+  }
+  auto hist = uint64_histograms_.find(description);
+  if (hist == uint64_histograms_.end() || hist->second == nullptr) return;
+  const grpc_core::InstrumentLabelList domain_labels =
+      description->domain->label_names();
+  if (domain_labels.empty()) {
+    hist->second->Record(static_cast<uint64_t>(value < 0 ? 0 : value),
+                         opentelemetry::context::Context{});
+  } else {
+    hist->second->Record(
+        static_cast<uint64_t>(value < 0 ? 0 : value),
+        ScopedKeyValueIterable(domain_labels, label_values, *collection_scope_),
+        opentelemetry::context::Context{});
+  }
+}
+
+// Filters labels based on the collection scope and records value in the stored
+// histogram. Returns if no histogram with this description exists.
+void OpenTelemetryPluginImpl::RecordHistogram(
+    const grpc_core::InstrumentMetadata::Description* description, double value,
+    absl::Span<const std::string> label_values) {
+  if (meter_provider_ == nullptr || description == nullptr ||
+      collection_scope_ == nullptr) {
+    return;
+  }
+  auto hist = double_histograms_.find(description);
+  if (hist == double_histograms_.end() || hist->second == nullptr) return;
+  const grpc_core::InstrumentLabelList domain_labels =
+      description->domain->label_names();
+  if (domain_labels.empty()) {
+    hist->second->Record(value, opentelemetry::context::Context{});
+  } else {
+    hist->second->Record(
+        value,
+        ScopedKeyValueIterable(domain_labels, label_values, *collection_scope_),
+        opentelemetry::context::Context{});
   }
 }
 
