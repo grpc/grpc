@@ -512,9 +512,11 @@ bool Server::ListenerState::OnHandshakeDone(
     // we orphaned it while the call to OnHandshakeDone() was in flight.
     // At this point, the connection has finished handshaking and therefore
     // may start receiving RPCs, so we need to drain it gracefully.
-    // FIXME: what if this is called after MaybeFinishShutdown() has
-    // already thought there were no connections and has started shutdown?
-    if (connection.ok()) {
+    //
+    // Note that if the server has already committed to shutting down,
+    // then we can't hang on to the connection.  In that case, the
+    // connection object will be orphaned automatically.
+    if (connection.ok() && !server_->shutdown_published_) {
       GRPC_TRACE_LOG(server, INFO) << "immediately draining new connection";
       server_->StartDrainingConnectionLocked(
           std::move(*connection),
@@ -2155,8 +2157,6 @@ void Server::FailCall(size_t cq_idx, RequestedCall* rc,
                  &rc->completion);
 }
 
-// Before calling MaybeFinishShutdown(), we must hold mu_global_ and not
-// hold mu_call_.
 void Server::MaybeFinishShutdown() {
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << this << "] MaybeFinishShutdown()";

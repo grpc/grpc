@@ -326,7 +326,6 @@ class Server : public ServerInterface,
    private:
     friend class grpc_core::testing::ListenerStateTestPeer;
 
-    // FIXME: can we avoid this?
     friend class Connection;
 
     enum class State {
@@ -762,7 +761,6 @@ class Server : public ServerInterface,
 
     absl::string_view peer_address() const;
 
-    // FIXME: maybe use http2 status code here?
     void SendGoaway(absl::string_view reason);
     void DisconnectImmediately(absl::Status status);
 
