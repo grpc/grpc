@@ -78,6 +78,19 @@ Examples:
      python3 tools/package_hosting/backfill/backfill_xslt_polyfill.py \
        --start-from="2019/01" \
        --debug-log="backfill.log"
+
+  4. GCS rollback (restores modified objects to their previous GCS version):
+     # Dry-run rollback for a single month in GCS:
+     python3 tools/package_hosting/backfill/backfill_xslt_polyfill.py \
+       --only="2018/07" \
+       --rollback \
+       --dry-run
+
+     # Live rollback for a single month in GCS (prompts [yN]):
+     python3 tools/package_hosting/backfill/backfill_xslt_polyfill.py \
+       --only="2018/07" \
+       --rollback \
+       --debug-log="rollback.log"
 """
 
 import argparse
@@ -561,6 +574,9 @@ class _GcsBlobProtocol(Protocol):
     """Typed subset of google.cloud.storage.Blob."""
 
     @property
+    def name(self) -> str | None: ...
+
+    @property
     def generation(self) -> int | None: ...
 
     def download_as_bytes(self, *, checksum: str = "auto") -> bytes: ...
@@ -578,10 +594,25 @@ class _GcsBlobProtocol(Protocol):
 class _GcsBucketProtocol(Protocol):
     """Typed subset of google.cloud.storage.Bucket."""
 
-    def blob(self, blob_name: str) -> _GcsBlobProtocol: ...
+    def blob(
+        self,
+        blob_name: str,
+        *,
+        generation: int | None = None,
+    ) -> _GcsBlobProtocol: ...
+
+    def copy_blob(
+        self,
+        blob: _GcsBlobProtocol,
+        destination_bucket: Self,
+        new_name: str | None = None,
+        *,
+        source_generation: int | None = None,
+        if_generation_match: int | None = None,
+    ) -> _GcsBlobProtocol: ...
 
 
-class _GcsBlobIteratorProtocol(Iterator[object], Protocol):
+class _GcsBlobIteratorProtocol(Iterator[_GcsBlobProtocol], Protocol):
     """Typed subset of google.api_core.page_iterator.HTTPIterator."""
 
     @property
@@ -599,6 +630,7 @@ class _GcsClientProtocol(Protocol):
         *,
         prefix: str | None = None,
         delimiter: str | None = None,
+        versions: bool | None = None,
     ) -> _GcsBlobIteratorProtocol: ...
 
     def close(self) -> None: ...
@@ -722,10 +754,12 @@ class GcsArchiveBackend:
         *,
         workers: int,
         dry_run: bool,
+        rollback: bool = False,
     ) -> None:
         self._bucket_name = bucket_name
         self._prefix = prefix.strip().strip("/")
         self._dry_run = dry_run
+        self._rollback = rollback
         self._unjoined_workers = False
         self._client = _create_gcs_client(pool_size=max(workers + 4, 16))
         self._bucket = self._client.bucket(bucket_name)
@@ -849,7 +883,7 @@ class GcsArchiveBackend:
         *,
         cancel_event: threading.Event | None = None,
     ) -> ItemResult:
-        """Downloads, validates, patches, and conditionally uploads one blob."""
+        """Processes one blob (patches or rolls back depending on mode)."""
         uri = f"gs://{self._bucket_name}/{target}"
         if cancel_event is not None and cancel_event.is_set():
             return ItemResult(target=uri, outcome=Outcome.CANCELLED)
@@ -858,6 +892,29 @@ class GcsArchiveBackend:
         if isinstance(downloaded, ItemResult):
             return downloaded
 
+        if self._rollback:
+            return self._process_rollback_target(
+                target,
+                uri,
+                downloaded,
+                cancel_event=cancel_event,
+            )
+        return self._process_patch_target(
+            target,
+            uri,
+            downloaded,
+            cancel_event=cancel_event,
+        )
+
+    def _process_patch_target(
+        self,
+        target: str,
+        uri: str,
+        downloaded: _DownloadedBlob,
+        *,
+        cancel_event: threading.Event | None = None,
+    ) -> ItemResult:
+        """Validates, patches, and conditionally uploads one downloaded blob."""
         try:
             patched_bytes = patch_build_index_xml(downloaded.raw_bytes, uri)
         except ValueError as exc:
@@ -875,6 +932,194 @@ class GcsArchiveBackend:
             uri,
             patched_bytes,
             downloaded.generation,
+        )
+
+    def _find_predecessor_generation(
+        self,
+        target: str,
+        uri: str,
+        live_generation: int,
+    ) -> int | None:
+        """Returns the generation preceding live_generation, or None if first."""
+        version_iter = self._client.list_blobs(
+            self._bucket_name,
+            prefix=target,
+            versions=True,
+        )
+        generations = sorted(
+            blob.generation
+            for blob in version_iter
+            if blob.name == target
+            and blob.generation is not None
+            and blob.generation > 0
+        )
+        if not generations or generations[-1] != live_generation:
+            msg = (
+                f"{uri}: object changed concurrently during rollback check "
+                f"(expected live generation {live_generation})"
+            )
+            raise ValueError(msg)
+        if len(generations) < 2:
+            return None
+        return generations[-2]
+
+    def _load_rollback_predecessor(
+        self,
+        target: str,
+        uri: str,
+        live: _DownloadedBlob,
+    ) -> _DownloadedBlob | ItemResult:
+        """Loads and validates the predecessor version for a rollback target."""
+        try:
+            prev_gen = self._find_predecessor_generation(
+                target,
+                uri,
+                live.generation,
+            )
+            if prev_gen is None:
+                _LOGGER.debug(
+                    "%s: generation %d has no predecessor version; skipping",
+                    uri,
+                    live.generation,
+                )
+                return ItemResult(target=uri, outcome=Outcome.ALREADY_PATCHED)
+            prev_bytes = self._bucket.blob(
+                target,
+                generation=prev_gen,
+            ).download_as_bytes(checksum="auto")
+            repatched = patch_build_index_xml(prev_bytes, f"{uri}#{prev_gen}")
+        except (ValueError, *_GCS_OPERATION_ERRORS) as exc:
+            _LOGGER.error("Failed inspecting versions for %s: %s", uri, exc)
+            return ItemResult(
+                target=uri, outcome=Outcome.FAILED, error=str(exc)
+            )
+
+        if repatched is None:
+            _LOGGER.debug(
+                "%s: predecessor generation %d already has polyfill; skipping",
+                uri,
+                prev_gen,
+            )
+            return ItemResult(target=uri, outcome=Outcome.ALREADY_PATCHED)
+        if repatched != live.raw_bytes:
+            msg = (
+                f"{uri}: live generation {live.generation} differs from "
+                f"patched predecessor {prev_gen}; refusing rollback"
+            )
+            _LOGGER.error("%s", msg)
+            return ItemResult(target=uri, outcome=Outcome.FAILED, error=msg)
+        return _DownloadedBlob(raw_bytes=prev_bytes, generation=prev_gen)
+
+    def _process_rollback_target(
+        self,
+        target: str,
+        uri: str,
+        live: _DownloadedBlob,
+        *,
+        cancel_event: threading.Event | None = None,
+    ) -> ItemResult:
+        """Validates version history and restores the unpatched predecessor."""
+        try:
+            live_patch_check = patch_build_index_xml(live.raw_bytes, uri)
+        except ValueError as exc:
+            _LOGGER.error("Failed validating %s: %s", uri, exc)
+            return ItemResult(
+                target=uri, outcome=Outcome.FAILED, error=str(exc)
+            )
+
+        if live_patch_check is not None:
+            return ItemResult(target=uri, outcome=Outcome.ALREADY_PATCHED)
+        if cancel_event is not None and cancel_event.is_set():
+            return ItemResult(target=uri, outcome=Outcome.CANCELLED)
+
+        predecessor = self._load_rollback_predecessor(target, uri, live)
+        if isinstance(predecessor, ItemResult):
+            return predecessor
+        if cancel_event is not None and cancel_event.is_set():
+            return ItemResult(target=uri, outcome=Outcome.CANCELLED)
+        return self._restore_or_recover(
+            target,
+            uri,
+            predecessor,
+            live.generation,
+        )
+
+    def _restore_or_recover(
+        self,
+        target: str,
+        uri: str,
+        predecessor: _DownloadedBlob,
+        live_generation: int,
+    ) -> ItemResult:
+        """Restores predecessor version via server-side copy or dry-run."""
+        if self._dry_run:
+            return ItemResult(target=uri, outcome=Outcome.PATCHED)
+        try:
+            _LOGGER.info(
+                "ROLLING BACK %s to generation %d (if_generation_match=%d)",
+                uri,
+                predecessor.generation,
+                live_generation,
+            )
+            source_blob = self._bucket.blob(target)
+            self._bucket.copy_blob(
+                source_blob,
+                self._bucket,
+                new_name=target,
+                source_generation=predecessor.generation,
+                if_generation_match=live_generation,
+            )
+        except gcs_exceptions.PreconditionFailed as exc:
+            return self._recover_rollback_precondition_failure(
+                target,
+                uri,
+                predecessor.raw_bytes,
+                exc,
+            )
+        except (ValueError, *_GCS_OPERATION_ERRORS) as exc:
+            _LOGGER.error("Failed rolling back %s: %s", uri, exc)
+            return ItemResult(
+                target=uri, outcome=Outcome.FAILED, error=str(exc)
+            )
+        return ItemResult(target=uri, outcome=Outcome.PATCHED)
+
+    def _recover_rollback_precondition_failure(
+        self,
+        target: str,
+        uri: str,
+        expected_unpatched_bytes: bytes,
+        original_exc: gcs_exceptions.PreconditionFailed,
+    ) -> ItemResult:
+        """Checks whether a 412 retry error occurred after rollback landed."""
+        try:
+            latest_bytes = self._bucket.blob(target).download_as_bytes(
+                checksum="auto"
+            )
+            if latest_bytes == expected_unpatched_bytes:
+                _LOGGER.warning(
+                    "Rollback retry for %s received 412 PreconditionFailed, "
+                    "but exact predecessor payload is already live; "
+                    "counting as rolled_back.",
+                    uri,
+                )
+                return ItemResult(target=uri, outcome=Outcome.PATCHED)
+            if patch_build_index_xml(latest_bytes, uri) is not None:
+                _LOGGER.warning(
+                    "Rollback for %s received 412 PreconditionFailed because "
+                    "another process already restored it; counting as "
+                    "skipped.",
+                    uri,
+                )
+                return ItemResult(target=uri, outcome=Outcome.ALREADY_PATCHED)
+        except (ValueError, *_GCS_OPERATION_ERRORS) as verify_exc:
+            _LOGGER.warning(
+                "Post-412 rollback verification failed for %s: %s",
+                uri,
+                verify_exc,
+            )
+        _LOGGER.error("Failed rolling back %s: %s", uri, original_exc)
+        return ItemResult(
+            target=uri, outcome=Outcome.FAILED, error=str(original_exc)
         )
 
     def _upload_or_recover(
@@ -1002,6 +1247,10 @@ def _build_epilog() -> str:
           %(prog)s --start-from="2018/07" --end-at="2018/12" \\
             --debug-log="backfill.log"
           %(prog)s --start-from="2019/01" --debug-log="backfill.log"
+
+          # 4. GCS rollback (restores modified index.xml to previous version):
+          %(prog)s --only="2018/07" --rollback --dry-run
+          %(prog)s --only="2018/07" --rollback --debug-log="rollback.log"
         """
     )
 
@@ -1026,6 +1275,11 @@ def _validate_parsed_args(
     if args.only is not None and args.end_at is not None:
         parser.error("argument --end-at: not allowed with argument --only")
     if args.local_dir is not None:
+        if args.rollback:
+            parser.error(
+                "argument --rollback: not allowed with argument --local-dir "
+                "(requires GCS object versioning)"
+            )
         if args.prefix is not None:
             parser.error(
                 "argument --prefix: not allowed with argument --local-dir"
@@ -1067,9 +1321,9 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     """Parses command-line arguments."""
     parser = argparse.ArgumentParser(
         description=(
-            "Backfill XSLT polyfill <script> tag into archived build "
-            "index.xml manifests. When --local-dir and --dry-run are both "
-            "omitted, modified index.xml files are UPLOADED to GCS."
+            "Backfill (or roll back) XSLT polyfill <script> tags in archived "
+            "build index.xml manifests. When --local-dir and --dry-run are "
+            "both omitted, modified index.xml files are written in GCS."
         ),
         epilog=_build_epilog(),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -1130,11 +1384,20 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--rollback",
+        action="store_true",
+        help=(
+            "Restore GCS build index.xml objects modified by this script back "
+            "to their immediately preceding unpatched object version "
+            "(cannot combine with --local-dir)."
+        ),
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help=(
-            "Read-only simulation: validate and test patching in memory "
-            "without writing local files or uploading to GCS."
+            "Read-only simulation: validate and test patching/rollback "
+            "without writing local files or mutating GCS."
         ),
     )
     parser.add_argument(
@@ -1195,10 +1458,28 @@ class ModeDisplay:
 
     banner: str
     action_label: str
+    noop_label: str = "already_patched"
 
 
-def _describe_mode(*, is_remote_gcs: bool, dry_run: bool) -> ModeDisplay:
+def _describe_mode(
+    *,
+    is_remote_gcs: bool,
+    dry_run: bool,
+    rollback: bool = False,
+) -> ModeDisplay:
     """Returns ModeDisplay labels for clear logging."""
+    if rollback:
+        if dry_run:
+            return ModeDisplay(
+                banner="DRY-RUN GCS ROLLBACK (READ-ONLY, NO CHANGES)",
+                action_label="would_rollback",
+                noop_label="skipped",
+            )
+        return ModeDisplay(
+            banner="LIVE GCS ROLLBACK (RESTORES PREVIOUS VERSIONS)",
+            action_label="rolled_back",
+            noop_label="skipped",
+        )
     if is_remote_gcs:
         if dry_run:
             return ModeDisplay(
@@ -1224,11 +1505,20 @@ def confirm_execution(
     backend: LocalArchiveBackend | GcsArchiveBackend,
     partitions: Sequence[YearMonth],
     workers: int,
+    *,
+    rollback: bool = False,
 ) -> bool:
-    """Prompts the user before mutating local files or uploading to GCS."""
+    """Prompts the user before mutating local files or mutating GCS."""
     first_ym = partitions[0]
     last_ym = partitions[-1]
-    if backend.is_remote_gcs:
+    if rollback:
+        prompt = (
+            f"LIVE GCS ROLLBACK: Restore modified index.xml files to their "
+            f"previous GCS versions in {backend.description} across "
+            f"{len(partitions)} month(s) ({first_ym}..{last_ym}) with "
+            f"{workers} worker(s)? [yN] "
+        )
+    elif backend.is_remote_gcs:
         prompt = (
             f"LIVE GCS UPLOAD: Upload modified index.xml files to "
             f"{backend.description} across {len(partitions)} month(s) "
@@ -1259,11 +1549,13 @@ def confirm_execution(
 def _format_outcome_label(
     outcome: Outcome,
     *,
-    patched_label: str,
+    mode_display: ModeDisplay,
 ) -> str:
-    """Formats an Outcome using the mode-specific action label for PATCHED."""
+    """Formats an Outcome using mode-specific action and no-op labels."""
     if outcome is Outcome.PATCHED:
-        return patched_label
+        return mode_display.action_label
+    if outcome is Outcome.ALREADY_PATCHED:
+        return mode_display.noop_label
     return outcome.value
 
 
@@ -1333,7 +1625,7 @@ def _process_partition(
     *,
     cancel_event: threading.Event,
     cumulative: Stats,
-    patched_label: str,
+    mode_display: ModeDisplay,
 ) -> Stats:
     """Processes all build targets in a single YYYY/MM partition."""
     targets = backend.list_targets(ym)
@@ -1357,25 +1649,27 @@ def _process_partition(
                 ym,
                 _format_outcome_label(
                     result.outcome,
-                    patched_label=patched_label,
+                    mode_display=mode_display,
                 ),
                 result.target,
             )
 
     cumulative.add(month_stats)
     _LOGGER.info(
-        "Completed %s (%d builds): %s=%d, already_patched=%d, "
+        "Completed %s (%d builds): %s=%d, %s=%d, "
         "missing=%d, failed=%d | cumulative %s=%d, "
-        "already_patched=%d, missing=%d, failed=%d",
+        "%s=%d, missing=%d, failed=%d",
         ym,
         len(targets),
-        patched_label,
+        mode_display.action_label,
         month_stats.patched,
+        mode_display.noop_label,
         month_stats.already_patched,
         month_stats.missing,
         month_stats.failed,
-        patched_label,
+        mode_display.action_label,
         cumulative.patched,
+        mode_display.noop_label,
         cumulative.already_patched,
         cumulative.missing,
         cumulative.failed,
@@ -1388,8 +1682,7 @@ def _execute_partitions(
     partitions: Sequence[YearMonth],
     *,
     workers: int,
-    mode_label: str,
-    patched_label: str,
+    mode_display: ModeDisplay,
     shutdown_state: _ShutdownState,
 ) -> int:
     """Processes partitions sequentially with concurrent per-month workers."""
@@ -1413,7 +1706,7 @@ def _execute_partitions(
                     ym,
                     cancel_event=cancel_event,
                     cumulative=cumulative,
-                    patched_label=patched_label,
+                    mode_display=mode_display,
                 )
                 if month_stats.failed > 0:
                     _LOGGER.error(
@@ -1445,13 +1738,14 @@ def _execute_partitions(
 
     elapsed = time.monotonic() - start_time
     _LOGGER.info(
-        "Finished [%s] in %.1fs: total=%d, %s=%d, already_patched=%d, "
+        "Finished [%s] in %.1fs: total=%d, %s=%d, %s=%d, "
         "missing=%d, failed=%d",
-        mode_label,
+        mode_display.banner,
         elapsed,
         cumulative.total,
-        patched_label,
+        mode_display.action_label,
         cumulative.patched,
+        mode_display.noop_label,
         cumulative.already_patched,
         cumulative.missing,
         cumulative.failed,
@@ -1466,7 +1760,7 @@ def _run_with_backend(
     *,
     shutdown_state: _ShutdownState,
 ) -> int:
-    """Discovers partitions, confirms execution, and runs the backfill."""
+    """Discovers partitions, confirms execution, and runs the operation."""
     _LOGGER.info(
         "Discovering YYYY/MM partitions in %s ...", backend.description
     )
@@ -1481,6 +1775,7 @@ def _run_with_backend(
     mode_display = _describe_mode(
         is_remote_gcs=backend.is_remote_gcs,
         dry_run=args.dry_run,
+        rollback=args.rollback,
     )
     _LOGGER.info(
         "Mode=%s | Target=%s | Partitions=%d (%s..%s) | Workers=%d",
@@ -1492,16 +1787,28 @@ def _run_with_backend(
         args.workers,
     )
     if backend.is_remote_gcs and not args.dry_run:
-        _LOGGER.warning(
-            "LIVE GCS UPLOAD ENABLED: Modified index.xml manifests "
-            "WILL BE UPLOADED to %s",
-            backend.description,
-        )
+        if args.rollback:
+            _LOGGER.warning(
+                "LIVE GCS ROLLBACK ENABLED: Modified index.xml manifests "
+                "WILL BE RESTORED to previous versions in %s",
+                backend.description,
+            )
+        else:
+            _LOGGER.warning(
+                "LIVE GCS UPLOAD ENABLED: Modified index.xml manifests "
+                "WILL BE UPLOADED to %s",
+                backend.description,
+            )
 
     if not args.dry_run:
         if args.yes:
             _LOGGER.debug("Skipping confirmation prompt (--yes).")
-        elif not confirm_execution(backend, partitions, args.workers):
+        elif not confirm_execution(
+            backend,
+            partitions,
+            args.workers,
+            rollback=args.rollback,
+        ):
             _LOGGER.info("Cancelled.")
             return 1
 
@@ -1509,8 +1816,7 @@ def _run_with_backend(
         backend,
         partitions,
         workers=args.workers,
-        mode_label=mode_display.banner,
-        patched_label=mode_display.action_label,
+        mode_display=mode_display,
         shutdown_state=shutdown_state,
     )
 
@@ -1640,6 +1946,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         args.prefix,
                         workers=args.workers,
                         dry_run=args.dry_run,
+                        rollback=args.rollback,
                     )
 
                 with backend:
