@@ -88,8 +88,6 @@ inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_HEADER_DATA_FRAME
 inline bool IsHeaderDataFrameEnabled() { return true; }
-inline bool IsInternalFixEnabled() { return false; }
-inline bool IsInternalFix1Enabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLameChannelV3Enabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
@@ -120,6 +118,7 @@ inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
+inline bool IsPromiseFilterClientHalfCloseEnabled() { return false; }
 inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsReplaceAuthFilterEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
@@ -172,8 +171,6 @@ inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_HEADER_DATA_FRAME
 inline bool IsHeaderDataFrameEnabled() { return true; }
-inline bool IsInternalFixEnabled() { return false; }
-inline bool IsInternalFix1Enabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLameChannelV3Enabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
@@ -204,6 +201,7 @@ inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
+inline bool IsPromiseFilterClientHalfCloseEnabled() { return false; }
 inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsReplaceAuthFilterEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
@@ -256,8 +254,6 @@ inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_HEADER_DATA_FRAME
 inline bool IsHeaderDataFrameEnabled() { return true; }
-inline bool IsInternalFixEnabled() { return false; }
-inline bool IsInternalFix1Enabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLameChannelV3Enabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
@@ -288,6 +284,7 @@ inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
+inline bool IsPromiseFilterClientHalfCloseEnabled() { return false; }
 inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsReplaceAuthFilterEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
@@ -328,8 +325,6 @@ enum ExperimentIds {
   kExperimentIdFuseFilters,
   kExperimentIdH2MaxDeallocatingStreamsHeadroom,
   kExperimentIdHeaderDataFrame,
-  kExperimentIdInternalFix,
-  kExperimentIdInternalFix1,
   kExperimentIdKeepAlivePingTimerBatch,
   kExperimentIdLameChannelV3,
   kExperimentIdLocalConnectorSecure,
@@ -354,6 +349,7 @@ enum ExperimentIds {
   kExperimentIdPrioritizeFinishedRequests,
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdPromiseBatchCleanupOnCancel,
+  kExperimentIdPromiseFilterClientHalfClose,
   kExperimentIdRecvMessageFilterBypassFix,
   kExperimentIdReplaceAuthFilter,
   kExperimentIdRetryInCallv3,
@@ -443,14 +439,6 @@ inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_HEADER_DATA_FRAME
 inline bool IsHeaderDataFrameEnabled() {
   return IsExperimentEnabled<kExperimentIdHeaderDataFrame>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_INTERNAL_FIX
-inline bool IsInternalFixEnabled() {
-  return IsExperimentEnabled<kExperimentIdInternalFix>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_INTERNAL_FIX1
-inline bool IsInternalFix1Enabled() {
-  return IsExperimentEnabled<kExperimentIdInternalFix1>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEP_ALIVE_PING_TIMER_BATCH
 inline bool IsKeepAlivePingTimerBatchEnabled() {
@@ -547,6 +535,10 @@ inline bool IsPromiseBasedInprocTransportEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() {
   return IsExperimentEnabled<kExperimentIdPromiseBatchCleanupOnCancel>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_CLIENT_HALF_CLOSE
+inline bool IsPromiseFilterClientHalfCloseEnabled() {
+  return IsExperimentEnabled<kExperimentIdPromiseFilterClientHalfClose>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RECV_MESSAGE_FILTER_BYPASS_FIX
 inline bool IsRecvMessageFilterBypassFixEnabled() {

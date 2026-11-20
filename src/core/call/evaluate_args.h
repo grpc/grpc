@@ -35,8 +35,9 @@ class EvaluateArgs final {
   // struct.
   struct PerChannelArgs {
     struct Address {
-      // The address in sockaddr form.
-      grpc_resolved_address address;
+      // The address in sockaddr form.  Zero-initialized (i.e., len == 0) if
+      // the endpoint address is unknown or is not an IPv4/IPv6 address.
+      grpc_resolved_address address = {};
       // The same address with only the host part.
       std::string address_str;
       int port = 0;

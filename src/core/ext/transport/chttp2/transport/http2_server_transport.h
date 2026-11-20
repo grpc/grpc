@@ -69,6 +69,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
@@ -310,6 +311,12 @@ class Http2ServerTransport final : public ServerTransport,
   // do post processing after the write is done.
   void NotifyUrgentFramesWriteDone();
 
+  void StartWriteCycle() {
+    transport_write_context_.StartWriteCycle();
+    http2_transport_stats_.BeginWrite(
+        transport_write_context_.GetWriteCycle().GetTargetWriteSize());
+  }
+
   absl::Status DequeueStreamFrames(RefCountedPtr<Stream> stream,
                                    WriteCycle& write_cycle);
 
@@ -511,6 +518,9 @@ class Http2ServerTransport final : public ServerTransport,
 
   //////////////////////////////////////////////////////////////////////////////
   // Stream Operations
+
+  // Creates and initializes the Arena for a new incoming stream.
+  RefCountedPtr<Arena> MakeStreamArena();
 
   // Runs on the transport party.
   std::optional<RefCountedPtr<Stream>> MakeStream(
@@ -769,7 +779,8 @@ class Http2ServerTransport final : public ServerTransport,
 
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
   bool is_goaway_received_;
-
+  // Only accessed on the transport party.
+  bool is_multiplexer_loop_spawned_ = false;
   bool should_reset_ping_clock_;
   bool max_concurrent_streams_overload_protection_ = false;
   Http2TransportStats http2_transport_stats_;
@@ -804,6 +815,10 @@ class Http2ServerTransport final : public ServerTransport,
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
   TarpitManager tarpit_manager_;
+
+  // Holds the stats plugins configured for the server.
+  const std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group_;
 };
 
 // TODO(tjagtap) : [PH2][P1] : Handle the case where a Server receives two

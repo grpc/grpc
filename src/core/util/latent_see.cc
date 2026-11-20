@@ -30,8 +30,10 @@
 #include "src/core/util/backoff.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/no_destruct.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
@@ -42,7 +44,7 @@
 
 namespace grpc_core::latent_see {
 
-thread_local std::unique_ptr<Bin> Appender::bin_;
+thread_local Appender::ThreadBin Appender::thread_bin_;
 std::atomic<Sink*> Appender::active_sink_;
 
 std::string JsonOutput::MicrosString(int64_t nanos) {
@@ -102,6 +104,61 @@ void Appender::Enable(Sink* sink) {
 
 void Appender::Disable() {
   active_sink_.store(nullptr, std::memory_order_relaxed);
+}
+
+struct Appender::ThreadBinRegistry {
+  // Returns the process-wide registry. It is never destroyed, so that it
+  // outlives the thread_local ThreadBins that are destroyed during process
+  // exit.
+  static ThreadBinRegistry& Get() {
+    static NoDestruct<ThreadBinRegistry> registry;
+    return *registry;
+  }
+
+  Mutex mu;
+  std::vector<ThreadBin*> thread_bins ABSL_GUARDED_BY(mu);
+};
+
+Appender::ThreadBin::ThreadBin() {
+  ThreadBinRegistry& registry = ThreadBinRegistry::Get();
+  MutexLock lock(registry.mu);
+  registry.thread_bins.push_back(this);
+}
+
+Appender::ThreadBin::~ThreadBin() {
+  {
+    ThreadBinRegistry& registry = ThreadBinRegistry::Get();
+    MutexLock lock(registry.mu);
+    std::vector<ThreadBin*>& thread_bins = registry.thread_bins;
+    // The order of `thread_bins` does not matter, so remove this ThreadBin by
+    // moving the last element into its slot instead of shifting all the
+    // elements after it.
+    const std::vector<ThreadBin*>::iterator it =
+        std::find(thread_bins.begin(), thread_bins.end(), this);
+    DCHECK(it != thread_bins.end());
+    *it = thread_bins.back();
+    thread_bins.pop_back();
+  }
+  // The thread is exiting: hand its remaining events to the active collection.
+  // No other thread can reach this ThreadBin once it is unregistered, so `bin`
+  // can be used without taking the lock.
+  Sink* const sink = active_sink_.load(std::memory_order_acquire);
+  if (sink != nullptr && bin != nullptr) sink->Append(std::move(bin));
+}
+
+void Appender::FlushAllThreadBins(Sink* sink) {
+  ThreadBinRegistry& registry = ThreadBinRegistry::Get();
+  MutexLock registry_lock(registry.mu);
+  for (ThreadBin* const thread_bin : registry.thread_bins) {
+    thread_bin->Lock();
+    std::unique_ptr<Bin> bin = std::move(thread_bin->bin);
+    thread_bin->Unlock();
+    // A null `sink` discards the bin when it goes out of scope.
+    // Note: If the sink is already at its limit, each flushed bin evicts the
+    // oldest bin, which is usually full, so a process with many threads and a
+    // conservative memory limit can lose older bins.
+    if (sink != nullptr && bin != nullptr) sink->Append(std::move(bin));
+  }
 }
 
 Sink::Sink() : gatherer_("grpc_latent_see_gatherer", [this]() { Gather(); }) {
@@ -241,6 +298,8 @@ void Collect(Notification* n, absl::Duration timeout, size_t memory_limit,
   // Collection phase - under a mutex to prevent multiple collections at once.
   mu->lock();
   LOG(INFO) << "Latent-see collection starting";
+  // Drop events left over from before this collection.
+  Appender::FlushAllThreadBins(nullptr);
   // Start the sink before enabling appender to ensure events are not dropped.
   sink->Start(memory_limit / sizeof(Bin) + 1u);
   Appender::Enable(sink);
@@ -256,6 +315,9 @@ void Collect(Notification* n, absl::Duration timeout, size_t memory_limit,
   LOG(INFO) << "Latent-see collection stopping";
   // Disable appender first to prevent new incoming events while draining.
   Appender::Disable();
+  // Hand the partially filled bin of every thread to the sink, so that the
+  // most recent events of each thread are not lost.
+  Appender::FlushAllThreadBins(sink);
   std::unique_ptr<Sink::EventDump> events = sink->Stop();
   mu->unlock();
   CHECK(events != nullptr);

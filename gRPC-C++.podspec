@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.86.0-dev'
+  version = '1.87.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -740,6 +740,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.h',
                       'src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb.h',
                       'src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.h',
+                      'src/core/ext/upb-gen/google/api/field_behavior.upb.h',
+                      'src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.h',
                       'src/core/ext/upb-gen/google/api/http.upb.h',
                       'src/core/ext/upb-gen/google/api/http.upb_minitable.h',
                       'src/core/ext/upb-gen/google/api/httpbody.upb.h',
@@ -776,6 +778,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.h',
                       'src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb.h',
                       'src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.h',
+                      'src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb.h',
+                      'src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h',
@@ -1273,6 +1277,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/transport_fwd.h',
                       'src/core/load_balancing/address_filtering.h',
                       'src/core/load_balancing/autosharding/autosharding.h',
+                      'src/core/load_balancing/autosharding/autosharding_assignment.h',
+                      'src/core/load_balancing/autosharding/autosharding_client.h',
                       'src/core/load_balancing/backend_metric_data.h',
                       'src/core/load_balancing/backend_metric_parser.h',
                       'src/core/load_balancing/child_policy_handler.h',
@@ -2203,6 +2209,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.h',
                               'src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb.h',
                               'src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.h',
+                              'src/core/ext/upb-gen/google/api/field_behavior.upb.h',
+                              'src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.h',
                               'src/core/ext/upb-gen/google/api/http.upb.h',
                               'src/core/ext/upb-gen/google/api/http.upb_minitable.h',
                               'src/core/ext/upb-gen/google/api/httpbody.upb.h',
@@ -2239,6 +2247,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.h',
                               'src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb.h',
                               'src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.h',
+                              'src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb.h',
+                              'src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h',
@@ -2736,6 +2746,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/transport_fwd.h',
                               'src/core/load_balancing/address_filtering.h',
                               'src/core/load_balancing/autosharding/autosharding.h',
+                              'src/core/load_balancing/autosharding/autosharding_assignment.h',
+                              'src/core/load_balancing/autosharding/autosharding_client.h',
                               'src/core/load_balancing/backend_metric_data.h',
                               'src/core/load_balancing/backend_metric_parser.h',
                               'src/core/load_balancing/child_policy_handler.h',

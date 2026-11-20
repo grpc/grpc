@@ -37,7 +37,6 @@
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
-#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -64,6 +63,7 @@ using ::grpc_core::IsStatusOk;
 using ::grpc_core::MakeImmediateResponse;
 using ::grpc_core::MakeRequestBodyDrainCompleteResponse;
 using ::grpc_core::MakeRequestBodyMutationResponse;
+using ::grpc_core::MakeRequestHalfCloseResponse;
 using ::grpc_core::MakeRequestHeadersMutationResponse;
 using ::grpc_core::MakeResponseBodyDrainCompleteResponse;
 using ::grpc_core::MakeResponseBodyMutationResponse;
@@ -664,8 +664,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
       seen_ = true;
       EXPECT_THAT(request, MatchesRequestBody(kEmptyBody, kEndOfStream));
       if (send_response_) {
-        stream_->SendResponse(
-            MakeRequestBodyMutationResponse(/*body=*/"", kEndOfStream));
+        stream_->SendResponse(MakeRequestHalfCloseResponse());
       }
     }
 
@@ -732,15 +731,20 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   }
 
   void SetUp() override {
-    // Server-side ext_proc crashes with PH2 server, and client-side ext_proc
-    // tests are flaky with PH2 server due to a data race in
-    // ServerCall::failed_before_recv_message().
-    SKIP_TEST_FOR_PH2_SERVER(
-        "TODO(rishesh) [PH2][P1] ext_proc is not yet supported with PH2");
     env_var_.emplace(GetParam().filter_on_server()
                          ? "GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_SERVER"
                          : "GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
-    InitClient(MakeBootstrapBuilder().SetTrustedXdsServer(),
+    // The ext_proc server's port is picked at construction time, so we
+    // create it before building the bootstrap config, which needs to
+    // reference its target URI in "allowed_grpc_services".
+    ext_proc_server_ = std::make_unique<ExtProcServerThread>(this);
+    // "allowed_grpc_services" is used only when the xDS server is not
+    // trusted; with a trusted xDS server, the ext_proc filter takes the
+    // side-channel credentials directly from the GrpcService proto.
+    XdsBootstrapBuilder builder = MakeBootstrapBuilder().AddAllowedGrpcService(
+        ext_proc_server_->target());
+    if (trusted_xds_server_) builder.SetTrustedXdsServer();
+    InitClient(std::move(builder),
                /*lb_expected_authority=*/"",
                /*xds_resource_does_not_exist_timeout_ms=*/0,
                /*balancer_authority_override=*/"", /*args=*/nullptr);
@@ -752,7 +756,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
         {"locality0", CreateEndpointsForBackends(0, 1)},
     })));
-    ext_proc_server_ = std::make_unique<ExtProcServerThread>(this);
     ext_proc_server_->Start();
   }
 
@@ -865,6 +868,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
   std::optional<grpc_core::testing::ScopedExperimentalEnvVar> env_var_;
   std::unique_ptr<ExtProcServerThread> ext_proc_server_;
+  bool trusted_xds_server_ = true;
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -1078,7 +1082,14 @@ TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
       {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
   half_close_handler.HandleIfNotYetSeen();
   // For trailers-only response, ext_proc server sees no further requests.
-  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
+  auto next_req = ext_proc_stream->GetNextRequest();
+  // TODO(rishesh): On the server, the client half-close races with the
+  // trailers-only response, so it may show up here. Remove once the
+  // server-side filter reliably observes client half-close.
+  if (GetParam().filter_on_server()) {
+    next_req = half_close_handler.MaybeHandle(std::move(next_req));
+  }
+  EXPECT_EQ(next_req, std::nullopt);
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::FAILED_PRECONDITION, ""));
 }
@@ -1313,16 +1324,44 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
   ASSERT_THAT(eos_req, ::testing::Optional(
                            MatchesRequestBody(kEmptyBody, kEndOfStream)));
   EXPECT_TRUE(eos_req->request_body().end_of_stream_without_message());
-  ::envoy::service::ext_proc::v3::ProcessingResponse proc_response;
-  auto* common_response =
-      proc_response.mutable_request_body()->mutable_response();
-  auto* streamed_response =
-      common_response->mutable_body_mutation()->mutable_streamed_response();
-  streamed_response->set_end_of_stream(true);
-  streamed_response->set_end_of_stream_without_message(true);
-  ext_proc_stream->SendResponse(proc_response);
+  ext_proc_stream->SendResponse(MakeRequestHalfCloseResponse());
   EXPECT_FALSE(stream.WaitForRead().has_value());
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+}
+
+// The request body is not sent to the ext_proc server, so the half-close is
+// forwarded directly to the backend. However, the child call is not started
+// until the ext_proc server responds to the request headers, so the filter
+// must hold the half-close until then.
+// Note: With the PH2 server transport, the server-side filter reads the
+// half-close before the ext_proc server's response is processed. With the
+// other transports, the half-close is currently read after it.
+TEST_P(XdsExtProcEnd2endTest,
+       BidiStreamHalfCloseWithoutMessageBeforeRequestHeadersResponse) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(false)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  StartBackendServer();
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  // Half-close without sending any message, before the ext_proc server
+  // responds to the request headers.  Start the read first, so the pending
+  // read keeps the call alive.
+  stream.StartReadMessage();
+  stream.StartWritesDone();
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req,
+              ::testing::Optional(
+                  MatchesRequestHeaders(::testing::Contains(::testing::Pair(
+                      ":path", "/grpc.testing.EchoTestService/BidiStream")))));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
+  EXPECT_FALSE(stream.WaitForRead().has_value());
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
 }
 
 //
@@ -1485,9 +1524,9 @@ TEST_P(XdsExtProcEnd2endTest, DrainIgnoredAfterHalfClose) {
   stream.StartWritesDone();
   auto req2 = ext_proc_stream->GetNextRequest();
   ASSERT_THAT(req2, ::testing::Optional(MatchesRequestBody("", kEndOfStream)));
-  ext_proc_stream->SendResponse(SetRequestDrains(
-      MakeRequestBodyMutationResponse("", /*end_of_stream=*/true),
-      /*drain_requests=*/true, /*drain_responses=*/false));
+  ext_proc_stream->SendResponse(SetRequestDrains(MakeRequestHalfCloseResponse(),
+                                                 /*drain_requests=*/true,
+                                                 /*drain_responses=*/false));
   EXPECT_FALSE(stream.WaitForRead().has_value());
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
 }
@@ -1792,8 +1831,7 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
   req = ext_proc_stream->GetNextRequest();
   ASSERT_TRUE(req.has_value());
   EXPECT_THAT(*req, MatchesRequestBody(kEmptyBody, kEndOfStream));
-  ext_proc_stream->SendResponse(
-      MakeRequestBodyMutationResponse(/*body=*/"", kEndOfStream));
+  ext_proc_stream->SendResponse(MakeRequestHalfCloseResponse());
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, IsStatusOk());
   const std::string expected_target = absl::StrCat("xds:", kServerName);
@@ -1807,6 +1845,77 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
   }
   EXPECT_TRUE(
       stats_plugin->GetHistogramValueByName(metric_name, labels).has_value());
+}
+
+//
+// Tests with an untrusted xDS server
+//
+
+// When the xDS server is not trusted, the ext_proc filter ignores the
+// credentials in the GrpcService proto and instead looks up the target URI
+// in the "allowed_grpc_services" field of the bootstrap config.
+//
+// Note that XdsExtProcEnd2endTest uses a trusted xDS server, so it never
+// exercises the "allowed_grpc_services" code path.  This is why a bug where
+// that bootstrap field was parsed only when
+// GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT was set (but not when only
+// GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_SERVER was set) was not caught for
+// server-side ext_proc.
+class XdsExtProcUntrustedXdsServerEnd2endTest : public XdsExtProcEnd2endTest {
+ public:
+  XdsExtProcUntrustedXdsServerEnd2endTest() { trusted_xds_server_ = false; }
+};
+
+// Only the listener-level filter config is tested here, because
+// SetFilterConfig() uses a top-level config with a placeholder target URI for
+// kHttpFilterConfigInRoute, which would not be in "allowed_grpc_services".
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsExtProcUntrustedXdsServerEnd2endTest,
+    ::testing::Values(XdsTestType(), XdsTestType().set_filter_on_server()),
+    &XdsTestType::Name);
+
+TEST_P(XdsExtProcUntrustedXdsServerEnd2endTest,
+       UsesCredentialsFromAllowedGrpcServices) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseTrailerMode(false)
+                             .SetRequestBodyMode(false)
+                             .SetResponseBodyMode(false)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  // For server-side tests, this verifies that the server accepted the
+  // Listener containing the ext_proc filter.  This would fail if the
+  // "allowed_grpc_services" bootstrap field was not parsed, since the
+  // ext_proc filter config would then be rejected.
+  StartBackendServer();
+  RpcOptions rpc_options;
+  rpc_options.set_echo_metadata_initially(true);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get(), rpc_options);
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  // ext_proc server sees request headers and mutates them.
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req,
+      ::testing::Optional(MatchesRequestHeaders(::testing::Contains(
+          ::testing::Pair(":path", "/grpc.testing.EchoTestService/Echo")))));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse(
+      {{kRequestHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
+  // ext_proc server sees response headers and mutates them.
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseHeaders(::testing::_)));
+  ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
+      {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
+  Status status = rpc.GetStatus();
+  EXPECT_THAT(status, IsStatusOk());
+  EXPECT_THAT(rpc.GetServerInitialMetadata(),
+              ::testing::AllOf(
+                  ::testing::Contains(::testing::Pair(
+                      kRequestHeadersMutatedHeaderKey, kHeaderMutatedValue)),
+                  ::testing::Contains(::testing::Pair(
+                      kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue))));
 }
 
 }  // namespace

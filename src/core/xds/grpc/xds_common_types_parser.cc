@@ -485,7 +485,7 @@ std::optional<std::string> GetHeaderValue(upb_StringView upb_value,
   absl::string_view value = UpbStringToAbsl(upb_value);
   if (value.empty()) return std::nullopt;
   ValidationErrors::ScopedField field(errors, field_name);
-  if (value.size() > 16384) errors->AddError("longer than 16384 bytes");
+  if (value.size() > 32768) errors->AddError("longer than 32768 bytes");
   if (is_binary) {
     std::string decoded_value;
     if (!absl::Base64Unescape(value, &decoded_value)) {

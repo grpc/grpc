@@ -144,6 +144,28 @@ TEST_F(EvaluateArgsTest, TestPeerAddressAndPort) {
   EXPECT_EQ(args.GetPeerPort(), 123);
 }
 
+// An endpoint address that is absent is reported as an empty (zero-length)
+// sockaddr, not as indeterminate bytes.
+TEST_F(EvaluateArgsTest, TestUnsetAddresses) {
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetLocalAddress().len, 0);
+  EXPECT_EQ(args.GetPeerAddress().len, 0);
+  EXPECT_EQ(args.GetLocalPort(), 0);
+  EXPECT_EQ(args.GetPeerPort(), 0);
+  EXPECT_TRUE(args.GetLocalAddressString().empty());
+  EXPECT_TRUE(args.GetPeerAddressString().empty());
+}
+
+// Same for an address that is not an IPv4 or IPv6 address, such as a unix
+// domain socket, which EvaluateArgs does not convert to a sockaddr.
+TEST_F(EvaluateArgsTest, TestNonIpAddresses) {
+  util_.SetLocalEndpoint("unix:/tmp/grpc-evaluate-args-test.sock");
+  util_.SetPeerEndpoint("unix:/tmp/grpc-evaluate-args-test.sock");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetLocalAddress().len, 0);
+  EXPECT_EQ(args.GetPeerAddress().len, 0);
+}
+
 TEST_F(EvaluateArgsTest, EmptyAuthContext) {
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_TRUE(args.GetTransportSecurityType().empty());

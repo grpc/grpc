@@ -56,19 +56,14 @@ class LameChannel final : public Channel {
   grpc_connectivity_state CheckConnectivityState(bool) override {
     return GRPC_CHANNEL_TRANSIENT_FAILURE;
   }
-  void WatchConnectivityState(grpc_connectivity_state, Timestamp,
-                              grpc_completion_queue*, void*) override {
-    Crash("WatchConnectivityState not supported");
-  }
+  void WatchConnectivityState(grpc_connectivity_state initial_state,
+                              Timestamp deadline, grpc_completion_queue* cq,
+                              void* tag) override;
   void AddConnectivityWatcher(
-      grpc_connectivity_state,
-      OrphanablePtr<AsyncConnectivityStateWatcherInterface>) override {
-    Crash("AddConnectivityWatcher not supported");
-  }
+      grpc_connectivity_state initial_state,
+      OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher) override;
   void RemoveConnectivityWatcher(
-      AsyncConnectivityStateWatcherInterface*) override {
-    Crash("RemoveConnectivityWatcher not supported");
-  }
+      AsyncConnectivityStateWatcherInterface*) override {}
   void GetInfo(const grpc_channel_info* channel_info) override {}
   void ResetConnectionBackoff() override {}
   void Ping(grpc_completion_queue*, void*) override {

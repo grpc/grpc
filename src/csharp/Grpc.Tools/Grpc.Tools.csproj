@@ -48,7 +48,7 @@
     <None Pack="true" PackagePath="build\" Include="build\**\*.xml; build\**\*.props; build\**\*.targets;" />
 
     <!-- Protobuf assets - well known types -->
-    <_ProtoAssetName Include="any;api;descriptor;duration;empty;field_mask;
+    <_ProtoAssetName Include="any;api;cpp_features;descriptor;duration;empty;field_mask;
                               source_context;struct;timestamp;type;wrappers" />
     <_Asset PackagePath="build/native/include/google/protobuf/" Include="@(_ProtoAssetName->'$(Assets_ProtoInclude)%(Identity).proto')" />
 

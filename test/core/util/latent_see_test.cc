@@ -316,5 +316,74 @@ TEST(LatentSeeTest, FlowWorksAppenderStartsLate) {
   EXPECT_TRUE(IsCollectionStartMark(elems[0]));
 }
 
+// Why: events sit in a per-thread bin until the bin fills up. A thread that is
+// still alive but idle when collection stops never fills its bin, and its last
+// events used to be lost unless that thread called Flush() itself.
+// What: emit one mark from a thread that stays alive, without Flush(), until
+// collection has finished, and check that the mark is collected.
+TEST(LatentSeeTest, PartialBinOfIdleThreadIsCollected) {
+  // Setup.
+  Notification mark_emitted;
+  Notification release_thread;
+  std::thread idle_thread;
+
+  // Execution.
+  auto elems = RunAndReportJson([&]() {
+    WaitForCollector();
+    idle_thread = std::thread([&]() {
+      GRPC_LATENT_SEE_ALWAYS_ON_MARK("idle");
+      mark_emitted.Notify();
+      release_thread.WaitForNotification();
+    });
+    mark_emitted.WaitForNotification();
+  });
+  release_thread.Notify();
+  idle_thread.join();
+
+  // Verification.
+  ASSERT_EQ(elems.size(), 2);
+  EXPECT_TRUE(IsCollectionStartMark(elems[0]));
+  EXPECT_THAT(elems[1].object(), HasStringFieldWithValue("name", "idle"));
+}
+
+// Why: a thread that exits during collection destroys its per-thread bin, and
+// its events used to be lost unless that thread called Flush() itself.
+// What: emit one mark from a thread that exits without Flush() during
+// collection, and check that the mark is collected.
+TEST(LatentSeeTest, PartialBinOfExitedThreadIsCollected) {
+  // Execution.
+  auto elems = RunAndReportJson([&]() {
+    WaitForCollector();
+    std::thread([]() { GRPC_LATENT_SEE_ALWAYS_ON_MARK("exited"); }).join();
+  });
+
+  // Verification.
+  ASSERT_EQ(elems.size(), 2);
+  EXPECT_TRUE(IsCollectionStartMark(elems[0]));
+  EXPECT_THAT(elems[1].object(), HasStringFieldWithValue("name", "exited"));
+}
+
+// Why: events recorded into a per-thread bin outside of a collection must not
+// leak into the next collection, where they would be reported with stale
+// timestamps.
+// What: leave a partially filled bin on this thread before collection starts,
+// flush this thread during collection, and check that the stale event is not
+// reported.
+TEST(LatentSeeTest, StaleBinIsNotCollected) {
+  // Setup.
+  // Leaked on purpose, as Sink cannot be destroyed.
+  static latent_see::Sink* const unused_sink = new latent_see::Sink();
+  latent_see::Appender(unused_sink)
+      .Append(GRPC_LATENT_SEE_METADATA("stale"), 1, 1);
+
+  // Execution.
+  // RunAndReportJson() flushes this thread once collection is running.
+  auto elems = RunAndReportJson([]() { WaitForCollector(); });
+
+  // Verification.
+  ASSERT_EQ(elems.size(), 1);
+  EXPECT_TRUE(IsCollectionStartMark(elems[0]));
+}
+
 }  // namespace
 }  // namespace grpc_core
