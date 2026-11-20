@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from libcpp cimport bool as cbool
+from libcpp.optional cimport optional
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
@@ -50,9 +52,10 @@ cdef extern from "python_observability_context.h" namespace "grpc_observability"
     string key
     string value
 
-  ctypedef struct Annotation:
+  ctypedef struct Event:
+    string name
+    vector[Label] attributes
     string time_stamp
-    string description
 
   ctypedef struct Measurement:
     cMetricsName name
@@ -70,7 +73,7 @@ cdef extern from "python_observability_context.h" namespace "grpc_observability"
     string parent_span_id
     string status
     vector[Label] span_labels
-    vector[Annotation] span_annotations
+    vector[Event] span_events
     int64_t child_span_count
     bint should_sample
 
@@ -81,6 +84,7 @@ cdef extern from "observability_util.h" namespace "grpc_observability":
                                     const char* target,
                                     const char* trace_id,
                                     const char* parent_span_id,
+                                    optional[cbool] parent_span_sampled,
                                     const char* identifier,
                                     const vector[Label] exchange_labels,
                                     bint add_csm_optional_labels,
