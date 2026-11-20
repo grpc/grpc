@@ -100,7 +100,7 @@ void Server::ListenerState::ConfigFetcherWatcher::UpdateConnectionManager(
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << listener_state_->server_.get() << " listener_state "
       << listener_state_ << " config_fetcher_watcher " << this
-      << "]: UpdateConnectionManager(" << connection_manager.get() << ")";
+      << "] UpdateConnectionManager(" << connection_manager.get() << ")";
   RefCountedPtr<ServerConfigFetcher::ConnectionManager>
       connection_manager_to_destroy;
   {
@@ -122,7 +122,7 @@ void Server::ListenerState::ConfigFetcherWatcher::StopServing() {
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << listener_state_->server_.get() << " listener_state "
       << listener_state_ << " config_fetcher_watcher " << this
-      << "]: StopServing()";
+      << "] StopServing()";
   MutexLock lock(listener_state_->mu_);
   listener_state_->is_serving_ = false;
   listener_state_->DrainConnectionsLocked();
@@ -152,7 +152,7 @@ Server::ListenerState::ListenerState(RefCountedPtr<Server> server,
 
 void Server::ListenerState::Start() {
   GRPC_TRACE_LOG(server, INFO) << "[server " << server_.get()
-                               << " listener_state " << this << "]: Start()";
+                               << " listener_state " << this << "] Start()";
   if (server_->config_fetcher() != nullptr) {
     auto watcher = std::make_unique<ConfigFetcherWatcher>(this);
     config_fetcher_watcher_ = watcher.get();
@@ -171,7 +171,7 @@ void Server::ListenerState::Start() {
 
 void Server::ListenerState::Stop() {
   GRPC_TRACE_LOG(server, INFO) << "[server " << server_.get()
-                               << " listener_state " << this << "]: Stop()";
+                               << " listener_state " << this << "] Stop()";
   absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
       connections;
   {
@@ -196,7 +196,7 @@ std::optional<ChannelArgs> Server::ListenerState::AddLogicalConnection(
     const ChannelArgs& args, grpc_endpoint* endpoint) {
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << server_.get() << " listener_state " << this
-      << "]: AddLogicalConnection(): connection=" << connection.get();
+      << "] AddLogicalConnection(): connection=" << connection.get();
   RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager;
   {
     MutexLock lock(mu_);
@@ -256,7 +256,7 @@ void Server::ListenerState::OnHandshakeDone(
     ListenerInterface::LogicalConnection* connection) {
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << server_.get() << " listener_state " << this
-      << "]: OnHandshakeDone(connection=" << connection << ")";
+      << "] OnHandshakeDone(connection=" << connection << ")";
   if (server_->config_fetcher() != nullptr) {
     return;
   }
@@ -280,7 +280,7 @@ void Server::ListenerState::RemoveLogicalConnection(
     ListenerInterface::LogicalConnection* connection) {
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << server_.get() << " listener_state " << this
-      << "]: RemoveLogicalConnection(connection=" << connection << ")";
+      << "] RemoveLogicalConnection(connection=" << connection << ")";
   OrphanablePtr<ListenerInterface::LogicalConnection> connection_to_remove;
   // Remove the connection if it wasn't already removed.
   MutexLock lock(mu_);
@@ -304,7 +304,7 @@ void Server::ListenerState::RemoveLogicalConnection(
 void Server::ListenerState::DrainConnectionsLocked() {
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << server_.get() << " listener_state " << this
-      << "]: DrainConnectionsLocked()";
+      << "] DrainConnectionsLocked()";
   if (connections_.empty()) {
     return;
   }
@@ -330,7 +330,7 @@ void Server::ListenerState::DrainConnectionsLocked() {
 void Server::ListenerState::OnDrainGraceTimer() {
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << server_.get() << " listener_state " << this
-      << "]: OnDrainGraceTimer()";
+      << "] OnDrainGraceTimer()";
   absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
       connections_to_be_drained;
   {
@@ -354,7 +354,7 @@ void Server::ListenerState::MaybeStartNewGraceTimerLocked() {
   }
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << server_.get() << " listener_state " << this
-      << "]: starting graceful drain timer";
+      << "] starting graceful drain timer";
   drain_grace_timer_handle_ = event_engine()->RunAfter(
       connections_to_be_drained_list_.front().timestamp - Timestamp::Now(),
       [self = Ref()]() mutable {
@@ -1067,7 +1067,7 @@ class Server::TransportConnectivityWatcher
                                  const absl::Status& /*status*/) override {
     GRPC_TRACE_LOG(server, INFO)
         << "[server " << server_.get() << " transport " << transport_.get()
-        << "]: TransportConnectivityWatcher::OnConnectivityStateChange(): "
+        << "] TransportConnectivityWatcher::OnConnectivityStateChange(): "
            "state="
         << ConnectivityStateName(new_state);
     // Don't do anything until we are being shut down.
@@ -1357,7 +1357,7 @@ grpc_error_handle Server::SetupTransport(
     Transport* transport, grpc_pollset* accepting_pollset,
     const ChannelArgs& args, grpc_channel_stack_type channel_stack_type) {
   GRPC_TRACE_LOG(server, INFO)
-      << "[server " << this << "]: SetupTransport(transport=" << transport
+      << "[server " << this << "] SetupTransport(transport=" << transport
       << ")";
   GRPC_LATENT_SEE_SCOPE("Server::SetupTransport");
   // Create channel.
@@ -1525,7 +1525,7 @@ void Server::MaybeFinishShutdown() {
                 << " listeners to be destroyed before shutting down server";
     } else {
       VLOG_EVERY_N_SEC(2, 1)
-          << "[server " << this << "]: Waiting for " << channels_.size()
+          << "[server " << this << "] Waiting for " << channels_.size()
           << " channels, " << connections_.size() << " connections, and "
           << listener_states_.size() - listeners_destroyed_ << "/"
           << listener_states_.size()
@@ -1623,8 +1623,7 @@ void BroadcastShutdownToConnectionsLocked(
 //       connection is NOT closed until the server is done with all those calls.
 //    -- Once there are no more calls in progress, the channel is closed.
 void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
-  GRPC_TRACE_LOG(server, INFO)
-      << "[server " << this << "]: ShutdownAndNotify()";
+  GRPC_TRACE_LOG(server, INFO) << "[server " << this << "] ShutdownAndNotify()";
   ChannelBroadcaster broadcaster;
   {
     // Wait for startup to be finished.  Locks mu_global.
@@ -1665,7 +1664,7 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
 }
 
 void Server::StopListening() {
-  GRPC_TRACE_LOG(server, INFO) << "[server " << this << "]: StopListening()";
+  GRPC_TRACE_LOG(server, INFO) << "[server " << this << "] StopListening()";
   for (auto& listener_state : listener_states_) {
     if (listener_state->listener() == nullptr) continue;
     channelz::ListenSocketNode* channelz_listen_socket_node =
@@ -1678,7 +1677,7 @@ void Server::StopListening() {
 }
 
 void Server::CancelAllCalls() {
-  GRPC_TRACE_LOG(server, INFO) << "[server " << this << "]: CancelAllCalls()";
+  GRPC_TRACE_LOG(server, INFO) << "[server " << this << "] CancelAllCalls()";
   ChannelBroadcaster broadcaster;
   {
     MutexLock lock(mu_global_);
@@ -1695,7 +1694,7 @@ void Server::CancelAllCalls() {
 }
 
 void Server::SendGoaways() {
-  GRPC_TRACE_LOG(server, INFO) << "[server " << this << "]: SendGoaways()";
+  GRPC_TRACE_LOG(server, INFO) << "[server " << this << "] SendGoaways()";
   ChannelBroadcaster broadcaster;
   {
     MutexLock lock(mu_global_);
@@ -1709,7 +1708,7 @@ void Server::SendGoaways() {
 }
 
 void Server::Orphan() {
-  GRPC_TRACE_LOG(server, INFO) << "[server " << this << "]: Orphan()";
+  GRPC_TRACE_LOG(server, INFO) << "[server " << this << "] Orphan()";
   {
     MutexLock lock(mu_global_);
     GRPC_CHECK(ShutdownCalled() || listener_states_.empty());
@@ -1821,7 +1820,7 @@ class Server::ChannelData::ConnectivityWatcher
                                  const absl::Status& /*status*/) override {
     GRPC_TRACE_LOG(server, INFO)
         << "[server " << chand_->server_.get() << " channel " << channel_.get()
-        << "]: ConnectivityWatcher::OnConnectivityStateChange(): state="
+        << "] ConnectivityWatcher::OnConnectivityStateChange(): state="
         << ConnectivityStateName(new_state);
     // Don't do anything until we are being shut down.
     if (new_state != GRPC_CHANNEL_SHUTDOWN) return;
@@ -1977,7 +1976,7 @@ void Server::ChannelData::Destroy() {
                     grpc_schedule_on_exec_ctx);
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << server_.get() << " channel_data " << this
-      << "]: disconnected client";
+      << "] disconnected client";
   grpc_transport_op* op =
       grpc_make_transport_op(&finish_destroy_channel_closure_);
   op->set_accept_stream = true;
