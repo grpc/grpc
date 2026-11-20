@@ -38,14 +38,15 @@
 namespace grpc {
 namespace testing {
 
+using ::google::cloud::autosharding::v1::AutoshardingService;
+
 // A fake AutoshardingService (gRFC A119) that sends scripted assignments.
 //
 // Each WatchShardingAssignment stream gets the latest assignment for its
 // target when it starts, and every assignment that the test sets for that
 // target after that.
 class AutoshardingServiceImpl
-    : public CountedService<google::cloud::autosharding::v1::
-                                AutoshardingService::CallbackService> {
+    : public CountedService<AutoshardingService::CallbackService> {
  public:
   using Request =
       google::cloud::autosharding::v1::WatchShardingAssignmentRequest;
