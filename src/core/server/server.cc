@@ -463,15 +463,15 @@ std::optional<ChannelArgs> Server::ListenerState::AddHandshakingConnectionImpl(
 }
 
 bool Server::ListenerState::OnHandshakeDone(
-    Orphanable* handshaking_connection, Transport* transport,
+    Orphanable* handshaking_connection, OrphanablePtr<Transport> transport,
     grpc_pollset* accepting_pollset, const ChannelArgs& args) {
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << server_.get() << " listener_state " << this
       << "]: OnHandshakeDone(handshaking_connection="
-      << handshaking_connection << ", transport=" << transport << ")";
+      << handshaking_connection << ", transport=" << transport.get() << ")";
   absl::StatusOr<OrphanablePtr<Connection>> connection = Connection::Create(
-      Ref(), transport, accepting_pollset, args, GRPC_SERVER_CHANNEL,
-      /*hold_connection_quota=*/true);
+      Ref(), std::move(transport), accepting_pollset, args,
+      GRPC_SERVER_CHANNEL, /*hold_connection_quota=*/true);
   if (connection.ok() && *connection == nullptr) {
     connection = absl::InternalError("failed to create connection");
   }
@@ -518,14 +518,14 @@ bool Server::ListenerState::OnHandshakeDone(
 }
 
 absl::Status Server::ListenerState::LegacyAddActiveConnection(
-    Transport* transport, grpc_pollset* accepting_pollset,
+    OrphanablePtr<Transport> transport, grpc_pollset* accepting_pollset,
     const ChannelArgs& args) {
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << server_.get() << " listener_state " << this
-      << "]: LegacyAddActiveConnection(transport=" << transport << ")";
+      << "]: LegacyAddActiveConnection(transport=" << transport.get() << ")";
   absl::StatusOr<OrphanablePtr<Connection>> connection = Connection::Create(
-      Ref(), transport, accepting_pollset, args, GRPC_SERVER_CHANNEL,
-      /*hold_connection_quota=*/false);
+      Ref(), std::move(transport), accepting_pollset, args,
+      GRPC_SERVER_CHANNEL, /*hold_connection_quota=*/false);
   if (!connection.ok()) return connection.status();
   if (*connection == nullptr) {
     return absl::InternalError("failed to create connection");
@@ -706,7 +706,7 @@ class Server::Connection::ConnectivityWatcher final
 absl::StatusOr<OrphanablePtr<Server::Connection>>
 Server::Connection::Create(
     RefCountedPtr<ListenerState> listener_state,
-    Transport* transport, grpc_pollset* accepting_pollset,
+    OrphanablePtr<Transport> transport, grpc_pollset* accepting_pollset,
     const ChannelArgs& args, grpc_channel_stack_type channel_stack_type,
     bool hold_connection_quota) {
   if (transport == nullptr) return absl::UnavailableError("handshake failed");
@@ -716,7 +716,8 @@ Server::Connection::Create(
       new Connection(std::move(listener_state), hold_connection_quota);
   absl::StatusOr<OrphanablePtr<ServerTransport>> owned_transport =
       connection->listener_state_->server_->SetupCallLinkageForTransport(
-          connection, transport, accepting_pollset, args, channel_stack_type);
+          connection, std::move(transport), accepting_pollset, args,
+          channel_stack_type);
   if (!owned_transport.ok()) {
     delete connection;
     return owned_transport.status();
@@ -1791,86 +1792,6 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
 grpc_error_handle Server::SetupTransport(
     Transport* transport, grpc_pollset* accepting_pollset,
     const ChannelArgs& args, grpc_channel_stack_type channel_stack_type) {
-  GRPC_LATENT_SEE_SCOPE("Server::SetupTransport");
-  if (!IsServerConnectionManagementEnabled()) {
-    return LegacySetupTransport(transport, accepting_pollset, args,
-                                channel_stack_type);
-  }
-  return listener_states_.back()->LegacyAddActiveConnection(
-      transport, accepting_pollset, args);
-}
-
-// TODO(roth): When the vrpc code goes away, remove the
-// channel_stack_type argument.
-absl::StatusOr<OrphanablePtr<ServerTransport>>
-Server::SetupCallLinkageForTransport(
-    Connection* connection, Transport* transport,
-    grpc_pollset* accepting_pollset, const ChannelArgs& args,
-    grpc_channel_stack_type channel_stack_type) {
-  global_stats().IncrementServerChannelsCreated();
-  OrphanablePtr<ServerTransport> owned_transport;
-  if (transport->server_transport() != nullptr) {
-    // Take ownership.
-    owned_transport.reset(transport->server_transport());
-    auto destination = MakeCallDestination(
-        args.SetObject(transport).SetObject<channelz::BaseNode>(
-            transport->GetSocketNode()),
-        connection, channel_stack_type);
-    if (!destination.ok()) return destination.status();
-    owned_transport->SetCallDestination(std::move(*destination));
-  } else {
-    // FIXME: figure out how to plumb connection object to be visible to RPCs
-    GRPC_CHECK(transport->filter_stack_transport() != nullptr);
-    absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
-        "",
-        args.SetObject(transport).SetObject<channelz::BaseNode>(
-            transport->GetSocketNode()),
-        channel_stack_type);
-    if (!channel.ok()) {
-      // FIXME: should we orphan here?  needs to work for legacy code
-      // paths via Server::SetupTransport() too
-      transport->Orphan();
-      return channel.status();
-    }
-    GRPC_CHECK(*channel != nullptr);
-    auto* channel_stack = (*channel)->channel_stack();
-    GRPC_CHECK(channel_stack != nullptr);
-    ChannelData* chand = static_cast<ChannelData*>(
-        grpc_channel_stack_element(channel_stack, 0)->channel_data);
-    // Set up CQs.
-    size_t cq_idx;
-    for (cq_idx = 0; cq_idx < cqs_.size(); cq_idx++) {
-      if (grpc_cq_pollset(cqs_[cq_idx]) == accepting_pollset) break;
-    }
-    if (cq_idx == cqs_.size()) {
-      // Completion queue not found.  Pick a random one to publish new calls to.
-      cq_idx = static_cast<size_t>(rand()) % std::max<size_t>(1, cqs_.size());
-    }
-    // Keep a local reference to the channel alive during setup to prevent
-    // premature destruction if the transport fails concurrently.
-    RefCountedPtr<Channel> channel_keep_alive = *channel;
-    // Wrap the channel in a transport, just to make it look the same as v3.
-    owned_transport = MakeOrphanable<ChannelData::V1ChannelTransport>(*channel);
-    // Set up call linkage.
-    chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport);
-    // TODO(snohria): Remove this as part of cleaning up the vRPC code.
-    auto* parent_arena =
-        args.GetPointer<Arena>(GRPC_ARG_SERVER_INTERNAL_PARENT_CALL_ARENA);
-    if (parent_arena != nullptr) {
-      chand->set_parent_arena(parent_arena->Ref());
-    }
-  }
-  stream_quota_->IncrementOpenChannels();
-  // Setup channelz node.
-  if (auto socket_node = transport->GetSocketNode(); socket_node != nullptr) {
-    socket_node->AddParent(channelz_node_.get());
-  }
-  return owned_transport;
-}
-
-grpc_error_handle Server::LegacySetupTransport(
-    Transport* transport, grpc_pollset* accepting_pollset,
-    const ChannelArgs& args, grpc_channel_stack_type channel_stack_type) {
   // Create channel.
   global_stats().IncrementServerChannelsCreated();
   // Set up channelz node.
@@ -1938,6 +1859,78 @@ grpc_error_handle Server::LegacySetupTransport(
     stream_quota_->IncrementOpenChannels();
   }
   return absl::OkStatus();
+}
+
+absl::Status Server::LegacyAddActiveConnection(
+    OrphanablePtr<Transport> transport, grpc_pollset* accepting_pollset,
+    const ChannelArgs& args, grpc_channel_stack_type channel_stack_type) {
+  GRPC_LATENT_SEE_SCOPE("Server::LegacyAddActiveConnection");
+  return listener_states_.back()->LegacyAddActiveConnection(
+      std::move(transport), accepting_pollset, args);
+}
+
+// TODO(roth): When the vrpc code goes away, remove the
+// channel_stack_type argument.
+absl::StatusOr<OrphanablePtr<ServerTransport>>
+Server::SetupCallLinkageForTransport(
+    Connection* connection, OrphanablePtr<Transport> transport,
+    grpc_pollset* accepting_pollset, const ChannelArgs& args,
+    grpc_channel_stack_type channel_stack_type) {
+  global_stats().IncrementServerChannelsCreated();
+  OrphanablePtr<ServerTransport> owned_transport;
+  if (transport->server_transport() != nullptr) {
+    // Take ownership.
+    owned_transport.reset(transport.release()->server_transport());
+    auto destination = MakeCallDestination(
+        args.SetObject(transport).SetObject<channelz::BaseNode>(
+            transport->GetSocketNode()),
+        connection, channel_stack_type);
+    if (!destination.ok()) return destination.status();
+    owned_transport->SetCallDestination(std::move(*destination));
+  } else {
+    // FIXME: figure out how to plumb connection object to be visible to RPCs
+    GRPC_CHECK(transport->filter_stack_transport() != nullptr);
+    absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
+        "",
+        args.SetObject(transport.get()).SetObject<channelz::BaseNode>(
+            transport->GetSocketNode()),
+        channel_stack_type);
+    if (!channel.ok()) return channel.status();
+    transport.release();  // Channel has taken ownership.
+    GRPC_CHECK(*channel != nullptr);
+    auto* channel_stack = (*channel)->channel_stack();
+    GRPC_CHECK(channel_stack != nullptr);
+    ChannelData* chand = static_cast<ChannelData*>(
+        grpc_channel_stack_element(channel_stack, 0)->channel_data);
+    // Set up CQs.
+    size_t cq_idx;
+    for (cq_idx = 0; cq_idx < cqs_.size(); cq_idx++) {
+      if (grpc_cq_pollset(cqs_[cq_idx]) == accepting_pollset) break;
+    }
+    if (cq_idx == cqs_.size()) {
+      // Completion queue not found.  Pick a random one to publish new calls to.
+      cq_idx = static_cast<size_t>(rand()) % std::max<size_t>(1, cqs_.size());
+    }
+    // Keep a local reference to the channel alive during setup to prevent
+    // premature destruction if the transport fails concurrently.
+    RefCountedPtr<Channel> channel_keep_alive = *channel;
+    // Wrap the channel in a transport, just to make it look the same as v3.
+    owned_transport = MakeOrphanable<ChannelData::V1ChannelTransport>(*channel);
+    // Set up call linkage.
+    chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport);
+    // TODO(snohria): Remove this as part of cleaning up the vRPC code.
+    auto* parent_arena =
+        args.GetPointer<Arena>(GRPC_ARG_SERVER_INTERNAL_PARENT_CALL_ARENA);
+    if (parent_arena != nullptr) {
+      chand->set_parent_arena(parent_arena->Ref());
+    }
+  }
+  stream_quota_->IncrementOpenChannels();
+  // Setup channelz node.
+  if (auto socket_node = transport->GetSocketNode(); socket_node != nullptr) {
+    socket_node->AddParent(channelz_node_.get());
+  }
+  return owned_transport;
 }
 
 bool Server::HasOpenConnections() {

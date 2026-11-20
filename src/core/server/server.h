@@ -292,27 +292,15 @@ class Server : public ServerInterface,
     // transport, sets up the necessary linkage to handle RPCs that come
     // in on the transport, and tracks it as an active connection.
     //
-    // TODO(roth): After the v3 migration, change this API to take the
-    // transport argument as OrphanablePtr<ServerTransport> instead of
-    // Transport*, and to return void.
-    bool OnHandshakeDone(Orphanable* handshaking_connection,
-                         Transport* transport, grpc_pollset* accepting_pollset,
-                         const ChannelArgs& args);
+    // TODO(roth): After the v3 migration, change this to return void.
+    bool OnHandshakeDone(
+        Orphanable* handshaking_connection, OrphanablePtr<Transport> transport,
+        grpc_pollset* accepting_pollset, const ChannelArgs& args);
 
     // Legacy code-path for callers that directly call
-    // Server::SetupTransport() without having a listener.
-    //
-    // TODO(roth): When we have time, migrate all callers to store
-    // connections in listeners and remove this method.  This will require
-    // changing at least the following callers:
-    // - the legacy grpc_server_add_channel_from_fd() API (should
-    //   migrate to the new PassiveListener API)
-    // - the inproc transport (needs to use a listener as part of the
-    //   transport selection work)
-    // - the chaotic_good transport (needs to be changed to use the
-    //   ListenerState APIs)
+    // Server::LegacyAddActionConnection() without having a listener.
     absl::Status LegacyAddActiveConnection(
-        Transport* transport, grpc_pollset* accepting_pollset,
+        OrphanablePtr<Transport> transport, grpc_pollset* accepting_pollset,
         const ChannelArgs& args);
 
     size_t NumOpenConnectionsLocked()
@@ -505,11 +493,8 @@ class Server : public ServerInterface,
   // Sets up a transport.  Creates a channel stack and binds the transport to
   // the server.  Called from the listener when a new connection is accepted.
   // Takes ownership of a ref on resource_user from the caller.
-  // TODO(roth): When we have time, migrate all callers to store
-  // connections in listeners and remove this method.  This will require
-  // changing the inproc transport to use a listener and migrating
-  // callers from the legacy grpc_server_add_channel_from_fd() API to
-  // the new PassiveListener API, and maybe other changes.
+  // TODO(roth): Remove this method as part of removing the
+  // server_connection_management experiment.
   grpc_error_handle SetupTransport(Transport* transport,
                                    grpc_pollset* accepting_pollset,
                                    const ChannelArgs& args)
@@ -522,6 +507,19 @@ class Server : public ServerInterface,
                                    const ChannelArgs& args,
                                    grpc_channel_stack_type channel_stack_type)
       ABSL_LOCKS_EXCLUDED(mu_global_);
+
+  // TODO(roth): When we have time, migrate all callers to manage
+  // connections in ListenerState and remove this method.  This will require
+  // changing at least the following callers:
+  // - the legacy grpc_server_add_channel_from_fd() API (should
+  //   migrate to the new PassiveListener API)
+  // - the inproc transport (needs to use a listener as part of the
+  //   transport selection work)
+  // - the chaotic_good transport (needs to be changed to use the
+  //   ListenerState APIs)
+  absl::Status LegacyAddActiveConnection(
+      OrphanablePtr<Transport> transport, grpc_pollset* accepting_pollset,
+      const ChannelArgs& args);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 
@@ -748,7 +746,7 @@ class Server : public ServerInterface,
    public:
     static absl::StatusOr<OrphanablePtr<Connection>> Create(
         RefCountedPtr<ListenerState> listener_state,
-        Transport* transport, grpc_pollset* accepting_pollset,
+        OrphanablePtr<Transport> transport, grpc_pollset* accepting_pollset,
         const ChannelArgs& args, grpc_channel_stack_type channel_stack_type,
         bool hold_connection_quota);
 
@@ -811,18 +809,11 @@ class Server : public ServerInterface,
   void StartDrainingAllConnectionsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
-  // TODO(roth): Remove this as part of removing the
-  // server_connection_management experiment.
-  grpc_error_handle LegacySetupTransport(
-      Transport* transport, grpc_pollset* accepting_pollset,
-      const ChannelArgs& args, grpc_channel_stack_type channel_stack_type)
-      ABSL_LOCKS_EXCLUDED(mu_global_);
-
   // TODO(roth): After the v3 migration, the caller should already have
   // an OrphanablePtr<ServerTransport>, so this can take the parameter as
   // ServerTransport& and just return absl::Status.
   absl::StatusOr<OrphanablePtr<ServerTransport>> SetupCallLinkageForTransport(
-      Connection* connection, Transport* transport,
+      Connection* connection, OrphanablePtr<Transport> transport,
       grpc_pollset* accepting_pollset, const ChannelArgs& args,
       grpc_channel_stack_type channel_stack_type);
 
