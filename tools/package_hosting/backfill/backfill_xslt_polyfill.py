@@ -67,14 +67,17 @@ Examples:
      python3 tools/package_hosting/backfill/backfill_xslt_polyfill.py \
        --only="2018/07"
 
-     # Upload backfilled index.xml files for a range of months in GCS:
+     # Upload backfilled index.xml files for a range of months in GCS while
+     # capturing per-file debug logs to a file:
      python3 tools/package_hosting/backfill/backfill_xslt_polyfill.py \
        --start-from="2018/07" \
-       --end-at="2018/12"
+       --end-at="2018/12" \
+       --debug-log="backfill.log"
 
      # Resume a live GCS upload from a specific YYYY/MM onward:
      python3 tools/package_hosting/backfill/backfill_xslt_polyfill.py \
-       --start-from="2019/01"
+       --start-from="2019/01" \
+       --debug-log="backfill.log"
 """
 
 import argparse
@@ -110,6 +113,11 @@ from requests import exceptions as requests_exceptions
 from urllib3 import exceptions as urllib3_exceptions
 
 _LOGGER: Final = logging.getLogger(__name__)
+_LOG_FORMAT: Final = (
+    "{levelname[0]}{asctime}.{msecs:03.0f} {thread} "
+    "{filename}:{lineno}] {message}"
+)
+_LOG_DATEFMT: Final = "%m%d %H:%M:%S"
 
 DEFAULT_BUCKET: Final = "packages.grpc.io"
 DEFAULT_PREFIX: Final = "archive"
@@ -1031,10 +1039,23 @@ def _build_epilog() -> str:
 
           # 3. LIVE GCS upload (UPLOADS modified index.xml; prompts [yN]):
           %(prog)s --only="2018/07"
-          %(prog)s --start-from="2018/07" --end-at="2018/12"
-          %(prog)s --start-from="2019/01"
+          %(prog)s --start-from="2018/07" --end-at="2018/12" \\
+            --debug-log="backfill.log"
+          %(prog)s --start-from="2019/01" --debug-log="backfill.log"
         """
     )
+
+
+def _parse_non_empty_path(
+    parser: argparse.ArgumentParser,
+    raw_value: str,
+    flag_name: str,
+) -> pathlib.Path:
+    """Validates and converts a non-empty CLI path argument."""
+    cleaned = raw_value.strip()
+    if not cleaned:
+        parser.error(f"argument {flag_name}: path must not be empty")
+    return pathlib.Path(cleaned)
 
 
 def _validate_parsed_args(
@@ -1049,10 +1070,11 @@ def _validate_parsed_args(
             parser.error(
                 "argument --prefix: not allowed with argument --local-dir"
             )
-        local_dir_str = args.local_dir.strip()
-        if not local_dir_str:
-            parser.error("argument --local-dir: path must not be empty")
-        args.local_dir = pathlib.Path(local_dir_str)
+        args.local_dir = _parse_non_empty_path(
+            parser,
+            args.local_dir,
+            "--local-dir",
+        )
     else:
         bucket = args.bucket.strip()
         if not bucket or "/" in bucket:
@@ -1069,6 +1091,13 @@ def _validate_parsed_args(
                 "not a gs:// URI"
             )
         args.prefix = cleaned_prefix
+
+    if args.debug_log is not None:
+        args.debug_log = _parse_non_empty_path(
+            parser,
+            args.debug_log,
+            "--debug-log",
+        )
 
     if args.workers < 1:
         parser.error("argument --workers: must be >= 1")
@@ -1160,7 +1189,16 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--verbose",
         action="store_true",
-        help="Log every individual file outcome.",
+        help="Log every individual file outcome to the console.",
+    )
+    parser.add_argument(
+        "--debug-log",
+        default=None,
+        metavar="FILE",
+        help=(
+            "Append full DEBUG-level logs (including every file outcome) to "
+            "FILE while keeping normal console output."
+        ),
     )
 
     args = parser.parse_args(argv)
@@ -1312,12 +1350,12 @@ def _process_partition(
     *,
     cancel_event: threading.Event,
     cumulative: Stats,
-    verbose: bool,
     patched_label: str,
 ) -> Stats:
     """Processes all build targets in a single YYYY/MM partition."""
     targets = backend.list_targets(ym)
     month_stats = Stats()
+    log_debug = _LOGGER.isEnabledFor(logging.DEBUG)
 
     future_map = {
         executor.submit(
@@ -1330,7 +1368,7 @@ def _process_partition(
     for future in futures.as_completed(future_map):
         result = future.result()
         month_stats.record(result.outcome)
-        if verbose:
+        if log_debug:
             _LOGGER.debug(
                 "[%s] %s: %s",
                 ym,
@@ -1366,7 +1404,6 @@ def _execute_partitions(
     partitions: Sequence[YearMonth],
     *,
     workers: int,
-    verbose: bool,
     mode_label: str,
     patched_label: str,
 ) -> int:
@@ -1390,7 +1427,6 @@ def _execute_partitions(
                     ym,
                     cancel_event=cancel_event,
                     cumulative=cumulative,
-                    verbose=verbose,
                     patched_label=patched_label,
                 )
                 if month_stats.failed > 0:
@@ -1486,54 +1522,127 @@ def _run_with_backend(
         backend,
         partitions,
         workers=args.workers,
-        verbose=args.verbose,
         mode_label=mode_display.banner,
         patched_label=mode_display.action_label,
     )
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    """Main entry point returning process exit status."""
-    args = parse_args(argv)
+@contextlib.contextmanager
+def _configure_logging(
+    *,
+    verbose: bool,
+    debug_log: pathlib.Path | None,
+) -> Generator[None]:
+    """Configures absl-style console logging and optional debug file logging."""
     # absl-style logging.
     logging.basicConfig(
         level=logging.INFO,
         style="{",
-        format=(
-            "{levelname[0]}{asctime}.{msecs:03.0f} {thread} "
-            "{filename}:{lineno}] {message}"
-        ),
-        datefmt="%m%d %H:%M:%S",
+        format=_LOG_FORMAT,
+        datefmt=_LOG_DATEFMT,
     )
-    _LOGGER.setLevel(logging.DEBUG if args.verbose else logging.INFO)
+    console_level = logging.DEBUG if verbose else logging.INFO
+    root_logger = logging.getLogger()
+    for handler in root_logger.handlers:
+        handler.setLevel(console_level)
 
+    _LOGGER.setLevel(
+        logging.DEBUG if (verbose or debug_log is not None) else logging.INFO
+    )
+    if debug_log is None:
+        yield
+        return
+
+    _reject_symlink(debug_log)
+    debug_log.parent.mkdir(parents=True, exist_ok=True)
+    file_handler = logging.FileHandler(debug_log, mode="a", encoding="utf-8")
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(
+        logging.Formatter(
+            fmt=_LOG_FORMAT,
+            datefmt=_LOG_DATEFMT,
+            style="{",
+        )
+    )
+    root_logger.addHandler(file_handler)
+    try:
+        _LOGGER.info("Appending debug logs to %s", debug_log)
+        yield
+    finally:
+        root_logger.removeHandler(file_handler)
+        file_handler.close()
+
+
+def _validate_local_paths(
+    local_dir: pathlib.Path,
+    debug_log: pathlib.Path | None,
+) -> bool:
+    """Validates --local-dir existence and ensures --debug-log is outside it."""
+    if local_dir.is_symlink() or not local_dir.is_dir():
+        _LOGGER.error(
+            "Local archive directory not found or is a symlink: %s",
+            local_dir,
+        )
+        return False
+    if debug_log is not None:
+        resolved_archive = local_dir.resolve()
+        resolved_log = debug_log.resolve()
+        if (
+            resolved_log == resolved_archive
+            or resolved_archive in resolved_log.parents
+        ):
+            _LOGGER.error(
+                "--debug-log (%s) must not reside inside --local-dir (%s).",
+                debug_log,
+                local_dir,
+            )
+            return False
+    return True
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Main entry point returning process exit status."""
+    args = parse_args(argv)
+    logging.basicConfig(
+        level=logging.INFO,
+        style="{",
+        format=_LOG_FORMAT,
+        datefmt=_LOG_DATEFMT,
+    )
     try:
         bounds = resolve_bounds(args)
     except ValueError as exc:
         _LOGGER.error("%s", exc)
         return 2
 
-    try:
-        backend: LocalArchiveBackend | GcsArchiveBackend
-        if args.local_dir is not None:
-            if args.local_dir.is_symlink() or not args.local_dir.is_dir():
-                _LOGGER.error(
-                    "Local archive directory not found or is a symlink: %s",
-                    args.local_dir,
-                )
-                return 2
-            backend = LocalArchiveBackend(args.local_dir, dry_run=args.dry_run)
-        else:
-            backend = GcsArchiveBackend(
-                args.bucket,
-                args.prefix,
-                workers=args.workers,
-                dry_run=args.dry_run,
-            )
+    if args.local_dir is not None and not _validate_local_paths(
+        args.local_dir,
+        args.debug_log,
+    ):
+        return 2
 
-        with backend:
-            return _run_with_backend(backend, args, bounds)
-    except _GCS_OPERATION_ERRORS as exc:
+    try:
+        with _configure_logging(
+            verbose=args.verbose,
+            debug_log=args.debug_log,
+        ):
+            backend: LocalArchiveBackend | GcsArchiveBackend
+            if args.local_dir is not None:
+                backend = LocalArchiveBackend(
+                    args.local_dir,
+                    dry_run=args.dry_run,
+                )
+            else:
+                backend = GcsArchiveBackend(
+                    args.bucket,
+                    args.prefix,
+                    workers=args.workers,
+                    dry_run=args.dry_run,
+                )
+
+            with backend:
+                return _run_with_backend(backend, args, bounds)
+    except (ValueError, *_GCS_OPERATION_ERRORS) as exc:
         _LOGGER.error("%s", exc)
         return 1
     except KeyboardInterrupt:
