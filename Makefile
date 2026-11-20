@@ -1595,6 +1595,7 @@ LIBGRPC_SRC = \
     src/core/xds/grpc/xds_endpoint.cc \
     src/core/xds/grpc/xds_endpoint_parser.cc \
     src/core/xds/grpc/xds_grpc_service_parser.cc \
+    src/core/xds/grpc/xds_header_map.cc \
     src/core/xds/grpc/xds_health_status.cc \
     src/core/xds/grpc/xds_http_composite_filter.cc \
     src/core/xds/grpc/xds_http_ext_proc_filter.cc \

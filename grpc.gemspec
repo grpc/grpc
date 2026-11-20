@@ -2263,6 +2263,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/xds/grpc/xds_endpoint_parser.h )
   s.files += %w( src/core/xds/grpc/xds_grpc_service_parser.cc )
   s.files += %w( src/core/xds/grpc/xds_grpc_service_parser.h )
+  s.files += %w( src/core/xds/grpc/xds_header_map.cc )
+  s.files += %w( src/core/xds/grpc/xds_header_map.h )
   s.files += %w( src/core/xds/grpc/xds_health_status.cc )
   s.files += %w( src/core/xds/grpc/xds_health_status.h )
   s.files += %w( src/core/xds/grpc/xds_http_composite_filter.cc )
