@@ -32,7 +32,7 @@ PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_timeval)
 static inline wrapped_grpc_timeval
 *wrapped_grpc_timeval_from_obj(zend_object *obj) {
   return (wrapped_grpc_timeval*)((char*)(obj) -
-                                 XtOffsetOf(wrapped_grpc_timeval, std));
+                                 offsetof(wrapped_grpc_timeval, std));
 }
 
 /* Initialize the Timeval PHP class */

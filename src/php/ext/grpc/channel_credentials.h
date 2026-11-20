@@ -38,7 +38,7 @@ PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_channel_credentials)
 static inline wrapped_grpc_channel_credentials
 *wrapped_grpc_channel_credentials_from_obj(zend_object *obj) {
   return (wrapped_grpc_channel_credentials *)(
-      (char*)(obj) - XtOffsetOf(wrapped_grpc_channel_credentials, std));
+      (char*)(obj) - offsetof(wrapped_grpc_channel_credentials, std));
 }
 
 /* Initializes the ChannelCredentials PHP class */

@@ -32,7 +32,7 @@ PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_server)
 static inline wrapped_grpc_server
 *wrapped_grpc_server_from_obj(zend_object *obj) {
   return (wrapped_grpc_server*)((char*)(obj) -
-                                XtOffsetOf(wrapped_grpc_server, std));
+                                offsetof(wrapped_grpc_server, std));
 }
 
 /* Initializes the Server class */
