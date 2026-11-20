@@ -1818,12 +1818,7 @@ Server::SetupCallLinkageForTransport(
         args.SetObject(transport.get()).SetObject<channelz::BaseNode>(
             transport->GetSocketNode()),
         channel_stack_type);
-    if (!channel.ok()) {
-      // FIXME: should we orphan here?  needs to work for legacy code
-      // paths via Server::SetupTransport() too
-      transport->Orphan();
-      return channel.status();
-    }
+    if (!channel.ok()) return channel.status();
     GRPC_CHECK(*channel != nullptr);
     auto* channel_stack = (*channel)->channel_stack();
     GRPC_CHECK(channel_stack != nullptr);
