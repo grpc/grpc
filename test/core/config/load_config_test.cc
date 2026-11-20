@@ -17,8 +17,10 @@
 #include "src/core/util/env.h"
 #include "gtest/gtest.h"
 #include "absl/flags/flag.h"
+#include "absl/types/optional.h"
 
 ABSL_FLAG(std::vector<std::string>, comma_separated_strings, {}, "");
+ABSL_FLAG(absl::optional<std::string>, double_as_string, {}, "");
 
 namespace grpc_core {
 
@@ -44,6 +46,32 @@ TEST(LoadConfigTest, LoadCommaSeparated) {
   EXPECT_EQ(LoadConfig(FLAGS_comma_separated_strings,
                        "grpc_comma_separated_strings", "bar", ""),
             "bar");
+}
+
+TEST(LoadConfigTest, LoadDoubleFromStringFlag) {
+  UnsetEnv("grpc_double_as_string");
+  EXPECT_EQ(
+      LoadConfig(FLAGS_double_as_string, "grpc_double_as_string", {}, 0.5),
+      0.5);
+  SetEnv("grpc_double_as_string", "0.25");
+  EXPECT_EQ(
+      LoadConfig(FLAGS_double_as_string, "grpc_double_as_string", {}, 0.5),
+      0.25);
+  EXPECT_EQ(
+      LoadConfig(FLAGS_double_as_string, "grpc_double_as_string", 0.75, 0.5),
+      0.75);
+  absl::SetFlag(&FLAGS_double_as_string, "0.125");
+  EXPECT_EQ(
+      LoadConfig(FLAGS_double_as_string, "grpc_double_as_string", {}, 0.5),
+      0.125);
+  EXPECT_EQ(
+      LoadConfig(FLAGS_double_as_string, "grpc_double_as_string", 0.75, 0.5),
+      0.75);
+  // An unparsable flag value falls back to the environment.
+  absl::SetFlag(&FLAGS_double_as_string, "not a double");
+  EXPECT_EQ(
+      LoadConfig(FLAGS_double_as_string, "grpc_double_as_string", {}, 0.5),
+      0.25);
 }
 
 }  // namespace grpc_core

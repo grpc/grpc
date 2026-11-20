@@ -42,6 +42,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
         "absl/flags:flag",
+        "absl/types:optional",
     ],
     uses_event_engine = False,
     uses_polling = False,

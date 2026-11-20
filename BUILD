@@ -3425,6 +3425,7 @@ grpc_cc_library(
         "absl/flags:marshalling",
         "absl/log:check",
         "absl/strings",
+        "absl/types:optional",
     ],
     deps = [
         "gpr_platform",

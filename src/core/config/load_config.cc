@@ -20,10 +20,12 @@
 #include <optional>
 
 #include "src/core/util/env.h"
+#include "absl/flags/flag.h"
 #include "absl/flags/marshalling.h"
 #include "absl/log/check.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_join.h"
+#include "absl/types/optional.h"
 
 namespace grpc_core {
 
@@ -75,6 +77,22 @@ bool LoadConfigFromEnv(absl::string_view environment_variable,
             error.c_str());
   }
   return default_value;
+}
+
+double LoadConfig(const absl::Flag<absl::optional<std::string>>& flag,
+                  absl::string_view environment_variable,
+                  const absl::optional<double>& override,
+                  double default_value) {
+  if (override.has_value()) return *override;
+  auto from_flag = absl::GetFlag(flag);
+  if (from_flag.has_value()) {
+    double out;
+    if (absl::SimpleAtod(*from_flag, &out)) return out;
+    fprintf(stderr,
+            "Error reading double from flag for %s: '%s' is not a double",
+            std::string(environment_variable).c_str(), from_flag->c_str());
+  }
+  return LoadConfigFromEnv(environment_variable, default_value);
 }
 
 std::string LoadConfig(const absl::Flag<std::vector<std::string>>& flag,
