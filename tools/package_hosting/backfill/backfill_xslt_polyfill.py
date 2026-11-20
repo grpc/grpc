@@ -135,7 +135,7 @@ _BUILD_OPEN_TAG_RE: Final = re.compile(
 )
 _XML_COMMENT_RE: Final = re.compile(r"<!--.*?-->", re.DOTALL)
 _STYLESHEET_PI_RE: Final = re.compile(
-    r"<\?xml-stylesheet\b[^>]*href=(['\"])/web-assets/build-201807\.xsl\1[^>]*\?>",
+    r"<\?xml-stylesheet(?=\s)[^>]*\shref=(['\"])/web-assets/build-201807\.xsl\1[^>]*\?>",
 )
 _DTD_RE: Final = re.compile(r"<!(DOCTYPE|ENTITY)\b", re.IGNORECASE)
 
@@ -208,7 +208,7 @@ class Stats:
         elif outcome is Outcome.FAILED:
             self.failed += 1
 
-    def add(self, other: "Stats") -> None:
+    def add(self, other: Self) -> None:
         """Accumulates counts from another Stats instance."""
         self.patched += other.patched
         self.already_patched += other.already_patched
@@ -273,22 +273,28 @@ def _check_existing_scripts(
     text: str,
     source_label: str,
 ) -> bool:
-    """Returns True if already patched, False if unpatched, or raises ValueError."""
+    """Checks existing script tags; returns True when already patched."""
     all_scripts = [
-        elem for elem in root.iter() if elem.tag in (XHTML_SCRIPT_TAG, "script")
+        elem
+        for elem in root.iter()
+        if elem.tag == "script" or elem.tag.endswith("}script")
     ]
     polyfill_children = [
         child
         for child in root
         if child.tag == XHTML_SCRIPT_TAG
-        and child.get("src") == POLYFILL_SRC
+        and child.attrib == {"src": POLYFILL_SRC}
         and not (child.text and child.text.strip())
         and len(child) == 0
     ]
     if polyfill_children:
-        if len(all_scripts) > 1 or text.count(POLYFILL_SRC) != 1:
+        if (
+            len(all_scripts) != 1
+            or text.count(POLYFILL_SRC) != 1
+            or root[0] is not polyfill_children[0]
+        ):
             msg = (
-                f"{source_label}: found unexpected extra script reference "
+                f"{source_label}: unexpected script placement or count "
                 f"(scripts={len(all_scripts)})"
             )
             raise ValueError(msg)
@@ -338,9 +344,6 @@ def patch_build_index_xml(raw_bytes: bytes, source_label: str) -> bytes | None:
         )
         raise ValueError(msg)
 
-    if _check_existing_scripts(root, text, source_label):
-        return None
-
     matches = list(_BUILD_OPEN_TAG_RE.finditer(text))
     if len(matches) != 1:
         msg = (
@@ -357,6 +360,9 @@ def patch_build_index_xml(raw_bytes: bytes, source_label: str) -> bytes | None:
             "/web-assets/build-201807.xsl"
         )
         raise ValueError(msg)
+
+    if _check_existing_scripts(root, text, source_label):
+        return None
 
     newline = match.group(2)
     insert_pos = match.end()
@@ -442,7 +448,7 @@ class LocalArchiveBackend:
         return None
 
     def mark_unjoined_workers(self) -> None:
-        """No-op hook matching GcsArchiveBackend for unjoined worker shutdown."""
+        """No-op hook matching GcsArchiveBackend on interrupted shutdown."""
 
     @property
     def is_remote_gcs(self) -> bool:
@@ -660,52 +666,75 @@ class _DownloadedBlob:
     generation: int
 
 
+def _configure_gcs_session(
+    raw_client: object,
+    session: requests.Session,
+    typed_creds: _CredentialsProtocol | None,
+    *,
+    pool_size: int,
+) -> None:
+    """Sizes HTTP adapter pools, preserves mTLS, and primes OAuth tokens."""
+    for scheme in ("https://", "http://"):
+        old_adapter = session.adapters.get(scheme)
+        new_adapter = adapters.HTTPAdapter(
+            pool_connections=pool_size,
+            pool_maxsize=pool_size,
+        )
+        session.mount(scheme, new_adapter)
+        if old_adapter is not None and old_adapter is not new_adapter:
+            old_adapter.close()
+
+    if isinstance(session, auth_requests.AuthorizedSession):
+        mtls_session = cast("_MtlsSessionProtocol", session)
+        if mtls_session.is_mtls:
+            cert_source = cast(
+                "Callable[[], tuple[bytes, bytes]] | None",
+                getattr(raw_client, "_client_cert_source", None),
+            )
+            mtls_session.configure_mtls_channel(cert_source)
+        auth_req = getattr(session, "_auth_request", None)
+        if (
+            typed_creds is not None
+            and not typed_creds.valid
+            and isinstance(auth_req, auth_requests.Request)
+        ):
+            endpoint = str(
+                getattr(
+                    raw_client,
+                    "api_endpoint",
+                    "https://storage.googleapis.com",
+                )
+            )
+            typed_creds.before_request(auth_req, "GET", endpoint, {})
+
+
 def _create_gcs_client(*, pool_size: int) -> _GcsClientProtocol:
     """Creates a GCS Client with an HTTP pool sized for worker threads."""
     raw_client = storage.Client(project=None)
-    raw_creds = getattr(raw_client, "_credentials", None)
-    typed_creds = (
-        cast("_CredentialsProtocol", raw_creds)
-        if isinstance(raw_creds, auth_credentials.Credentials)
-        else None
-    )
-    if typed_creds is not None:
-        typed_creds.with_non_blocking_refresh()
+    typed_client = cast("_GcsClientProtocol", raw_client)
+    try:
+        raw_creds = getattr(raw_client, "_credentials", None)
+        typed_creds = (
+            cast("_CredentialsProtocol", raw_creds)
+            if isinstance(raw_creds, auth_credentials.Credentials)
+            else None
+        )
+        if typed_creds is not None:
+            typed_creds.with_non_blocking_refresh()
 
-    session = getattr(raw_client, "_http", None)
-    if isinstance(session, requests.Session):
-        for scheme in ("https://", "http://"):
-            old_adapter = session.adapters.get(scheme)
-            new_adapter = adapters.HTTPAdapter(
-                pool_connections=pool_size,
-                pool_maxsize=pool_size,
+        session = getattr(raw_client, "_http", None)
+        if isinstance(session, requests.Session):
+            _configure_gcs_session(
+                raw_client,
+                session,
+                typed_creds,
+                pool_size=pool_size,
             )
-            session.mount(scheme, new_adapter)
-            if old_adapter is not None and old_adapter is not new_adapter:
-                old_adapter.close()
-        if isinstance(session, auth_requests.AuthorizedSession):
-            mtls_session = cast("_MtlsSessionProtocol", session)
-            if mtls_session.is_mtls:
-                cert_source = cast(
-                    "Callable[[], tuple[bytes, bytes]] | None",
-                    getattr(raw_client, "_client_cert_source", None),
-                )
-                mtls_session.configure_mtls_channel(cert_source)
-            auth_req = getattr(session, "_auth_request", None)
-            if (
-                typed_creds is not None
-                and not typed_creds.valid
-                and isinstance(auth_req, auth_requests.Request)
-            ):
-                endpoint = str(
-                    getattr(
-                        raw_client,
-                        "api_endpoint",
-                        "https://storage.googleapis.com",
-                    )
-                )
-                typed_creds.before_request(auth_req, "GET", endpoint, {})
-    return cast("_GcsClientProtocol", raw_client)
+    except BaseException:
+        if getattr(raw_client, "_http_internal", None) is not None:
+            typed_client.close()
+        raise
+    return typed_client
 
 
 class GcsArchiveBackend:
@@ -739,7 +768,7 @@ class GcsArchiveBackend:
             self._client.close()
 
     def mark_unjoined_workers(self) -> None:
-        """Skips client.close() on exit if workers were abandoned via 2x SIGINT."""
+        """Skips client.close() if workers were abandoned via 2x SIGINT."""
         self._unjoined_workers = True
 
     @property
@@ -767,7 +796,7 @@ class GcsArchiveBackend:
 
         partitions: set[YearMonth] = set()
         for year_prefix in sorted(year_iter.prefixes):
-            year_str = year_prefix.rstrip("/").rsplit("/", maxsplit=1)[-1]
+            year_str = year_prefix.removeprefix(root_prefix).removesuffix("/")
             if not _YEAR_RE.match(year_str):
                 continue
             year = int(year_str)
@@ -783,7 +812,9 @@ class GcsArchiveBackend:
             for _ in month_iter:
                 pass
             for month_prefix in sorted(month_iter.prefixes):
-                month_str = month_prefix.rstrip("/").rsplit("/", maxsplit=1)[-1]
+                month_str = month_prefix.removeprefix(year_prefix).removesuffix(
+                    "/"
+                )
                 if not _MONTH_RE.match(month_str):
                     continue
                 partitions.add(YearMonth(year=year, month=int(month_str)))
@@ -800,10 +831,14 @@ class GcsArchiveBackend:
         )
         for _ in build_iter:
             pass
-        return [
-            f"{build_prefix}{INDEX_FILENAME}"
-            for build_prefix in sorted(build_iter.prefixes)
-        ]
+        targets: list[str] = []
+        for build_prefix in sorted(build_iter.prefixes):
+            build_dir = build_prefix.removeprefix(month_prefix).removesuffix(
+                "/"
+            )
+            if build_dir and "/" not in build_dir:
+                targets.append(f"{build_prefix}{INDEX_FILENAME}")
+        return targets
 
     def _download_target(
         self,
@@ -921,11 +956,7 @@ class GcsArchiveBackend:
                     uri,
                 )
                 return ItemResult(target=uri, outcome=Outcome.ALREADY_PATCHED)
-        except (
-            gcs_exceptions.NotFound,
-            ValueError,
-            *_GCS_OPERATION_ERRORS,
-        ) as verify_exc:
+        except (ValueError, *_GCS_OPERATION_ERRORS) as verify_exc:
             _LOGGER.warning(
                 "Post-412 verification failed for %s: %s", uri, verify_exc
             )
@@ -1032,7 +1063,7 @@ def _validate_parsed_args(
         args.prefix = DEFAULT_PREFIX
     else:
         cleaned_prefix = args.prefix.strip()
-        if cleaned_prefix.startswith("gs://"):
+        if cleaned_prefix.lower().startswith("gs://"):
             parser.error(
                 "argument --prefix: expected object prefix inside bucket, "
                 "not a gs:// URI"
@@ -1212,7 +1243,9 @@ def confirm_execution(
             f"({first_ym}..{last_ym}) with {workers} worker(s)? [yN] "
         )
     try:
-        response = input(prompt)
+        sys.stderr.write(prompt)
+        sys.stderr.flush()
+        response = input()
     except EOFError:
         return False
     except KeyboardInterrupt:
@@ -1238,29 +1271,38 @@ def _managed_thread_pool(
     *,
     cancel_event: threading.Event,
     backend: LocalArchiveBackend | GcsArchiveBackend,
-) -> Generator[futures.ThreadPoolExecutor, None, None]:
+) -> Generator[futures.ThreadPoolExecutor]:
     """Yields a ThreadPoolExecutor that cancels work cleanly on exception."""
     executor = futures.ThreadPoolExecutor(max_workers=workers)
     try:
         yield executor
     except KeyboardInterrupt:
         cancel_event.set()
-        _LOGGER.warning(
-            "Interrupt received; cancelling queued tasks and waiting for "
-            "in-flight requests to finish..."
-        )
         try:
-            executor.shutdown(wait=True, cancel_futures=True)
-        except KeyboardInterrupt:
+            executor.shutdown(wait=False, cancel_futures=True)
+            _LOGGER.warning(
+                "Interrupt received; cancelling queued tasks and waiting for "
+                "in-flight requests to finish..."
+            )
+            executor.shutdown(wait=True)
+        except BaseException:
             backend.mark_unjoined_workers()
             raise
         raise
     except BaseException:
         cancel_event.set()
-        executor.shutdown(wait=True, cancel_futures=True)
+        try:
+            executor.shutdown(wait=True, cancel_futures=True)
+        except BaseException:
+            backend.mark_unjoined_workers()
+            raise
         raise
     else:
-        executor.shutdown(wait=True)
+        try:
+            executor.shutdown(wait=True)
+        except BaseException:
+            backend.mark_unjoined_workers()
+            raise
 
 
 def _process_partition(
@@ -1359,7 +1401,7 @@ def _execute_partitions(
                         ym,
                     )
                     return 1
-    except (*_GCS_OPERATION_ERRORS, OSError) as exc:
+    except _GCS_OPERATION_ERRORS as exc:
         _LOGGER.error(
             "Failed processing partition %s: %s. Re-run with "
             '--start-from="%s" to retry.',
@@ -1491,7 +1533,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         with backend:
             return _run_with_backend(backend, args, bounds)
-    except (*_GCS_OPERATION_ERRORS, OSError) as exc:
+    except _GCS_OPERATION_ERRORS as exc:
         _LOGGER.error("%s", exc)
         return 1
     except KeyboardInterrupt:
