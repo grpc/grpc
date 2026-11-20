@@ -1576,7 +1576,7 @@ def _check_log_file_stat(path: pathlib.Path) -> None:
 
 def _prepare_debug_log_path(debug_log: pathlib.Path) -> pathlib.Path:
     """Validates and normalizes --debug-log without creating directories."""
-    if not debug_log.name or debug_log.name in {".", ".."}:
+    if not debug_log.name or debug_log.name == "..":
         msg = f"--debug-log must name a file, not a directory: {debug_log}"
         raise ValueError(msg)
     _check_log_file_stat(debug_log)
@@ -1597,7 +1597,7 @@ def _is_path_within_directory(
     for ancestor in (candidate, *candidate.parents):
         try:
             anc_stat = ancestor.stat()
-        except FileNotFoundError:
+        except OSError:
             continue
         if os.path.samestat(anc_stat, dir_stat):
             return True
@@ -1623,61 +1623,58 @@ def _configure_logging(
     root_logger = logging.getLogger()
     prev_logger_level = _LOGGER.level
     prev_handler_levels = [(h, h.level) for h in root_logger.handlers]
+    file_handler: logging.FileHandler | None = None
 
-    console_level = logging.DEBUG if verbose else logging.INFO
-    for handler in root_logger.handlers:
-        handler.setLevel(console_level)
-
-    _LOGGER.setLevel(
-        logging.DEBUG if (verbose or debug_log is not None) else logging.INFO
-    )
-    if debug_log is None:
-        try:
-            yield
-        finally:
-            if not shutdown_state.unjoined_workers:
-                _LOGGER.setLevel(prev_logger_level)
-                for handler, level in prev_handler_levels:
-                    handler.setLevel(level)
-        return
-
-    _check_log_file_stat(debug_log)
-    debug_log.parent.mkdir(parents=True, exist_ok=True)
-    _check_log_file_stat(debug_log)
-    file_handler = logging.FileHandler(
-        debug_log,
-        mode="a",
-        encoding="utf-8",
-        errors="backslashreplace",
-    )
     try:
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(
-            logging.Formatter(
-                fmt=_LOG_FORMAT,
-                datefmt=_LOG_DATEFMT,
-                style="{",
+        console_level = logging.DEBUG if verbose else logging.INFO
+        for handler in root_logger.handlers:
+            handler.setLevel(console_level)
+
+        _LOGGER.setLevel(
+            logging.DEBUG
+            if (verbose or debug_log is not None)
+            else logging.INFO
+        )
+        if debug_log is not None:
+            _check_log_file_stat(debug_log)
+            debug_log.parent.mkdir(parents=True, exist_ok=True)
+            _check_log_file_stat(debug_log)
+            file_handler = logging.FileHandler(
+                debug_log,
+                mode="a",
+                encoding="utf-8",
+                errors="backslashreplace",
             )
-        )
-        root_logger.addHandler(file_handler)
-        now_utc = datetime.datetime.now(datetime.UTC).strftime(
-            "%Y-%m-%dT%H:%M:%SZ"
-        )
-        _LOGGER.debug(
-            "=== Run start utc=%s pid=%d argv=%r ===",
-            now_utc,
-            os.getpid(),
-            list(cli_args),
-        )
-        _LOGGER.info("Appending debug logs to %s", debug_log)
+            file_handler.setLevel(logging.DEBUG)
+            file_handler.setFormatter(
+                logging.Formatter(
+                    fmt=_LOG_FORMAT,
+                    datefmt=_LOG_DATEFMT,
+                    style="{",
+                )
+            )
+            root_logger.addHandler(file_handler)
+            now_utc = datetime.datetime.now(datetime.UTC).strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
+            _LOGGER.debug(
+                "=== Run start utc=%s pid=%d argv=%r ===",
+                now_utc,
+                os.getpid(),
+                list(cli_args),
+            )
+            _LOGGER.info("Appending debug logs to %s", debug_log)
         yield
     finally:
         if not shutdown_state.unjoined_workers:
-            root_logger.removeHandler(file_handler)
-            file_handler.close()
-            _LOGGER.setLevel(prev_logger_level)
-            for handler, level in prev_handler_levels:
-                handler.setLevel(level)
+            try:
+                if file_handler is not None:
+                    root_logger.removeHandler(file_handler)
+                    file_handler.close()
+            finally:
+                _LOGGER.setLevel(prev_logger_level)
+                for handler, level in prev_handler_levels:
+                    handler.setLevel(level)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1731,20 +1728,20 @@ def _validate_inputs(args: argparse.Namespace) -> _ValidatedInputs | None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     """Main entry point returning process exit status."""
-    args = parse_args(argv)
     logging.basicConfig(
         level=logging.INFO,
         style="{",
         format=_LOG_FORMAT,
         datefmt=_LOG_DATEFMT,
     )
-    validated = _validate_inputs(args)
-    if validated is None:
-        return 2
-
-    cli_args = list(sys.argv[1:] if argv is None else argv)
-    shutdown_state = _ShutdownState()
     try:
+        args = parse_args(argv)
+        validated = _validate_inputs(args)
+        if validated is None:
+            return 2
+
+        cli_args = list(sys.argv[1:] if argv is None else argv)
+        shutdown_state = _ShutdownState()
         with _configure_logging(
             verbose=args.verbose,
             debug_log=validated.debug_log,
@@ -1780,11 +1777,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 _LOGGER.warning("Interrupted.")
                 return 130
     except (ValueError, OSError) as exc:
-        _LOGGER.error(
-            "Failed to initialize --debug-log %s: %s",
-            args.debug_log,
-            exc,
-        )
+        _LOGGER.error("Debug log error: %s", exc)
         return 1
     except KeyboardInterrupt:
         _LOGGER.warning("Interrupted.")
