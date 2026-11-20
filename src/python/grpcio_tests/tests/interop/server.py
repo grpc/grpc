@@ -25,7 +25,7 @@ from tests.interop import resources
 from tests.interop import service
 from tests.unit import test_common
 
-logging.basicConfig()
+logging.basicConfig(force=True)
 _LOGGER = logging.getLogger(__name__)
 
 
