@@ -896,8 +896,7 @@ class Server : public ServerInterface,
                                             ClientMetadataHandle md);
   auto MatchAndPublishCall(CallHandler call_handler);
   absl::StatusOr<RefCountedPtr<UnstartedCallDestination>> MakeCallDestination(
-      const ChannelArgs& args, Connection* connection,
-      grpc_channel_stack_type channel_stack_type);
+      const ChannelArgs& args, grpc_channel_stack_type channel_stack_type);
 
   ChannelArgs const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;

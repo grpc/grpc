@@ -1660,9 +1660,8 @@ auto Server::MatchAndPublishCall(CallHandler call_handler) {
 }
 
 absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>
-Server::MakeCallDestination(const ChannelArgs& args, Connection* connection,
+Server::MakeCallDestination(const ChannelArgs& args,
                             grpc_channel_stack_type channel_stack_type) {
-  // FIXME: track connection for each call somehow?
   InterceptionChainBuilder builder(args);
   // TODO(ctiller): find a way to avoid adding a server ref per call
   builder.AddOnClientInitialMetadata([self = Ref()](ClientMetadata& md) {
@@ -1818,8 +1817,10 @@ absl::Status Server::LegacyAddConnection(
 
 absl::StatusOr<OrphanablePtr<ServerTransport>>
 Server::SetupCallLinkageForTransport(
-    Connection* connection, OrphanablePtr<Transport> transport,
+    Connection* /*connection*/, OrphanablePtr<Transport> transport,
     grpc_pollset* accepting_pollset, const ChannelArgs& args) {
+  // TODO(roth): In a subsequent PR, plumb connection object to be
+  // visible to RPCs.
   global_stats().IncrementServerChannelsCreated();
   auto socket_node = transport->GetSocketNode();  // Will be used below
   OrphanablePtr<ServerTransport> owned_transport;
@@ -1829,11 +1830,10 @@ Server::SetupCallLinkageForTransport(
     auto destination = MakeCallDestination(
         args.SetObject(owned_transport.get()).SetObject<channelz::BaseNode>(
             owned_transport->GetSocketNode()),
-        connection, GRPC_SERVER_CHANNEL);
+        GRPC_SERVER_CHANNEL);
     if (!destination.ok()) return destination.status();
     owned_transport->SetCallDestination(std::move(*destination));
   } else {
-    // FIXME: figure out how to plumb connection object to be visible to RPCs
     GRPC_CHECK(transport->filter_stack_transport() != nullptr);
     absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
         "",
@@ -1901,7 +1901,7 @@ grpc_error_handle Server::SetupTransport(
     auto destination = MakeCallDestination(
         args.SetObject(transport).SetObject<channelz::BaseNode>(
             transport->GetSocketNode()),
-        /*connection=*/nullptr, channel_stack_type);
+        channel_stack_type);
     if (!destination.ok()) return destination.status();
     t->SetCallDestination(std::move(*destination));
     MutexLock lock(mu_global_);
