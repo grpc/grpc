@@ -160,7 +160,7 @@ class FakeXdsClient final : public XdsClientInterface {
                      RefCountedPtr<ResourceWatcherInterface> watcher) override;
   void CancelResourceWatch(const XdsResourceType* type, absl::string_view name,
                            ResourceWatcherInterface* watcher,
-                           bool delay_unsubscription = false) override;
+                           bool delay_unsubscription) override;
   void ResetBackoff() override;
   const XdsBootstrap& bootstrap() const override { return *bootstrap_; }
   XdsTransportFactory* transport_factory() const override { return nullptr; }
