@@ -37,6 +37,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -260,6 +261,144 @@ TEST_F(V3BridgeTest, ForceDestroyPromiseCancelsV3Call) {
         << "v3 call was torn down but not observed as a cancellation.";
     arena_.reset();
   });
+}
+
+// A v3 interceptor that forwards the call to the next v2 filter, but returns
+// only the server trailing metadata.  So the client sees a Trailers-Only
+// response even if the next v2 filter sends server initial metadata, as when
+// the server-side ext_proc filter gets a Trailers-Only response from the
+// backend before the server initial metadata.
+class DropServerInitialMetadataInterceptor final
+    : public V3InterceptorToV2Bridge<DropServerInitialMetadataInterceptor> {
+ public:
+  DropServerInitialMetadataInterceptor()
+      : V3InterceptorToV2Bridge<DropServerInitialMetadataInterceptor>(
+            ChannelArgs()) {}
+
+  void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
+    CallHandler handler = Consume(std::move(unstarted_call_handler));
+    handler.SpawnGuarded(
+        "start_child_call",
+        [self = RefAsSubclass<DropServerInitialMetadataInterceptor>(),
+         handler]() mutable {
+          return TrySeq(
+              handler.PullClientInitialMetadata(),
+              [self, handler](ClientMetadataHandle metadata) mutable {
+                CallInitiator initiator = self->MakeChildCall(
+                    std::move(metadata), handler.arena()->Ref());
+                handler.AddChildCall(initiator);
+                initiator.SpawnInfallible(
+                    "forward_server_trailing_metadata",
+                    [handler, initiator]() mutable {
+                      return Seq(
+                          initiator.PullServerInitialMetadata(),
+                          [initiator](std::optional<ServerMetadataHandle>) {
+                            return ForEach(
+                                MessagesFrom(initiator),
+                                [](MessageHandle) { return Success{}; });
+                          },
+                          [initiator](StatusFlag) mutable {
+                            return initiator.PullServerTrailingMetadata();
+                          },
+                          [handler](ServerMetadataHandle md) mutable {
+                            handler.SpawnPushServerTrailingMetadata(
+                                std::move(md));
+                            return Empty{};
+                          });
+                    });
+                return absl::OkStatus();
+              });
+        });
+  }
+  void Orphaned() override {}
+};
+
+// The bridge gets server initial metadata and server trailing metadata back
+// from the v3 interceptor through two different latches, which can be set in
+// either order.  If the trailing metadata arrives while the initial metadata
+// is still waiting in the v2 pipe, the bridge's promise must not complete
+// until the initial metadata has been released.  Otherwise, ServerCallData
+// sees the call complete first and never forwards the initial metadata, which
+// hangs the call when the initial and trailing metadata are in the same batch.
+TEST_F(V3BridgeTest, TrailingMetadataWaitsForInitialMetadataInV2Pipe) {
+  auto event_engine =
+      std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+          grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+          fuzzing_event_engine::Actions());
+  ExecCtx exec_ctx;
+  auto drain = [&]() {
+    for (int i = 0; i < 1000; ++i) {
+      const bool did_work = ExecCtx::Get()->Flush();
+      if (!did_work && event_engine->IsIdle()) return;
+      event_engine->TickUntilIdle();
+    }
+    ADD_FAILURE() << "call did not quiesce";
+  };
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+      event_engine.get());
+  TestActivity activity;
+  activity.Run([&]() {
+    promise_detail::Context<Arena> arena_ctx(arena.get());
+    auto bridge = MakeRefCounted<DropServerInitialMetadataInterceptor>();
+    Pipe<ServerMetadataHandle> server_initial_metadata(arena.get());
+    Pipe<MessageHandle> client_to_server_messages(arena.get());
+    Pipe<MessageHandle> server_to_client_messages(arena.get());
+    // Stands in for the next v2 filter: completes with OK status once the
+    // test sets send_trailing_metadata.
+    bool next_called = false;
+    bool send_trailing_metadata = false;
+    auto next_promise_factory = [&](CallArgs) {
+      next_called = true;
+      return ArenaPromise<ServerMetadataHandle>(
+          [&]() -> Poll<ServerMetadataHandle> {
+            if (!send_trailing_metadata) return Pending{};
+            return ServerMetadataFromStatus(absl::OkStatus());
+          });
+    };
+    auto promise = bridge->MakeCallPromise(
+        CallArgs{Arena::MakePooledForOverwrite<ClientMetadata>(),
+                 ClientInitialMetadataOutstandingToken::Empty(), nullptr,
+                 &server_initial_metadata.sender,
+                 &client_to_server_messages.receiver,
+                 &server_to_client_messages.sender},
+        next_promise_factory);
+    // Let the bridge start the call on the next v2 filter.
+    for (int i = 0; i < 10 && !next_called; ++i) {
+      EXPECT_THAT(promise(), IsPending());
+      drain();
+    }
+    ASSERT_TRUE(next_called);
+    // The v2 stack sends server initial metadata.  It goes to the v3
+    // interceptor, and the v2 pipe waits for the interceptor to return it.
+    auto push_initial_metadata = server_initial_metadata.sender.Push(
+        Arena::MakePooledForOverwrite<ServerMetadata>());
+    auto next_initial_metadata = server_initial_metadata.receiver.Next();
+    EXPECT_THAT(push_initial_metadata(), IsPending());
+    EXPECT_THAT(next_initial_metadata(), IsPending());
+    drain();
+    // The v2 stack then finishes the call before it polls the v2 pipe again.
+    send_trailing_metadata = true;
+    EXPECT_THAT(promise(), IsPending());
+    drain();
+    // By now the v3 interceptor has returned the trailing metadata, and the
+    // client will see a Trailers-Only response.  However, the initial metadata
+    // is still in the v2 pipe, so the bridge's promise must not complete yet.
+    EXPECT_THAT(promise(), IsPending());
+    // Once the v2 pipe releases the initial metadata, the promise completes.
+    auto initial_metadata = next_initial_metadata();
+    ASSERT_THAT(initial_metadata, IsReady());
+    EXPECT_FALSE(initial_metadata.value().has_value());
+    auto result = promise();
+    ASSERT_THAT(result, IsReady());
+    EXPECT_EQ(
+        result.value()->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN),
+        GRPC_STATUS_OK);
+  });
+  drain();
+  arena.reset();
+  drain();
+  event_engine->UnsetGlobalHooks();
 }
 
 // What the v3 interceptor sees on the client-to-server path. Passed to the
