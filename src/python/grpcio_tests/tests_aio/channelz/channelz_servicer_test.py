@@ -16,6 +16,7 @@
 import asyncio
 import ipaddress
 import logging
+import time
 import unittest
 
 import grpc
@@ -90,7 +91,7 @@ class _ChannelServerPair:
             self.address, options=_ENABLE_CHANNELZ
         )
 
-    async def bind_channelz(self, channelz_stub):
+    async def bind_channelz(self, channelz_stub, known_server_ids):
         resp = await channelz_stub.GetTopChannels(
             channelz_pb2.GetTopChannelsRequest(start_channel_id=0)
         )
@@ -98,23 +99,39 @@ class _ChannelServerPair:
             if channel.data.target == "dns:///" + self.address:
                 self.channel_ref_id = channel.ref.channel_id
 
-        resp = await channelz_stub.GetServers(
-            channelz_pb2.GetServersRequest(start_server_id=0)
-        )
-        self.server_ref_id = resp.server[-1].ref.server_id
+        server_ids = await _list_server_ids(channelz_stub)
+        new_server_ids = server_ids - known_server_ids
+        if len(new_server_ids) != 1:
+            raise AssertionError(
+                f"Expected exactly one new server, got {new_server_ids}"
+            )
+        self.server_ref_id = new_server_ids.pop()
 
     async def stop(self):
         await self.channel.close()
         await self.server.stop(None)
 
 
+async def _list_server_ids(channelz_stub):
+    if not channelz_stub:
+        return set()
+
+    resp = await channelz_stub.GetServers(
+        channelz_pb2.GetServersRequest(start_server_id=0)
+    )
+    if not resp.end:
+        raise AssertionError("GetServers response was paginated")
+    return {server.ref.server_id for server in resp.server}
+
+
 async def _create_channel_server_pairs(n, channelz_stub=None):
     """Create channel-server pairs."""
     pairs = [_ChannelServerPair() for i in range(n)]
     for pair in pairs:
+        known_server_ids = await _list_server_ids(channelz_stub)
         await pair.start()
         if channelz_stub:
-            await pair.bind_channelz(channelz_stub)
+            await pair.bind_channelz(channelz_stub, known_server_ids)
     return pairs
 
 
@@ -150,6 +167,7 @@ class ChannelzServicerTest(AioTestBase):
         resp = await self._channelz_stub.GetServers(
             channelz_pb2.GetServersRequest(start_server_id=ref_id)
         )
+        self.assertEqual(len(resp.server), 1)
         self.assertEqual(ref_id, resp.server[0].ref.server_id)
         return resp.server[0]
 
@@ -291,7 +309,16 @@ class ChannelzServicerTest(AioTestBase):
         for i in range(k_failed):
             await self._send_failed_unary_unary(pairs[0])
 
-        resp = await self._get_server_by_ref_id(pairs[0].server_ref_id)
+        deadline = time.monotonic() + test_constants.TIME_ALLOWANCE
+        while time.monotonic() < deadline:
+            resp = await self._get_server_by_ref_id(pairs[0].server_ref_id)
+            if (
+                resp.data.calls_started
+                == resp.data.calls_succeeded + resp.data.calls_failed
+            ):
+                break
+            await asyncio.sleep(0.01)
+
         self.assertEqual(resp.data.calls_started, k_success + k_failed)
         self.assertEqual(resp.data.calls_succeeded, k_success)
         self.assertEqual(resp.data.calls_failed, k_failed)
@@ -368,7 +395,8 @@ class ChannelzServicerTest(AioTestBase):
         # Subchannel exists
         self.assertGreater(len(gc_resp.channel.subchannel_ref), 0)
 
-        while True:
+        deadline = time.monotonic() + test_constants.TIME_ALLOWANCE
+        while time.monotonic() < deadline:
             gsc_resp = await self._channelz_stub.GetSubchannel(
                 channelz_pb2.GetSubchannelRequest(
                     subchannel_id=gc_resp.channel.subchannel_ref[
@@ -382,13 +410,16 @@ class ChannelzServicerTest(AioTestBase):
                 + gsc_resp.subchannel.data.calls_failed
             ):
                 break
+            await asyncio.sleep(0.01)
+
         self.assertEqual(gsc_resp.subchannel.data.calls_started, 1)
         self.assertEqual(gsc_resp.subchannel.data.calls_failed, 0)
         self.assertEqual(gsc_resp.subchannel.data.calls_succeeded, 1)
         # Socket exists
         self.assertEqual(len(gsc_resp.subchannel.socket_ref), 1)
 
-        while True:
+        deadline = time.monotonic() + test_constants.TIME_ALLOWANCE
+        while time.monotonic() < deadline:
             gs_resp = await self._channelz_stub.GetSocket(
                 channelz_pb2.GetSocketRequest(
                     socket_id=gsc_resp.subchannel.socket_ref[0].socket_id
@@ -400,6 +431,8 @@ class ChannelzServicerTest(AioTestBase):
                 + gs_resp.socket.data.streams_failed
             ):
                 break
+            await asyncio.sleep(0.01)
+
         self.assertEqual(gs_resp.socket.data.streams_started, 1)
         self.assertEqual(gs_resp.socket.data.streams_failed, 0)
         self.assertEqual(gs_resp.socket.data.streams_succeeded, 1)
@@ -418,7 +451,16 @@ class ChannelzServicerTest(AioTestBase):
         await self._send_successful_unary_unary(pairs[0])
         await self._send_failed_unary_unary(pairs[0])
 
-        resp = await self._get_server_by_ref_id(pairs[0].server_ref_id)
+        deadline = time.monotonic() + test_constants.TIME_ALLOWANCE
+        while time.monotonic() < deadline:
+            resp = await self._get_server_by_ref_id(pairs[0].server_ref_id)
+            if (
+                resp.data.calls_started
+                == resp.data.calls_succeeded + resp.data.calls_failed
+            ):
+                break
+            await asyncio.sleep(0.01)
+
         self.assertEqual(resp.data.calls_started, 2)
         self.assertEqual(resp.data.calls_succeeded, 1)
         self.assertEqual(resp.data.calls_failed, 1)
