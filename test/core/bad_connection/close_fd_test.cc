@@ -91,7 +91,7 @@ static void server_setup_transport(grpc_core::Transport* transport) {
   grpc_core::ExecCtx exec_ctx;
   grpc_endpoint_add_to_pollset(g_ctx.ep->server, grpc_cq_pollset(g_ctx.cq));
   grpc_core::Server* core_server = grpc_core::Server::FromC(g_ctx.server);
-  if (!IsServerConnectionManagementEnabled()) {
+  if (!grpc_core::IsServerConnectionManagementEnabled()) {
     GRPC_CHECK(GRPC_LOG_IF_ERROR(
         "SetupTransport", core_server->SetupTransport(
                               transport, nullptr, core_server->channel_args())));
@@ -99,7 +99,7 @@ static void server_setup_transport(grpc_core::Transport* transport) {
   }
   GRPC_CHECK(GRPC_LOG_IF_ERROR(
       "LegacyAddConnection", core_server->LegacyAddConnection(
-          OrphanablePtr<Transport>(transport), nullptr,
+          grpc_core::OrphanablePtr<grpc_core::Transport>(transport), nullptr,
           core_server->channel_args())));
 }
 

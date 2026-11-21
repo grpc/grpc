@@ -125,7 +125,7 @@ class InProcessCHTTP2 {
       for (grpc_pollset* pollset : core_server->pollsets()) {
         grpc_endpoint_add_to_pollset(iomgr_server_endpoint.get(), pollset);
       }
-      if (!IsServerConnectionManagementEnabled()) {
+      if (!grpc_core::IsServerConnectionManagementEnabled()) {
         grpc_core::Transport* transport = grpc_create_chttp2_transport(
             core_server->channel_args(), std::move(iomgr_server_endpoint),
             /*is_client=*/false);

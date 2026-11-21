@@ -178,7 +178,7 @@ class EndpointPairFixture : public BaseFixture {
           grpc_core::Server::FromC(server_->c_server());
       grpc_core::ChannelArgs server_args = core_server->channel_args();
 
-      if (!IsServerConnectionManagementEnabled()) {
+      if (!grpc_core::IsServerConnectionManagementEnabled()) {
         auto* server_transport = grpc_create_chttp2_transport(
             server_args,
             grpc_core::OrphanablePtr<grpc_endpoint>(endpoints.server),
@@ -193,10 +193,11 @@ class EndpointPairFixture : public BaseFixture {
         grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr,
                                             nullptr, nullptr);
       } else {
-        OrphanablePtr<Transport> server_transport(grpc_create_chttp2_transport(
-            server_args,
-            grpc_core::OrphanablePtr<grpc_endpoint>(endpoints.server),
-            /*is_client=*/false));
+        grpc_core::OrphanablePtr<grpc_core::Transport> server_transport(
+            grpc_create_chttp2_transport(
+                server_args,
+                grpc_core::OrphanablePtr<grpc_endpoint>(endpoints.server),
+                /*is_client=*/false));
         auto transport_ref = server_transport->Ref();
         for (grpc_pollset* pollset : core_server->pollsets()) {
           grpc_endpoint_add_to_pollset(endpoints.server, pollset);

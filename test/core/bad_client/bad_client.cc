@@ -76,7 +76,7 @@ static void server_setup_transport(void* ts, grpc_core::Transport* transport) {
   thd_args* a = static_cast<thd_args*>(ts);
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Server* core_server = grpc_core::Server::FromC(a->server);
-  if (!IsServerConnectionManagementEnabled()) {
+  if (!grpc_core::IsServerConnectionManagementEnabled()) {
     GRPC_CHECK(GRPC_LOG_IF_ERROR(
         "SetupTransport",
         core_server->SetupTransport(transport, /*accepting_pollset=*/nullptr,
@@ -85,9 +85,9 @@ static void server_setup_transport(void* ts, grpc_core::Transport* transport) {
   }
   GRPC_CHECK(GRPC_LOG_IF_ERROR(
       "LegacyAddConnection",
-      core_server->LegacyAddConnection(OrphanablePtr<Transport>(transport),
-                                       /*accepting_pollset=*/nullptr,
-                                       core_server->channel_args())));
+      core_server->LegacyAddConnection(
+          grpc_core::OrphanablePtr<grpc_core::Transport>(transport),
+          /*accepting_pollset=*/nullptr, core_server->channel_args())));
 }
 
 // Sets the read_done event
