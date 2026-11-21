@@ -187,9 +187,8 @@ class EndpointPairFixture : public BaseFixture {
           grpc_endpoint_add_to_pollset(endpoints.server, pollset);
         }
         GRPC_CHECK(GRPC_LOG_IF_ERROR(
-            "SetupTransport",
-            core_server->SetupTransport(server_transport, nullptr,
-                                        server_args)));
+            "SetupTransport", core_server->SetupTransport(
+                                  server_transport, nullptr, server_args)));
         grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr,
                                             nullptr, nullptr);
       } else {
@@ -203,10 +202,11 @@ class EndpointPairFixture : public BaseFixture {
           grpc_endpoint_add_to_pollset(endpoints.server, pollset);
         }
         GRPC_CHECK(GRPC_LOG_IF_ERROR(
-            "LegacyAddConnection", core_server->LegacyAddConnection(
-                std::move(server_transport), nullptr, server_args)));
-        grpc_chttp2_transport_start_reading(
-            transport_ref.get(), nullptr, nullptr, nullptr, nullptr);
+            "LegacyAddConnection",
+            core_server->LegacyAddConnection(std::move(server_transport),
+                                             nullptr, server_args)));
+        grpc_chttp2_transport_start_reading(transport_ref.get(), nullptr,
+                                            nullptr, nullptr, nullptr);
       }
     }
 

@@ -594,7 +594,6 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                 self->connection_->handshake_result_args(),
                 std::move(frame_transport), config.MakeMessageChunker()),
             nullptr, self->connection_->handshake_result_args());
-
       });
 }
 

@@ -110,15 +110,14 @@ class GracefulShutdownTest : public ::testing::Test {
     } else {
       OrphanablePtr<Transport> transport(grpc_create_chttp2_transport(
           core_server->channel_args(),
-          OrphanablePtr<grpc_endpoint>(fds_.server),
-          false));
+          OrphanablePtr<grpc_endpoint>(fds_.server), false));
       auto transport_ref = transport->Ref();
       grpc_endpoint_add_to_pollset(fds_.server, grpc_cq_pollset(cq_));
       GRPC_CHECK(core_server->LegacyAddConnection(
-          std::move(transport), nullptr, core_server->channel_args()) ==
-          absl::OkStatus());
-      grpc_chttp2_transport_start_reading(
-          transport_ref.get(), nullptr, nullptr, nullptr, nullptr);
+                     std::move(transport), nullptr,
+                     core_server->channel_args()) == absl::OkStatus());
+      grpc_chttp2_transport_start_reading(transport_ref.get(), nullptr, nullptr,
+                                          nullptr, nullptr);
     }
     // Start polling on the client
     Notification client_poller_thread_started_notification;

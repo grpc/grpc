@@ -1280,7 +1280,8 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
       grpc_core::IsServerConnectionManagementEnabled()
           ? core_server->LegacyAddConnection(
                 grpc_core::OrphanablePtr<grpc_core::Transport>(
-                    server_transport), nullptr, server_args)
+                    server_transport),
+                nullptr, server_args)
           : core_server->SetupTransport(server_transport, nullptr, server_args);
   grpc_channel* channel = nullptr;
   if (error.ok()) {

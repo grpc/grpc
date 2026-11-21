@@ -137,16 +137,16 @@ class InProcessCHTTP2 {
                                             nullptr, nullptr);
       } else {
         grpc_core::OrphanablePtr<grpc_core::Transport> transport(
-            grpc_create_chttp2_transport(
-                core_server->channel_args(), std::move(iomgr_server_endpoint),
-                /*is_client=*/false));
+            grpc_create_chttp2_transport(core_server->channel_args(),
+                                         std::move(iomgr_server_endpoint),
+                                         /*is_client=*/false));
         auto transport_ref = transport->Ref();
         GRPC_CHECK(GRPC_LOG_IF_ERROR(
             "LegacyAddConnection",
             core_server->LegacyAddConnection(std::move(transport), nullptr,
                                              core_server->channel_args())));
-        grpc_chttp2_transport_start_reading(
-            transport_ref.get(), nullptr, nullptr, nullptr, nullptr);
+        grpc_chttp2_transport_start_reading(transport_ref.get(), nullptr,
+                                            nullptr, nullptr, nullptr);
       }
     }
     // create channel

@@ -470,17 +470,18 @@ std::optional<ChannelArgs> Server::ListenerState::AddHandshakingConnectionImpl(
   return new_args;
 }
 
-bool Server::ListenerState::OnHandshakeDone(
-    Orphanable* handshaking_connection, OrphanablePtr<Transport> transport,
-    grpc_pollset* accepting_pollset, const ChannelArgs& args) {
+bool Server::ListenerState::OnHandshakeDone(Orphanable* handshaking_connection,
+                                            OrphanablePtr<Transport> transport,
+                                            grpc_pollset* accepting_pollset,
+                                            const ChannelArgs& args) {
   GRPC_LATENT_SEE_SCOPE("Server::ListenerState::OnHandshakeDone");
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << server_.get() << " listener_state " << this
-      << "] OnHandshakeDone(handshaking_connection="
-      << handshaking_connection << ", transport=" << transport.get() << ")";
-  absl::StatusOr<OrphanablePtr<Connection>> connection = Connection::Create(
-      Ref(), std::move(transport), accepting_pollset, args,
-      /*hold_connection_quota=*/true);
+      << "] OnHandshakeDone(handshaking_connection=" << handshaking_connection
+      << ", transport=" << transport.get() << ")";
+  absl::StatusOr<OrphanablePtr<Connection>> connection =
+      Connection::Create(Ref(), std::move(transport), accepting_pollset, args,
+                         /*hold_connection_quota=*/true);
   if (connection.ok() && *connection == nullptr) {
     connection = absl::InternalError("failed to create connection");
   }
@@ -535,9 +536,9 @@ absl::Status Server::ListenerState::LegacyAddActiveConnection(
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << server_.get() << " listener_state " << this
       << "] LegacyAddActiveConnection(transport=" << transport.get() << ")";
-  absl::StatusOr<OrphanablePtr<Connection>> connection = Connection::Create(
-      Ref(), std::move(transport), accepting_pollset, args,
-      /*hold_connection_quota=*/false);
+  absl::StatusOr<OrphanablePtr<Connection>> connection =
+      Connection::Create(Ref(), std::move(transport), accepting_pollset, args,
+                         /*hold_connection_quota=*/false);
   if (!connection.ok()) return connection.status();
   if (*connection == nullptr) {
     return absl::InternalError("failed to create connection");
@@ -725,8 +726,7 @@ class Server::Connection::ConnectivityWatcher final
 // Server::Connection
 //
 
-absl::StatusOr<OrphanablePtr<Server::Connection>>
-Server::Connection::Create(
+absl::StatusOr<OrphanablePtr<Server::Connection>> Server::Connection::Create(
     RefCountedPtr<ListenerState> listener_state,
     OrphanablePtr<Transport> transport, grpc_pollset* accepting_pollset,
     const ChannelArgs& args, bool hold_connection_quota) {
@@ -1808,21 +1808,22 @@ void Server::Start() {
   starting_cv_.Signal();
 }
 
-absl::Status Server::LegacyAddConnection(
-    OrphanablePtr<Transport> transport, grpc_pollset* accepting_pollset,
-    const ChannelArgs& args) {
+absl::Status Server::LegacyAddConnection(OrphanablePtr<Transport> transport,
+                                         grpc_pollset* accepting_pollset,
+                                         const ChannelArgs& args) {
   GRPC_LATENT_SEE_SCOPE("Server::LegacyAddConnection");
   GRPC_TRACE_LOG(server, INFO)
-      << "[server " << this << "] LegacyAddConnection(transport="
-      << transport.get() << ")";
+      << "[server " << this
+      << "] LegacyAddConnection(transport=" << transport.get() << ")";
   return listener_states_.back()->LegacyAddActiveConnection(
       std::move(transport), accepting_pollset, args);
 }
 
 absl::StatusOr<OrphanablePtr<ServerTransport>>
-Server::SetupCallLinkageForTransport(
-    Connection* /*connection*/, OrphanablePtr<Transport> transport,
-    grpc_pollset* accepting_pollset, const ChannelArgs& args) {
+Server::SetupCallLinkageForTransport(Connection* /*connection*/,
+                                     OrphanablePtr<Transport> transport,
+                                     grpc_pollset* accepting_pollset,
+                                     const ChannelArgs& args) {
   // TODO(roth): In a subsequent PR, plumb connection object to be
   // visible to RPCs.
   global_stats().IncrementServerChannelsCreated();
@@ -1832,8 +1833,8 @@ Server::SetupCallLinkageForTransport(
     // Take ownership.
     owned_transport.reset(transport.release()->server_transport());
     auto destination = MakeCallDestination(
-        args.SetObject(owned_transport.get()).SetObject<channelz::BaseNode>(
-            owned_transport->GetSocketNode()),
+        args.SetObject(owned_transport.get())
+            .SetObject<channelz::BaseNode>(owned_transport->GetSocketNode()),
         GRPC_SERVER_CHANNEL);
     if (!destination.ok()) return destination.status();
     owned_transport->SetCallDestination(std::move(*destination));
@@ -1841,8 +1842,8 @@ Server::SetupCallLinkageForTransport(
     GRPC_CHECK(transport->filter_stack_transport() != nullptr);
     absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
         "",
-        args.SetObject(transport.get()).SetObject<channelz::BaseNode>(
-            transport->GetSocketNode()),
+        args.SetObject(transport.get())
+            .SetObject<channelz::BaseNode>(transport->GetSocketNode()),
         GRPC_SERVER_CHANNEL);
     if (!channel.ok()) return channel.status();
     GRPC_CHECK(*channel != nullptr);

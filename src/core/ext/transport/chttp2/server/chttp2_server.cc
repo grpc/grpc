@@ -584,9 +584,8 @@ void NewChttp2ServerListener::HandshakingConnection::OnHandshakeDoneLocked(
     const bool is_callv3 = args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false);
     if (!is_callv3) {
       // v1 stack
-      OrphanablePtr<Transport> transport(
-          grpc_create_chttp2_transport(args, std::move((*result)->endpoint),
-                                       false));
+      OrphanablePtr<Transport> transport(grpc_create_chttp2_transport(
+          args, std::move((*result)->endpoint), false));
       auto transport_ref = transport->Ref();
       if (listener_state_->OnHandshakeDone(this, std::move(transport),
                                            accepting_pollset_, args)) {
@@ -1058,8 +1057,8 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
       grpc_error_handle error =
           core_server->SetupTransport(transport, nullptr, server_args);
       if (error.ok()) {
-        grpc_chttp2_transport_start_reading(
-            transport, nullptr, nullptr, nullptr, nullptr);
+        grpc_chttp2_transport_start_reading(transport, nullptr, nullptr,
+                                            nullptr, nullptr);
       } else {
         LOG(ERROR) << "Failed to create channel: "
                    << grpc_core::StatusToString(error);
@@ -1073,8 +1072,8 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
       absl::Status status = core_server->LegacyAddConnection(
           std::move(transport), nullptr, server_args);
       if (status.ok()) {
-        grpc_chttp2_transport_start_reading(
-            transport_ref.get(), nullptr, nullptr, nullptr, nullptr);
+        grpc_chttp2_transport_start_reading(transport_ref.get(), nullptr,
+                                            nullptr, nullptr, nullptr);
       } else {
         LOG(ERROR) << "Failed to create channel: " << status;
       }

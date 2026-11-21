@@ -88,8 +88,8 @@ class SockpairFixture : public CoreTestFixture {
       grpc_error_handle error = core_server->SetupTransport(
           transport, nullptr, core_server->channel_args());
       if (error.ok()) {
-        grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
-                                            nullptr);
+        grpc_chttp2_transport_start_reading(transport, nullptr, nullptr,
+                                            nullptr, nullptr);
       } else {
         transport->Orphan();
       }
@@ -100,8 +100,8 @@ class SockpairFixture : public CoreTestFixture {
       absl::Status error = core_server->LegacyAddConnection(
           std::move(transport), nullptr, core_server->channel_args());
       if (error.ok()) {
-        grpc_chttp2_transport_start_reading(
-            transport_ref.get(), nullptr, nullptr, nullptr, nullptr);
+        grpc_chttp2_transport_start_reading(transport_ref.get(), nullptr,
+                                            nullptr, nullptr, nullptr);
       }
     }
     return server;

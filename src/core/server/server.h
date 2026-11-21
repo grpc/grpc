@@ -293,15 +293,16 @@ class Server : public ServerInterface,
     // in on the transport, and tracks it as an active connection.
     //
     // TODO(roth): After the v3 migration, change this to return void.
-    bool OnHandshakeDone(
-        Orphanable* handshaking_connection, OrphanablePtr<Transport> transport,
-        grpc_pollset* accepting_pollset, const ChannelArgs& args);
+    bool OnHandshakeDone(Orphanable* handshaking_connection,
+                         OrphanablePtr<Transport> transport,
+                         grpc_pollset* accepting_pollset,
+                         const ChannelArgs& args);
 
     // Legacy code-path for callers that directly call
     // Server::LegacyAddConnection() without having a listener.
-    absl::Status LegacyAddActiveConnection(
-        OrphanablePtr<Transport> transport, grpc_pollset* accepting_pollset,
-        const ChannelArgs& args);
+    absl::Status LegacyAddActiveConnection(OrphanablePtr<Transport> transport,
+                                           grpc_pollset* accepting_pollset,
+                                           const ChannelArgs& args);
 
     size_t NumOpenConnectionsLocked()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_) {
@@ -518,9 +519,9 @@ class Server : public ServerInterface,
   //   transport selection work)
   // - the chaotic_good transport (needs to be changed to use the
   //   ListenerState APIs)
-  absl::Status LegacyAddConnection(
-      OrphanablePtr<Transport> transport, grpc_pollset* accepting_pollset,
-      const ChannelArgs& args)
+  absl::Status LegacyAddConnection(OrphanablePtr<Transport> transport,
+                                   grpc_pollset* accepting_pollset,
+                                   const ChannelArgs& args)
       ABSL_LOCKS_EXCLUDED(mu_global_);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
