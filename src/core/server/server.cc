@@ -1867,7 +1867,7 @@ Server::SetupCallLinkageForTransport(Connection* /*connection*/,
     owned_transport = MakeOrphanable<ChannelData::V1ChannelTransport>(*channel);
     // Set up call linkage.
     chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport.get());
-    transport.release();  // Channel has taken ownership.
+    (void)transport.release();  // Channel has taken ownership.
     // TODO(snohria): Remove this as part of cleaning up the vRPC code.
     auto* parent_arena =
         args.GetPointer<Arena>(GRPC_ARG_SERVER_INTERNAL_PARENT_CALL_ARENA);
