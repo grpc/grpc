@@ -42,44 +42,26 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, LdsTest, ::testing::Values(XdsTestType()),
 // Testing just one example of an invalid resource here.
 // Unit tests for XdsListenerResourceType have exhaustive tests for all
 // of the invalid cases.
-TEST_P(LdsTest, NacksInvalidListener) {
+TEST_P(LdsTest, InvalidListener) {
   auto listener = default_listener_;
   listener.clear_api_listener();
   balancer_->ads_service()->SetLdsResource(listener);
+  // We should NACK.
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("Listener has neither address nor ApiListener"));
-}
-
-// Tests that we go into TRANSIENT_FAILURE if the Listener is not an API
-// listener.
-TEST_P(LdsTest, NotAnApiListener) {
-  Listener listener = default_server_listener_;
-  listener.set_name(kServerName);
-  auto hcm = ServerHcmAccessor().Unpack(listener);
-  auto* rds = hcm.mutable_rds();
-  rds->set_route_config_name(kDefaultRouteConfigurationName);
-  rds->mutable_config_source()->mutable_self();
-  ServerHcmAccessor().Pack(hcm, &listener);
-  balancer_->ads_service()->SetLdsResource(listener);
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: server.example.com: "
+            "INVALID_ARGUMENT: errors validating Listener resource: ["
+            "field:api_listener error:field not present]]");
   // RPCs should fail.
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      absl::StrCat("empty address list \\(LDS resource ",
-                                   kServerName, ": not an API listener\\)"));
-  // We should have ACKed the LDS resource.
-  const auto deadline =
-      absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
-  while (true) {
-    ASSERT_LT(absl::Now(), deadline) << "timed out waiting for LDS ACK";
-    auto response_state = balancer_->ads_service()->lds_response_state();
-    if (response_state.has_value()) {
-      EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-      break;
-    }
-    absl::SleepFor(absl::Seconds(1) * grpc_test_slowdown_factor());
-  }
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat(
+          "empty address list \\(LDS resource ", kServerName,
+          ": invalid resource: errors validating Listener resource: \\["
+          "field:api_listener error:field not present\\] "
+          "\\(node ID:xds_end2end_test\\)\\)"));
 }
 
 class LdsDeletionTest : public XdsEnd2endTest {
@@ -580,7 +562,7 @@ TEST_P(LdsRdsTest, NacksInvalidRouteConfig) {
                 "errors validating RouteConfiguration resource: ["
                 "field:"
               : "server.example.com: INVALID_ARGUMENT: "
-                "errors validating ApiListener: ["
+                "errors validating Listener resource: ["
                 "field:api_listener.api_listener.value["
                 "envoy.extensions.filters.network.http_connection_manager.v3"
                 ".HttpConnectionManager].route_config.",
