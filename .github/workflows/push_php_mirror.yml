@@ -38,6 +38,7 @@ jobs:
           # Copy configuration files
           cp src/php/ext/grpc/composer.json mirror/
           cp src/php/ext/grpc/README.md mirror/README.md
+          cp -r src/php/ext/grpc/.github mirror/
 
       - name: Push to Mirror
         run: |
