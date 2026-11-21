@@ -380,6 +380,28 @@ void tsi_ssl_handshaker::MaybeRecordTelemetry(
   }
 }
 
+// Releases and returns |impl->key_signer| if the handshake result has already
+// been created or BoringSSL will no longer invoke the private key on
+// |impl->ssl|. The caller must destroy the returned signer after releasing
+// |impl->mu| to avoid lock-order inversion in ~PrivateKeySigner().
+static std::shared_ptr<grpc_core::PrivateKeySigner>
+MaybeReleasePrivateKeySignerLocked(
+#if defined(OPENSSL_IS_BORINGSSL)
+    tsi_ssl_handshaker* impl)
+#else
+    tsi_ssl_handshaker* /*impl*/)
+#endif
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
+#if defined(OPENSSL_IS_BORINGSSL)
+  if (impl->key_signer != nullptr && impl->signing_handle == nullptr &&
+      (impl->handshaker_result_created ||
+       (impl->ssl != nullptr && SSL_can_release_private_key(impl->ssl)))) {
+    return std::move(impl->key_signer);
+  }
+#endif
+  return nullptr;
+}
+
 static std::pair<tsi_result, std::optional<HandshakerNextArgs>>
 ssl_handshaker_next_async(tsi_ssl_handshaker* self)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu);
@@ -567,16 +589,16 @@ tsi_result SetKeyExchangeGroups(
       return TSI_INTERNAL_ERROR;
     }
 #elif OPENSSL_VERSION_NUMBER < 0x10101000L
-    if (!SSL_CTX_set1_curves_list(context,
-                                  kDefaultOpenSSL1_0_2KeyExchangeGroups)) {
-      LOG(ERROR)
-          << "Could not set default key exchange groups for OpenSSL 1.0.2.";
-      return TSI_INTERNAL_ERROR;
-    }
-    if (!SSL_CTX_set_ecdh_auto(context, /*onoff=*/1)) {
-      LOG(ERROR) << "Could not set ecdh auto for OpenSSL 1.0.2.";
-      return TSI_INTERNAL_ERROR;
-    }
+      if (!SSL_CTX_set1_curves_list(context,
+                                    kDefaultOpenSSL1_0_2KeyExchangeGroups)) {
+        LOG(ERROR)
+            << "Could not set default key exchange groups for OpenSSL 1.0.2.";
+        return TSI_INTERNAL_ERROR;
+      }
+      if (!SSL_CTX_set_ecdh_auto(context, /*onoff=*/1)) {
+        LOG(ERROR) << "Could not set ecdh auto for OpenSSL 1.0.2.";
+        return TSI_INTERNAL_ERROR;
+      }
 #endif
   }
   return TSI_OK;
@@ -652,6 +674,7 @@ void TlsOffloadSignDoneCallback(
     absl::StatusOr<std::string> signed_data) {
   grpc_core::ExecCtx exec_ctx;
   std::optional<HandshakerNextArgs> next_args;
+  std::shared_ptr<grpc_core::PrivateKeySigner> released_key_signer;
   tsi_result result = TSI_INTERNAL_ERROR;
   {
     grpc_core::MutexLock lock(handshaker->mu);
@@ -663,7 +686,9 @@ void TlsOffloadSignDoneCallback(
     auto async_result = ssl_handshaker_next_async(handshaker.get());
     result = async_result.first;
     next_args = std::move(async_result.second);
+    released_key_signer = MaybeReleasePrivateKeySignerLocked(handshaker.get());
   }
+  released_key_signer.reset();
   if (next_args.has_value() && next_args->cb != nullptr) {
     next_args->cb(result, next_args->user_data, next_args->bytes_to_send,
                   next_args->bytes_to_send_size, next_args->handshaker_result);
@@ -867,6 +892,7 @@ void OnSelectCertificateDone(
   grpc_core::ExecCtx exec_ctx;
   tsi_result next_result;
   std::optional<HandshakerNextArgs> next_args;
+  std::shared_ptr<grpc_core::PrivateKeySigner> released_key_signer;
   {
     grpc_core::MutexLock lock(handshaker->mu);
     if (handshaker->is_shutdown) return;
@@ -881,7 +907,9 @@ void OnSelectCertificateDone(
     auto async_result = ssl_handshaker_next_async(handshaker.get());
     next_result = async_result.first;
     next_args = std::move(async_result.second);
+    released_key_signer = MaybeReleasePrivateKeySignerLocked(handshaker.get());
   }
+  released_key_signer.reset();
   // If result is not TSI_ASYNC and there are args, we are ready to flush.
   if (next_result != TSI_ASYNC && next_args.has_value() &&
       next_args->cb != nullptr) {
@@ -2940,6 +2968,9 @@ static tsi_result ssl_handshaker_next(
     return TSI_INVALID_ARGUMENT;
   }
   tsi_ssl_handshaker* impl = static_cast<tsi_ssl_handshaker*>(self);
+  // Declared before mu lock so any released key_signer is destroyed after mu
+  // is released, preventing lock-order inversion in ~PrivateKeySigner().
+  std::shared_ptr<grpc_core::PrivateKeySigner> released_key_signer;
   grpc_core::MutexLock lock(impl->mu);
   if (impl->is_shutdown) {
     if (error != nullptr) *error = "Handshaker shutdown";
@@ -2966,6 +2997,7 @@ static tsi_result ssl_handshaker_next(
     impl->MaybeRecordTelemetry(handshake_result);
     impl->handshaker_next_args.reset();
   }
+  released_key_signer = MaybeReleasePrivateKeySignerLocked(impl);
   return handshake_result.tsi_handshake_result;
 }
 
@@ -2989,10 +3021,10 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self, bool peer_closed) {
         /*err_code=*/0,
     });
 #if defined(OPENSSL_IS_BORINGSSL)
-    if (impl->key_signer != nullptr && impl->signing_handle != nullptr) {
-      key_signer = std::move(impl->key_signer);
-      signing_handle = std::move(impl->signing_handle);
-    }
+    // Release key_signer unconditionally on shutdown (even when there is no
+    // in-flight signing_handle) and destroy it outside mu below.
+    key_signer = std::move(impl->key_signer);
+    signing_handle = std::move(impl->signing_handle);
     if (GetCertificateSelector(impl) != nullptr &&
         impl->cert_selection_handle != nullptr) {
       cert_selection_handle = std::move(impl->cert_selection_handle);
@@ -3010,7 +3042,10 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self, bool peer_closed) {
   // holding the mutex here while calling the plugin's Cancel method, which may
   // need to acquire its own mutex.
   if (key_signer != nullptr) {
-    key_signer->Cancel(signing_handle);
+    if (signing_handle != nullptr) {
+      key_signer->Cancel(signing_handle);
+    }
+    key_signer.reset();
   }
   if (cert_selection_handle != nullptr) {
     reinterpret_cast<tsi_ssl_server_handshaker_factory*>(impl->factory_ref)

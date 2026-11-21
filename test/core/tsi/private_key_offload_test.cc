@@ -19,9 +19,12 @@
 #include <grpc/private_key_signer.h>
 
 #include <atomic>
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -435,6 +438,283 @@ TEST_P(PrivateKeyOffloadTest, OffloadFailsWithSignCancelledOnClient) {
   fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false,
                event_engine_.get());
   EXPECT_TRUE(signer->WasCancelled());
+}
+
+struct OffloadStepResult {
+  tsi_result status = TSI_INTERNAL_ERROR;
+  std::vector<unsigned char> bytes_to_send;
+  tsi_handshaker_result* handshaker_result = nullptr;
+};
+
+struct OffloadPendingState {
+  std::mutex mu;
+  std::condition_variable cv;
+  bool done = false;
+  OffloadStepResult step;
+};
+
+void OnOffloadSteppedNextDone(tsi_result result, void* user_data,
+                              const unsigned char* bytes_to_send,
+                              size_t bytes_to_send_size,
+                              tsi_handshaker_result* handshaker_result) {
+  auto* state = static_cast<OffloadPendingState*>(user_data);
+  std::lock_guard<std::mutex> lock(state->mu);
+  state->step.status = result;
+  if (bytes_to_send != nullptr && bytes_to_send_size > 0) {
+    state->step.bytes_to_send.assign(bytes_to_send,
+                                     bytes_to_send + bytes_to_send_size);
+  }
+  state->step.handshaker_result = handshaker_result;
+  state->done = true;
+  state->cv.notify_all();
+}
+
+OffloadStepResult StepOffloadHandshaker(
+    tsi_handshaker* hs, const std::vector<unsigned char>& in,
+    grpc_event_engine::experimental::FuzzingEventEngine* event_engine) {
+  OffloadPendingState state;
+  const unsigned char* out_bytes = nullptr;
+  size_t out_bytes_size = 0;
+  tsi_handshaker_result* hs_result = nullptr;
+  tsi_result res = tsi_handshaker_next(
+      hs, in.empty() ? nullptr : in.data(), in.size(), &out_bytes,
+      &out_bytes_size, &hs_result, &OnOffloadSteppedNextDone, &state);
+  if (res != TSI_ASYNC) {
+    state.step.status = res;
+    if (out_bytes != nullptr && out_bytes_size > 0) {
+      state.step.bytes_to_send.assign(out_bytes, out_bytes + out_bytes_size);
+    }
+    state.step.handshaker_result = hs_result;
+    return std::move(state.step);
+  }
+  event_engine->TickUntilIdle();
+  std::unique_lock<std::mutex> lock(state.mu);
+  state.cv.wait(lock, [&state]() { return state.done; });
+  return std::move(state.step);
+}
+
+TEST_P(PrivateKeyOffloadTest, ClientReleasesKeySignerOnCompletion) {
+  std::string ca_cert =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "ca.pem"));
+  std::string server_key =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server0.key"));
+  std::string server_cert =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server0.pem"));
+  std::string client_key =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "client.key"));
+  std::string client_cert =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "client.pem"));
+
+  auto client_signer =
+      std::make_shared<AsyncTestPrivateKeySigner>(client_key, event_engine_);
+  tsi_ssl_client_handshaker_factory* client_factory = nullptr;
+  {
+    PemKeyCertPair client_pair(client_signer, client_cert);
+    tsi_ssl_client_handshaker_options client_options;
+    client_options.root_cert_info =
+        std::make_shared<tsi::RootCertInfo>(ca_cert);
+    client_options.min_tls_version = GetParam();
+    client_options.max_tls_version = GetParam();
+    client_options.pem_key_cert_pair = &client_pair;
+    ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
+                  &client_options, &client_factory),
+              TSI_OK);
+  }
+
+  tsi_ssl_server_handshaker_factory* server_factory = nullptr;
+  {
+    PemKeyCertPairList server_pairs;
+    server_pairs.emplace_back(server_key, server_cert);
+    tsi_ssl_server_handshaker_options server_options;
+    server_options.root_cert_info =
+        std::make_shared<tsi::RootCertInfo>(ca_cert);
+    server_options.client_certificate_request =
+        TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
+    server_options.min_tls_version = GetParam();
+    server_options.max_tls_version = GetParam();
+    server_options.key_cert_pairs_or_selector = std::move(server_pairs);
+    ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
+                  &server_options, &server_factory),
+              TSI_OK);
+  }
+
+  const long base_use_count = client_signer.use_count();
+  tsi_handshaker* client_hs = nullptr;
+  tsi_handshaker* server_hs = nullptr;
+  ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
+                client_factory, nullptr, 0, 0, std::nullopt, nullptr, "", "",
+                "", &client_hs),
+            TSI_OK);
+  ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
+                server_factory, 0, 0, nullptr, &server_hs),
+            TSI_OK);
+  // Handshaker holds an additional shared_ptr ref to client_signer.
+  EXPECT_EQ(client_signer.use_count(), base_use_count + 1);
+
+  std::vector<unsigned char> to_client;
+  std::vector<unsigned char> to_server;
+  tsi_handshaker_result* client_result = nullptr;
+  tsi_handshaker_result* server_result = nullptr;
+
+  OffloadStepResult init =
+      StepOffloadHandshaker(client_hs, {}, event_engine_.get());
+  ASSERT_EQ(init.status, TSI_OK);
+  to_server = std::move(init.bytes_to_send);
+
+  while (client_result == nullptr || server_result == nullptr) {
+    bool progressed = false;
+    if (server_result == nullptr && !to_server.empty()) {
+      progressed = true;
+      OffloadStepResult s =
+          StepOffloadHandshaker(server_hs, to_server, event_engine_.get());
+      to_server.clear();
+      ASSERT_EQ(s.status, TSI_OK);
+      if (s.handshaker_result != nullptr) server_result = s.handshaker_result;
+      to_client.insert(to_client.end(), s.bytes_to_send.begin(),
+                       s.bytes_to_send.end());
+    }
+    if (client_result == nullptr && !to_client.empty()) {
+      progressed = true;
+      OffloadStepResult c =
+          StepOffloadHandshaker(client_hs, to_client, event_engine_.get());
+      to_client.clear();
+      ASSERT_EQ(c.status, TSI_OK);
+      if (c.handshaker_result != nullptr) client_result = c.handshaker_result;
+      to_server.insert(to_server.end(), c.bytes_to_send.begin(),
+                       c.bytes_to_send.end());
+    }
+    ASSERT_TRUE(progressed);
+  }
+
+  // client_hs must have released its reference to client_signer upon
+  // completion even before tsi_handshaker_destroy() or shutdown().
+  EXPECT_EQ(client_signer.use_count(), base_use_count);
+  EXPECT_FALSE(client_signer->WasCancelled());
+
+  tsi_handshaker_result_destroy(client_result);
+  tsi_handshaker_result_destroy(server_result);
+  tsi_handshaker_destroy(client_hs);
+  tsi_handshaker_destroy(server_hs);
+  tsi_ssl_client_handshaker_factory_unref(client_factory);
+  tsi_ssl_server_handshaker_factory_unref(server_factory);
+}
+
+TEST_P(PrivateKeyOffloadTest, ServerReleasesFactoryKeySignerOnPreSignShutdown) {
+  std::string server_key =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server0.key"));
+  std::string server_cert =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server0.pem"));
+  auto server_signer =
+      std::make_shared<AsyncTestPrivateKeySigner>(server_key, event_engine_);
+
+  tsi_ssl_server_handshaker_factory* server_factory = nullptr;
+  {
+    PemKeyCertPairList server_pairs;
+    server_pairs.emplace_back(server_signer, server_cert);
+    tsi_ssl_server_handshaker_options server_options;
+    server_options.client_certificate_request =
+        TSI_DONT_REQUEST_CLIENT_CERTIFICATE;
+    server_options.min_tls_version = GetParam();
+    server_options.max_tls_version = GetParam();
+    server_options.key_cert_pairs_or_selector = std::move(server_pairs);
+    ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
+                  &server_options, &server_factory),
+              TSI_OK);
+  }
+
+  const long base_use_count = server_signer.use_count();
+  tsi_handshaker* server_hs = nullptr;
+  ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
+                server_factory, 0, 0, nullptr, &server_hs),
+            TSI_OK);
+  EXPECT_EQ(server_signer.use_count(), base_use_count + 1);
+
+  // Shut down before any signing operation starts (signing_handle == nullptr).
+  tsi_handshaker_shutdown(server_hs, /*peer_closed=*/false);
+  EXPECT_EQ(server_signer.use_count(), base_use_count);
+  EXPECT_FALSE(server_signer->WasCancelled());
+
+  tsi_handshaker_destroy(server_hs);
+  tsi_ssl_server_handshaker_factory_unref(server_factory);
+}
+
+TEST_P(PrivateKeyOffloadTest,
+       ServerWithSNIReleasesFactoryKeySignerBeforeClientFinished) {
+  std::string ca_cert =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "ca.pem"));
+  std::string server0_key =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server0.key"));
+  std::string server0_cert =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server0.pem"));
+  std::string server1_key =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.key"));
+  std::string server1_cert =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.pem"));
+
+  auto server0_signer = std::make_shared<SyncTestPrivateKeySigner>(server0_key);
+  auto server1_signer =
+      std::make_shared<AsyncTestPrivateKeySigner>(server1_key, event_engine_);
+
+  tsi_ssl_client_handshaker_factory* client_factory = nullptr;
+  {
+    tsi_ssl_client_handshaker_options client_options;
+    client_options.root_cert_info =
+        std::make_shared<tsi::RootCertInfo>(ca_cert);
+    client_options.min_tls_version = GetParam();
+    client_options.max_tls_version = GetParam();
+    ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
+                  &client_options, &client_factory),
+              TSI_OK);
+  }
+
+  tsi_ssl_server_handshaker_factory* server_factory = nullptr;
+  {
+    PemKeyCertPairList server_pairs;
+    server_pairs.emplace_back(server0_signer, server0_cert);
+    server_pairs.emplace_back(server1_signer, server1_cert);
+    tsi_ssl_server_handshaker_options server_options;
+    server_options.client_certificate_request =
+        TSI_DONT_REQUEST_CLIENT_CERTIFICATE;
+    server_options.min_tls_version = GetParam();
+    server_options.max_tls_version = GetParam();
+    server_options.key_cert_pairs_or_selector = std::move(server_pairs);
+    ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
+                  &server_options, &server_factory),
+              TSI_OK);
+  }
+
+  const long base0 = server0_signer.use_count();
+  const long base1 = server1_signer.use_count();
+  tsi_handshaker* client_hs = nullptr;
+  tsi_handshaker* server_hs = nullptr;
+  ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
+                client_factory, "bar.test.google.fr", 0, 0, std::nullopt,
+                nullptr, "bar.test.google.fr", "", "", &client_hs),
+            TSI_OK);
+  ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
+                server_factory, 0, 0, nullptr, &server_hs),
+            TSI_OK);
+  EXPECT_EQ(server0_signer.use_count(), base0 + 1);
+  EXPECT_EQ(server1_signer.use_count(), base1);
+
+  OffloadStepResult client_hello =
+      StepOffloadHandshaker(client_hs, {}, event_engine_.get());
+  ASSERT_EQ(client_hello.status, TSI_OK);
+
+  OffloadStepResult server_flight = StepOffloadHandshaker(
+      server_hs, client_hello.bytes_to_send, event_engine_.get());
+  ASSERT_EQ(server_flight.status, TSI_OK);
+  EXPECT_EQ(server_flight.handshaker_result, nullptr);
+  // SNI selected server1_signer and dropped server0_signer; after
+  // ServerFinished is queued, server_hs must drop server1_signer immediately
+  // before waiting for ClientFinished.
+  EXPECT_EQ(server0_signer.use_count(), base0);
+  EXPECT_EQ(server1_signer.use_count(), base1);
+
+  tsi_handshaker_destroy(client_hs);
+  tsi_handshaker_destroy(server_hs);
+  tsi_ssl_client_handshaker_factory_unref(client_factory);
+  tsi_ssl_server_handshaker_factory_unref(server_factory);
 }
 
 std::string TestNameSuffix(
