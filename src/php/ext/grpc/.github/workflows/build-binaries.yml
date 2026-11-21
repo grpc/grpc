@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  # Allows manually backfilling binary builds/releases for previously pushed tags.
   workflow_dispatch:
     inputs:
       tag:
