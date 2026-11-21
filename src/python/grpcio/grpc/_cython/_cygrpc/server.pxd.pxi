@@ -18,7 +18,9 @@ cdef class Server:
 
   cdef bint is_started  # start has been called
   cdef bint is_shutting_down  # shutdown has been called
-  cdef bint is_shutdown  # notification of complete shutdown received
+  # notification of complete shutdown received; written by the thread that
+  # polls the completion queue, read by threads calling cancel_all_calls()
+  cdef atomic[bint] is_shutdown
   # used at dealloc when user forgets to shutdown
   cdef CompletionQueue backup_shutdown_queue
   # TODO(https://github.com/grpc/grpc/issues/15662): Elide this.

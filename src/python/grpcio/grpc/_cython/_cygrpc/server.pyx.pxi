@@ -49,7 +49,7 @@ cdef class Server:
     self.registered_completion_queues = []
     self.is_started = False
     self.is_shutting_down = False
-    self.is_shutdown = False
+    self.is_shutdown.store(False)
     self.c_server = NULL
     self.registered_methods = {}  # Mapping[bytes, RegisteredMethod]
     arguments_list = list(arguments) if arguments is not None else []
@@ -216,12 +216,12 @@ cdef class Server:
   cdef notify_shutdown_complete(self):
     # called only after our server shutdown tag has emerged from a completion
     # queue.
-    self.is_shutdown = True
+    self.is_shutdown.store(True)
 
   def cancel_all_calls(self):
     if not self.is_shutting_down:
       raise UsageError("the server must be shutting down to cancel all calls")
-    elif self.is_shutdown:
+    elif self.is_shutdown.load():
       return
     else:
       with nogil:
@@ -234,7 +234,7 @@ cdef class Server:
     if self.c_server != NULL:
       if not self.is_started:
         pass
-      elif self.is_shutdown:
+      elif self.is_shutdown.load():
         pass
       elif not self.is_shutting_down:
         if self.backup_shutdown_queue is None:
@@ -243,12 +243,12 @@ cdef class Server:
           # the user didn't call shutdown - use our backup queue
           self._c_shutdown(self.backup_shutdown_queue, None)
           # and now we wait
-          while not self.is_shutdown:
+          while not self.is_shutdown.load():
             self.backup_shutdown_queue.poll()
       else:
         # We're in the process of shutting down, but have not shutdown; can't do
         # much but repeatedly release the GIL and wait
-        while not self.is_shutdown:
+        while not self.is_shutdown.load():
           time.sleep(0)
       with nogil:
         grpc_server_destroy(self.c_server)

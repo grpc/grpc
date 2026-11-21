@@ -1240,7 +1240,7 @@ cdef class AioServer:
             if self._status == AIO_SERVER_STATUS_STOPPING:
                 grpc_server_destroy(self._server.c_server)
                 self._server.c_server = NULL
-                self._server.is_shutdown = True
+                self._server.is_shutdown.store(True)
                 self._status = AIO_SERVER_STATUS_STOPPED
 
     async def wait_for_termination(self, object timeout):
