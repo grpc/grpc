@@ -34,6 +34,7 @@ grpc_cc_test(
         "//:gpr_platform",
         "//:grpc",
         "//:lb_load_data_store",
+        "//:lb_load_reporter_constants",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -56,6 +57,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:lb_load_reporter",
+        "//:lb_load_reporter_constants",
         "//src/core:lb_server_load_reporting_filter",
         "//test/core/test_util:grpc_test_util",
     ],

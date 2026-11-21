@@ -2210,12 +2210,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "lb_load_reporter_constants",
+    hdrs = [
+        "src/cpp/server/load_reporter/constants.h",
+    ],
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "lb_load_data_store",
     srcs = [
         "src/cpp/server/load_reporter/load_data_store.cc",
     ],
     hdrs = [
-        "src/cpp/server/load_reporter/constants.h",
         "src/cpp/server/load_reporter/load_data_store.h",
     ],
     external_deps = [
@@ -2225,6 +2234,7 @@ grpc_cc_library(
         "gpr",
         "gpr_platform",
         "grpc++",
+        "lb_load_reporter_constants",
         "//src/core:grpc_check",
         "//src/core:grpc_sockaddr",
     ],
@@ -2299,6 +2309,7 @@ grpc_cc_library(
         ":gpr",
         ":grpc++",
         ":lb_load_reporter",
+        ":lb_load_reporter_constants",
         ":load_reporter_cc_grpc",
         "//src/core:grpc_check",
         "//src/core:sync",
@@ -2331,7 +2342,6 @@ grpc_cc_library(
         "src/cpp/server/load_reporter/load_reporter.cc",
     ],
     hdrs = [
-        "src/cpp/server/load_reporter/constants.h",
         "src/cpp/server/load_reporter/load_reporter.h",
     ],
     external_deps = [
@@ -2348,6 +2358,7 @@ grpc_cc_library(
         "gpr",
         "lb_get_cpu_stats",
         "lb_load_data_store",
+        "lb_load_reporter_constants",
         ":load_reporter_cc_grpc",
         "//src/core:grpc_check",
         "//src/core:sync",
