@@ -40,7 +40,7 @@
 namespace grpc {
 
 // ProtoBufferWriter must be a subclass of ::protobuf::io::ZeroCopyOutputStream.
-template <class ProtoBufferWriter, class T>
+template <class ProtoBufferWriter>
 Status GenericSerialize(
     const grpc::protobuf::MessageLite& msg, ByteBuffer* bb, bool* own_buffer,
     grpc_event_engine::experimental::MemoryAllocator* allocator = nullptr) {
@@ -74,8 +74,15 @@ Status GenericSerialize(
              : Status(StatusCode::INTERNAL, "Failed to serialize message");
 }
 
+template <class ProtoBufferWriter, class T>
+Status GenericSerialize(
+    const grpc::protobuf::MessageLite& msg, ByteBuffer* bb, bool* own_buffer,
+    grpc_event_engine::experimental::MemoryAllocator* allocator = nullptr) {
+  return GenericSerialize<ProtoBufferWriter>(msg, bb, own_buffer, allocator);
+}
+
 // BufferReader must be a subclass of ::protobuf::io::ZeroCopyInputStream.
-template <class ProtoBufferReader, class T>
+template <class ProtoBufferReader>
 Status GenericDeserialize(ByteBuffer* buffer,
                           grpc::protobuf::MessageLite* msg) {
   static_assert(std::is_base_of<protobuf::io::ZeroCopyInputStream,
@@ -97,6 +104,12 @@ Status GenericDeserialize(ByteBuffer* buffer,
   }
   buffer->Clear();
   return result;
+}
+
+template <class ProtoBufferReader, class T>
+Status GenericDeserialize(ByteBuffer* buffer,
+                          grpc::protobuf::MessageLite* msg) {
+  return GenericDeserialize<ProtoBufferReader>(buffer, msg);
 }
 
 }  // namespace grpc
