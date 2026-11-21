@@ -189,7 +189,7 @@ class EndpointPairFixture : public BaseFixture {
         GRPC_CHECK(GRPC_LOG_IF_ERROR(
             "SetupTransport", core_server->SetupTransport(
                                   server_transport, nullptr, server_args)));
-        grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr,
+        grpc_chttp2_transport_start_reading(server_transport, nullptr, nullptr,
                                             nullptr, nullptr);
       } else {
         grpc_core::OrphanablePtr<grpc_core::Transport> server_transport(
