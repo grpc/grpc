@@ -160,8 +160,8 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
            cancelled = op->data.recv_close_on_server.cancelled]() {
             return Map(self->call_handler_.WasCancelled(),
                        [cancelled, self](bool result) -> Success {
-                         self->saw_was_cancelled_.store(
-                             true, std::memory_order_relaxed);
+                         self->completed_.store(true,
+                                                std::memory_order_relaxed);
                          self->ResetDeadline();
                          *cancelled = result ? 1 : 0;
                          return Success{};
