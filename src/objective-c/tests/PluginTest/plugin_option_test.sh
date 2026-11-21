@@ -75,17 +75,19 @@ $PROTOC \
     exit 1
 }
 
-# Verify the "grpc_local_import_directory" option
+# Verify the "grpc_local_import_prefix" option
 # Verify system files are imported in a "local" way in header files.
-[ "`cat ${PROTO_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.h |
-    egrep '#import "'"${RUNTIME_IMPORT_PREFIX}"'/ProtoRPC/.*\.h'`"] || {
-    echo >&2 "grpc system files should be imported with full paths."    
+grep -q '#import "'"${RUNTIME_IMPORT_PREFIX}"'ProtoRPC/.*\.h"' \
+    "${PROTO_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.h" || {
+    echo >&2 "grpc system files should be imported with full paths in Test.pbrpc.h"
+    exit 1
 }
 
 # Verify system files are imported in a "local" way in source files.
-[ "`cat ${PROTO_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.m |
-    egrep '#import "'"${RUNTIME_IMPORT_PREFIX}"'/ProtoRPC/.*\.h'`"] || {
-    echo >&2 "grpc system files should be imported with full paths."    
+grep -q '#import "'"${RUNTIME_IMPORT_PREFIX}"'ProtoRPC/.*\.h"' \
+    "${PROTO_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.m" || {
+    echo >&2 "grpc system files should be imported with full paths in Test.pbrpc.m"
+    exit 1
 }
 
 # Verify the "named_framework_to_proto_path_mappings_path" option
