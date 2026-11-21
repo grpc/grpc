@@ -519,9 +519,10 @@ bool Server::ListenerState::OnHandshakeDone(
     if (connection.ok() && !server_->shutdown_published_) {
       GRPC_TRACE_LOG(server, INFO) << "immediately draining new connection";
       server_->StartDrainingConnectionLocked(
-          std::move(*connection),
-          // FIXME: what is the right reason and time to use here?
-          "server closing connection", Duration::Infinity());
+          std::move(*connection), "server closing connection",
+          // TODO(roth): Tie this in with the normal server shutdown
+          // grace period somehow.
+          Duration::Seconds(10));
     }
   }
   if (!connection_initialized) connection_quota_->ReleaseConnections(1);
@@ -549,9 +550,10 @@ absl::Status Server::ListenerState::LegacyAddActiveConnection(
   if (state_ != State::kStarted) {
     GRPC_TRACE_LOG(server, INFO) << "immediately draining new connection";
     server_->StartDrainingConnectionLocked(
-        std::move(*connection),
-        // FIXME: what is the right reason and time to use here?
-        "server closing connection", Duration::Infinity());
+        std::move(*connection), "server closing connection",
+        // TODO(roth): Tie this in with the normal server shutdown
+        // grace period somehow.
+        Duration::Seconds(10));
   } else {
     GRPC_TRACE_LOG(server, INFO) << "tracking new active connection";
     active_connections_.insert(std::move(*connection));
