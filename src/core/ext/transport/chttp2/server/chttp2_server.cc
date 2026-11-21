@@ -780,7 +780,8 @@ void NewChttp2ServerListener::OnAccept(
           self->listener_state_->memory_quota(), peer)) {
     return;
   }
-  // FIXME: move this to server code?
+  // TODO(roth): This check should probably be moved to the server code,
+  // so that it will work for any transport type.
   RefCountedPtr<MitigationEngine> mitigation_engine = self->mitigation_engine();
   if (mitigation_engine != nullptr) {
     auto action = mitigation_engine->EvaluateIncomingConnection(
