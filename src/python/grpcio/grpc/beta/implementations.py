@@ -34,14 +34,18 @@ ssl_channel_credentials = grpc.ssl_channel_credentials
 CallCredentials = grpc.CallCredentials
 
 
-def metadata_call_credentials(metadata_plugin, name=None):
+def metadata_call_credentials(
+    metadata_plugin, name=None, propagate_context=False
+):
     def plugin(context, callback):
         def wrapped_callback(beta_metadata, error):
             callback(_metadata.unbeta(beta_metadata), error)
 
         metadata_plugin(context, wrapped_callback)
 
-    return grpc.metadata_call_credentials(plugin, name=name)
+    return grpc.metadata_call_credentials(
+        plugin, name=name, propagate_context=propagate_context
+    )
 
 
 def google_call_credentials(credentials):

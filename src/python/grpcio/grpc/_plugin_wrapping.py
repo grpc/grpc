@@ -81,20 +81,25 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
 class _Plugin:
     _metadata_plugin: grpc.AuthMetadataPlugin
 
-    def __init__(self, metadata_plugin: grpc.AuthMetadataPlugin):
+    def __init__(
+        self,
+        metadata_plugin: grpc.AuthMetadataPlugin,
+        propagate_context: bool = False,
+    ):
         self._metadata_plugin = metadata_plugin
         self._stored_ctx = None
 
-        try:
-            import contextvars  # pylint: disable=wrong-import-position
+        if propagate_context:
+            try:
+                import contextvars  # pylint: disable=wrong-import-position
 
-            # The plugin may be invoked on a thread created by Core, which will not
-            # have the context propagated. This context is stored and installed in
-            # the thread invoking the plugin.
-            self._stored_ctx = contextvars.copy_context()
-        except ImportError:
-            # Support versions predating contextvars.
-            pass
+                # The plugin may be invoked on a thread created by Core, which will not
+                # have the context propagated. This context is stored and installed in
+                # the thread invoking the plugin.
+                self._stored_ctx = contextvars.copy_context()
+            except ImportError:
+                # Support versions predating contextvars.
+                pass
 
     def __call__(
         self,
@@ -125,7 +130,9 @@ class _Plugin:
 
 
 def metadata_plugin_call_credentials(
-    metadata_plugin: grpc.AuthMetadataPlugin, name: Optional[str]
+    metadata_plugin: grpc.AuthMetadataPlugin,
+    name: Optional[str],
+    propagate_context: bool = False,
 ) -> grpc.CallCredentials:
     if name is None:
         try:
@@ -136,6 +143,7 @@ def metadata_plugin_call_credentials(
         effective_name = name
     return grpc.CallCredentials(
         cygrpc.MetadataPluginCallCredentials(
-            _Plugin(metadata_plugin), _common.encode(effective_name)
+            _Plugin(metadata_plugin, propagate_context=propagate_context),
+            _common.encode(effective_name),
         )
     )
