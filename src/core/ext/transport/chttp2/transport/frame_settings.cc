@@ -1,5 +1,4 @@
-//
-//
+```cpp
 // Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,222 +13,137 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-//
 
-#include "src/core/ext/transport/chttp2/transport/frame_settings.h"
+#include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
 
-#include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
-#include <string.h>
 
-#include <memory>
-#include <string>
-#include <utility>
+#include <cstdint>
+#include <stddef.h>
 
+#include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
-#include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
-#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice.h"
+#include "src/core/ext/transport/chttp2/transport/stream_lists.h"
 #include "src/core/telemetry/stats.h"
-#include "src/core/util/debug_location.h"
-#include "src/core/util/useful.h"
-#include "absl/base/attributes.h"
-#include "absl/log/log.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/time.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-using grpc_core::http2::Http2ErrorCode;
+grpc_slice grpc_chttp2_window_update_create(
+    uint32_t id, uint32_t window_delta,
+    grpc_core::CallTracerInterface* call_tracer) {
+  static const size_t frame_size = 13;
+  grpc_slice slice = GRPC_SLICE_MALLOC(frame_size);
+  if (call_tracer != nullptr) {
+    call_tracer->RecordOutgoingBytes({frame_size, 0, 0});
+  }
+  uint8_t* p = GRPC_SLICE_START_PTR(slice);
 
-static uint8_t* fill_header(uint8_t* out, uint32_t length, uint8_t flags) {
-  *out++ = static_cast<uint8_t>(length >> 16);
-  *out++ = static_cast<uint8_t>(length >> 8);
-  *out++ = static_cast<uint8_t>(length);
-  *out++ = GRPC_CHTTP2_FRAME_SETTINGS;
-  *out++ = flags;
-  *out++ = 0;
-  *out++ = 0;
-  *out++ = 0;
-  *out++ = 0;
-  return out;
+  GRPC_CHECK(window_delta);
+  GRPC_CHECK_LE(window_delta, 0x7fffffffu);
+
+  *p++ = 0;
+  *p++ = 0;
+  *p++ = 4;
+  *p++ = GRPC_CHTTP2_FRAME_WINDOW_UPDATE;
+  *p++ = 0;
+  *p++ = static_cast<uint8_t>(id >> 24);
+  *p++ = static_cast<uint8_t>(id >> 16);
+  *p++ = static_cast<uint8_t>(id >> 8);
+  *p++ = static_cast<uint8_t>(id);
+  *p++ = static_cast<uint8_t>(window_delta >> 24);
+  *p++ = static_cast<uint8_t>(window_delta >> 16);
+  *p++ = static_cast<uint8_t>(window_delta >> 8);
+  *p++ = static_cast<uint8_t>(window_delta);
+
+  return slice;
 }
 
-grpc_slice grpc_chttp2_settings_ack_create(void) {
-  grpc_slice output = GRPC_SLICE_MALLOC(9);
-  fill_header(GRPC_SLICE_START_PTR(output), 0, GRPC_CHTTP2_FLAG_ACK);
-  return output;
+grpc_error_handle grpc_chttp2_window_update_parser_begin_frame(
+    grpc_chttp2_window_update_parser* parser, uint32_t length, uint8_t flags) {
+  if (flags || length != 4) {
+    return GRPC_ERROR_CREATE(absl::StrFormat(
+        "invalid window update: length=%d, flags=%02x", length, flags));
+  }
+  parser->byte = 0;
+  parser->amount = 0;
+  return absl::OkStatus();
 }
 
-grpc_error_handle grpc_chttp2_settings_parser_begin_frame(
-    grpc_chttp2_settings_parser* parser, uint32_t length, uint8_t flags,
-    grpc_core::Http2Settings& settings) {
-  parser->target_settings = &settings;
-  parser->incoming_settings.Init(settings);
-  parser->is_ack = 0;
-  parser->state = GRPC_CHTTP2_SPS_ID0;
-  if (flags == GRPC_CHTTP2_FLAG_ACK) {
-    parser->is_ack = 1;
-    if (length != 0) {
-      return GRPC_ERROR_CREATE("non-empty settings ack frame received");
+grpc_error_handle grpc_chttp2_window_update_parser_parse(
+    void* parser, grpc_chttp2_transport* t, grpc_chttp2_stream* s,
+    const grpc_slice& slice, int is_last) {
+  const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
+  const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
+  const uint8_t* cur = beg;
+  grpc_chttp2_window_update_parser* p =
+      static_cast<grpc_chttp2_window_update_parser*>(parser);
+
+  while (p->byte != 4 && cur != end) {
+    p->amount |= (static_cast<uint32_t>(*cur)) << (8 * (3 - p->byte));
+    cur++;
+    p->byte++;
+  }
+
+  if (s != nullptr) {
+    uint64_t framing_bytes = static_cast<uint32_t>(end - cur);
+    s->call_tracer_wrapper.RecordIncomingBytes({framing_bytes, 0, 0});
+  }
+
+  if (p->byte == 4) {
+    // The top bit is reserved and must be ignored.
+    uint32_t received_update = p->amount & 0x7fffffffu;
+    if (received_update == 0) {
+      return GRPC_ERROR_CREATE(
+          absl::StrCat("invalid window update bytes: ", p->amount));
     }
-    return absl::OkStatus();
-  } else if (flags != 0) {
-    return GRPC_ERROR_CREATE("invalid flags on settings frame");
-  } else if (length % 6 != 0) {
-    return GRPC_ERROR_CREATE("settings frames must be a multiple of six bytes");
-  } else {
-    return absl::OkStatus();
-  }
-}
+    GRPC_CHECK(is_last);
 
-grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
-                                                    grpc_chttp2_transport* t,
-                                                    grpc_chttp2_stream* /*s*/,
-                                                    const grpc_slice& slice,
-                                                    int is_last) {
-  grpc_chttp2_settings_parser* parser =
-      static_cast<grpc_chttp2_settings_parser*>(p);
-  const uint8_t* cur = GRPC_SLICE_START_PTR(slice);
-  const uint8_t* end = GRPC_SLICE_END_PTR(slice);
+    t->http2_ztrace_collector.Append(grpc_core::H2WindowUpdateTrace<true>{
+        t->incoming_stream_id, received_update});
 
-  if (parser->is_ack) {
-    t->http2_ztrace_collector.Append(
-        grpc_core::H2SettingsTrace<true>{true, {}});
-    return absl::OkStatus();
-  }
-
-  for (;;) {
-    switch (parser->state) {
-      case GRPC_CHTTP2_SPS_ID0:
-        if (cur == end) {
-          parser->state = GRPC_CHTTP2_SPS_ID0;
-          if (is_last) {
-            grpc_core::Http2Settings* target_settings =
-                parser->incoming_settings.get();
-            t->http2_stats->IncrementHttp2HeaderTableSize(
-                target_settings->header_table_size());
-            t->http2_stats->IncrementHttp2InitialWindowSize(
-                target_settings->initial_window_size());
-            t->http2_stats->IncrementHttp2MaxConcurrentStreams(
-                target_settings->max_concurrent_streams());
-            t->http2_stats->IncrementHttp2MaxFrameSize(
-                target_settings->max_frame_size());
-            t->http2_stats->IncrementHttp2MaxHeaderListSize(
-                target_settings->max_header_list_size());
-            t->http2_stats->IncrementHttp2PreferredReceiveCryptoMessageSize(
-                target_settings->preferred_receive_crypto_message_size());
-            t->http2_ztrace_collector.Append([parser]() {
-              grpc_core::H2SettingsTrace<true> settings{false, {}};
-              // TODO(ctiller): produce actual wire settings here, not a
-              // diff. Likely this needs to wait for PH2 where we separate
-              // the parse loop from the application loop.
-              parser->incoming_settings->Diff(
-                  false, *parser->target_settings,
-                  [&settings](uint16_t key, uint32_t value) {
-                    settings.settings.push_back({key, value});
-                  });
-              return settings;
-            });
-            t->http2_ztrace_collector.Append(
-                []() { return grpc_core::H2SettingsTrace<false>{true, {}}; });
-            *parser->target_settings = *parser->incoming_settings;
-            t->peer_settings_applied = true;
-            t->MaybeNotifyStateWatcherOfPeerMaxConcurrentStreamsLocked();
-            grpc_error_handle error =
-                grpc_chttp2_increase_num_pending_induced_frames(t);
-            if (GPR_UNLIKELY(!error.ok())) return error;
-
-            grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());
-            grpc_chttp2_initiate_write(t,
-                                       GRPC_CHTTP2_INITIATE_WRITE_SETTINGS_ACK);
-            t->MaybeNotifyOnReceiveSettingsLocked(
-                parser->target_settings->max_concurrent_streams());
-            if (t->pending_security_frame != nullptr &&
-                t->pending_security_frame->Length() > 0) {
-              std::unique_ptr<grpc_core::SliceBuffer> pending =
-                  std::move(t->pending_security_frame);
-              t->WriteSecurityFrameLocked(pending.get());
-            }
-          }
-          return absl::OkStatus();
+    if (t->incoming_stream_id != 0) {
+      if (s != nullptr) {
+        grpc_core::Timestamp now = grpc_core::Timestamp::Now();
+        if (s->last_window_update_time != grpc_core::Timestamp::InfPast()) {
+          t->http2_stats->IncrementHttp2StreamWindowUpdatePeriod(
+              (now - s->last_window_update_time).millis());
         }
-        parser->id = static_cast<uint16_t>((static_cast<uint16_t>(*cur)) << 8);
-        cur++;
-        [[fallthrough]];
-      case GRPC_CHTTP2_SPS_ID1:
-        if (cur == end) {
-          parser->state = GRPC_CHTTP2_SPS_ID1;
-          return absl::OkStatus();
+        s->last_window_update_time = now;
+        grpc_core::chttp2::StreamFlowControl::OutgoingUpdateContext(
+            &s->flow_control)
+            .RecvUpdate(received_update);
+        t->http2_stats->IncrementHttp2StreamRemoteWindowUpdate(
+            received_update);
+        if (grpc_chttp2_list_remove_stalled_by_stream(t, s)) {
+          grpc_chttp2_mark_stream_writable(t, s);
+          grpc_chttp2_initiate_write(
+              t, GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_UPDATE);
         }
-        parser->id = static_cast<uint16_t>(parser->id | (*cur));
-        cur++;
-        [[fallthrough]];
-      case GRPC_CHTTP2_SPS_VAL0:
-        if (cur == end) {
-          parser->state = GRPC_CHTTP2_SPS_VAL0;
-          return absl::OkStatus();
-        }
-        parser->value = (static_cast<uint32_t>(*cur)) << 24;
-        cur++;
-        [[fallthrough]];
-      case GRPC_CHTTP2_SPS_VAL1:
-        if (cur == end) {
-          parser->state = GRPC_CHTTP2_SPS_VAL1;
-          return absl::OkStatus();
-        }
-        parser->value |= (static_cast<uint32_t>(*cur)) << 16;
-        cur++;
-        [[fallthrough]];
-      case GRPC_CHTTP2_SPS_VAL2:
-        if (cur == end) {
-          parser->state = GRPC_CHTTP2_SPS_VAL2;
-          return absl::OkStatus();
-        }
-        parser->value |= (static_cast<uint32_t>(*cur)) << 8;
-        cur++;
-        [[fallthrough]];
-      case GRPC_CHTTP2_SPS_VAL3: {
-        if (cur == end) {
-          parser->state = GRPC_CHTTP2_SPS_VAL3;
-          return absl::OkStatus();
-        } else {
-          parser->state = GRPC_CHTTP2_SPS_ID0;
-        }
-        parser->value |= *cur;
-        cur++;
-
-        if (parser->id == grpc_core::Http2Settings::kInitialWindowSizeWireId) {
-          t->initial_window_update +=
-              static_cast<int64_t>(parser->value) -
-              parser->incoming_settings->initial_window_size();
-          if (GRPC_TRACE_FLAG_ENABLED(http) ||
-              GRPC_TRACE_FLAG_ENABLED(flowctl)) {
-            LOG(INFO) << t << "[" << (t->is_client ? "cli" : "svr")
-                      << "] adding " << t->initial_window_update
-                      << " for initial_window change";
-          }
-        }
-        auto error =
-            parser->incoming_settings->Apply(parser->id, parser->value);
-        if (error != Http2ErrorCode::kNoError) {
-          grpc_chttp2_goaway_append(
-              t->last_new_stream_id, static_cast<uint32_t>(error),
-              grpc_slice_from_static_string("HTTP2 settings error"), &t->qbuf,
-              &t->http2_ztrace_collector);
-          return GRPC_ERROR_CREATE(absl::StrFormat(
-              "invalid value %u passed for %s", parser->value,
-              grpc_core::Http2Settings::WireIdToName(parser->id).c_str()));
-        }
-        GRPC_TRACE_LOG(http, INFO)
-            << "CHTTP2:" << (t->is_client ? "CLI" : "SVR") << ":"
-            << t->peer_string.as_string_view() << ": got setting "
-            << grpc_core::Http2Settings::WireIdToName(parser->id) << " = "
-            << parser->value;
-      } break;
+      }
+    } else {
+      grpc_core::chttp2::TransportFlowControl::OutgoingUpdateContext upd(
+          &t->flow_control);
+      grpc_core::Timestamp now = grpc_core::Timestamp::Now();
+      if (t->last_window_update_time != grpc_core::Timestamp::InfPast()) {
+        t->http2_stats->IncrementHttp2TransportWindowUpdatePeriod(
+            (now - t->last_window_update_time).millis());
+      }
+      t->last_window_update_time = now;
+      t->http2_stats->IncrementHttp2TransportRemoteWindowUpdate(
+          received_update);
+      upd.RecvUpdate(received_update);
+      if (upd.Finish() == grpc_core::chttp2::StallEdge::kUnstalled) {
+        grpc_chttp2_initiate_write(
+            t, GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL_UNSTALLED);
+      }
     }
   }
+
+  return absl::OkStatus();
 }
+```
