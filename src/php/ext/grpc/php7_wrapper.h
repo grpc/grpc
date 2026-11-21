@@ -140,7 +140,7 @@ static inline int php_grpc_zend_hash_del(HashTable *ht, char *key, int len) {
 #define PHP_GRPC_INIT_HANDLER(class_object, handler_name) \
   memcpy(&handler_name, zend_get_std_object_handlers(), \
          sizeof(zend_object_handlers)); \
-  handler_name.offset = XtOffsetOf(class_object, std); \
+  handler_name.offset = offsetof(class_object, std); \
   handler_name.free_obj = free_##class_object
 
 #define PHP_GRPC_DECLARE_OBJECT_HANDLER(handler_name) \
