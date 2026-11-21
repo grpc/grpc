@@ -13,6 +13,7 @@
 # limitations under the License.
 """Implementations of fork support test methods."""
 
+import collections
 import enum
 import json
 import logging
@@ -27,6 +28,7 @@ import time
 import traceback
 
 import grpc
+import grpc.experimental
 
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
@@ -37,18 +39,23 @@ _LOGGER = logging.getLogger(__name__)
 _RPC_TIMEOUT_S = 10
 _CHILD_FINISH_TIMEOUT_S = 20
 _LIFEBEAT_PERIOD_S = 15
+# For the IN_PROGRESS_ALL_RPC_TYPES_* test cases.
+_STREAM_INTERVAL_US = 50 * 1000  # Keeps streams in flight across the fork.
+_LONG_STREAM_MESSAGES = 10000  # More than a test runs long enough to receive.
+_CHILD_RPC_SIZES = (1, 2, 3)
 
 
-def _channel(args):
+def _channel(args, options=None):
     target = "{}:{}".format(args["server_host"], args["server_port"])
     if args["use_tls"]:
         channel_credentials = grpc.ssl_channel_credentials()
         channel = grpc.secure_channel(
             target,
             channel_credentials,
+            options=options,
         )
     else:
-        channel = grpc.insecure_channel(target)
+        channel = grpc.insecure_channel(target, options=options)
     return channel
 
 
@@ -151,7 +158,9 @@ class _ChildProcess:
             self._exceptions.put("RpcError: %s" % rpc_error)
         except Exception as e:  # pylint: disable=broad-except
             traceback.print_exc()
-            self._exceptions.put(e)
+            # Send a string: an exception that can't be pickled (e.g. one that
+            # holds a Cython object) would be dropped, hiding the failure.
+            self._exceptions.put(repr(e))
         sys.exit(0)
 
     def _orchestrate_child_gdb(self):
@@ -502,6 +511,400 @@ def _in_progress_bidi_new_channel_blocking_call(channel, args):
     )
 
 
+def _streaming_output_request(sizes, interval_us=0):
+    return messages_pb2.StreamingOutputCallRequest(
+        response_type=messages_pb2.COMPRESSABLE,
+        response_parameters=[
+            messages_pb2.ResponseParameters(size=size, interval_us=interval_us)
+            for size in sizes
+        ],
+    )
+
+
+def _client_stream_requests(sizes, interval_s=0):
+    for size in sizes:
+        time.sleep(interval_s)
+        yield messages_pb2.StreamingInputCallRequest(
+            payload=messages_pb2.Payload(body=b"\x00" * size)
+        )
+
+
+def _validate_streamed_sizes(responses, sizes):
+    responses = list(responses)
+    if len(responses) != len(sizes):
+        raise ValueError(
+            "expected %d responses, got %d" % (len(sizes), len(responses))
+        )
+    for response, size in zip(responses, sizes):
+        _validate_payload_type_and_length(
+            response, messages_pb2.COMPRESSABLE, size
+        )
+
+
+def _validate_aggregated_size(response, sizes):
+    if response.aggregated_payload_size != sum(sizes):
+        raise ValueError(
+            "expected aggregated payload size %d, got %d"
+            % (sum(sizes), response.aggregated_payload_size)
+        )
+
+
+def _all_rpc_types(stub):
+    """Makes one call of each of the four RPC types, checking each response."""
+    sizes = _CHILD_RPC_SIZES
+    options = {"timeout": _RPC_TIMEOUT_S, "wait_for_ready": True}
+    request = messages_pb2.SimpleRequest(
+        response_type=messages_pb2.COMPRESSABLE, response_size=sizes[0]
+    )
+    _validate_payload_type_and_length(
+        stub.UnaryCall(request, **options), messages_pb2.COMPRESSABLE, sizes[0]
+    )
+    _validate_streamed_sizes(
+        stub.StreamingOutputCall(_streaming_output_request(sizes), **options),
+        sizes,
+    )
+    _validate_aggregated_size(
+        stub.StreamingInputCall(_client_stream_requests(sizes), **options),
+        sizes,
+    )
+    _validate_streamed_sizes(
+        stub.FullDuplexCall(
+            iter([_streaming_output_request((size,)) for size in sizes]),
+            **options,
+        ),
+        sizes,
+    )
+
+
+class _InProgressCalls:
+    """Keeps calls of all four RPC types in flight from background threads.
+
+    Every response is checked. Blocking unary and blocking client-streaming
+    calls are segregated: each completes on its own completion queue, polled
+    by the calling thread. The others are integrated: they complete on the
+    channel's shared completion queue, polled by a gRPC thread.
+
+    Fork support requires that no other application thread is calling into
+    gRPC when fork() is called. So pause() makes each background thread wait
+    at its next safe point, between calls or between the messages of a
+    stream, until resume(). The long-lived streams stay in flight meanwhile.
+    """
+
+    def __init__(self, channel):
+        self._stub = test_pb2_grpc.TestServiceStub(channel)
+        self._calls = {
+            "unary": self._unary,
+            "unary_future": self._unary_future,
+            "server_stream": self._server_stream,
+            "server_stream_short": self._server_stream_short,
+            "client_stream": self._client_stream,
+            "client_stream_future": self._client_stream_future,
+            "bidi": self._bidi,
+            "bidi_short": self._bidi_short,
+        }
+        self._stop = threading.Event()
+        self._errors = []
+        self._checked = collections.Counter(dict.fromkeys(self._calls, 0))
+        self._threads = {}
+        self.bidi_call = None  # The long-lived bidi call, set by start().
+        self._gate = threading.Condition()  # Guards the three fields below.
+        self._pause_requested = False
+        self._paused = 0  # Threads waiting at a safe point.
+        self._running = len(self._calls)  # Threads that have not finished.
+
+    def start(self):
+        """Starts the calls; returns once each has checked a response."""
+        ready = {name: threading.Event() for name in self._calls}
+        for name, call in self._calls.items():
+            self._threads[name] = threading.Thread(
+                target=self._run, args=(name, call, ready[name]), daemon=True
+            )
+            self._threads[name].start()
+        for name, event in ready.items():
+            if not event.wait(_RPC_TIMEOUT_S):
+                raise ValueError(
+                    "%s got no response: %s" % (name, self._errors)
+                )
+        self.raise_if_failed()
+
+    def raise_if_failed(self):
+        if self._errors:
+            raise ValueError("Parent call failed: %s" % self._errors[0])
+
+    def pause(self):
+        """Waits until every background thread waits at a safe point.
+
+        Returns the responses checked so far, per call.
+        """
+        with self._gate:
+            self._pause_requested = True
+            paused = self._gate.wait_for(
+                lambda: self._paused == self._running, _RPC_TIMEOUT_S
+            )
+        self.raise_if_failed()
+        if not paused:
+            raise ValueError("Background calls did not pause")
+        return collections.Counter(self._checked)
+
+    def resume(self):
+        with self._gate:
+            self._pause_requested = False
+            self._gate.notify_all()
+
+    def stop(self, checked_before_fork):
+        """Stops the calls. Each must have checked responses after the fork."""
+        self._stop.set()
+        for name, thread in self._threads.items():
+            thread.join(_RPC_TIMEOUT_S)
+            if thread.is_alive():
+                raise ValueError("%s did not finish" % name)
+        self.raise_if_failed()
+        stalled = [
+            name
+            for name in self._calls
+            if self._checked[name] <= checked_before_fork[name]
+        ]
+        if stalled:
+            raise ValueError("No responses after the fork for %s" % stalled)
+
+    def _run(self, name, call, ready):
+        def checked():
+            self._checked[name] += 1
+            ready.set()
+
+        try:
+            call(checked)
+        except Exception as e:  # pylint: disable=broad-except
+            self._errors.append("%s: %r" % (name, e))
+        with self._gate:  # So that pause() does not wait for this thread.
+            self._running -= 1
+            self._gate.notify_all()
+
+    def _safe_point(self):
+        """Waits here, outside of gRPC, while a pause is requested."""
+        with self._gate:
+            if self._pause_requested:
+                self._paused += 1
+                self._gate.notify_all()
+                self._gate.wait_for(lambda: not self._pause_requested)
+                self._paused -= 1
+
+    def _unary(self, checked):
+        request = messages_pb2.SimpleRequest(
+            response_type=messages_pb2.COMPRESSABLE, response_size=1
+        )
+        while not self._stop.is_set():
+            self._safe_point()
+            response = self._stub.UnaryCall(request, timeout=_RPC_TIMEOUT_S)
+            _validate_payload_type_and_length(
+                response, messages_pb2.COMPRESSABLE, 1
+            )
+            checked()
+
+    def _unary_future(self, checked):
+        request = messages_pb2.SimpleRequest(
+            response_type=messages_pb2.COMPRESSABLE, response_size=1
+        )
+        while not self._stop.is_set():
+            self._safe_point()
+            future = self._stub.UnaryCall.future(
+                request, timeout=_RPC_TIMEOUT_S
+            )
+            _validate_payload_type_and_length(
+                future.result(), messages_pb2.COMPRESSABLE, 1
+            )
+            checked()
+
+    def _server_stream(self, checked):
+        """One long-lived server stream; its messages must arrive in order."""
+        sizes = [n % 64 + 1 for n in range(_LONG_STREAM_MESSAGES)]
+        responses = self._stub.StreamingOutputCall(
+            _streaming_output_request(sizes, _STREAM_INTERVAL_US)
+        )
+        for size, response in zip(sizes, responses):
+            _validate_payload_type_and_length(
+                response, messages_pb2.COMPRESSABLE, size
+            )
+            checked()
+            if self._stop.is_set():
+                responses.cancel()  # It would not end on its own.
+                return
+            self._safe_point()
+
+    def _server_stream_short(self, checked):
+        while not self._stop.is_set():
+            responses = self._stub.StreamingOutputCall(
+                _streaming_output_request(
+                    _CHILD_RPC_SIZES, _STREAM_INTERVAL_US
+                ),
+                timeout=_RPC_TIMEOUT_S,
+            )
+            received = []
+            for response in responses:
+                received.append(response)
+                self._safe_point()  # The call is still in flight here.
+            _validate_streamed_sizes(received, _CHILD_RPC_SIZES)
+            checked()
+
+    def _client_stream(self, checked):
+        while not self._stop.is_set():
+            self._safe_point()
+            response = self._stub.StreamingInputCall(
+                _client_stream_requests(
+                    _CHILD_RPC_SIZES, _STREAM_INTERVAL_US / 1e6
+                ),
+                timeout=_RPC_TIMEOUT_S,
+            )
+            _validate_aggregated_size(response, _CHILD_RPC_SIZES)
+            checked()
+
+    def _client_stream_future(self, checked):
+        while not self._stop.is_set():
+            self._safe_point()
+            future = self._stub.StreamingInputCall.future(
+                _client_stream_requests(
+                    _CHILD_RPC_SIZES, _STREAM_INTERVAL_US / 1e6
+                ),
+                timeout=_RPC_TIMEOUT_S,
+            )
+            _validate_aggregated_size(future.result(), _CHILD_RPC_SIZES)
+            checked()
+
+    def _bidi(self, checked):
+        """One long-lived ping-pong stream: send a request, check its reply."""
+        pipe = _Pipe()
+        sent = 0
+        pipe.add(_streaming_output_request((1,), _STREAM_INTERVAL_US))
+        self.bidi_call = self._stub.FullDuplexCall(pipe)
+        for response in self.bidi_call:
+            _validate_payload_type_and_length(
+                response, messages_pb2.COMPRESSABLE, sent % 64 + 1
+            )
+            checked()
+            if self._stop.is_set():
+                pipe.close()  # Half-close: the stream then ends with OK.
+            else:
+                # Before the next request, so no message is sent while paused.
+                self._safe_point()
+                sent += 1
+                pipe.add(
+                    _streaming_output_request(
+                        (sent % 64 + 1,), _STREAM_INTERVAL_US
+                    )
+                )
+
+    def _bidi_short(self, checked):
+        while not self._stop.is_set():
+            self._safe_point()
+            requests = [
+                _streaming_output_request((size,), _STREAM_INTERVAL_US)
+                for size in _CHILD_RPC_SIZES
+            ]
+            responses = self._stub.FullDuplexCall(
+                iter(requests), timeout=_RPC_TIMEOUT_S
+            )
+            _validate_streamed_sizes(responses, _CHILD_RPC_SIZES)
+            checked()
+
+
+def _in_progress_all_rpc_types(channel, child_rpcs):
+    """Forks a child while calls of all four RPC types are in flight.
+
+    Background threads keep calls of every kind in flight. This thread pauses
+    them, forks a child, and resumes them while the child runs. The child
+    checks that gRPC cancelled the long-lived bidi call it inherited, then
+    runs child_rpcs().
+    """
+    calls = _InProgressCalls(channel)
+
+    def child_target():
+        # gRPC must end the calls the child inherited: cancelled by its
+        # post-fork handler, or failed first when the child's I/O was reset.
+        inherited_code = calls.bidi_call.code()
+        if inherited_code not in (
+            grpc.StatusCode.CANCELLED,
+            grpc.StatusCode.UNAVAILABLE,
+        ):
+            raise ValueError(
+                "Expected inherited code CANCELLED or UNAVAILABLE, got %s"
+                % inherited_code
+            )
+        child_rpcs()
+
+    calls.start()
+    child_process = _ChildProcess(child_target)
+    checked_before_fork = calls.pause()
+    child_process.start()
+    calls.resume()
+    child_process.finish()
+    calls.stop(checked_before_fork)
+
+
+def _in_progress_all_rpc_types_same_channel(channel):
+    def child_rpcs():
+        try:
+            _all_rpc_types(stub)
+        except grpc.RpcError as rpc_error:
+            if rpc_error.code() not in (
+                grpc.StatusCode.UNAVAILABLE,
+                grpc.StatusCode.CANCELLED,
+            ):
+                raise ValueError("Unexpected status code") from rpc_error
+            _all_rpc_types(stub)
+
+    stub = test_pb2_grpc.TestServiceStub(channel)
+    _in_progress_all_rpc_types(channel, child_rpcs)
+
+
+def _in_progress_all_rpc_types_new_channel(channel, args):
+    def child_rpcs():
+        with _channel(args) as child_channel:
+            _all_rpc_types(test_pb2_grpc.TestServiceStub(child_channel))
+
+    _in_progress_all_rpc_types(channel, child_rpcs)
+
+
+def _in_progress_single_threaded_stream_continue_call(args):
+    """The forking thread owns an in-flight single-threaded server stream.
+
+    The child keeps reading the stream it inherited, which gRPC must end with
+    CANCELLED. The parent reads the rest of the stream.
+    """
+    single_threaded_channel = _channel(
+        args,
+        options=(
+            (grpc.experimental.ChannelOptions.SingleThreadedUnaryStream, 1),
+        ),
+    )
+    stub = test_pb2_grpc.TestServiceStub(single_threaded_channel)
+    responses = stub.StreamingOutputCall(
+        _streaming_output_request(_CHILD_RPC_SIZES, _STREAM_INTERVAL_US),
+        timeout=_RPC_TIMEOUT_S,
+    )
+    _validate_payload_type_and_length(
+        next(responses), messages_pb2.COMPRESSABLE, _CHILD_RPC_SIZES[0]
+    )
+
+    def child_target():
+        try:
+            for _ in responses:
+                pass
+        except grpc.RpcError as rpc_error:
+            if rpc_error.code() not in (
+                grpc.StatusCode.CANCELLED,
+                grpc.StatusCode.UNAVAILABLE,
+            ):
+                raise ValueError("Unexpected status code") from rpc_error
+        else:
+            raise ValueError("The inherited stream did not end with an error")
+
+    child_process = _ChildProcess(child_target)
+    child_process.start()
+    _validate_streamed_sizes(responses, _CHILD_RPC_SIZES[1:])
+    child_process.finish()
+    single_threaded_channel.close()
+
+
 @enum.unique
 class TestCase(enum.Enum):
     CONNECTIVITY_WATCH = "connectivity_watch"
@@ -522,6 +925,15 @@ class TestCase(enum.Enum):
     )
     IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL = (
         "in_progress_bidi_new_channel_blocking_call"
+    )
+    IN_PROGRESS_ALL_RPC_TYPES_SAME_CHANNEL = (
+        "in_progress_all_rpc_types_same_channel"
+    )
+    IN_PROGRESS_ALL_RPC_TYPES_NEW_CHANNEL = (
+        "in_progress_all_rpc_types_new_channel"
+    )
+    IN_PROGRESS_SINGLE_THREADED_STREAM_CONTINUE_CALL = (
+        "in_progress_single_threaded_stream_continue_call"
     )
 
     def run_test(self, args):
@@ -549,6 +961,12 @@ class TestCase(enum.Enum):
             _in_progress_bidi_new_channel_async_call(channel, args)
         elif self is TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL:
             _in_progress_bidi_new_channel_blocking_call(channel, args)
+        elif self is TestCase.IN_PROGRESS_ALL_RPC_TYPES_SAME_CHANNEL:
+            _in_progress_all_rpc_types_same_channel(channel)
+        elif self is TestCase.IN_PROGRESS_ALL_RPC_TYPES_NEW_CHANNEL:
+            _in_progress_all_rpc_types_new_channel(channel, args)
+        elif self is TestCase.IN_PROGRESS_SINGLE_THREADED_STREAM_CONTINUE_CALL:
+            _in_progress_single_threaded_stream_continue_call(args)
         else:
             raise NotImplementedError(
                 'Test case "%s" not implemented!' % self.name
