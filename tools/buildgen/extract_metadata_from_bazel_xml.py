@@ -770,7 +770,8 @@ def _expand_upb_proto_library_rules(bazel_rules):
     GEN_UPBDEFS_ROOT = "//:src/core/ext/upbdefs-gen/"
     for name, bazel_rule in bazel_rules.items():
         gen_func = bazel_rule.get("generator_function", None)
-        is_dev_cel_upb = bazel_rule.get("class") == "upb_c_proto_library" and (
+        rule_class = bazel_rule.get("class")
+        is_dev_cel_upb = rule_class == "upb_c_proto_library" and (
             name.startswith("@dev_cel//") or name.startswith("@@cel-spec+")
         )
         if (
@@ -778,6 +779,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
             in (
                 "grpc_upb_proto_library",
                 "grpc_upb_proto_reflection_library",
+                "grpc_add_well_known_proto_upb_targets",
             )
             or is_dev_cel_upb
         ):
@@ -808,9 +810,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
             for proto_src in protos:
                 # The descriptor.proto's upb-generated files are already provided
                 # by upb_descriptor_lib (see _patch_descriptor_upb_proto_library).
-                if bazel_rule[
-                    "generator_function"
-                ] == "grpc_upb_proto_library" and proto_src.endswith(
+                if rule_class == "upb_c_proto_library" and proto_src.endswith(
                     ":descriptor.proto"
                 ):
                     continue
@@ -838,9 +838,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
                         )
                     )
 
-                is_upb_proto = (
-                    gen_func == "grpc_upb_proto_library" or is_dev_cel_upb
-                )
+                is_upb_proto = rule_class == "upb_c_proto_library"
                 extensions = (
                     # There is no longer a .upb.c extension.
                     [".upb.h", ".upb_minitable.h", ".upb_minitable.c"]
