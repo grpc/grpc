@@ -24,6 +24,7 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "opentelemetry/trace/span.h"
@@ -161,9 +162,17 @@ class OpenTelemetryPluginImpl::ClientCallTracerInterface
       bool is_transparent_retry) override;
   void RecordAnnotation(absl::string_view annotation) override;
   void RecordAnnotation(const Annotation& /*annotation*/) override;
+  void RecordEnd(const absl::Status& status) override;
 
  private:
+  using AttributeVector =
+      absl::InlinedVector<std::pair<opentelemetry::nostd::string_view,
+                                    opentelemetry::common::AttributeValue>,
+                          4>;
+
   absl::string_view MethodForStats() const;
+  AttributeVector GetAttributes(
+      std::optional<grpc_status_code> status_code = std::nullopt) const;
 
   // Client method.
   grpc_core::Slice path_;
@@ -184,6 +193,7 @@ class OpenTelemetryPluginImpl::ClientCallTracerInterface
   absl::Time time_at_last_attempt_end_ ABSL_GUARDED_BY(&mu_);
   uint64_t num_active_attempts_ ABSL_GUARDED_BY(&mu_) = 0;
   opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> span_;
+  absl::Time start_time_;
 };
 
 }  // namespace internal
