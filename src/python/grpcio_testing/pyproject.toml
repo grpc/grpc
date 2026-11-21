@@ -30,6 +30,7 @@ dynamic = ["dependencies", "requires-python", "version", "classifiers"]
 
 [project.urls]
 Homepage = "https://grpc.io"
+"Source Code" = "https://github.com/grpc/grpc/tree/master/src/python/grpcio_testing"
 Documentation = "https://grpc.github.io/grpc/python/grpc_testing.html"
 
 [tool.setuptools.dynamic]
