@@ -35,7 +35,7 @@ a location with sufficient disk space.
 # Performance benchmarks (run_performance_tests.py)
 
 The `run_performance_tests.py` script is deprecated.
-See [end-to-end benchmarking documentation](/tools/run_tests/peformance/README.md) for more info.
+See [end-to-end benchmarking documentation](/tools/run_tests/performance/README.md) for more info.
 
 # Artifacts & Packages (task_runner.py)
 
