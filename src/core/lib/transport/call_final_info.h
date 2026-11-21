@@ -50,4 +50,14 @@ struct grpc_call_final_info {
   const char* error_string = nullptr;
 };
 
+namespace grpc_core {
+template <typename T>
+struct ArenaContextType;
+
+template <>
+struct ArenaContextType<grpc_call_final_info> {
+  static void Destroy(grpc_call_final_info*) {}
+};
+}  // namespace grpc_core
+
 #endif  // GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FINAL_INFO_H
