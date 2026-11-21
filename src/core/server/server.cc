@@ -515,7 +515,7 @@ bool Server::ListenerState::OnHandshakeDone(Orphanable* handshaking_connection,
     // may start receiving RPCs, so we need to drain it gracefully.
     //
     // Note that if the server has already committed to shutting down,
-    // then we can't hang on to the connection.  In that case, the
+    // then we can't hold on to the connection.  In that case, the
     // connection object will be orphaned automatically.
     if (connection.ok() && !server_->shutdown_published_) {
       GRPC_TRACE_LOG(server, INFO) << "immediately draining new connection";
