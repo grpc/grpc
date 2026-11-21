@@ -1084,6 +1084,25 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
         if (s->header_frames_received == 2) {
           return GRPC_ERROR_CREATE("Too many trailer frames");
         }
+        if (t->is_client && s->header_frames_received == 0) {
+          // Non-gRPC HTTP error bodies must not replace the status from the
+          // response headers with a gRPC message deframing error.
+          const auto http_status =
+              s->initial_metadata_buffer.get(grpc_core::HttpStatusMetadata());
+          const auto content_type = s->initial_metadata_buffer.get(
+              grpc_core::ContentTypeMetadata());
+          s->discard_non_grpc_response_data =
+              http_status.has_value() && *http_status != 200 &&
+              content_type.value_or(grpc_core::ContentTypeMetadata::kEmpty) !=
+                  grpc_core::ContentTypeMetadata::kApplicationGrpc;
+          if (s->discard_non_grpc_response_data) {
+            // A proxy may put gRPC status fields in its initial HTTP error
+            // headers. They are not trailing gRPC status; let the HTTP status
+            // mapping filter derive the call status instead.
+            s->initial_metadata_buffer.Remove(grpc_core::GrpcStatusMetadata());
+            s->initial_metadata_buffer.Remove(grpc_core::GrpcMessageMetadata());
+          }
+        }
         s->published_metadata[s->header_frames_received] =
             GRPC_METADATA_PUBLISHED_FROM_WIRE;
         maybe_complete_funcs[s->header_frames_received](t, s);
