@@ -179,7 +179,6 @@ static void on_writable(void* acp, grpc_error_handle error) {
   int done;
   grpc_endpoint** ep = ac->ep;
   grpc_closure* closure = ac->closure;
-  std::string addr_str = ac->addr_str;
   grpc_fd* fd;
 
   GRPC_TRACE_LOG(tcp, INFO)

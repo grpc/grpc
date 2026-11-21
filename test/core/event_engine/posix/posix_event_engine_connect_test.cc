@@ -148,7 +148,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   GRPC_CHECK_OK(resolved_addr);
   std::shared_ptr<EventEngine> posix_ee =
       PosixEventEngine::MakePosixEventEngine();
-  std::string resolved_addr_str =
+  [[maybe_unused]] std::string resolved_addr_str =
       ResolvedAddressToNormalizedString(*resolved_addr).value();
   auto sockets = CreateConnectedSockets(*resolved_addr);
   grpc_core::Notification signal;
@@ -179,7 +179,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   GRPC_CHECK_OK(resolved_addr);
   std::shared_ptr<EventEngine> posix_ee =
       PosixEventEngine::MakePosixEventEngine();
-  std::string resolved_addr_str =
+  [[maybe_unused]] std::string resolved_addr_str =
       ResolvedAddressToNormalizedString(*resolved_addr).value();
   auto sockets = CreateConnectedSockets(*resolved_addr);
   grpc_core::ChannelArgs args;
