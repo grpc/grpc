@@ -154,46 +154,6 @@ static const char* kBuildExtraMetadata = R"json({
         "build": "all",
         "_RENAME": "address_sorting"
     },
-    "@com_google_protobuf//upb/base": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_base_lib"
-    },
-    "@com_google_protobuf//upb/mem": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_mem_lib"
-    },
-    "@com_google_protobuf//upb/lex:lex": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_lex_lib"
-    },
-    "@com_google_protobuf//upb/message": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_message_lib"
-    },
-    "@com_google_protobuf//upb/json:json": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_json_lib"
-    },
-    "@com_google_protobuf//upb/mini_descriptor:mini_descriptor": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_mini_descriptor_lib"
-    },
-    "@com_google_protobuf//upb/text:text": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_textformat_lib"
-    },
-    "@com_google_protobuf//upb/wire:wire": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_wire_lib"
-    },
     "@com_google_protobuf//third_party/utf8_range:utf8_range": {
         "language": "c",
         "build": "all",
