@@ -16,7 +16,6 @@
 import asyncio
 from collections.abc import AsyncIterable
 import enum
-from functools import partial
 import logging
 import traceback
 from typing import (
@@ -28,6 +27,7 @@ from typing import (
     Tuple,
     Union,
 )
+import weakref
 
 import grpc
 from grpc import _common
@@ -240,7 +240,13 @@ class Call(Generic[RequestType, ResponseType]):
         return self._cython_call.done()
 
     def add_done_callback(self, callback: DoneCallbackType) -> None:
-        cb = partial(callback, self)
+        self_ref = weakref.ref(self)
+
+        def cb() -> None:
+            call = self_ref()
+            if call is not None:
+                callback(call)
+
         self._cython_call.add_done_callback(cb)
 
     def time_remaining(self) -> Optional[float]:
