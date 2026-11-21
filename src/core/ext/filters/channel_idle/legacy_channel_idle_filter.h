@@ -43,11 +43,9 @@ Duration GetClientIdleTimeout(const ChannelArgs& args);
 class LegacyChannelIdleFilter : public ChannelFilter {
  public:
   LegacyChannelIdleFilter(grpc_channel_stack* channel_stack,
-                          Duration client_idle_timeout)
-      : channel_stack_(channel_stack),
-        client_idle_timeout_(client_idle_timeout) {}
+                          Duration client_idle_timeout);
 
-  ~LegacyChannelIdleFilter() override = default;
+  ~LegacyChannelIdleFilter() override;
 
   LegacyChannelIdleFilter(const LegacyChannelIdleFilter&) = delete;
   LegacyChannelIdleFilter& operator=(const LegacyChannelIdleFilter&) = delete;
@@ -73,7 +71,12 @@ class LegacyChannelIdleFilter : public ChannelFilter {
   void DecreaseCallCount();
 
  private:
+  struct ActivityState;
+
   void StartIdleTimer();
+  void ShutdownIdleTimer();
+  static void CloseChannel(grpc_channel_stack* channel_stack,
+                           absl::string_view reason);
 
   struct CallCountDecreaser {
     void operator()(LegacyChannelIdleFilter* filter) const {
@@ -87,7 +90,7 @@ class LegacyChannelIdleFilter : public ChannelFilter {
   std::shared_ptr<IdleFilterState> idle_filter_state_{
       std::make_shared<IdleFilterState>(false)};
 
-  SingleSetActivityPtr activity_;
+  std::shared_ptr<ActivityState> activity_state_;
 };
 
 class LegacyClientIdleFilter final : public LegacyChannelIdleFilter {
@@ -100,6 +103,8 @@ class LegacyClientIdleFilter final : public LegacyChannelIdleFilter {
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   using LegacyChannelIdleFilter::LegacyChannelIdleFilter;
+
+  bool StartTransportOp(grpc_transport_op* op) override;
 };
 
 class LegacyMaxAgeFilter final : public LegacyChannelIdleFilter {

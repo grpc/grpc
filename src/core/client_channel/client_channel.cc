@@ -686,7 +686,13 @@ void ClientChannel::Orphaned() {
   // IncreaseCallCount() introduces a phony call and prevents the idle
   // timer from being reset by other threads.
   idle_state_.IncreaseCallCount();
-  idle_activity_.Reset();
+  ActivityPtr idle_activity;
+  {
+    MutexLock lock(idle_activity_mu_);
+    idle_shutdown_ = true;
+    idle_activity = std::move(idle_activity_);
+  }
+  idle_activity.reset();
 }
 
 grpc_connectivity_state ClientChannel::CheckConnectivityState(
@@ -1419,6 +1425,12 @@ void ClientChannel::UpdateStateAndPickerLocked(
 void ClientChannel::StartIdleTimer() {
   GRPC_TRACE_LOG(client_channel, INFO)
       << "client_channel=" << this << ": idle timer started";
+  uint64_t gen;
+  {
+    MutexLock lock(idle_activity_mu_);
+    if (idle_shutdown_) return;
+    gen = ++idle_timer_generation_;
+  }
   auto self = WeakRefAsSubclass<ClientChannel>();
   auto promise = Loop([self]() {
     return TrySeq(Sleep(Timestamp::Now() + self->idle_timeout_),
@@ -1433,24 +1445,36 @@ void ClientChannel::StartIdleTimer() {
   auto arena = SimpleArenaAllocator(0)->MakeArena();
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine());
-  idle_activity_.Set(MakeActivity(
+  auto new_activity = MakeActivity(
       std::move(promise), ExecCtxWakeupScheduler{},
-      [self = std::move(self)](absl::Status status) mutable {
-        if (status.ok()) {
-          self->work_serializer_->Run(
-              [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
-                self->DestroyResolverAndLbPolicyLocked();
-                self->UpdateStateAndPickerLocked(
-                    GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                    "channel entering IDLE", nullptr);
-                // TODO(roth): In case there's a race condition, we
-                // might need to check for any calls that are
-                // queued waiting for a resolver result or an LB
-                // pick.
-              });
+      [self = std::move(self), gen](absl::Status status) mutable {
+        if (!status.ok()) return;
+        {
+          MutexLock lock(self->idle_activity_mu_);
+          if (self->idle_shutdown_ || gen != self->idle_timer_generation_) {
+            return;
+          }
         }
+        self->work_serializer_->Run([self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+                                        *self->work_serializer_) {
+          if (!self->idle_state_.IsIdle()) return;
+          self->DestroyResolverAndLbPolicyLocked();
+          self->UpdateStateAndPickerLocked(GRPC_CHANNEL_IDLE, absl::OkStatus(),
+                                           "channel entering IDLE", nullptr);
+        });
       },
-      std::move(arena)));
+      std::move(arena));
+  ActivityPtr displaced_activity;
+  {
+    MutexLock lock(idle_activity_mu_);
+    if (idle_shutdown_ || gen != idle_timer_generation_) {
+      displaced_activity = std::move(new_activity);
+    } else {
+      displaced_activity = std::move(idle_activity_);
+      idle_activity_ = std::move(new_activity);
+    }
+  }
+  displaced_activity.reset();
 }
 
 absl::StatusOr<RefCountedPtr<const FilterChain>>

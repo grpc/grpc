@@ -710,6 +710,18 @@ TEST_F(ClientLbEnd2endTest, ChannelIdleness) {
   response_generator.SetNextResolution(GetServersPorts());
   CheckRpcSendOk(DEBUG_LOCATION, stub);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+  // Subsequent idle periods must also transition the channel back to IDLE
+  // (regression test for https://github.com/grpc/grpc/issues/38454).
+  LOG(INFO) << "*** WAITING FOR CHANNEL TO GO IDLE A SECOND TIME ***";
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1200));
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
+  LOG(INFO) << "*** SENDING THIRD RPC, CHANNEL SHOULD RECONNECT AGAIN ***";
+  response_generator.SetNextResolution(GetServersPorts());
+  CheckRpcSendOk(DEBUG_LOCATION, stub);
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+  LOG(INFO) << "*** WAITING FOR CHANNEL TO GO IDLE A THIRD TIME ***";
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1200));
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
 }
 
 //
