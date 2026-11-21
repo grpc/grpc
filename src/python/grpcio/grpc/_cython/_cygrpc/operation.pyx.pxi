@@ -100,6 +100,8 @@ cdef class SendStatusFromServerOperation(Operation):
     return GRPC_OP_SEND_STATUS_FROM_SERVER
 
   cdef void c(self) except *:
+    cdef bytes encoded_details = _encode(self._details)
+    cdef grpc_status_code c_code = self._code
     self.c_op.type = GRPC_OP_SEND_STATUS_FROM_SERVER
     self.c_op.flags = self._flags
     _store_c_metadata(
@@ -109,8 +111,8 @@ cdef class SendStatusFromServerOperation(Operation):
         self._c_trailing_metadata)
     self.c_op.data.send_status_from_server.trailing_metadata_count = (
         self._c_trailing_metadata_count)
-    self.c_op.data.send_status_from_server.status = self._code
-    self._c_details = _slice_from_bytes(_encode(self._details))
+    self.c_op.data.send_status_from_server.status = c_code
+    self._c_details = _slice_from_bytes(encoded_details)
     self.c_op.data.send_status_from_server.status_details = &self._c_details
 
   cdef void un_c(self) except *:

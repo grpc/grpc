@@ -17,6 +17,7 @@ load("@rules_python//python:defs.bzl", "py_library", "py_test")
 package(default_visibility = ["//visibility:public"])
 
 GRPCIO_TESTS_UNIT_CYTHON = [
+    "_batch_operation_tag_leak_test.py",
     "_cancel_many_calls_test.py",
     "_channel_test.py",
     "_no_messages_server_completion_queue_per_call_test.py",

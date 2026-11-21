@@ -99,10 +99,10 @@ cdef class Server:
        CompletionQueue call_queue,
        CompletionQueue server_queue,
        bytes method):
+    cdef RegisteredMethod registered_method = self.registered_methods[method]
     request_call_tag.prepare()
     cpython.Py_INCREF(request_call_tag)
     cdef cpython.PyObject *c_request_call_tag = <cpython.PyObject *>request_call_tag
-    cdef RegisteredMethod registered_method = self.registered_methods[method]
     # optional_payload is set to NULL because we use GRPC_SRM_PAYLOAD_NONE for all method.
     cdef grpc_call_error c_call_error = GRPC_CALL_OK
     with nogil:
@@ -114,7 +114,8 @@ cdef class Server:
           call_queue.c_completion_queue, server_queue.c_completion_queue,
           c_request_call_tag)
     if c_call_error != GRPC_CALL_OK:
-      raise InternalError("Error in grpc_server_request_registered_call: %s" % grpc_call_error_to_string(self.c_call_error).decode())
+      cpython.Py_DECREF(request_call_tag)
+      raise InternalError("Error in grpc_server_request_registered_call: %s" % grpc_call_error_to_string(c_call_error).decode())
     return c_call_error
 
   cdef _c_request_unregistered_call(self,
@@ -133,7 +134,8 @@ cdef class Server:
           call_queue.c_completion_queue, server_queue.c_completion_queue,
           c_request_call_tag)
     if c_call_error != GRPC_CALL_OK:
-      raise InternalError("Error in grpc_server_request_call: %s" % grpc_call_error_to_string(self.c_call_error).decode())
+      cpython.Py_DECREF(request_call_tag)
+      raise InternalError("Error in grpc_server_request_call: %s" % grpc_call_error_to_string(c_call_error).decode())
     return c_call_error
 
   def register_completion_queue(

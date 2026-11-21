@@ -33,6 +33,9 @@ cdef class Call:
       error = grpc_call_start_batch(
           self.c_call, batch_operation_tag.c_ops, batch_operation_tag.c_nops,
           <cpython.PyObject *>batch_operation_tag, NULL)
+    if error != GRPC_CALL_OK:
+      cpython.Py_DECREF(batch_operation_tag)
+      batch_operation_tag.release()
     return error
 
   def start_client_batch(self, operations, tag):
