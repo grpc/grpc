@@ -244,6 +244,7 @@ def build_all_images_for_release(lang, release):
             "go": "GRPC_GO_ROOT",
             "java": "GRPC_JAVA_ROOT",
             "node": "GRPC_NODE_ROOT",
+            "rust": "GRPC_RUST_ROOT",
         }.get(lang, "GRPC_ROOT")
         env[var] = stack_base
 

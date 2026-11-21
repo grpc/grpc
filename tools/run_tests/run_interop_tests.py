@@ -685,6 +685,39 @@ class PythonAsyncIOLanguage:
         return "pythonasyncio"
 
 
+class RustLanguage:
+    def __init__(self):
+        self.client_cwd = "../grpc-rust"
+        self.server_cwd = "../grpc-rust"
+        self.safename = str(self)
+
+    def client_cmd(self, args):
+        return ["target/release/client", "--codec=protobuf"] + args
+
+    def cloud_to_prod_env(self):
+        return {}
+
+    def server_cmd(self, args):
+        return ["target/release/server", "--codec=protobuf"] + args
+
+    def global_env(self):
+        return {}
+
+    def unimplemented_test_cases(self):
+        return (
+            _SKIP_COMPRESSION
+            + _SKIP_DATA_FRAME_PADDING
+            + _AUTH_TEST_CASES
+            + _ORCA_TEST_CASES
+        )
+
+    def unimplemented_test_cases_server(self):
+        return _SKIP_COMPRESSION + _ORCA_TEST_CASES
+
+    def __str__(self):
+        return "rust"
+
+
 _LANGUAGES = {
     "c++": CXXLanguage(),
     "aspnetcore": AspNetCoreLanguage(),
@@ -699,6 +732,7 @@ _LANGUAGES = {
     "ruby": RubyLanguage(),
     "python": PythonLanguage(),
     "pythonasyncio": PythonAsyncIOLanguage(),
+    "rust": RustLanguage(),
 }
 
 # languages supported as cloud_to_cloud servers
@@ -713,6 +747,7 @@ _SERVERS = [
     "dart",
     "pythonasyncio",
     "php8",
+    "rust",
 ]
 
 _TEST_CASES = [
