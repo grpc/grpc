@@ -125,15 +125,29 @@ class InProcessCHTTP2 {
       for (grpc_pollset* pollset : core_server->pollsets()) {
         grpc_endpoint_add_to_pollset(iomgr_server_endpoint.get(), pollset);
       }
-      grpc_core::Transport* transport = grpc_create_chttp2_transport(
-          core_server->channel_args(), std::move(iomgr_server_endpoint),
-          /*is_client=*/false);
-      GRPC_CHECK(GRPC_LOG_IF_ERROR(
-          "SetupTransport",
-          core_server->SetupTransport(transport, nullptr,
-                                      core_server->channel_args())));
-      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
-                                          nullptr);
+      if (!grpc_core::IsServerConnectionManagementEnabled()) {
+        grpc_core::Transport* transport = grpc_create_chttp2_transport(
+            core_server->channel_args(), std::move(iomgr_server_endpoint),
+            /*is_client=*/false);
+        GRPC_CHECK(GRPC_LOG_IF_ERROR(
+            "SetupTransport",
+            core_server->SetupTransport(transport, nullptr,
+                                        core_server->channel_args())));
+        grpc_chttp2_transport_start_reading(transport, nullptr, nullptr,
+                                            nullptr, nullptr);
+      } else {
+        grpc_core::OrphanablePtr<grpc_core::Transport> transport(
+            grpc_create_chttp2_transport(core_server->channel_args(),
+                                         std::move(iomgr_server_endpoint),
+                                         /*is_client=*/false));
+        auto transport_ref = transport->Ref();
+        GRPC_CHECK(GRPC_LOG_IF_ERROR(
+            "LegacyAddConnection",
+            core_server->LegacyAddConnection(std::move(transport), nullptr,
+                                             core_server->channel_args())));
+        grpc_chttp2_transport_start_reading(transport_ref.get(), nullptr,
+                                            nullptr, nullptr, nullptr);
+      }
     }
     // create channel
     {

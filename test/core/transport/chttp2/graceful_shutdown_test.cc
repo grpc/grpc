@@ -97,15 +97,28 @@ class GracefulShutdownTest : public ::testing::Test {
     grpc_server_register_completion_queue(server_, cq_, nullptr);
     grpc_server_start(server_);
     fds_ = grpc_iomgr_create_endpoint_pair("fixture", nullptr);
-    auto* transport = grpc_create_chttp2_transport(
-        core_server->channel_args(), OrphanablePtr<grpc_endpoint>(fds_.server),
-        false);
-    grpc_endpoint_add_to_pollset(fds_.server, grpc_cq_pollset(cq_));
-    GRPC_CHECK(core_server->SetupTransport(transport, nullptr,
-                                           core_server->channel_args()) ==
-               absl::OkStatus());
-    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
-                                        nullptr);
+    if (!IsServerConnectionManagementEnabled()) {
+      auto* transport = grpc_create_chttp2_transport(
+          core_server->channel_args(),
+          OrphanablePtr<grpc_endpoint>(fds_.server), false);
+      grpc_endpoint_add_to_pollset(fds_.server, grpc_cq_pollset(cq_));
+      GRPC_CHECK(core_server->SetupTransport(transport, nullptr,
+                                             core_server->channel_args()) ==
+                 absl::OkStatus());
+      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
+                                          nullptr);
+    } else {
+      OrphanablePtr<Transport> transport(grpc_create_chttp2_transport(
+          core_server->channel_args(),
+          OrphanablePtr<grpc_endpoint>(fds_.server), false));
+      auto transport_ref = transport->Ref();
+      grpc_endpoint_add_to_pollset(fds_.server, grpc_cq_pollset(cq_));
+      GRPC_CHECK(core_server->LegacyAddConnection(
+                     std::move(transport), nullptr,
+                     core_server->channel_args()) == absl::OkStatus());
+      grpc_chttp2_transport_start_reading(transport_ref.get(), nullptr, nullptr,
+                                          nullptr, nullptr);
+    }
     // Start polling on the client
     Notification client_poller_thread_started_notification;
     client_poll_thread_ = std::make_unique<std::thread>(

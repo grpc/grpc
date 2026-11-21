@@ -371,8 +371,17 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       self->connection_->endpoint_.Write(std::move(write_buffer),
                                          PromiseEndpoint::WriteArgs{}),
       [self]() {
-        return self->connection_->listener_->server_->SetupTransport(
-            new ChaoticGoodServerTransport(
+        if (!IsServerConnectionManagementEnabled()) {
+          return self->connection_->listener_->server_->SetupTransport(
+              new ChaoticGoodServerTransport(
+                  self->connection_->handshake_result_args(),
+                  std::move(self->connection_->endpoint_),
+                  std::move(std::get<ControlConnection>(self->data_).config),
+                  self->connection_->listener_->data_connection_listener_),
+              nullptr, self->connection_->handshake_result_args());
+        }
+        return self->connection_->listener_->server_->LegacyAddConnection(
+            MakeOrphanable<ChaoticGoodServerTransport>(
                 self->connection_->handshake_result_args(),
                 std::move(self->connection_->endpoint_),
                 std::move(std::get<ControlConnection>(self->data_).config),

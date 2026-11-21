@@ -50,6 +50,7 @@ namespace testing {
 class Chttp2ServerListenerTestPeer;
 class ActiveConnectionTestPeer;
 class HandshakingStateTestPeer;
+class HandshakingConnectionTestPeer;
 }  // namespace testing
 
 // New ChttpServerListener
@@ -60,6 +61,8 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
 
   // Keeps state for an individual connection. Lifetime: Internally refcounted
   // and owned by Server::ListenerState.
+  // TODO(roth): Remove this in favor of HandshakingConnection once the
+  // server_connection_management experiment is removed.
   class ActiveConnection : public LogicalConnection {
    public:
     // State for handshake. Lifetime: Owned by ActiveConnection and lasts while
@@ -136,6 +139,44 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
                  RefCountedPtr<http2::Http2ServerTransport>>
         state_;
     bool shutdown_ = false;
+  };
+
+  // State for an incoming connection while handshaking is in progress.
+  // Owned by the server.
+  class HandshakingConnection
+      : public InternallyRefCounted<HandshakingConnection> {
+   public:
+    HandshakingConnection(RefCountedPtr<Server::ListenerState> listener_state,
+                          grpc_tcp_server* tcp_server,
+                          grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
+                          const ChannelArgs& args);
+
+    ~HandshakingConnection() override;
+
+    void Start(OrphanablePtr<grpc_endpoint> endpoint, const ChannelArgs& args);
+
+    void Orphan() override;
+
+   private:
+    friend class NewChttp2ServerListener;  // For access to Ref().
+
+    friend class grpc_core::testing::HandshakingConnectionTestPeer;
+
+    void StartLocked(OrphanablePtr<grpc_endpoint> endpoint,
+                     const ChannelArgs& args);
+    void OnHandshakeDoneLocked(absl::StatusOr<HandshakerArgs*> result);
+
+    const RefCountedPtr<Server::ListenerState> listener_state_;
+    WorkSerializer work_serializer_;
+    grpc_tcp_server* const tcp_server_;
+    grpc_pollset* const accepting_pollset_;
+    const AcceptorPtr acceptor_;
+    grpc_pollset_set* const interested_parties_;
+    const Timestamp deadline_;
+
+    // If null, that means we're shutting down.
+    // Protected by WorkSerializer.
+    RefCountedPtr<HandshakeManager> handshake_mgr_;
   };
 
   static grpc_error_handle Create(

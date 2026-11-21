@@ -164,8 +164,7 @@ class InProcess : public FullstackFixture {
 class EndpointPairFixture : public BaseFixture {
  public:
   EndpointPairFixture(Service* service, grpc_endpoint_pair endpoints,
-                      const FixtureConfiguration& fixture_configuration)
-      : endpoint_pair_(endpoints) {
+                      const FixtureConfiguration& fixture_configuration) {
     ServerBuilder b;
     cq_ = b.AddCompletionQueue(true);
     b.RegisterService(service);
@@ -178,19 +177,37 @@ class EndpointPairFixture : public BaseFixture {
       grpc_core::Server* core_server =
           grpc_core::Server::FromC(server_->c_server());
       grpc_core::ChannelArgs server_args = core_server->channel_args();
-      server_transport_ = grpc_create_chttp2_transport(
-          server_args,
-          grpc_core::OrphanablePtr<grpc_endpoint>(endpoints.server),
-          /*is_client=*/false);
-      for (grpc_pollset* pollset : core_server->pollsets()) {
-        grpc_endpoint_add_to_pollset(endpoints.server, pollset);
-      }
 
-      GRPC_CHECK(GRPC_LOG_IF_ERROR(
-          "SetupTransport", core_server->SetupTransport(server_transport_,
-                                                        nullptr, server_args)));
-      grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr,
-                                          nullptr, nullptr);
+      if (!grpc_core::IsServerConnectionManagementEnabled()) {
+        auto* server_transport = grpc_create_chttp2_transport(
+            server_args,
+            grpc_core::OrphanablePtr<grpc_endpoint>(endpoints.server),
+            /*is_client=*/false);
+        for (grpc_pollset* pollset : core_server->pollsets()) {
+          grpc_endpoint_add_to_pollset(endpoints.server, pollset);
+        }
+        GRPC_CHECK(GRPC_LOG_IF_ERROR(
+            "SetupTransport", core_server->SetupTransport(
+                                  server_transport, nullptr, server_args)));
+        grpc_chttp2_transport_start_reading(server_transport, nullptr, nullptr,
+                                            nullptr, nullptr);
+      } else {
+        grpc_core::OrphanablePtr<grpc_core::Transport> server_transport(
+            grpc_create_chttp2_transport(
+                server_args,
+                grpc_core::OrphanablePtr<grpc_endpoint>(endpoints.server),
+                /*is_client=*/false));
+        auto transport_ref = server_transport->Ref();
+        for (grpc_pollset* pollset : core_server->pollsets()) {
+          grpc_endpoint_add_to_pollset(endpoints.server, pollset);
+        }
+        GRPC_CHECK(GRPC_LOG_IF_ERROR(
+            "LegacyAddConnection",
+            core_server->LegacyAddConnection(std::move(server_transport),
+                                             nullptr, server_args)));
+        grpc_chttp2_transport_start_reading(transport_ref.get(), nullptr,
+                                            nullptr, nullptr, nullptr);
+      }
     }
 
     // create channel
@@ -207,16 +224,16 @@ class EndpointPairFixture : public BaseFixture {
                      .channel_args_preconditioning()
                      .PreconditionChannelArgs(&tmp_args);
       }
-      client_transport_ = grpc_create_chttp2_transport(
+      auto* client_transport = grpc_create_chttp2_transport(
           c_args, grpc_core::OrphanablePtr<grpc_endpoint>(endpoints.client),
           /*is_client=*/true);
-      GRPC_CHECK(client_transport_);
+      GRPC_CHECK(client_transport);
       grpc_channel* channel =
           grpc_core::ChannelCreate("target", c_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                                   client_transport_)
+                                   client_transport)
               ->release()
               ->c_ptr();
-      grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr,
+      grpc_chttp2_transport_start_reading(client_transport, nullptr, nullptr,
                                           nullptr, nullptr);
 
       channel_ = grpc::CreateChannelInternal(
@@ -237,11 +254,6 @@ class EndpointPairFixture : public BaseFixture {
 
   ServerCompletionQueue* cq() { return cq_.get(); }
   std::shared_ptr<Channel> channel() { return channel_; }
-
- protected:
-  grpc_endpoint_pair endpoint_pair_;
-  grpc_core::Transport* client_transport_;
-  grpc_core::Transport* server_transport_;
 
  private:
   std::unique_ptr<Server> server_;

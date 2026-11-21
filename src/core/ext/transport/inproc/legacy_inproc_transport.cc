@@ -1277,7 +1277,12 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
 
   // TODO(ncteisen): design and support channelz GetSocket for inproc.
   grpc_error_handle error =
-      core_server->SetupTransport(server_transport, nullptr, server_args);
+      grpc_core::IsServerConnectionManagementEnabled()
+          ? core_server->LegacyAddConnection(
+                grpc_core::OrphanablePtr<grpc_core::Transport>(
+                    server_transport),
+                nullptr, server_args)
+          : core_server->SetupTransport(server_transport, nullptr, server_args);
   grpc_channel* channel = nullptr;
   if (error.ok()) {
     auto new_channel = grpc_core::ChannelCreate(
@@ -1289,7 +1294,9 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
       grpc_status_code status = static_cast<grpc_status_code>(error.code());
       // client_transport was destroyed when grpc_channel_create_internal saw an
       // error.
-      server_transport->Orphan();
+      if (!grpc_core::IsServerConnectionManagementEnabled()) {
+        server_transport->Orphan();
+      }
       channel = grpc_lame_client_channel_create(
           nullptr, status, "Failed to create client channel");
     } else {
@@ -1301,7 +1308,9 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
                << grpc_core::StatusToString(error);
     grpc_status_code status = static_cast<grpc_status_code>(error.code());
     client_transport->Orphan();
-    server_transport->Orphan();
+    if (!grpc_core::IsServerConnectionManagementEnabled()) {
+      server_transport->Orphan();
+    }
     channel = grpc_lame_client_channel_create(
         nullptr, status, "Failed to create server channel");
   }
