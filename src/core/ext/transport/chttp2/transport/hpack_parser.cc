@@ -557,7 +557,8 @@ HPackParser::String::StringResult HPackParser::String::ParseBinary(
       case State::kBinary:
         // Binary, we're done
         {
-          size_t wire_len = decompressed.size();
+          // The stripped true-binary marker still counts toward metadata size.
+          size_t wire_len = decompressed.size() + 1;
           return StringResult{HpackParseStatus::kOk, wire_len,
                               String(std::move(decompressed))};
         }
