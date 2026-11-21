@@ -17,8 +17,10 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/time.h>
 
+#include <functional>
 #include <memory>
 #include <thread>
+#include <utility>
 
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/grpc_check.h"
@@ -40,6 +42,26 @@ using WriteEvent = EventEngine::Endpoint::WriteEvent;
 using WriteEventSink = EventEngine::Endpoint::WriteEventSink;
 using WriteMetric = EventEngine::Endpoint::WriteMetric;
 using ::testing::Eq;
+
+// Returns a sink that runs `on_destroy` when it is destroyed. Destroying a sink
+// can run arbitrary code, e.g. when it holds the last ref to a call whose
+// cleanup writes to the same endpoint and so adds a new traced buffer.
+WriteEventSink SinkWithDestroyHook(std::function<void()> on_destroy) {
+  std::shared_ptr<int> hook(new int(0), [on_destroy](int* p) {
+    delete p;
+    on_destroy();
+  });
+  return WriteEventSink(
+      nullptr, {},
+      [hook = std::move(hook)](WriteEvent /*event*/, absl::Time /*time*/,
+                               std::vector<WriteMetric> /*metrics*/) {});
+}
+
+WriteEventSink NoopSink() {
+  return WriteEventSink(nullptr, {},
+                        [](WriteEvent /*event*/, absl::Time /*time*/,
+                           std::vector<WriteMetric> /*metrics*/) {});
+}
 
 // Tests that remaining WriteEventSink is handled on shutdown.
 TEST(BufferListTest, TestShutdownFlushesAll) {
@@ -201,6 +223,71 @@ TEST(BufferListTest, TimedOut) {
   EXPECT_THAT(traced_buffers.Size(), Eq(0));
   TracedBufferList::TestOnlySetMaxPendingAckTime(
       grpc_core::Duration::Seconds(10));
+}
+
+// Tests that an acked buffer is destroyed outside the lock, so its sink can add
+// a new entry.
+TEST(BufferListTest, AckedSinkDestructionCanAddEntry) {
+  TracedBufferList traced_buffers;
+  bool added = false;
+  traced_buffers.AddNewEntry(
+      /*seq_no=*/0, /*posix_interface=*/nullptr, /*fd=*/FileDescriptor(),
+      SinkWithDestroyHook([&] {
+        traced_buffers.AddNewEntry(/*seq_no=*/1, /*posix_interface=*/nullptr,
+                                   /*fd=*/FileDescriptor(), NoopSink());
+        added = true;
+      }));
+  struct sock_extended_err serr;
+  serr.ee_data = 0;
+  serr.ee_info = SCM_TSTAMP_ACK;
+  struct scm_timestamping tss;
+  memset(&tss, 0, sizeof(tss));
+  traced_buffers.ProcessTimestamp(&serr, nullptr, &tss);
+  EXPECT_TRUE(added);
+  EXPECT_THAT(traced_buffers.Size(), Eq(1));
+}
+
+// Tests that a timed out buffer is destroyed outside the lock, so its sink can
+// add a new entry.
+TEST(BufferListTest, TimedOutSinkDestructionCanAddEntry) {
+  TracedBufferList::TestOnlySetMaxPendingAckTime(grpc_core::Duration::Zero());
+  TracedBufferList traced_buffers;
+  bool added = false;
+  traced_buffers.AddNewEntry(
+      /*seq_no=*/1, /*posix_interface=*/nullptr, /*fd=*/FileDescriptor(),
+      SinkWithDestroyHook([&] {
+        traced_buffers.AddNewEntry(/*seq_no=*/2, /*posix_interface=*/nullptr,
+                                   /*fd=*/FileDescriptor(), NoopSink());
+        added = true;
+      }));
+  std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  struct sock_extended_err serr;
+  serr.ee_data = 0;
+  serr.ee_info = SCM_TSTAMP_SND;
+  struct scm_timestamping tss;
+  memset(&tss, 0, sizeof(tss));
+  traced_buffers.ProcessTimestamp(&serr, nullptr, &tss);
+  EXPECT_TRUE(added);
+  EXPECT_THAT(traced_buffers.Size(), Eq(1));
+  TracedBufferList::TestOnlySetMaxPendingAckTime(
+      grpc_core::Duration::Seconds(10));
+}
+
+// Tests that buffers are destroyed outside the lock on shutdown, so their sinks
+// can add a new entry.
+TEST(BufferListTest, ShutdownSinkDestructionCanAddEntry) {
+  TracedBufferList traced_buffers;
+  bool added = false;
+  traced_buffers.AddNewEntry(
+      /*seq_no=*/0, /*posix_interface=*/nullptr, /*fd=*/FileDescriptor(),
+      SinkWithDestroyHook([&] {
+        traced_buffers.AddNewEntry(/*seq_no=*/1, /*posix_interface=*/nullptr,
+                                   /*fd=*/FileDescriptor(), NoopSink());
+        added = true;
+      }));
+  traced_buffers.Shutdown(std::nullopt);
+  EXPECT_TRUE(added);
+  EXPECT_THAT(traced_buffers.Size(), Eq(1));
 }
 
 }  // namespace
