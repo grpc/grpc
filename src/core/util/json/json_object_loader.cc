@@ -63,12 +63,19 @@ void LoadDuration::LoadInto(const std::string& value, void* dst,
     return;
   }
   buf = absl::StripAsciiWhitespace(buf);
+  // SimpleAtoi accepts a sign and surrounding whitespace, but the proto3
+  // JSON mapping for google.protobuf.Duration only allows digits here.
+  // Accepting a signed fractional part would otherwise flow negative
+  // nanoseconds into the Duration unchecked.
+  constexpr absl::string_view kDigits = "0123456789";
   auto decimal_point = buf.find('.');
   int32_t nanos = 0;
   if (decimal_point != absl::string_view::npos) {
     absl::string_view after_decimal = buf.substr(decimal_point + 1);
     buf = buf.substr(0, decimal_point);
-    if (!absl::SimpleAtoi(after_decimal, &nanos)) {
+    if (after_decimal.empty() ||
+        after_decimal.find_first_not_of(kDigits) != absl::string_view::npos ||
+        !absl::SimpleAtoi(after_decimal, &nanos)) {
       errors->AddError("Not a duration (not a number of nanoseconds)");
       return;
     }
@@ -82,7 +89,9 @@ void LoadDuration::LoadInto(const std::string& value, void* dst,
     }
   }
   int64_t seconds;
-  if (!absl::SimpleAtoi(buf, &seconds)) {
+  if (buf.empty() ||
+      buf.find_first_not_of(kDigits) != absl::string_view::npos ||
+      !absl::SimpleAtoi(buf, &seconds)) {
     errors->AddError("Not a duration (not a number of seconds)");
     return;
   }
@@ -90,6 +99,7 @@ void LoadDuration::LoadInto(const std::string& value, void* dst,
   // https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#google.protobuf.Duration
   if (seconds < 0 || seconds > 315576000000) {
     errors->AddError("seconds must be in the range [0, 315576000000]");
+    return;
   }
   *static_cast<Duration*>(dst) =
       Duration::FromSecondsAndNanoseconds(seconds, nanos);
