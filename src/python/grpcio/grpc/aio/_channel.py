@@ -457,31 +457,29 @@ class Channel(_base_channel.Channel):
 
         calls = list(self._active_calls)
 
-        if grace:
-            call_tasks = [
-                self._loop.create_task(_wait_for_call_to_complete(call))
-                for call in calls
-                if not call.done()
-            ]
-            if call_tasks:
-                await asyncio.wait(call_tasks, timeout=grace)
+        try:
+            if grace:
+                call_tasks = [
+                    self._loop.create_task(_wait_for_call_to_complete(call))
+                    for call in calls
+                    if not call.done()
+                ]
+                if call_tasks:
+                    await asyncio.wait(call_tasks, timeout=grace)
 
-        # Time to cancel existing calls.
-        for call in calls:
-            call.cancel()
+        finally:
+            # Time to cancel existing calls.
+            for call in calls:
+                call.cancel()
 
-        calls.clear()
-        self._active_calls.clear()
+            calls.clear()
+            self._active_calls.clear()
 
-        # Destroy the channel
-        self._channel.close()
+            # Destroy the channel
+            self._channel.close()
 
     async def close(self, grace: Optional[float] = None) -> None:
         await self._close(grace)
-
-    def __del__(self):
-        if hasattr(self, "_channel") and not self._channel.closed():
-            self._channel.close()
 
     def get_state(
         self, try_to_connect: bool = False
