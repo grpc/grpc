@@ -65,7 +65,7 @@ cdef class _MethodResolver:
     cdef list _generic_handlers
     cdef dict _registered_method_handlers
 
-    cpdef resolve_handler(self, _HandlerCallDetails handler_call_details)
+    cpdef resolve_handler(self, object handler_call_details)
 
 
 cdef enum AioServerStatus:
