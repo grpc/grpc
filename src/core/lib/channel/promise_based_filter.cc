@@ -437,12 +437,20 @@ void BaseCallData::SendMessage::StartOp(CapturedBatch batch) {
     case State::kIdle:
       state_ = State::kGotBatch;
       break;
+    case State::kClosed:
+      if (IsPromiseFilterClientHalfCloseEnabled()) {
+        // The client already half-closed (e.g. a Write() after WritesDone()),
+        // so the pipe is closed. Leave the batch uncaptured so it continues
+        // down the stack and is failed there, as when the experiment is
+        // disabled.
+        return;
+      }
+      [[fallthrough]];
     case State::kGotBatch:
     case State::kGotBatchNoPipe:
     case State::kForwardedBatch:
     case State::kBatchCompleted:
     case State::kPushedToPipe:
-    case State::kClosed:
       Crash(absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
     case State::kCancelled:
     case State::kCancelledButNotYetPolled:
