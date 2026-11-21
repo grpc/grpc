@@ -35,13 +35,15 @@ namespace grpc_core {
 
 class MitigationEngine : public RefCounted<MitigationEngine> {
  public:
-  enum class Action { kCloseConnection, kRejectRpc };
+  enum class Action { kCloseConnection, kRejectRpc, kDiscardMetadata };
   static absl::string_view ActionToString(Action action) {
     switch (action) {
       case Action::kCloseConnection:
         return "Close Connection";
       case Action::kRejectRpc:
         return "Reject RPC";
+      case Action::kDiscardMetadata:
+        return "Discard Metadata";
     }
     return "Unknown Action";
   }
