@@ -5865,6 +5865,7 @@ grpc_cc_library(
         "latch",
         "loop",
         "match",
+        "match_promise",
         "message",
         "metadata",
         "metadata_batch",

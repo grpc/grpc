@@ -2227,6 +2227,8 @@ FILTER_TEST(ExtProcFilterTest,
           .SerializeAsString());
   EXPECT_THAT(GetNextSideStreamRequest(*side_stream),
               Optional(MatchesRequestBodyDrainComplete()));
+  // The backend reads the message, which unblocks the side-stream read loop.
+  EXPECT_THAT(PullClientMessage(*backend), IsMessage(kMessage1));
   // The ext_proc server closes the stream without acknowledging the drain.
   side_stream->MaybeSendStatusToClient(absl::OkStatus());
   EXPECT_EQ(PullServerTrailingStatus(client),
@@ -2260,6 +2262,9 @@ FILTER_TEST(ExtProcFilterTest,
           .SerializeAsString());
   EXPECT_THAT(GetNextSideStreamRequest(*side_stream),
               Optional(MatchesResponseBodyDrainComplete()));
+  // The client reads the message, which unblocks the side-stream read loop.
+  EXPECT_TRUE(PullServerInitialMetadata(client).ok());
+  EXPECT_THAT(PullServerMessage(client), IsMessage(kMessage1));
   // The ext_proc server closes the stream without acknowledging the drain.
   side_stream->MaybeSendStatusToClient(absl::OkStatus());
   PushClientHalfClose(client);

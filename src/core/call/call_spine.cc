@@ -35,8 +35,8 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
                     [call_initiator](MessageHandle msg) mutable {
                       // Need to spawn a job into the initiator's activity to
                       // push the message in.
-                      call_initiator.SpawnPushMessage(std::move(msg));
-                      return Success{};
+                      return call_initiator.SpawnPushMessageWithWaiting(
+                          std::move(msg));
                     }),
             [call_initiator]() mutable { call_initiator.SpawnFinishSends(); });
       });
@@ -60,8 +60,8 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
                         return ForEach(
                             MessagesFrom(call_initiator),
                             [call_handler](MessageHandle msg) mutable {
-                              call_handler.SpawnPushMessage(std::move(msg));
-                              return Success{};
+                              return call_handler.SpawnPushMessageWithWaiting(
+                                  std::move(msg));
                             });
                       },
                       []() -> StatusFlag { return Success{}; });
