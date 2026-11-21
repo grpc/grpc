@@ -2332,6 +2332,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/xds/xds_client/xds_channel_args.h )
   s.files += %w( src/core/xds/xds_client/xds_client.cc )
   s.files += %w( src/core/xds/xds_client/xds_client.h )
+  s.files += %w( src/core/xds/xds_client/xds_client_interface.h )
   s.files += %w( src/core/xds/xds_client/xds_locality.h )
   s.files += %w( src/core/xds/xds_client/xds_metrics.h )
   s.files += %w( src/core/xds/xds_client/xds_resource_type.h )

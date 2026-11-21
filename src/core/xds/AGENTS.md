@@ -1,44 +1,55 @@
 # gRPC xDS
 
-This directory contains the implementation of gRPC's xDS support. xDS is a set of APIs that allow a gRPC client or server to discover and configure itself dynamically.
+This directory contains gRPC's xDS implementation, which allows gRPC clients and servers to discover and configure themselves dynamically via a central xDS control plane.
 
 See also: [gRPC Core overview](../AGENTS.md)
 
-## Overarching Purpose
+## Two-Layer Architecture
 
-The code in this directory provides a gRPC implementation of the xDS APIs. This allows gRPC clients and servers to be configured by a central control plane. xDS is one way that service configurations can be delivered to a gRPC application; see [service config](../service_config/AGENTS.md) for more information.
+The code in `src/core/xds/` is intentionally split into two distinct layers:
 
-## Core Concepts
+1. **`xds_client/` — Generic xDS client library**: Protocol-level xDS and LRS client infrastructure that avoids depending on gRPC internals. This layer is used by projects outside of gRPC (via the `//bazel:xds_client_core` visibility group on `//:xds_client`) and is intended to eventually be split out into a standalone OSS library independent of gRPC.
+2. **`grpc/` — gRPC-specific extensions**: Everything tied closely to gRPC (gRPC bootstrap format, gRPC channel-based transport, LDS/RDS/CDS/EDS resource types and parsers, HTTP filters, LB policy/audit logger registries, certificate providers, routing, matchers, etc.). Not intended to be used outside of gRPC.
 
-*   **`XdsClient`**: The `XdsClient` is the core of the xDS implementation. It is responsible for managing the connection to the xDS server, sending resource requests, and receiving and processing resource updates.
-*   **Bootstrap File**: The `XdsClient` is configured via a bootstrap file. The bootstrap file is a JSON file that contains the information that the `XdsClient` needs to connect to the xDS server.
-*   **xDS Resources**: xDS is a set of APIs for discovering and configuring different types of resources. The most important resource types for gRPC are:
-    *   **LDS (Listener Discovery Service)**: Used to discover the listeners that are running on a gRPC server.
-    *   **RDS (Route Discovery Service)**: Used to discover the routes that are available for a given listener.
-    *   **CDS (Cluster Discovery Service)**: Used to discover the clusters that are available to the gRPC client.
-    *   **EDS (Endpoint Discovery Service)**: Used to discover the endpoints (i.e., the backend servers) that are in a given cluster.
+### Dependency Rules
+*   **Never add dependencies from `src/core/xds/xds_client/` onto `src/core/xds/grpc/`** or onto heavy gRPC internals (such as `//:grpc`, `CoreConfiguration`, channel/LB/resolver/filter types).
+*   **Keep generic test doubles in `test/core/xds/` free of gRPC-specific xDS dependencies** as well (e.g., `//test/core/xds:fake_xds_client`), so external consumers of `//:xds_client` can reuse them in their own tests.
 
-## `xds_client` Directory
+## `xds_client/` Directory (Generic Layer)
 
-The `xds_client` directory contains the core implementation of the xDS client.
+Contains the generic xDS/LRS client (`//:xds_client` in the root `BUILD` file).
 
-### Files
+### Key Files & Classes
+*   **`xds_client_interface.h`**: `XdsClientInterface` — pure-virtual interface for watching/cancelling resources, backoff reset, and bootstrap access, allowing consumers to inject fakes in unit tests.
+*   **`xds_client.{h,cc}`**: `XdsClient` — concrete implementation of `XdsClientInterface` managing ADS streams, resource caching/versioning, subscriptions, and error handling.
+*   **`lrs_client.{h,cc}`**: `LrsClient` — Load Reporting Service (LRS) client.
+*   **`xds_api.{h,cc}`**: `XdsApi` — ADS request serialization and response parsing helpers.
+*   **`xds_bootstrap.{h,cc}`**: `XdsBootstrap` — abstract bootstrap configuration interface (`Node`, `XdsServerTarget`, `XdsServer`, `Authority`).
+*   **`xds_resource_type.h`, `xds_resource_type_impl.h`**: `XdsResourceType` and `XdsResourceTypeImpl` — generic plugin interface and typed CRTP base class for xDS resource types.
+*   **`xds_transport.h`, `xds_transport_factory.h`**: `XdsTransport` and `XdsTransportFactory` — transport abstraction decoupling `XdsClient` from gRPC channels.
+*   **`xds_locality.h`, `xds_metrics.h`, `xds_backend_metric_propagation.{h,cc}`, `xds_channel_args.h`**: Shared generic data types and metrics interfaces.
 
-*   **`xds_client.h`, `xds_client.cc`**: These files define the `XdsClient` class.
-*   **`xds_bootstrap.h`, `xds_bootstrap.cc`**: These files define the `XdsBootstrap` class, which is responsible for reading the xDS bootstrap file and creating the initial `XdsClient` configuration.
-*   **`xds_api.h`, `xds_api.cc`**: These files define the `XdsApi` class, which provides a high-level API for interacting with the xDS server.
-*   **`lrs_client.h`, `lrs_client.cc`**: These files define the `LrsClient` class, which is used to send load reports to the xDS server.
-*   **`xds_resource_type.h`**: Defines the interface for a specific xDS resource type. Each resource type (e.g., LDS, RDS, CDS, EDS) has its own implementation of this interface.
+## `grpc/` Directory (gRPC-Specific Extensions)
 
-### Major Classes
+Implements gRPC's integration on top of `xds_client/`.
 
-*   **`grpc_core::XdsClient`**: The core of the xDS client implementation.
-*   **`grpc_core::XdsBootstrap`**: Responsible for reading the xDS bootstrap file.
-*   **`grpc_core::XdsApi`**: A high-level API for interacting with the xDS server.
-*   **`grpc_core::LrsClient`**: A client for sending load reports to the xDS server.
+### Key Components
+*   **Client, Bootstrap & Transport**: `GrpcXdsClient` (`xds_client_grpc.{h,cc}`), `GrpcXdsBootstrap` (`xds_bootstrap_grpc.{h,cc}`, `xds_bootstrap_grpc_builder.{h,cc}`), `GrpcXdsServer` (`xds_server_grpc.{h,cc}`), and gRPC transport (`xds_transport_grpc.{h,cc}`, `xds_transport_factory_grpc.{h,cc}`).
+*   **xDS Resource Types & Parsers**:
+    *   **LDS (Listener Discovery Service)**: `xds_listener.{h,cc}`, `xds_listener_parser.{h,cc}`
+    *   **RDS (Route Discovery Service)**: `xds_route_config.{h,cc}`, `xds_route_config_parser.{h,cc}`
+    *   **CDS (Cluster Discovery Service)**: `xds_cluster.{h,cc}`, `xds_cluster_parser.{h,cc}`
+    *   **EDS (Endpoint Discovery Service)**: `xds_endpoint.{h,cc}`, `xds_endpoint_parser.{h,cc}`
+    *   Shared parsers/types: `xds_common_types*.{h,cc}`, `xds_tls_context*.{h,cc}`, `xds_metadata*.{h,cc}`, `xds_grpc_service_parser.{h,cc}`, `xds_health_status.{h,cc}`.
+*   **Routing, Filters, Matchers & Registries**: `xds_routing.{h,cc}`, `xds_http_filter*`, `xds_matcher*`, `xds_cluster_specifier_plugin.{h,cc}`, `xds_lb_policy_registry.{h,cc}`, `xds_audit_logger_registry.{h,cc}`, `blackboard.{h,cc}`.
+*   **Security & Certificate Providers**: `certificate_provider_store*.{h,cc}`, `xds_certificate_provider.{h,cc}`, `file_watcher_certificate_provider_factory.{h,cc}`.
+
+## Testing Utilities (`test/core/xds/`)
+
+*   **`fake_xds_client.{h,cc}` (`//test/core/xds:fake_xds_client`)**: Generic, `gtest`-free `FakeXdsClient` (implementing `XdsClientInterface`) and `FakeXdsBootstrap`, depending only on `//:xds_client`. Exposed via `//bazel:xds_client_core` for reuse by external projects as well as gRPC unit tests.
+*   **`xds_transport_fake.{h,cc}` (`//test/core/xds:xds_transport_fake`)**: `FakeXdsTransportFactory` for testing the real `XdsClient` / `LrsClient` protocol behavior against scripted ADS/LRS streams.
 
 ## Notes
 
-*   xDS is a complex and powerful feature. A full understanding of xDS requires reading the official [Envoy documentation](https://www.envoyproxy.io/docs/envoy/latest/api-docs/xds_protocol).
-*   The gRPC xDS implementation is still under active development.
-*   The xDS implementation is a good example of how gRPC can be extended with new features. It is implemented as a set of plugins that are loaded at runtime, and it uses the `CoreConfiguration` class to register its factories.
+*   For details on the xDS protocol itself, see the official [Envoy documentation](https://www.envoyproxy.io/docs/envoy/latest/api-docs/xds_protocol).
+*   See also [service config](../service_config/AGENTS.md) for how xDS integrates with gRPC service configuration.
