@@ -44,7 +44,6 @@
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
-#include "src/core/xds/grpc/xds_header_map.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.h"
 #include "upb/mem/arena.hpp"

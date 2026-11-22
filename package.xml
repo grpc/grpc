@@ -2247,8 +2247,6 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_endpoint_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_grpc_service_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_grpc_service_parser.h" role="src" />
-    <file baseinstalldir="/" name="src/core/xds/grpc/xds_header_map.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/xds/grpc/xds_header_map.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_health_status.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_health_status.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_composite_filter.cc" role="src" />

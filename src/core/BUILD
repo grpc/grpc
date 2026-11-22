@@ -5932,7 +5932,6 @@ grpc_cc_library(
         "validation_errors",
         "xds_common_types",
         "xds_common_types_parser",
-        "xds_header_map",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_credentials_util",
@@ -6402,30 +6401,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "xds_header_map",
-    srcs = [
-        "xds/grpc/xds_header_map.cc",
-    ],
-    hdrs = [
-        "xds/grpc/xds_header_map.h",
-    ],
-    external_deps = [
-        "@com_google_protobuf//upb/base",
-        "@com_google_protobuf//upb/mem",
-        "absl/base:core_headers",
-        "absl/strings",
-        "absl/types:span",
-    ],
-    deps = [
-        "envoy_config_core_upb",
-        "grpc_matchers",
-        "metadata_batch",
-        "slice",
-        "upb_utils",
-    ],
-)
-
-grpc_cc_library(
     name = "xds_common_types",
     srcs = [
         "xds/grpc/xds_common_types.cc",
@@ -6434,18 +6409,24 @@ grpc_cc_library(
         "xds/grpc/xds_common_types.h",
     ],
     external_deps = [
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "absl/base:core_headers",
         "absl/status",
         "absl/strings",
+        "absl/types:span",
         "re2",
     ],
     tags = ["nofixdeps"],
     deps = [
+        "envoy_config_core_upb",
         "grpc_matchers",
         "json",
         "match",
         "metadata_batch",
         "slice",
         "time",
+        "upb_utils",
         "validation_errors",
         "xds_server_grpc",
         "//:gpr",
