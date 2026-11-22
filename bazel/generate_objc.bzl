@@ -184,7 +184,6 @@ generate_objc = rule(
             cfg = "exec",
         ),
     },
-    output_to_genfiles = True,
     implementation = _generate_objc_impl,
 )
 
