@@ -1444,6 +1444,14 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                             pipe_owner->server_initial_metadata.Wait(),
                             [pipe_owner](
                                 std::optional<ServerMetadataHandle> result) {
+                              // No explicit wakeup is needed for the trailing
+                              // metadata promise above: both run in the v2
+                              // activity, and once this pipe read completes
+                              // (woken via the latch when the v3 side sets it),
+                              // ServerCallData / ClientCallData repolls the
+                              // call promise in WakeInsideCombiner(). If the
+                              // call is cancelled while this flag is set, the
+                              // call promise is destroyed.
                               pipe_owner->server_initial_metadata_in_flight =
                                   false;
                               return result;
