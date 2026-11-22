@@ -25,7 +25,6 @@
 #include <vector>
 
 #include "cel-c/alloc.h"
-#include "cel-c/arena.h"
 #include "cel-c/ast.h"
 #include "cel-c/ast_proto.h"
 #include "cel-c/runtime.h"
@@ -143,10 +142,8 @@ absl::Status ValidateCall(const cel_expr_CheckedExpr* checked_expr, int64_t id,
         "CEL string() conversions are not supported");
   }
   if (function == "_+_") {
-    // Which overload of + this is can only be told from the type-checker's
-    // reference map.  Reject if it might be string, bytes or list
-    // concatenation.  Envoy disables these via cel-cpp's enable_string_concat
-    // (which covers both string and bytes) and enable_list_concat options.
+    // Only allow numeric and temporal addition; reject concatenation
+    // (string, bytes, list) and any unknown overload.
     cel_expr_Reference* reference;
     size_t num_overloads = 0;
     const upb_StringView* overloads = nullptr;
@@ -158,10 +155,12 @@ absl::Status ValidateCall(const cel_expr_CheckedExpr* checked_expr, int64_t id,
     }
     for (size_t i = 0; i < num_overloads; ++i) {
       absl::string_view overload = UpbStringToAbsl(overloads[i]);
-      if (overload == "add_string" || overload == "add_bytes" ||
-          overload == "add_list") {
+      if (overload != "add_int64" && overload != "add_uint64" &&
+          overload != "add_double" && overload != "add_duration_duration" &&
+          overload != "add_duration_timestamp" &&
+          overload != "add_timestamp_duration") {
         return absl::InvalidArgumentError(
-            "CEL string, bytes and list concatenation are not supported");
+            absl::StrCat("CEL + overload \"", overload, "\" is not supported"));
       }
     }
   }
@@ -401,13 +400,13 @@ absl::StatusOr<CelProgram> CelProgram::Create(
   AstPtr ast(cel_Ast_FromProto(checked_expr, arena.ptr(), status.get()));
   if (ast == nullptr || !status.ok()) {
     return absl::InvalidArgumentError(absl::StrCat(
-        "failed to convert CEL expression: ", status.ToAbsl().message()));
+        "failed to convert CEL expression: ", status.ToAbsl().ToString()));
   }
   ProgramPtr program(cel_Runtime_Compile(GetCelRuntime(), ast.get(),
                                          /*opts=*/nullptr, status.get()));
   if (program == nullptr || !status.ok()) {
     return absl::InvalidArgumentError(absl::StrCat(
-        "failed to compile CEL expression: ", status.ToAbsl().message()));
+        "failed to compile CEL expression: ", status.ToAbsl().ToString()));
   }
   return CelProgram(std::move(*serialized), std::move(program));
 }

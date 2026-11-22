@@ -130,12 +130,6 @@ alias(
 )
 
 alias(
-    name = "cel_c_arena",
-    actual = "@cel_c//cel-c:arena",
-    tags = ["manual"],
-)
-
-alias(
     name = "cel_c_ast",
     actual = "@cel_c//cel-c:ast",
     tags = ["manual"],

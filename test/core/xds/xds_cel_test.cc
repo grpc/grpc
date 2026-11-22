@@ -451,21 +451,28 @@ TEST_F(CelProgramTest, StringConcatenation) {
   EXPECT_EQ(
       CelProgram::Create(NewAddExpr("add_string"), ResultType::kBool).status(),
       absl::InvalidArgumentError(
-          "CEL string, bytes and list concatenation are not supported"));
+          "CEL + overload \"add_string\" is not supported"));
 }
 
 TEST_F(CelProgramTest, BytesConcatenation) {
   EXPECT_EQ(
       CelProgram::Create(NewAddExpr("add_bytes"), ResultType::kBool).status(),
       absl::InvalidArgumentError(
-          "CEL string, bytes and list concatenation are not supported"));
+          "CEL + overload \"add_bytes\" is not supported"));
 }
 
 TEST_F(CelProgramTest, ListConcatenation) {
   EXPECT_EQ(
       CelProgram::Create(NewAddExpr("add_list"), ResultType::kBool).status(),
       absl::InvalidArgumentError(
-          "CEL string, bytes and list concatenation are not supported"));
+          "CEL + overload \"add_list\" is not supported"));
+}
+
+TEST_F(CelProgramTest, UnknownAddOverload) {
+  EXPECT_EQ(
+      CelProgram::Create(NewAddExpr("add_unknown"), ResultType::kBool).status(),
+      absl::InvalidArgumentError(
+          "CEL + overload \"add_unknown\" is not supported"));
 }
 
 TEST_F(CelProgramTest, AdditionWithoutOverload) {
@@ -512,8 +519,8 @@ TEST_F(CelProgramTest, MatchesWithoutPattern) {
   builder_.SetIdent(builder_.SetReceiverCall(root, "matches", 0)[0], "request");
   EXPECT_EQ(CelProgram::Create(checked, ResultType::kBool).status(),
             absl::InvalidArgumentError(
-                "failed to compile CEL expression: cel: function with name "
-                "matches taking 1 args not found"));
+                "failed to compile CEL expression: INVALID_ARGUMENT: cel: "
+                "function with name matches taking 1 args not found"));
 }
 
 TEST_F(CelProgramTest, ExpressionAtMaxDepth) {
@@ -547,9 +554,9 @@ TEST_F(CelProgramTest, InvalidExprIdFailsConversion) {
   cel_expr_Expr_set_id(args[1], -1);
   EXPECT_EQ(CelProgram::Create(checked, ResultType::kBool).status(),
             absl::InvalidArgumentError(
-                "failed to convert CEL expression: cel: expected "
-                "google.api.expr.Expr.id to be greater than or equal to 0: "
-                "-1"));
+                "failed to convert CEL expression: INVALID_ARGUMENT: cel: "
+                "expected google.api.expr.Expr.id to be greater than or equal "
+                "to 0: -1"));
 }
 
 TEST_F(CelProgramTest, UnknownFunctionFailsCompilation) {
@@ -558,8 +565,8 @@ TEST_F(CelProgramTest, UnknownFunctionFailsCompilation) {
   builder_.SetIdent(builder_.SetCall(root, "my_custom_func", 1)[0], "request");
   EXPECT_EQ(CelProgram::Create(checked, ResultType::kBool).status(),
             absl::InvalidArgumentError(
-                "failed to compile CEL expression: cel: function with name "
-                "my_custom_func taking 1 args not found"));
+                "failed to compile CEL expression: INVALID_ARGUMENT: cel: "
+                "function with name my_custom_func taking 1 args not found"));
 }
 
 // The following tests check that validation skips missing sub-expressions,
@@ -573,8 +580,8 @@ TEST_F(CelProgramTest, SelectWithoutOperand) {
       cel_StringView_FromAbsl("foo"));
   EXPECT_EQ(CelProgram::Create(checked, ResultType::kBool).status(),
             absl::InvalidArgumentError(
-                "failed to compile CEL expression: cel: select expr AST node "
-                "is missing operand: id=1"));
+                "failed to compile CEL expression: INVALID_ARGUMENT: cel: "
+                "select expr AST node is missing operand: id=1"));
 }
 
 TEST_F(CelProgramTest, MapEntryWithoutKeyOrValue) {
@@ -584,9 +591,9 @@ TEST_F(CelProgramTest, MapEntryWithoutKeyOrValue) {
       cel_expr_Expr_mutable_struct_expr(map, arena_.ptr()), arena_.ptr());
   EXPECT_EQ(CelProgram::Create(checked, ResultType::kBool).status(),
             absl::InvalidArgumentError(
-                "failed to convert CEL expression: cel: expected "
-                "google.api.expr.Expr.CreateStruct.Entry.key_kind to be "
-                "map_key: 0"));
+                "failed to convert CEL expression: INVALID_ARGUMENT: cel: "
+                "expected google.api.expr.Expr.CreateStruct.Entry.key_kind to "
+                "be map_key: 0"));
 }
 
 //
