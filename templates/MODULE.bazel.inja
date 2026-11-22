@@ -22,12 +22,8 @@ module(
 # Regular dependencies
 # ====================
 
-# TODO(weizheyuan): Check if this version bump is still needed for BCR
-# releases after we drop bazel 7 supprot.
-#
-# Upgrade version of rules_swift to avoid an error in BCR CI of not
-# finding switfc.exe on Windows with bazel 7.
-bazel_dep(name = "rules_swift", version = "2.5.0")
+# rules_apple 5.x requires rules_swift 4.x.
+bazel_dep(name = "rules_swift", version = "4.0.1")
 
 # -- Abseil library.
 # Pinning version to be consistent with third_party/abseil-cpp
@@ -40,10 +36,10 @@ single_version_override(
 bazel_dep(name = "autosharding", version = "0.0.0-20260826-3a21f69")
 bazel_dep(name = "grpc-proto", version = "0.0.0-20260915-dd549fc", repo_name = "grpc_proto")
 bazel_dep(name = "platforms", version = "1.0.0")
-bazel_dep(name = "apple_support", version = "1.19.0", repo_name = "build_bazel_apple_support")
+bazel_dep(name = "apple_support", version = "2.5.4", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "boringssl", version = "0.20260929.0")
-bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
+bazel_dep(name = "c-ares", version = "1.34.9.bcr.1", repo_name = "com_github_cares_cares")
 
 # -- CEL (Common Expression Language) C implementation.
 # Pinning version to be consistent with third_party/cel-c.
@@ -57,19 +53,22 @@ bazel_dep(name = "cel-c", version = "0.0.0-20261024-7c739ee", repo_name = "cel_c
 # The version must match what the module graph resolves to (xds, envoy_api,
 # cel-c and cel-cpp all require 0.25.1) and what CMakeLists.txt downloads.
 bazel_dep(name = "cel-spec", version = "0.25.1", repo_name = "dev_cel")
-bazel_dep(name = "envoy_api", version = "0.0.0-20260901-005c18a.bcr.1")
+bazel_dep(name = "envoy_api", version = "0.0.0-20261109-0a161d3")
 bazel_dep(name = "googleapis-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-grpc-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-python", version = "1.0.0")
 bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googletest")
-bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.2", repo_name = "io_opencensus_cpp")
+bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.3", repo_name = "io_opencensus_cpp")
 bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
-bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
+bazel_dep(name = "opentelemetry-cpp", version = "1.19.0.bcr.2", repo_name = "io_opentelemetry_cpp")
 
 # --- Protobuf related packages.
 bazel_dep(name = "protobuf", version = "35.1", repo_name = "com_google_protobuf")
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.2", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
-bazel_dep(name = "rules_apple", version = "3.16.0", repo_name = "build_bazel_rules_apple")
+
+# rules_apple 5.0.0 is the first version that does not use
+# `ctx.fragments.objc.ios_simulator_version`, which Bazel 10 removed.
+bazel_dep(name = "rules_apple", version = "5.0.0", repo_name = "build_bazel_rules_apple")
 bazel_dep(name = "rules_proto", version = "7.0.2")
 bazel_dep(name = "rules_shell", version = "0.4.0")
 
@@ -77,15 +76,20 @@ bazel_dep(name = "rules_shell", version = "0.4.0")
 #
 # Patch to fix a windows rbe related issue on bazel 8.7.0
 # See also https://github.com/grpc/grpc/issues/42607.
-bazel_dep(name = "rules_go", version = "0.59.0", repo_name = "io_bazel_rules_go")
+bazel_dep(name = "rules_go", version = "0.63.0", repo_name = "io_bazel_rules_go")
 single_version_override(
     module_name = "rules_go",
     patch_strip = 1,
     patches = [
         "//bazel:rules_go_fix_windows_rbe.patch",
     ],
-    version = "0.59.0",
+    version = "0.63.0",
 )
+
+# Declare a Go SDK compatible with gazelle 0.54.0 (pulled in by envoy_api)
+# before transitive dependencies like cel-spec, which registers Go 1.23.0.
+go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
+go_sdk.download(version = "1.27.3")
 
 bazel_dep(name = "xds", version = "0.0.0-20251210-ee656c7", repo_name = "com_github_cncf_xds")
 
@@ -107,6 +111,18 @@ bazel_dep(name = "yaml-cpp", version = "0.9.0", dev_dependency = True)
 # ===================
 
 bazel_dep(name = "rules_python", version = "2.0.2")
+
+# envoy_api requires rules_python 2.4.5, which breaks the Python Bazel build
+# in CI with "/usr/bin/env: 'python3': No such file or directory". Starting
+# with 2.4.0, rules_python rewrites wheel RECORD files with a py_binary whose
+# bootstrap runs "/usr/bin/env python3" in an empty environment, and the CI
+# docker image has python3 only in /usr/local/bin.
+# TODO(bpawan): Remove this override when rules_python or the CI image is
+# fixed, and upgrade rules_python to 2.4.5 or later.
+single_version_override(
+    module_name = "rules_python",
+    version = "2.0.2",
+)
 
 DEFAULT_PYTHON_VERSION = "3.11"
 
@@ -134,7 +150,11 @@ python.defaults(python_version = DEFAULT_PYTHON_VERSION)
 
 use_repo(python, "python_3_11_aarch64-apple-darwin")
 
-register_toolchains("//:python_3_11_ios_sim_arm64_workaround")
+# Only gRPC's own iOS tests use this toolchain.
+register_toolchains(
+    "//:python_3_11_ios_sim_arm64_workaround",
+    dev_dependency = True,
+)
 
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 
@@ -184,15 +204,12 @@ archive_override(
 )
 
 # --- Provide repo @com_google_fuzztest.
-bazel_dep(name = "fuzztest", version = "20260629.0", dev_dependency = True, repo_name = "com_google_fuzztest")
+bazel_dep(name = "fuzztest", version = "20260629.0.bcr.1", dev_dependency = True, repo_name = "com_google_fuzztest")
 
-# This package is not directly used by grpc, but requested by fuzztest.
-#
-# The reason for version bump is because bazel resolve this package to riegeli@0.0.0-20240606-973b6f0,
-# which is incompatible with the version of abseil-cpp we use.
-#
-# See also https://bazel.build/external/module#version-selection.
-bazel_dep(name = "riegeli", version = "0.0.0-20250706-c4d1f27", dev_dependency = True)
+# This package is not directly used by grpc, but requested by opentelemetry-cpp
+# and google_cloud_cpp. Pin a newer version than the 8.11.0.bcr.2 that
+# opentelemetry-cpp requests.
+bazel_dep(name = "curl", version = "8.11.0.bcr.5", repo_name = None)
 
 # --- Provide repo @grpc_custom_exec_properties.
 http_archive(
@@ -231,6 +248,11 @@ bazel_dep(name = "google_cloud_cpp", version = "2.35.0", dev_dependency = True)
 archive_override(
     module_name = "google_cloud_cpp",
     integrity = "sha256-geooz55bsDLTVrAYdAnzCxA1+OpbUwZ16iSMimwAcKo=",
+    # Add rules_cc load() statements, which Bazel 9 requires.
+    patch_strip = 1,
+    patches = [
+        "//bazel:google_cloud_cpp_bazel9.patch",
+    ],
     strip_prefix = "google-cloud-cpp-2.35.0",
     urls = [
         "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",

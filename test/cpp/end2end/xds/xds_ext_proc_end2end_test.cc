@@ -734,7 +734,17 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     env_var_.emplace(GetParam().filter_on_server()
                          ? "GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_SERVER"
                          : "GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
-    InitClient(MakeBootstrapBuilder().SetTrustedXdsServer(),
+    // The ext_proc server's port is picked at construction time, so we
+    // create it before building the bootstrap config, which needs to
+    // reference its target URI in "allowed_grpc_services".
+    ext_proc_server_ = std::make_unique<ExtProcServerThread>(this);
+    // "allowed_grpc_services" is used only when the xDS server is not
+    // trusted; with a trusted xDS server, the ext_proc filter takes the
+    // side-channel credentials directly from the GrpcService proto.
+    XdsBootstrapBuilder builder = MakeBootstrapBuilder().AddAllowedGrpcService(
+        ext_proc_server_->target());
+    if (trusted_xds_server_) builder.SetTrustedXdsServer();
+    InitClient(std::move(builder),
                /*lb_expected_authority=*/"",
                /*xds_resource_does_not_exist_timeout_ms=*/0,
                /*balancer_authority_override=*/"", /*args=*/nullptr);
@@ -746,7 +756,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
         {"locality0", CreateEndpointsForBackends(0, 1)},
     })));
-    ext_proc_server_ = std::make_unique<ExtProcServerThread>(this);
     ext_proc_server_->Start();
   }
 
@@ -859,6 +868,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
   std::optional<grpc_core::testing::ScopedExperimentalEnvVar> env_var_;
   std::unique_ptr<ExtProcServerThread> ext_proc_server_;
+  bool trusted_xds_server_ = true;
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -1072,7 +1082,14 @@ TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
       {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
   half_close_handler.HandleIfNotYetSeen();
   // For trailers-only response, ext_proc server sees no further requests.
-  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
+  auto next_req = ext_proc_stream->GetNextRequest();
+  // TODO(rishesh): On the server, the client half-close races with the
+  // trailers-only response, so it may show up here. Remove once the
+  // server-side filter reliably observes client half-close.
+  if (GetParam().filter_on_server()) {
+    next_req = half_close_handler.MaybeHandle(std::move(next_req));
+  }
+  EXPECT_EQ(next_req, std::nullopt);
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::FAILED_PRECONDITION, ""));
 }
@@ -1828,6 +1845,77 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
   }
   EXPECT_TRUE(
       stats_plugin->GetHistogramValueByName(metric_name, labels).has_value());
+}
+
+//
+// Tests with an untrusted xDS server
+//
+
+// When the xDS server is not trusted, the ext_proc filter ignores the
+// credentials in the GrpcService proto and instead looks up the target URI
+// in the "allowed_grpc_services" field of the bootstrap config.
+//
+// Note that XdsExtProcEnd2endTest uses a trusted xDS server, so it never
+// exercises the "allowed_grpc_services" code path.  This is why a bug where
+// that bootstrap field was parsed only when
+// GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT was set (but not when only
+// GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_SERVER was set) was not caught for
+// server-side ext_proc.
+class XdsExtProcUntrustedXdsServerEnd2endTest : public XdsExtProcEnd2endTest {
+ public:
+  XdsExtProcUntrustedXdsServerEnd2endTest() { trusted_xds_server_ = false; }
+};
+
+// Only the listener-level filter config is tested here, because
+// SetFilterConfig() uses a top-level config with a placeholder target URI for
+// kHttpFilterConfigInRoute, which would not be in "allowed_grpc_services".
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsExtProcUntrustedXdsServerEnd2endTest,
+    ::testing::Values(XdsTestType(), XdsTestType().set_filter_on_server()),
+    &XdsTestType::Name);
+
+TEST_P(XdsExtProcUntrustedXdsServerEnd2endTest,
+       UsesCredentialsFromAllowedGrpcServices) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseTrailerMode(false)
+                             .SetRequestBodyMode(false)
+                             .SetResponseBodyMode(false)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  // For server-side tests, this verifies that the server accepted the
+  // Listener containing the ext_proc filter.  This would fail if the
+  // "allowed_grpc_services" bootstrap field was not parsed, since the
+  // ext_proc filter config would then be rejected.
+  StartBackendServer();
+  RpcOptions rpc_options;
+  rpc_options.set_echo_metadata_initially(true);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get(), rpc_options);
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  // ext_proc server sees request headers and mutates them.
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req,
+      ::testing::Optional(MatchesRequestHeaders(::testing::Contains(
+          ::testing::Pair(":path", "/grpc.testing.EchoTestService/Echo")))));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse(
+      {{kRequestHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
+  // ext_proc server sees response headers and mutates them.
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseHeaders(::testing::_)));
+  ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
+      {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
+  Status status = rpc.GetStatus();
+  EXPECT_THAT(status, IsStatusOk());
+  EXPECT_THAT(rpc.GetServerInitialMetadata(),
+              ::testing::AllOf(
+                  ::testing::Contains(::testing::Pair(
+                      kRequestHeadersMutatedHeaderKey, kHeaderMutatedValue)),
+                  ::testing::Contains(::testing::Pair(
+                      kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue))));
 }
 
 }  // namespace

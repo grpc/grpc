@@ -56,6 +56,11 @@ exports_files(
     ],
 )
 
+exports_files(
+    ["src/cpp/server/load_reporter/constants.h"],
+    visibility = ["//src/core:__pkg__"],
+)
+
 bool_flag(
     name = "small_client",
     build_setting_default = False,
@@ -285,11 +290,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "googol"  # @unused
+g_stands_for = "garfield"  # @unused
 
 core_version = "59.0.0"  # @unused
 
-version = "1.86.0-dev"  # @unused
+version = "1.87.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -5461,6 +5466,11 @@ grpc_upb_proto_reflection_library(
 grpc_upb_proto_library(
     name = "envoy_type_http_upb",
     deps = ["@envoy_api//envoy/type/http/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_load_balancing_policies_autosharding_upb",
+    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/autosharding/v3:pkg"],
 )
 
 grpc_upb_proto_library(

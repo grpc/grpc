@@ -408,12 +408,18 @@ class PosixSecureEndpointTest
   }
 
   void TearDown() override {
-    if (GetParam().use_zero_copy_protector || test_skipped_) {
+    // Destroy any pre-allocated protectors that were not transferred to a
+    // secure endpoint via CreateSecureEndpoint().
+    if (client_protector_ != nullptr) {
       tsi_frame_protector_destroy(client_protector_);
+    }
+    if (server_protector_ != nullptr) {
       tsi_frame_protector_destroy(server_protector_);
     }
-    if (!GetParam().use_zero_copy_protector || test_skipped_) {
+    if (client_zero_copy_protector_ != nullptr) {
       tsi_zero_copy_grpc_protector_destroy(client_zero_copy_protector_);
+    }
+    if (server_zero_copy_protector_ != nullptr) {
       tsi_zero_copy_grpc_protector_destroy(server_zero_copy_protector_);
     }
     grpc_slice_unref(encrypted_leftover_data_);
@@ -433,18 +439,56 @@ class PosixSecureEndpointTest
       bool use_zero_copy_protector, bool is_client,
       grpc_core::ChannelArgs args) {
     if (leftover) {
+      // SetUp() only populates leftover_data_ once, and EncryptLeftoverBytes()
+      // unrefs each slice in leftover_data_ and overwrites
+      // encrypted_leftover_data_. When CreateSecureEndpoint() is called across
+      // multiple connections in a single test, repopulate leftover_data_,
+      // ensure a server_protector_ is available to encrypt it, and unref any
+      // previous encrypted_leftover_data_ slice before encrypting again.
+      if (leftover_data_.Count() == 0) {
+        grpc_slice leftover_slice =
+            grpc_slice_from_copied_string(leftover_data_str_.c_str());
+        leftover_data_.Append(
+            grpc_core::Slice(grpc_core::CSliceRef(leftover_slice)));
+      }
+      if (server_protector_ == nullptr) {
+        server_protector_ = tsi_create_fake_frame_protector(nullptr);
+      }
+      grpc_slice_unref(encrypted_leftover_data_);
       EncryptLeftoverBytes(&leftover_data_, server_protector_,
                            &encrypted_leftover_data_);
+      leftover_data_.Clear();
     }
-    auto quota = grpc_core::ResourceQuota::Default();
-    args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
+    // grpc_secure_endpoint_create() takes ownership of the protector passed to
+    // it and destroys it when the secure endpoint is destroyed. Transfer
+    // ownership of the pre-allocated member protector via std::exchange(...,
+    // nullptr), and lazily allocate a fresh protector if this helper is called
+    // for additional connections in the same test.
+    tsi_frame_protector* protector = nullptr;
+    tsi_zero_copy_grpc_protector* zero_copy_protector = nullptr;
+    if (use_zero_copy_protector) {
+      zero_copy_protector = std::exchange(
+          is_client ? client_zero_copy_protector_ : server_zero_copy_protector_,
+          nullptr);
+      if (zero_copy_protector == nullptr) {
+        zero_copy_protector = tsi_create_fake_zero_copy_grpc_protector(nullptr);
+      }
+    } else {
+      protector = std::exchange(
+          is_client ? client_protector_ : server_protector_, nullptr);
+      if (protector == nullptr) {
+        protector = tsi_create_fake_frame_protector(nullptr);
+      }
+    }
+    // Preserve any custom GRPC_ARG_RESOURCE_QUOTA supplied by the caller (e.g.
+    // to trigger memory reclamation in WriteReclaimerAndConcurrentShutdown) and
+    // only fall back to the default ResourceQuota when none was provided.
+    if (!args.Contains(GRPC_ARG_RESOURCE_QUOTA)) {
+      auto quota = grpc_core::ResourceQuota::Default();
+      args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
+    }
     return grpc_secure_endpoint_create(
-        use_zero_copy_protector
-            ? nullptr
-            : (is_client ? client_protector_ : server_protector_),
-        use_zero_copy_protector ? (is_client ? client_zero_copy_protector_
-                                             : server_zero_copy_protector_)
-                                : nullptr,
+        protector, zero_copy_protector,
         grpc_core::OrphanablePtr<grpc_endpoint>(
             grpc_event_engine_endpoint_create(std::move(endpoint))),
         (leftover) ? &encrypted_leftover_data_ : nullptr, (leftover) ? 1 : 0,
@@ -672,6 +716,98 @@ TEST_P(PosixSecureEndpointTest, UsesMemoryAllocatorFactoryIfProvided) {
       }
       EXPECT_GE(test_factory.last_created_impl()->total_bytes_reserved(),
                 expected_bytes_reserved);
+    }
+  }
+  worker->Wait();
+}
+
+TEST_P(PosixSecureEndpointTest, WriteReclaimerAndConcurrentShutdown) {
+  if (PosixPoller() == nullptr) {
+    test_skipped_ = true;
+    return;
+  }
+  Worker* worker = new Worker(GetPosixEE(), PosixPoller());
+  worker->Start();
+  {
+    // Payload > STAGING_BUFFER_SIZE (8192) to trigger FlushWriteStagingBuffer()
+    // and MaybePostReclaimer().
+    const std::string large_msg(16384, 'x');
+    // This test is intended to verify that benign memory reclamation can
+    // execute concurrently with SecureEndpoint::Shutdown(). It creates multiple
+    // connections to the server and sends a single message on each connection.
+    // Each connection will trigger a resource quota reclamation attempt when
+    // the connection is closed. The test must pass reliably across many runs to
+    // verify that there are no race conditions.
+    auto connections = CreateConnectedEndpoints(
+        *PosixPoller(), true, kNumConnections, GetPosixEE(), GetOracleEE());
+    for (auto& conn : connections) {
+      auto client_endpoint = std::move(conn.client_endpoint);
+      auto server_endpoint = std::move(conn.server_endpoint);
+      EXPECT_NE(client_endpoint, nullptr);
+      EXPECT_NE(server_endpoint, nullptr);
+
+      auto resource_quota = grpc_core::MakeRefCounted<grpc_core::ResourceQuota>(
+          "reclaimer_test_quota");
+      resource_quota->memory_quota()->SetSize(1024 * 1024);
+      grpc_core::ChannelArgs args = grpc_core::ChannelArgs()
+                                        .SetObject(resource_quota)
+                                        .SetObject(GetPosixEE());
+
+      auto client_secure_endpoint_grpc = CreateSecureEndpoint(
+          std::move(client_endpoint),
+          /*leftover=*/GetParam().has_leftover_bytes,
+          /*use_zero_copy_protector=*/GetParam().use_zero_copy_protector,
+          /*is_client=*/true, args);
+      auto client_secure_endpoint = grpc_get_wrapped_event_engine_endpoint(
+          client_secure_endpoint_grpc.get());
+
+      grpc_core::ChannelArgs server_args;
+      auto server_secure_endpoint_grpc = CreateSecureEndpoint(
+          std::move(server_endpoint), /*leftover=*/false,
+          /*use_zero_copy_protector=*/GetParam().use_zero_copy_protector,
+          /*is_client=*/false, server_args);
+      auto server_secure_endpoint = grpc_get_wrapped_event_engine_endpoint(
+          server_secure_endpoint_grpc.get());
+
+      if (GetParam().has_leftover_bytes) {
+        grpc_core::Notification read_done;
+        SliceBuffer read_buffer;
+        if (client_secure_endpoint->Read(
+                [&](absl::Status status) {
+                  CHECK_OK(status) << "Failed to read leftover data from "
+                                      "client secure endpoint";
+                  read_done.Notify();
+                },
+                &read_buffer, {})) {
+          read_done.Notify();
+        }
+        read_done.WaitForNotification();
+        EXPECT_EQ(read_buffer.Count(), 1);
+        EXPECT_EQ(read_buffer.TakeFirst().as_string_view(),
+                  GetLeftoverDataStr());
+      }
+
+      ASSERT_TRUE(
+          SendValidatePayload(
+              large_msg, client_secure_endpoint, server_secure_endpoint,
+              /*read_hint_bytes=*/
+              (GetParam().use_zero_copy_protector ? -1 : large_msg.size()))
+              .ok());
+
+      // Trigger benign memory reclamation while shutting down and destroying
+      // the endpoint.
+      grpc_core::Notification ready;
+      grpc_core::Notification reclaim_triggered;
+      GetPosixEE()->Run([resource_quota, &ready, &reclaim_triggered]() {
+        ready.Notify();
+        resource_quota->memory_quota()->SetSize(0);
+        reclaim_triggered.Notify();
+      });
+      ready.WaitForNotification();
+      // Endpoint reset calls Shutdown and races with the resource quota
+      // reclamation loop because the resource quota size has been set to zero.
+      client_secure_endpoint_grpc.reset();
+      reclaim_triggered.WaitForNotification();
     }
   }
   worker->Wait();

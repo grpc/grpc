@@ -16,6 +16,7 @@
 
 #include "src/core/client_channel/subchannel.h"
 
+#include <grpc/channel_factory.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -1678,6 +1679,9 @@ ChannelArgs Subchannel::MakeSubchannelArgs(
       .Remove(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL)
       .Remove(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP)
       .Remove(GRPC_ARG_CHANNELZ_CHANNEL_NODE)
+      // The channel factory is for side channels (gRFC A119), not for
+      // backend connections.
+      .Remove(GRPC_ARG_CHANNEL_FACTORY)
       // Remove all keys with the no-subchannel prefix.
       .RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX);
 }

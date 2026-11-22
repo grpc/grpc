@@ -40,6 +40,7 @@
 #include <vector>
 
 #include "src/core/client_channel/client_channel_internal.h"
+#include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/config/core_configuration.h"
@@ -374,8 +375,13 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return std::exchange(requested_connection_, false);
     }
 
+    void set_fail_creation(bool fail_creation) {
+      fail_creation_ = fail_creation;
+    }
+
     // To be invoked by FakeHelper.
     RefCountedPtr<SubchannelInterface> CreateSubchannel() {
+      if (fail_creation_) return nullptr;
       return MakeRefCounted<FakeSubchannel>(this);
     }
 
@@ -413,6 +419,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     ConnectivityStateTracker state_tracker_;
 
     bool requested_connection_ = false;
+
+    bool fail_creation_ = false;
 
     std::set<OrcaWatcher*> orca_watchers_;
   };
@@ -522,11 +530,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         const grpc_resolved_address& address,
-        const ChannelArgs& /*per_address_args*/,
-        const ChannelArgs& args) override {
-      // TODO(roth): Need to use per_address_args here.
-      SubchannelKey key(
-          address, args.RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX));
+        const ChannelArgs& per_address_args, const ChannelArgs& args) override {
+      SubchannelKey key(address, MakeSubchannelArgs(args, per_address_args));
       auto it = test_->subchannel_pool_.find(key);
       if (it == test_->subchannel_pool_.end()) {
         auto address_uri = grpc_sockaddr_to_uri(&address);
@@ -877,15 +882,16 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   bool ExpectStateAndQueuingPicker(
       grpc_connectivity_state expected_state,
       absl::Status expected_status = absl::OkStatus(),
+      const std::map<std::string, std::string>& metadata = {},
       SourceLocation location = SourceLocation()) {
     auto picker = ExpectState(expected_state, expected_status, location);
-    return ExpectPickQueued(picker.get(), {}, {}, location);
+    return ExpectPickQueued(picker.get(), {}, metadata, location);
   }
 
   // Convenient frontend to ExpectStateAndQueuingPicker() for CONNECTING.
   bool ExpectConnectingUpdate(SourceLocation location = SourceLocation()) {
     return ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING,
-                                       absl::OkStatus(), location);
+                                       absl::OkStatus(), {}, location);
   }
 
   static std::unique_ptr<LoadBalancingPolicy::MetadataInterface> MakeMetadata(
@@ -1267,6 +1273,21 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     check_status(fail->status);
   }
 
+  // Requests a pick on picker and expects a Drop result.
+  // The failing status is passed to check_status.
+  void ExpectPickDrop(LoadBalancingPolicy::SubchannelPicker* picker,
+                      std::function<void(const absl::Status&)> check_status,
+                      const CallAttributes& call_attributes = {},
+                      const std::map<std::string, std::string>& metadata = {},
+                      SourceLocation location = SourceLocation()) {
+    auto pick_result = DoPick(picker, call_attributes, metadata);
+    auto* drop =
+        std::get_if<LoadBalancingPolicy::PickResult::Drop>(&pick_result.result);
+    ASSERT_NE(drop, nullptr) << PickResultString(pick_result) << " at "
+                             << location.file() << ":" << location.line();
+    check_status(drop->status);
+  }
+
   // Returns a human-readable string for a pick result.
   static std::string PickResultString(
       const LoadBalancingPolicy::PickResult& result) {
@@ -1291,10 +1312,20 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         });
   }
 
+  // Returns the args of the subchannel that the channel creates for
+  // channel_args and per_address_args.
+  static ChannelArgs MakeSubchannelArgs(const ChannelArgs& channel_args,
+                                        const ChannelArgs& per_address_args) {
+    return Subchannel::MakeSubchannelArgs(channel_args, per_address_args,
+                                          /*subchannel_pool=*/nullptr,
+                                          /*channel_default_authority=*/"");
+  }
+
   // Returns the entry in the subchannel pool, or null if not present.
   SubchannelState* FindSubchannel(absl::string_view address,
                                   const ChannelArgs& args = ChannelArgs()) {
-    SubchannelKey key(MakeAddress(address), args);
+    SubchannelKey key(MakeAddress(address),
+                      MakeSubchannelArgs(args, ChannelArgs()));
     SubchannelState* subchannel = nullptr;
     TickUntil([&]() {
       auto it = subchannel_pool_.find(key);
@@ -1312,7 +1343,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // pool, or by being created by another LB policy in this channel).
   SubchannelState* CreateSubchannel(absl::string_view address,
                                     const ChannelArgs& args = ChannelArgs()) {
-    SubchannelKey key(MakeAddress(address), args);
+    SubchannelKey key(MakeAddress(address),
+                      MakeSubchannelArgs(args, ChannelArgs()));
     auto it = subchannel_pool_
                   .emplace(std::piecewise_construct, std::forward_as_tuple(key),
                            std::forward_as_tuple(address, this))
