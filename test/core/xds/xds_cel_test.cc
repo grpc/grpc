@@ -516,14 +516,26 @@ TEST_F(CelProgramTest, MatchesWithoutPattern) {
                 "matches taking 1 args not found"));
 }
 
-TEST_F(CelProgramTest, ExpressionTooDeepToSerialize) {
-  // !!...!true, nested deeper than upb's encoding depth limit.
+TEST_F(CelProgramTest, ExpressionAtMaxDepth) {
+  // 31 nested `!` calls around `true` -> AST depth 32.
   cel_expr_Expr* expr;
   auto* checked = builder_.NewCheckedExpr(&expr, ResultType::kBool);
-  for (int i = 0; i < 100; ++i) expr = builder_.SetCall(expr, "!_", 1)[0];
+  for (int i = 0; i < 31; ++i) expr = builder_.SetCall(expr, "!_", 1)[0];
   builder_.SetBoolConst(expr, true);
-  EXPECT_EQ(CelProgram::Create(checked, ResultType::kBool).status(),
-            absl::InvalidArgumentError("failed to serialize CEL expression"));
+  auto program = Compile(checked, ResultType::kBool);
+  ASSERT_TRUE(program.has_value());
+  EXPECT_EQ(program->EvaluateBool(resolver_), false);
+}
+
+TEST_F(CelProgramTest, ExpressionExceedsMaxDepth) {
+  // 32 nested `!` calls around `true` -> AST depth 33.
+  cel_expr_Expr* expr;
+  auto* checked = builder_.NewCheckedExpr(&expr, ResultType::kBool);
+  for (int i = 0; i < 32; ++i) expr = builder_.SetCall(expr, "!_", 1)[0];
+  builder_.SetBoolConst(expr, true);
+  EXPECT_EQ(
+      CelProgram::Create(checked, ResultType::kBool).status(),
+      absl::InvalidArgumentError("CEL expression exceeds max depth of 32"));
 }
 
 TEST_F(CelProgramTest, InvalidExprIdFailsConversion) {

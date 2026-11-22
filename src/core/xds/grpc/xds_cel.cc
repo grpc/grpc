@@ -66,6 +66,11 @@ namespace {
 // Matches Envoy's regex_max_program_size CEL runtime option.
 constexpr int kMaxRegexProgramSize = 100;
 
+// Maximum AST depth allowed for a CEL expression. Guards against stack
+// overflow in cel-c's recursive cel_Ast_FromProto() and keeps expressions
+// within upb's encoding depth limit without relying on upb's internal limit.
+constexpr int kMaxCelExprDepth = 32;
+
 // Size of the stack-allocated initial block of the arena used to evaluate a
 // program.
 constexpr size_t kEvaluationArenaInitialBlockSize = 512;
@@ -184,12 +189,20 @@ absl::Status ValidateCelExpr(const cel_expr_CheckedExpr* checked_expr,
   absl::Status status =
       ValidateResultType(checked_expr, cel_expr_Expr_id(root), result_type);
   if (!status.ok()) return status;
-  // Walk the AST iteratively, since it comes from the control plane and
-  // may be arbitrarily deep.
-  std::vector<const cel_expr_Expr*> stack = {root};
+  // Walk the AST iteratively, enforcing kMaxCelExprDepth before
+  // serialization and cel-c conversion.
+  struct StackEntry {
+    const cel_expr_Expr* expr;
+    int depth;
+  };
+  std::vector<StackEntry> stack = {{root, 1}};
   while (!stack.empty()) {
-    const cel_expr_Expr* expr = stack.back();
+    const auto [expr, depth] = stack.back();
     stack.pop_back();
+    if (depth > kMaxCelExprDepth) {
+      return absl::InvalidArgumentError(absl::StrCat(
+          "CEL expression exceeds max depth of ", kMaxCelExprDepth));
+    }
     switch (cel_expr_Expr_expr_kind_case(expr)) {
       case cel_expr_Expr_expr_kind_ident_expr: {
         absl::string_view name = UpbStringToAbsl(
@@ -207,7 +220,7 @@ absl::Status ValidateCelExpr(const cel_expr_CheckedExpr* checked_expr,
       case cel_expr_Expr_expr_kind_select_expr: {
         const cel_expr_Expr* operand =
             cel_expr_Expr_Select_operand(cel_expr_Expr_select_expr(expr));
-        if (operand != nullptr) stack.push_back(operand);
+        if (operand != nullptr) stack.push_back({operand, depth + 1});
         break;
       }
       case cel_expr_Expr_expr_kind_call_expr: {
@@ -215,12 +228,14 @@ absl::Status ValidateCelExpr(const cel_expr_CheckedExpr* checked_expr,
         status = ValidateCall(checked_expr, cel_expr_Expr_id(expr), call);
         if (!status.ok()) return status;
         if (cel_expr_Expr_Call_has_target(call)) {
-          stack.push_back(cel_expr_Expr_Call_target(call));
+          stack.push_back({cel_expr_Expr_Call_target(call), depth + 1});
         }
         size_t num_args;
         const cel_expr_Expr* const* args =
             cel_expr_Expr_Call_args(call, &num_args);
-        stack.insert(stack.end(), args, args + num_args);
+        for (size_t i = 0; i < num_args; ++i) {
+          stack.push_back({args[i], depth + 1});
+        }
         break;
       }
       case cel_expr_Expr_expr_kind_list_expr: {
@@ -228,7 +243,9 @@ absl::Status ValidateCelExpr(const cel_expr_CheckedExpr* checked_expr,
         const cel_expr_Expr* const* elements =
             cel_expr_Expr_CreateList_elements(cel_expr_Expr_list_expr(expr),
                                               &num_elements);
-        stack.insert(stack.end(), elements, elements + num_elements);
+        for (size_t i = 0; i < num_elements; ++i) {
+          stack.push_back({elements[i], depth + 1});
+        }
         break;
       }
       case cel_expr_Expr_expr_kind_struct_expr: {
@@ -241,8 +258,8 @@ absl::Status ValidateCelExpr(const cel_expr_CheckedExpr* checked_expr,
               cel_expr_Expr_CreateStruct_Entry_map_key(entries[i]);
           const cel_expr_Expr* value =
               cel_expr_Expr_CreateStruct_Entry_value(entries[i]);
-          if (key != nullptr) stack.push_back(key);
-          if (value != nullptr) stack.push_back(value);
+          if (key != nullptr) stack.push_back({key, depth + 1});
+          if (value != nullptr) stack.push_back({value, depth + 1});
         }
         break;
       }
@@ -260,9 +277,8 @@ absl::Status ValidateCelExpr(const cel_expr_CheckedExpr* checked_expr,
 // Deterministically serializes checked_expr for use in equality
 // comparisons. Omits source_info (source positions, used only in error
 // messages), so that expressions differing only in formatting compare equal.
-// Returns nullopt if the expression exceeds upb's encoding depth limit (it
-// comes from the control plane, so may be arbitrarily deep) or if allocation
-// fails.
+// Returns nullopt if serialization fails (e.g. if a sub-message exceeds upb's
+// encoding depth limit or allocation fails).
 std::optional<std::string> SerializeForEquality(
     const cel_expr_CheckedExpr* checked_expr, upb_Arena* arena) {
   // The shallow clone shares all fields with checked_expr, so clearing

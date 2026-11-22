@@ -45,7 +45,8 @@ class CelProgram final {
   // - no comprehensions (e.g. exists(), all(), cel.bind());
   // - no string() conversions and no string, bytes or list concatenation;
   // - matches() patterns are constant, valid RE2 regexes with a program
-  //   size of at most 100.
+  //   size of at most 100;
+  // - the AST depth is at most 32.
   static absl::StatusOr<CelProgram> Create(
       const cel_expr_CheckedExpr* checked_expr, ResultType result_type);
 
