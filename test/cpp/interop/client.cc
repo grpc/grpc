@@ -20,6 +20,7 @@
 #include <grpc/support/alloc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
 #include <grpcpp/support/channel_arguments.h>
 
 #include <memory>
@@ -33,6 +34,7 @@
 #include "test/cpp/util/test_config.h"
 #include "absl/flags/flag.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
 
 ABSL_FLAG(bool, use_alts, false,
           "Whether to use alts. Enable alts will disable tls.");
@@ -137,6 +139,9 @@ ABSL_FLAG(
 ABSL_FLAG(std::string, service_config_json, "",
           "Disables service config lookups and sets the provided string as the "
           "default service config");
+ABSL_FLAG(std::string, google_c2p_universe_domain, "",
+          "Universe domain to configure for the google-c2p resolver. Optional; "
+          "when empty, no universe domain is explicitly configured.");
 
 using grpc::testing::CreateChannelForTestCase;
 using grpc::testing::GetServiceAccountJsonKey;
@@ -207,6 +212,16 @@ int main(int argc, char** argv) {
   LOG(INFO) << "Testing these cases: " << absl::GetFlag(FLAGS_test_case);
   int ret = 0;
 
+  std::string google_c2p_universe_domain =
+      absl::GetFlag(FLAGS_google_c2p_universe_domain);
+  if (!google_c2p_universe_domain.empty()) {
+    absl::Status status =
+        grpc::GoogleC2PSetUniverseDomain(google_c2p_universe_domain);
+    if (!status.ok()) {
+      LOG(ERROR) << "Failed to set google-c2p universe domain: " << status;
+      return 1;
+    }
+  }
   std::string test_case = absl::GetFlag(FLAGS_test_case);
   auto additional_metadata =
       ParseAdditionalMetadataFlag(absl::GetFlag(FLAGS_additional_metadata));

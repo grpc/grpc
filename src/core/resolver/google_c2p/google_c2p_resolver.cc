@@ -14,7 +14,12 @@
 // limitations under the License.
 //
 
+#include "src/core/resolver/google_c2p/google_c2p_resolver.h"
+
+#include <grpc/grpc.h>
+#include <grpc/status.h>
 #include <grpc/support/json.h>
+#include <grpc/support/string_util.h>
 
 #include <cstdint>
 #include <memory>
@@ -38,15 +43,20 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/no_destruct.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/work_serializer.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "absl/base/thread_annotations.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -57,6 +67,27 @@ namespace grpc_core {
 namespace {
 
 const char* kC2PAuthority = "traffic-director-c2p.xds.googleapis.com";
+constexpr absl::string_view kDefaultUniverseDomain = "googleapis.com";
+
+struct GoogleC2PConfig {
+  Mutex mu;
+  std::optional<std::string> universe_domain ABSL_GUARDED_BY(mu);
+  std::shared_ptr<GrpcXdsBootstrap> bootstrap ABSL_GUARDED_BY(mu);
+};
+
+GoogleC2PConfig* GetGoogleC2PConfig() {
+  static NoDestruct<GoogleC2PConfig> config;
+  return config.get();
+}
+
+std::string GetOrSetDefaultUniverseDomain() {
+  GoogleC2PConfig* config = GetGoogleC2PConfig();
+  MutexLock lock(config->mu);
+  if (!config->universe_domain.has_value()) {
+    config->universe_domain = std::string(kDefaultUniverseDomain);
+  }
+  return *config->universe_domain;
+}
 
 class GoogleCloud2ProdResolver final : public Resolver {
  public:
@@ -84,6 +115,7 @@ class GoogleCloud2ProdResolver final : public Resolver {
 
   // Used to hold state between ctor and StartLocked().
   std::string xds_uri_;
+  std::string universe_domain_;
   ChannelArgs args_;
 
   OrphanablePtr<GcpMetadataQuery> zone_query_;
@@ -140,6 +172,8 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
       metadata_server_name_ = std::move(*test_only_metadata_server_override);
     }
   }
+  // Lock in the universe domain (defaulting to "googleapis.com" if not set).
+  universe_domain_ = GetOrSetDefaultUniverseDomain();
   // Create xds resolver.
   xds_uri_ = federation_enabled
                  ? absl::StrCat("xds://", kC2PAuthority, "/", name_to_resolve)
@@ -217,15 +251,17 @@ std::shared_ptr<GrpcXdsBootstrap> GoogleCloud2ProdResolver::ConstructBootstrap()
       {"TRAFFICDIRECTOR_DIRECTPATH_C2P_IPV6_CAPABLE", Json::FromBool(true)},
   });
   // Allow the TD server uri to be overridden for testing purposes.
+  // Evaluated after default universe domain locking so tests still exercise
+  // the default value logic.
   auto override_server =
       GetEnv("GRPC_TEST_ONLY_GOOGLE_C2P_RESOLVER_TRAFFIC_DIRECTOR_URI");
-  const char* server_uri =
+  std::string server_uri =
       override_server.has_value() && !override_server->empty()
-          ? override_server->c_str()
-          : "directpath-pa.googleapis.com";
+          ? std::move(*override_server)
+          : absl::StrCat("directpath-pa.", universe_domain_);
   Json xds_server = Json::FromArray({
       Json::FromObject({
-          {"server_uri", Json::FromString(server_uri)},
+          {"server_uri", Json::FromString(std::move(server_uri))},
           {"channel_creds",
            Json::FromArray({
                Json::FromObject({
@@ -255,10 +291,17 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
   // xds resolver calls GrpcXdsClient::GetOrCreate(), it will get back
   // the same instance rather than creating one with the normal
   // bootstrap config from env vars.
-  static NoDestruct<std::shared_ptr<GrpcXdsBootstrap>> bootstrap(
-      ConstructBootstrap());
+  GoogleC2PConfig* config = GetGoogleC2PConfig();
+  std::shared_ptr<GrpcXdsBootstrap> bootstrap;
+  {
+    MutexLock lock(config->mu);
+    if (config->bootstrap == nullptr) {
+      config->bootstrap = ConstructBootstrap();
+    }
+    bootstrap = config->bootstrap;
+  }
   auto xds_client = GrpcXdsClient::GetOrCreate(
-      xds_uri_, args_, "google-c2p resolver", *bootstrap);
+      xds_uri_, args_, "google-c2p resolver", std::move(bootstrap));
   args_ = ChannelArgs();  // Don't need the args anymore.
   // Now start xDS resolver.
   child_resolver_->StartLocked();
@@ -312,6 +355,46 @@ class ExperimentalGoogleCloud2ProdResolverFactory final
 
 }  // namespace
 
+absl::Status SetGoogleC2PUniverseDomain(absl::string_view universe_domain) {
+  if (universe_domain.empty()) {
+    return absl::InvalidArgumentError("universe domain must not be empty");
+  }
+  GoogleC2PConfig* config = GetGoogleC2PConfig();
+  MutexLock lock(config->mu);
+  if (!config->universe_domain.has_value()) {
+    config->universe_domain = std::string(universe_domain);
+    return absl::OkStatus();
+  }
+  if (*config->universe_domain == universe_domain) {
+    return absl::OkStatus();
+  }
+  return absl::FailedPreconditionError(
+      absl::StrCat("universe domain already set to ", *config->universe_domain,
+                   "; cannot change to ", universe_domain));
+}
+
+std::optional<std::string> GetGoogleC2PUniverseDomainForTesting() {
+  GoogleC2PConfig* config = GetGoogleC2PConfig();
+  MutexLock lock(config->mu);
+  return config->universe_domain;
+}
+
+std::optional<std::string> GetGoogleC2PBootstrapServerUriForTesting() {
+  GoogleC2PConfig* config = GetGoogleC2PConfig();
+  MutexLock lock(config->mu);
+  if (config->bootstrap == nullptr) return std::nullopt;
+  auto servers = config->bootstrap->servers();
+  if (servers.empty()) return std::nullopt;
+  return servers.front()->target()->server_uri();
+}
+
+void ResetGoogleC2PResolverForTesting() {
+  GoogleC2PConfig* config = GetGoogleC2PConfig();
+  MutexLock lock(config->mu);
+  config->universe_domain.reset();
+  config->bootstrap.reset();
+}
+
 void RegisterCloud2ProdResolver(CoreConfiguration::Builder* builder) {
   builder->resolver_registry()->RegisterResolverFactory(
       std::make_unique<GoogleCloud2ProdResolverFactory>());
@@ -320,3 +403,31 @@ void RegisterCloud2ProdResolver(CoreConfiguration::Builder* builder) {
 }
 
 }  // namespace grpc_core
+
+grpc_status_code grpc_google_c2p_set_universe_domain(
+    const char* universe_domain, char** error_message) {
+  if (error_message != nullptr) {
+    *error_message = nullptr;
+  }
+  if (universe_domain == nullptr) {
+    if (error_message != nullptr) {
+      *error_message = gpr_strdup("universe domain must not be empty");
+    }
+    return GRPC_STATUS_INVALID_ARGUMENT;
+  }
+  absl::Status status = grpc_core::SetGoogleC2PUniverseDomain(universe_domain);
+  if (status.ok()) {
+    return GRPC_STATUS_OK;
+  }
+  if (error_message != nullptr) {
+    *error_message = gpr_strdup(std::string(status.message()).c_str());
+  }
+  switch (status.code()) {
+    case absl::StatusCode::kInvalidArgument:
+      return GRPC_STATUS_INVALID_ARGUMENT;
+    case absl::StatusCode::kFailedPrecondition:
+      return GRPC_STATUS_FAILED_PRECONDITION;
+    default:
+      return GRPC_STATUS_UNKNOWN;
+  }
+}

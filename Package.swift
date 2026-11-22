@@ -1973,6 +1973,7 @@ let package = Package(
         "src/core/resolver/fake/fake_resolver.cc",
         "src/core/resolver/fake/fake_resolver.h",
         "src/core/resolver/google_c2p/google_c2p_resolver.cc",
+        "src/core/resolver/google_c2p/google_c2p_resolver.h",
         "src/core/resolver/polling_resolver.cc",
         "src/core/resolver/polling_resolver.h",
         "src/core/resolver/resolver.cc",

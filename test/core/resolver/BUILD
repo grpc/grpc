@@ -125,6 +125,7 @@ grpc_cc_test(
     name = "google_c2p_resolver_test",
     srcs = ["google_c2p_resolver_test.cc"],
     external_deps = [
+        "absl/status",
         "absl/strings:str_format",
         "gtest",
     ],
@@ -133,6 +134,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//src/core:env",
+        "//src/core:grpc_resolver_c2p",
         "//test/core/test_util:fake_udp_and_tcp_server",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",

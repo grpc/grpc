@@ -1221,6 +1221,7 @@ libs:
   - src/core/resolver/dns/service_config_helper.h
   - src/core/resolver/endpoint_addresses.h
   - src/core/resolver/fake/fake_resolver.h
+  - src/core/resolver/google_c2p/google_c2p_resolver.h
   - src/core/resolver/polling_resolver.h
   - src/core/resolver/resolver.h
   - src/core/resolver/resolver_factory.h

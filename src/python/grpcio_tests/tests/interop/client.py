@@ -20,6 +20,7 @@ from absl.flags import argparse_flags
 from google import auth as google_auth
 from google.auth import jwt as google_auth_jwt
 import grpc
+import grpc.experimental
 
 from src.proto.grpc.testing import test_pb2_grpc
 from tests.interop import methods
@@ -91,6 +92,15 @@ def parse_interop_client_args(argv):
             + "grpc::CreateTestChannel, that configures the grpclb LB policy "
             + "with a child policy being the value of this flag (e.g."
             " round_robin " + "or pick_first)."
+        ),
+    )
+    parser.add_argument(
+        "--google_c2p_universe_domain",
+        default="",
+        type=str,
+        help=(
+            "Universe domain to configure for the google-c2p resolver. "
+            "Optional; when empty, no universe domain is explicitly configured."
         ),
     )
     return parser.parse_args(argv[1:])
@@ -187,7 +197,10 @@ def get_secure_channel_parameters(args):
 
 
 def _create_channel(args):
-    target = "{}:{}".format(args.server_host, args.server_port)
+    if args.server_port == 0:
+        target = args.server_host
+    else:
+        target = "{}:{}".format(args.server_host, args.server_port)
 
     if (
         args.use_tls
@@ -216,6 +229,10 @@ def _test_case_from_arg(test_case_arg):
 
 
 def test_interoperability(args):
+    if args.google_c2p_universe_domain:
+        grpc.experimental.google_c2p_set_universe_domain(
+            args.google_c2p_universe_domain
+        )
     channel = _create_channel(args)
     stub = create_stub(channel, args)
     test_case = _test_case_from_arg(args.test_case)

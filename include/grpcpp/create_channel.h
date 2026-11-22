@@ -26,8 +26,25 @@
 #include <grpcpp/support/config.h>
 
 #include <memory>
+#include <string>
+
+#include "absl/status/status.h"
 
 namespace grpc {
+/// Inform the gRPC library of the universe domain in which the process is
+/// running (it is the caller's responsibility to ensure that this is correct).
+/// This setting is used by the "google-c2p" resolver (the resolver used for
+/// URIs with "google-c2p" schemes) to configure its dependencies. If a gRPC
+/// channel is created with the "google-c2p" URI scheme and this API has not
+/// yet been invoked, then gRPC configures the universe domain as
+/// "googleapis.com".
+///
+/// \param universe_domain DNS domain for Google APIs in the current universe
+/// (for example, "googleapis.com").
+/// \return absl::OkStatus() if the universe domain has not yet been configured
+/// or was already configured to the same value; otherwise returns a non-OK
+/// status.
+absl::Status GoogleC2PSetUniverseDomain(std::string universe_domain);
 /// Create a new \a Channel pointing to \a target.
 ///
 /// \param target The URI of the endpoint to connect to.
