@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.86.0-dev
+PROJECT_NUMBER         = 1.87.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1723,6 +1723,9 @@ src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xd
 src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h \
 src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.c \
 src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.h \
+src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb.h \
+src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb_minitable.c \
+src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb_minitable.h \
 src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h \
 src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb_minitable.c \
 src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb_minitable.h \

@@ -302,6 +302,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/common/v3/common.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb_minitable.c \
@@ -1522,7 +1523,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.86.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.87.0dev\""')
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/call)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz/v2tov1)
@@ -1601,6 +1602,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/tls/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/common/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/pick_first/v3)

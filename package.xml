@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.86.0dev</release>
-  <api>1.86.0dev</api>
+  <release>1.87.0dev</release>
+  <api>1.87.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.86.0 update
+- gRPC Core 1.87.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -735,6 +735,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb_minitable.h" role="src" />

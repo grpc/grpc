@@ -133,6 +133,29 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "autosharding_test_server",
+    testonly = True,
+    srcs = ["autosharding_test_server.cc"],
+    hdrs = ["autosharding_test_server.h"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log",
+        "absl/strings",
+    ],
+    deps = [
+        ":counted_service",
+        "//:autosharding_cc_grpc",
+        "//:autosharding_cc_proto",
+        "//:gpr",
+        "//:grpc++",
+        "//src/core:grpc_check",
+        "//src/core:sync",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_library(
     name = "end2end_test_utils",
     testonly = True,
     hdrs = ["end2end_test_utils.h"],
@@ -921,6 +944,48 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "autosharding_end2end_test",
+    srcs = ["autosharding_end2end_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/time",
+        "gtest",
+    ],
+    tags = [
+        "cpp_end2end_test",
+        "cpp_lb_end2end_test",
+        "no_test_ios",
+    ],
+    deps = [
+        ":autosharding_test_server",
+        ":counted_service",
+        ":test_service_impl",
+        "//:endpoint_addresses",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc++_public_hdrs",
+        "//:grpc_core_credentials_header",
+        "//:grpc_public_hdrs",
+        "//:grpc_resolver_fake",
+        "//:grpc_service_config_impl",
+        "//:parse_address",
+        "//:ref_counted_ptr",
+        "//:uri",
+        "//src/core:channel_args",
+        "//src/core:channel_factory",
+        "//src/core:grpc_check",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+        "//test/core/test_util:scoped_env_var",
+    ],
+)
+
+grpc_cc_test(
     name = "rls_end2end_test",
     srcs = ["rls_end2end_test.cc"],
     external_deps = [
@@ -1678,6 +1743,25 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:client.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
+        "//test/core/tsi/test_creds/mldsa:ca_mldsa44.pem",
+        "//test/core/tsi/test_creds/mldsa:ca_mldsa65.pem",
+        "//test/core/tsi/test_creds/mldsa:ca_mldsa87.pem",
+        "//test/core/tsi/test_creds/mldsa:client_chain_mldsa87.key",
+        "//test/core/tsi/test_creds/mldsa:client_chain_mldsa87.pem",
+        "//test/core/tsi/test_creds/mldsa:client_mldsa44.key",
+        "//test/core/tsi/test_creds/mldsa:client_mldsa44.pem",
+        "//test/core/tsi/test_creds/mldsa:client_mldsa65.key",
+        "//test/core/tsi/test_creds/mldsa:client_mldsa65.pem",
+        "//test/core/tsi/test_creds/mldsa:client_mldsa87.key",
+        "//test/core/tsi/test_creds/mldsa:client_mldsa87.pem",
+        "//test/core/tsi/test_creds/mldsa:server_chain_mldsa87.key",
+        "//test/core/tsi/test_creds/mldsa:server_chain_mldsa87.pem",
+        "//test/core/tsi/test_creds/mldsa:server_mldsa44.key",
+        "//test/core/tsi/test_creds/mldsa:server_mldsa44.pem",
+        "//test/core/tsi/test_creds/mldsa:server_mldsa65.key",
+        "//test/core/tsi/test_creds/mldsa:server_mldsa65.pem",
+        "//test/core/tsi/test_creds/mldsa:server_mldsa87.key",
+        "//test/core/tsi/test_creds/mldsa:server_mldsa87.pem",
     ],
     external_deps = [
         "gtest",

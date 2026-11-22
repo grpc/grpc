@@ -138,7 +138,7 @@ def get_commit_log(prevRelLabel, relBranch):
 
 
 def get_pr_data(pr_num):
-    """Get the PR data from github. Return 'error' on exception"""
+    """Get the PR data from github. Return 'not_found' on 404 or 'error' on failure."""
     http = urllib3.PoolManager(
         retries=urllib3.Retry(total=7, backoff_factor=1), timeout=4.0
     )
@@ -149,6 +149,15 @@ def get_pr_data(pr_num):
         )
     except urllib3.exceptions.HTTPError as e:
         print("Request error:", e.reason)
+        return "error"
+    if response.status == 404:
+        print(f"WARNING: PR #{pr_num} returned HTTP 404 (Not Found).")
+        return "not_found"
+    if response.status != 200:
+        print(
+            f"HTTP {response.status} error getting data for PR {pr_num}:"
+            f" {response.data.decode('utf-8', 'ignore')}"
+        )
         return "error"
     return json.loads(response.data.decode("utf-8"))
 
@@ -161,6 +170,7 @@ def get_pr_titles(gitLogs):
     all_commits_set = set(re.findall(match_commit, gitLogs, re.MULTILINE))
 
     error_count = 0
+    pr_to_commit = {}
     # PRs with merge commits
     match_merge_pr = "^([a-fA-F0-9]+) .*Merge pull request #(\d+)"
     matches = re.findall(match_merge_pr, gitLogs, re.MULTILINE)
@@ -168,6 +178,7 @@ def get_pr_titles(gitLogs):
     prlist_merge_pr = []
     if matches:
         merge_commits, prlist_merge_pr = zip(*matches)
+        pr_to_commit.update({str(pr): commit for commit, pr in matches})
     merge_commits_set = set(merge_commits)
     print("\nPRs matching 'Merge pull request #<num>':")
     print(prlist_merge_pr)
@@ -176,8 +187,11 @@ def get_pr_titles(gitLogs):
     # PRs using GitHub's squash & merge feature
     match_sq = "^([a-fA-F0-9]+) .*\(#(\d+)\)$"
     matches = re.findall(match_sq, gitLogs, re.MULTILINE)
+    sq_commits = []
+    prlist_sq = []
     if matches:
         sq_commits, prlist_sq = zip(*matches)
+        pr_to_commit.update({str(pr): commit for commit, pr in matches})
     sq_commits_set = set(sq_commits)
     print("\nPRs matching '[PR Description](#<num>)$'")
     print(prlist_sq)
@@ -188,6 +202,15 @@ def get_pr_titles(gitLogs):
         pr_num = str(pr_num)
         print(("---------- getting data for PR " + pr_num))
         pr = get_pr_data(pr_num)
+        if pr == "not_found":
+            # A merged PR can return 404 if it was removed or the author's
+            # GitHub account was deleted/suspended.
+            print(
+                f"\n***WARNING*** PR {pr_num} not found (HTTP 404); falling"
+                " back to commit info.\n"
+            )
+            langs_pr["nopr"].append(get_commit_detail(pr_to_commit[pr_num]))
+            continue
         if pr == "error":
             print(
                 ("\n***ERROR*** Error in getting data for PR " + pr_num + "\n")
