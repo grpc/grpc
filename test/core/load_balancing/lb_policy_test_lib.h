@@ -40,6 +40,7 @@
 #include <vector>
 
 #include "src/core/client_channel/client_channel_internal.h"
+#include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/config/core_configuration.h"
@@ -374,8 +375,13 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return std::exchange(requested_connection_, false);
     }
 
+    void set_fail_creation(bool fail_creation) {
+      fail_creation_ = fail_creation;
+    }
+
     // To be invoked by FakeHelper.
     RefCountedPtr<SubchannelInterface> CreateSubchannel() {
+      if (fail_creation_) return nullptr;
       return MakeRefCounted<FakeSubchannel>(this);
     }
 
@@ -413,6 +419,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     ConnectivityStateTracker state_tracker_;
 
     bool requested_connection_ = false;
+
+    bool fail_creation_ = false;
 
     std::set<OrcaWatcher*> orca_watchers_;
   };
@@ -522,11 +530,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         const grpc_resolved_address& address,
-        const ChannelArgs& /*per_address_args*/,
-        const ChannelArgs& args) override {
-      // TODO(roth): Need to use per_address_args here.
-      SubchannelKey key(
-          address, args.RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX));
+        const ChannelArgs& per_address_args, const ChannelArgs& args) override {
+      SubchannelKey key(address, MakeSubchannelArgs(args, per_address_args));
       auto it = test_->subchannel_pool_.find(key);
       if (it == test_->subchannel_pool_.end()) {
         auto address_uri = grpc_sockaddr_to_uri(&address);
@@ -1307,10 +1312,20 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         });
   }
 
+  // Returns the args of the subchannel that the channel creates for
+  // channel_args and per_address_args.
+  static ChannelArgs MakeSubchannelArgs(const ChannelArgs& channel_args,
+                                        const ChannelArgs& per_address_args) {
+    return Subchannel::MakeSubchannelArgs(channel_args, per_address_args,
+                                          /*subchannel_pool=*/nullptr,
+                                          /*channel_default_authority=*/"");
+  }
+
   // Returns the entry in the subchannel pool, or null if not present.
   SubchannelState* FindSubchannel(absl::string_view address,
                                   const ChannelArgs& args = ChannelArgs()) {
-    SubchannelKey key(MakeAddress(address), args);
+    SubchannelKey key(MakeAddress(address),
+                      MakeSubchannelArgs(args, ChannelArgs()));
     SubchannelState* subchannel = nullptr;
     TickUntil([&]() {
       auto it = subchannel_pool_.find(key);
@@ -1328,7 +1343,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // pool, or by being created by another LB policy in this channel).
   SubchannelState* CreateSubchannel(absl::string_view address,
                                     const ChannelArgs& args = ChannelArgs()) {
-    SubchannelKey key(MakeAddress(address), args);
+    SubchannelKey key(MakeAddress(address),
+                      MakeSubchannelArgs(args, ChannelArgs()));
     auto it = subchannel_pool_
                   .emplace(std::piecewise_construct, std::forward_as_tuple(key),
                            std::forward_as_tuple(address, this))
