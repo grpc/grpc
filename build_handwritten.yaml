@@ -18,7 +18,7 @@ settings:
   '#14': The versions below can be retrieved from third_party/protobuf/version.json.
   core_version: 59.0.0
   csharp_major_version: 2
-  g_stands_for: googol
+  g_stands_for: gannet
   protobuf_version:
     csharp: 3.35.1
     objectivec: 5.35.1
