@@ -44,6 +44,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/read_context.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -3237,6 +3238,66 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportRecordsStats) {
       endpoint()->NewStep();
   AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/1u);
   teardown_step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest,
+       TestHttp2ServerTransportMaxSecurityFramesPerReadCycle) {
+  // Verifies that up to kCurrentCycleMaxSecurityFrames SECURITY frames are
+  // allowed per read cycle, completing a write cycle resets the counter, and
+  // exceeding kCurrentCycleMaxSecurityFrames in a single cycle closes the
+  // connection with GOAWAY(ENHANCE_YOUR_CALM).
+  ExecCtx ctx;
+  InitTransport(GetChannelArgs());
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // Client sends kCurrentCycleMaxSecurityFrames SECURITY frames followed by a
+  // SETTINGS frame. Server writes a SETTINGS ACK back, completing a write cycle
+  // and resetting the read-cycle counters.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step1 =
+      endpoint()->NewStep();
+  step1->ThenPerformRead([this](SliceBuffer& buf) {
+    for (uint32_t i = 0u; i < kCurrentCycleMaxSecurityFrames; ++i) {
+      EventEngineSlice frame =
+          helper_.SerializedSecurityFrame((i % 2u == 0u) ? "" : "key");
+      buf.Append(Slice(frame.TakeCSlice()));
+    }
+    EventEngineSlice settings = helper_.SerializedSettingsFrame({});
+    buf.Append(Slice(settings.TakeCSlice()));
+  });
+  step1->ThenExpectWrite({
+      helper_.SerializedSettingsFrameAck(),
+  });
+  step1->Wait();
+  event_engine()->Tick();
+
+  // Verify that another kCurrentCycleMaxSecurityFrames frames from client will
+  // not trigger a GOAWAY because the counter was reset.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step2 =
+      endpoint()->NewStep();
+  step2->ThenPerformRead([this](SliceBuffer& buf) {
+    for (uint32_t i = 0u; i < kCurrentCycleMaxSecurityFrames; ++i) {
+      EventEngineSlice frame =
+          helper_.SerializedSecurityFrame((i % 2u == 0u) ? "" : "payload");
+      buf.Append(Slice(frame.TakeCSlice()));
+    }
+  });
+  step2->Wait();
+  event_engine()->Tick();
+
+  // One more SECURITY frame must trigger GOAWAY(ENHANCE_YOUR_CALM).
+  const std::shared_ptr<EventSequenceEndpoint::Step> step3 =
+      endpoint()->NewStep();
+  step3->ThenPerformRead({
+      helper_.SerializedSecurityFrame("overflow"),
+  });
+  step3->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/GrpcErrors::kTooManySecurityFrames,
+          /*last_stream_id=*/0u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm)),
+  });
+  step3->Wait();
 }
 
 }  // namespace testing

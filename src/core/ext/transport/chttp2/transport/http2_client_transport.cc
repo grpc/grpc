@@ -563,10 +563,11 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
 
 Http2Status Http2ClientTransport::ProcessIncomingFrame(
     Http2SecurityFrame&& frame) {
-  if (settings_->IsSecurityFrameExpected()) {
+  Http2Status status = read_context_.OnSecurityFrameReceived();
+  if (GPR_LIKELY(status.IsOk() && settings_->IsSecurityFrameExpected())) {
     security_frame_handler_->ProcessPayload(std::move(frame.payload));
   }
-  return Http2Status::Ok();
+  return status;
 }
 
 Http2Status Http2ClientTransport::ProcessIncomingFrame(
