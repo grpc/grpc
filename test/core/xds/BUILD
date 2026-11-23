@@ -759,7 +759,6 @@ grpc_cc_test(
         "@envoy_api//envoy/extensions/filters/http/rbac/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/stateful_session/v3:pkg_cc_proto",
-        "@envoy_api//envoy/extensions/grpc_service/channel_credentials/insecure/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg_cc_proto",
         "@envoy_api//envoy/type/http/v3:pkg_cc_proto",
         "@envoy_api//envoy/type/matcher/v3:pkg_cc_proto",

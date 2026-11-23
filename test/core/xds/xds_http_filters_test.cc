@@ -44,7 +44,6 @@
 #include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "envoy/extensions/filters/http/stateful_session/v3/stateful_session.pb.h"
-#include "envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.pb.h"
 #include "envoy/extensions/http/stateful_session/cookie/v3/cookie.pb.h"
 #include "envoy/type/http/v3/cookie.pb.h"
 #include "envoy/type/matcher/v3/http_inputs.pb.h"
@@ -100,6 +99,7 @@ using ::envoy::extensions::filters::common::matcher::action::v3::SkipFilter;
 using ::envoy::extensions::filters::http::composite::v3::Composite;
 using ::envoy::extensions::filters::http::composite::v3::ExecuteFilterAction;
 using ::envoy::extensions::filters::http::ext_authz::v3::ExtAuthz;
+using ::envoy::extensions::filters::http::ext_authz::v3::ExtAuthzPerRoute;
 using ::envoy::extensions::filters::http::ext_proc::v3::ExternalProcessor;
 using ::envoy::extensions::filters::http::ext_proc::v3::ExtProcPerRoute;
 using ::envoy::extensions::filters::http::fault::v3::HTTPFault;
@@ -3787,20 +3787,6 @@ TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigEmptyHeaderLists) {
             "timeout=\xE2\x88\x9E}}");
 }
 
-TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigMissingGrpcService) {
-  XdsExtension extension = MakeXdsExtension(ExtAuthz());
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
-  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
-                                       "errors validating filter config");
-  EXPECT_EQ(
-      status,
-      absl::InvalidArgumentError(
-          "errors validating filter config: ["
-          "field:http_filter.value[envoy.extensions.filters.http.ext_authz.v3"
-          ".ExtAuthz].grpc_service error:field not set]"));
-}
-
 TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigInvalidGrpcService) {
   ExtAuthz ext_authz;
   auto* grpc_service = ext_authz.mutable_grpc_service();
@@ -3816,27 +3802,6 @@ TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigInvalidGrpcService) {
           "errors validating filter config: ["
           "field:http_filter.value[envoy.extensions.filters.http.ext_authz.v3"
           ".ExtAuthz].grpc_service.google_grpc error:field not set]"));
-}
-
-// The xDS server is not trusted, so the target must be present in the
-// bootstrap's allowed_grpc_services map.
-TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigGrpcServiceTargetNotAllowed) {
-  ExtAuthz ext_authz;
-  auto* grpc_service = ext_authz.mutable_grpc_service();
-  grpc_service->mutable_google_grpc()->set_target_uri("dns:server.example.com");
-  XdsExtension extension = MakeXdsExtension(ext_authz);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
-  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
-                                       "errors validating filter config");
-  EXPECT_EQ(
-      status,
-      absl::InvalidArgumentError(
-          "errors validating filter config: ["
-          "field:http_filter.value[envoy.extensions.filters.http.ext_authz.v3"
-          ".ExtAuthz].grpc_service.google_grpc.target_uri "
-          "error:service not present in \"allowed_grpc_services\" "
-          "in bootstrap config]"));
 }
 
 TEST_F(XdsExtAuthzFilterTest,
@@ -3917,48 +3882,6 @@ TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigInvalidDisallowedHeaders) {
           "error:invalid string matcher]"));
 }
 
-TEST_F(XdsExtAuthzFilterTest,
-       ParseTopLevelConfigInvalidAllowedHeadersInvalidRegex) {
-  ExtAuthz ext_authz;
-  auto* grpc_service = ext_authz.mutable_grpc_service();
-  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
-  auto* pattern = ext_authz.mutable_allowed_headers()->add_patterns();
-  pattern->mutable_safe_regex()->set_regex("[");
-  XdsExtension extension = MakeXdsExtension(ext_authz);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
-  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
-                                       "errors validating filter config");
-  EXPECT_EQ(
-      status,
-      absl::InvalidArgumentError(
-          "errors validating filter config: ["
-          "field:http_filter.value[envoy.extensions.filters.http.ext_authz.v3"
-          ".ExtAuthz].allowed_headers.patterns[0] "
-          "error:Invalid regex string specified in matcher: missing ]: []"));
-}
-
-TEST_F(XdsExtAuthzFilterTest,
-       ParseTopLevelConfigInvalidDisallowedHeadersInvalidRegex) {
-  ExtAuthz ext_authz;
-  auto* grpc_service = ext_authz.mutable_grpc_service();
-  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
-  auto* pattern = ext_authz.mutable_disallowed_headers()->add_patterns();
-  pattern->mutable_safe_regex()->set_regex("[");
-  XdsExtension extension = MakeXdsExtension(ext_authz);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
-  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
-                                       "errors validating filter config");
-  EXPECT_EQ(
-      status,
-      absl::InvalidArgumentError(
-          "errors validating filter config: ["
-          "field:http_filter.value[envoy.extensions.filters.http.ext_authz.v3"
-          ".ExtAuthz].disallowed_headers.patterns[0] "
-          "error:Invalid regex string specified in matcher: missing ]: []"));
-}
-
 // Note: The ".header_mutation_rules" segment in the error path is added by
 // the ParseHeaderMutationRules() helper shared with ext_proc; it does not
 // correspond to a field of the HeaderMutationRules proto.
@@ -4022,194 +3945,6 @@ TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigIgnoredFields) {
             "timeout=\xE2\x88\x9E}}");
 }
 
-// filter_enabled is converted to parts per million for every denominator.
-TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigFilterEnabledDenominators) {
-  struct TestCase {
-    uint32_t numerator;
-    envoy::type::v3::FractionalPercent::DenominatorType denominator;
-    uint32_t expected_parts_per_million;
-  };
-  for (const TestCase& test_case : {
-           TestCase{25, envoy::type::v3::FractionalPercent::HUNDRED, 250000},
-           TestCase{25, envoy::type::v3::FractionalPercent::TEN_THOUSAND, 2500},
-           TestCase{25, envoy::type::v3::FractionalPercent::MILLION, 25},
-       }) {
-    ExtAuthz ext_authz;
-    auto* grpc_service = ext_authz.mutable_grpc_service();
-    grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
-    auto* percent = ext_authz.mutable_filter_enabled()->mutable_default_value();
-    percent->set_numerator(test_case.numerator);
-    percent->set_denominator(test_case.denominator);
-    XdsExtension extension = MakeXdsExtension(ext_authz);
-    auto config =
-        factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
-    ASSERT_TRUE(errors_.ok()) << errors_.status(
-        absl::StatusCode::kInvalidArgument, "unexpected errors");
-    ASSERT_NE(config, nullptr);
-    EXPECT_EQ(DownCast<const ExtAuthzFilter::Config&>(*config).filter_enabled,
-              test_case.expected_parts_per_million)
-        << test_case.denominator;
-  }
-}
-
-// filter_enabled is capped at 100%.
-TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigFilterEnabledCappedAt100) {
-  ExtAuthz ext_authz;
-  auto* grpc_service = ext_authz.mutable_grpc_service();
-  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
-  auto* percent = ext_authz.mutable_filter_enabled()->mutable_default_value();
-  percent->set_numerator(150);
-  percent->set_denominator(envoy::type::v3::FractionalPercent::HUNDRED);
-  XdsExtension extension = MakeXdsExtension(ext_authz);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
-  ASSERT_TRUE(errors_.ok()) << errors_.status(
-      absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_NE(config, nullptr);
-  EXPECT_EQ(DownCast<const ExtAuthzFilter::Config&>(*config).filter_enabled,
-            1000000u);
-}
-
-// An unset status_on_error defaults to HTTP 403, i.e., PERMISSION_DENIED.
-TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigStatusOnErrorUnset) {
-  ExtAuthz ext_authz;
-  auto* grpc_service = ext_authz.mutable_grpc_service();
-  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
-  XdsExtension extension = MakeXdsExtension(ext_authz);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
-  ASSERT_TRUE(errors_.ok()) << errors_.status(
-      absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_NE(config, nullptr);
-  EXPECT_EQ(DownCast<const ExtAuthzFilter::Config&>(*config).status_on_error,
-            GRPC_STATUS_PERMISSION_DENIED);
-}
-
-// The grpc_service timeout is used as the deadline of the Check call (A102).
-TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigGrpcServiceTimeout) {
-  ExtAuthz ext_authz;
-  auto* grpc_service = ext_authz.mutable_grpc_service();
-  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
-  grpc_service->mutable_timeout()->set_seconds(5);
-  XdsExtension extension = MakeXdsExtension(ext_authz);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
-  ASSERT_TRUE(errors_.ok()) << errors_.status(
-      absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_NE(config, nullptr);
-  const auto& target = std::get<GrpcXdsServerTarget>(
-      DownCast<const ExtAuthzFilter::Config&>(*config).channel_info);
-  EXPECT_EQ(target.timeout(), Duration::Seconds(5));
-}
-
-// The grpc_service timeout must be > 0 (A102).
-TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigGrpcServiceTimeoutZero) {
-  ExtAuthz ext_authz;
-  auto* grpc_service = ext_authz.mutable_grpc_service();
-  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
-  grpc_service->mutable_timeout()->set_seconds(0);
-  XdsExtension extension = MakeXdsExtension(ext_authz);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
-  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
-                                       "errors validating filter config");
-  EXPECT_EQ(
-      status,
-      absl::InvalidArgumentError(
-          "errors validating filter config: ["
-          "field:http_filter.value[envoy.extensions.filters.http.ext_authz.v3"
-          ".ExtAuthz].grpc_service.timeout "
-          "error:duration must be positive]"));
-}
-
-// A negative grpc_service timeout is an invalid Duration and not > 0 (A102).
-TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigGrpcServiceTimeoutNegative) {
-  ExtAuthz ext_authz;
-  auto* grpc_service = ext_authz.mutable_grpc_service();
-  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
-  grpc_service->mutable_timeout()->set_seconds(-1);
-  XdsExtension extension = MakeXdsExtension(ext_authz);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
-  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
-                                       "errors validating filter config");
-  EXPECT_EQ(
-      status,
-      absl::InvalidArgumentError(
-          "errors validating filter config: ["
-          "field:http_filter.value[envoy.extensions.filters.http.ext_authz.v3"
-          ".ExtAuthz].grpc_service.timeout "
-          "error:duration must be positive; "
-          "field:http_filter.value[envoy.extensions.filters.http.ext_authz.v3"
-          ".ExtAuthz].grpc_service.timeout.seconds "
-          "error:value must be in the range [0, 315576000000]]"));
-}
-
-// The xDS server is not trusted, so the initial_metadata in the
-// grpc_service is ignored.
-TEST_F(XdsExtAuthzFilterTest,
-       ParseTopLevelConfigUntrustedServerIgnoresInitialMetadata) {
-  ExtAuthz ext_authz;
-  auto* grpc_service = ext_authz.mutable_grpc_service();
-  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
-  auto* header = grpc_service->add_initial_metadata();
-  header->set_key("foo");
-  header->set_value("bar");
-  XdsExtension extension = MakeXdsExtension(ext_authz);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
-  ASSERT_TRUE(errors_.ok()) << errors_.status(
-      absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_NE(config, nullptr);
-  const auto& target = std::get<GrpcXdsServerTarget>(
-      DownCast<const ExtAuthzFilter::Config&>(*config).channel_info);
-  EXPECT_THAT(target.initial_metadata(), ::testing::IsEmpty());
-}
-
-// The xDS server is trusted, so the initial_metadata and the credentials in
-// the grpc_service are used.
-TEST_F(XdsExtAuthzFilterTest,
-       ParseTopLevelConfigTrustedServerUsesInitialMetadata) {
-  auto bootstrap = GrpcXdsBootstrapBuilder::Build(
-      "{\n"
-      "  \"xds_servers\": [\n"
-      "    {\n"
-      "      \"server_uri\": \"xds.example.com\",\n"
-      "      \"server_features\": [\"trusted_xds_server\"],\n"
-      "      \"channel_creds\": [\n"
-      "        {\"type\": \"google_default\"}\n"
-      "      ]\n"
-      "    }\n"
-      "  ]\n"
-      "}");
-  ASSERT_TRUE(bootstrap.ok()) << bootstrap.status();
-  XdsResourceType::DecodeContext trusted_decode_context{
-      xds_client_.get(), *(*bootstrap)->servers()[0], upb_def_pool_.ptr(),
-      upb_arena_.ptr()};
-  ExtAuthz ext_authz;
-  auto* google_grpc = ext_authz.mutable_grpc_service()->mutable_google_grpc();
-  google_grpc->set_target_uri("dns:server.example.com");
-  google_grpc->add_channel_credentials_plugin()->PackFrom(
-      envoy::extensions::grpc_service::channel_credentials::insecure::v3::
-          InsecureCredentials());
-  auto* header = ext_authz.mutable_grpc_service()->add_initial_metadata();
-  header->set_key("foo");
-  header->set_value("bar");
-  XdsExtension extension = MakeXdsExtension(ext_authz);
-  auto config = factory_->ParseTopLevelConfig("", trusted_decode_context,
-                                              extension, &errors_);
-  ASSERT_TRUE(errors_.ok()) << errors_.status(
-      absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_NE(config, nullptr);
-  const auto& target = std::get<GrpcXdsServerTarget>(
-      DownCast<const ExtAuthzFilter::Config&>(*config).channel_info);
-  EXPECT_EQ(target.server_uri(), "dns:server.example.com");
-  ASSERT_NE(target.channel_creds_config(), nullptr);
-  EXPECT_EQ(target.channel_creds_config()->type(), "insecure");
-  EXPECT_THAT(target.initial_metadata(),
-              ::testing::ElementsAre(::testing::Pair("foo", "bar")));
-}
-
 TEST_F(XdsExtAuthzFilterTest, ParsedConfigEquality) {
   ExtAuthz proto = MakeFullConfigProto();
   RefCountedPtr<const FilterConfig> config1;
@@ -4256,7 +3991,7 @@ TEST_F(XdsExtAuthzFilterTest, ParsedConfigEquality) {
 // All fields of ExtAuthzPerRoute are ignored, so there is no override config,
 // but the override must still parse.
 TEST_F(XdsExtAuthzFilterTest, ParseOverrideConfigIgnoresDisabled) {
-  envoy::extensions::filters::http::ext_authz::v3::ExtAuthzPerRoute proto;
+  ExtAuthzPerRoute proto;
   proto.set_disabled(true);
   XdsExtension extension = MakeXdsExtension(proto);
   auto override_config =
@@ -4267,7 +4002,7 @@ TEST_F(XdsExtAuthzFilterTest, ParseOverrideConfigIgnoresDisabled) {
 }
 
 TEST_F(XdsExtAuthzFilterTest, ParseOverrideConfigIgnoresCheckSettings) {
-  envoy::extensions::filters::http::ext_authz::v3::ExtAuthzPerRoute proto;
+  ExtAuthzPerRoute proto;
   auto* check_settings = proto.mutable_check_settings();
   (*check_settings->mutable_context_extensions())["foo"] = "bar";
   check_settings->set_disable_request_body_buffering(true);
@@ -4280,8 +4015,7 @@ TEST_F(XdsExtAuthzFilterTest, ParseOverrideConfigIgnoresCheckSettings) {
 }
 
 TEST_F(XdsExtAuthzFilterTest, ParseOverrideConfigTypedStruct) {
-  XdsExtension extension = MakeXdsExtension(
-      envoy::extensions::filters::http::ext_authz::v3::ExtAuthzPerRoute());
+  XdsExtension extension = MakeXdsExtension(ExtAuthzPerRoute());
   extension.value = Json();
   auto override_config =
       factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
@@ -4297,8 +4031,7 @@ TEST_F(XdsExtAuthzFilterTest, ParseOverrideConfigTypedStruct) {
 }
 
 TEST_F(XdsExtAuthzFilterTest, ParseOverrideConfigUnparseable) {
-  XdsExtension extension = MakeXdsExtension(
-      envoy::extensions::filters::http::ext_authz::v3::ExtAuthzPerRoute());
+  XdsExtension extension = MakeXdsExtension(ExtAuthzPerRoute());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
   auto override_config =
@@ -4358,22 +4091,21 @@ TEST_F(XdsExtAuthzFilterTest, MergeConfigsIgnoresOverrideConfigs) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(top_level_config, nullptr);
-  envoy::extensions::filters::http::ext_authz::v3::ExtAuthzPerRoute vhost_proto;
+  ExtAuthzPerRoute vhost_proto;
   vhost_proto.set_disabled(true);
   XdsExtension vhost_extension = MakeXdsExtension(vhost_proto);
   auto vhost_config = factory_->ParseOverrideConfig("", decode_context_,
                                                     vhost_extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
-  envoy::extensions::filters::http::ext_authz::v3::ExtAuthzPerRoute route_proto;
+  ExtAuthzPerRoute route_proto;
   route_proto.set_disabled(true);
   XdsExtension route_extension = MakeXdsExtension(route_proto);
   auto route_config = factory_->ParseOverrideConfig("", decode_context_,
                                                     route_extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
-  envoy::extensions::filters::http::ext_authz::v3::ExtAuthzPerRoute
-      cluster_weight_proto;
+  ExtAuthzPerRoute cluster_weight_proto;
   cluster_weight_proto.set_disabled(true);
   XdsExtension cluster_weight_extension =
       MakeXdsExtension(cluster_weight_proto);
