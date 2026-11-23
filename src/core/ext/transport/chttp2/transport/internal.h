@@ -606,6 +606,9 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   /// is the transport destroying itself?
   uint8_t destroying = false;
 
+  /// is close_transport_locked currently executing on this transport?
+  bool in_close_transport = false;
+
   /// is this a client?
   bool is_client;
 
