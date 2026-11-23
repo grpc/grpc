@@ -22589,6 +22589,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
     test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+    test/core/test_util/fake_stats_plugin.cc
     test/core/transport/chttp2/http2_server_transport_test.cc
     test/core/transport/util/mock_promise_endpoint.cc
   )
