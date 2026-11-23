@@ -42,7 +42,6 @@
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -61,9 +60,6 @@ constexpr absl::string_view kVal2 = "val2";
 constexpr absl::string_view kKey3 = "key3";
 constexpr absl::string_view kVal3 = "val3";
 constexpr absl::string_view kVal4 = "val4";
-constexpr absl::string_view kKeyPrefix = "key";
-constexpr absl::string_view kCustomTextKey = "custom-text";
-constexpr absl::string_view kCustomTextVal = "plain-text-value";
 constexpr absl::string_view kCustomBinKey = "custom-bin";
 constexpr absl::string_view kCustomBinVal{"\x00\x01\x02\xFF", 4};
 constexpr absl::string_view kCustomBinValBase64 = "AAEC/w==";
@@ -108,6 +104,19 @@ MATCHER_P2(IsHeaderValue, key_matcher, raw_value_matcher, "") {
                                        result_listener);
 }
 
+MATCHER_P2(IsTcpSocketAddress, address_matcher, port_matcher, "") {
+  return ::testing::ExplainMatchResult(
+             ::testing::IsTrue(), arg.has_socket_address(), result_listener) &&
+         ::testing::ExplainMatchResult(
+             ::testing::Eq(envoy::config::core::v3::SocketAddress::TCP),
+             arg.socket_address().protocol(), result_listener) &&
+         ::testing::ExplainMatchResult(address_matcher,
+                                       arg.socket_address().address(),
+                                       result_listener) &&
+         ::testing::ExplainMatchResult(
+             port_matcher, arg.socket_address().port_value(), result_listener);
+}
+
 class CreateExtAuthzRequestTest : public ::testing::Test {
  protected:
   CheckRequest ParseRequest(const std::string& serialized) {
@@ -117,52 +126,27 @@ class CreateExtAuthzRequestTest : public ::testing::Test {
   }
 };
 
-// On the client side, source and destination are omitted and the peer
-// certificate is ignored, even if connection attributes are available.
-TEST_F(CreateExtAuthzRequestTest, ClientRequestOmitsSourceAndDestination) {
-  grpc_metadata_batch batch;
-  grpc_auth_context auth_context(/*chained=*/nullptr);
-  auth_context.add_cstring_property(GRPC_PEER_URI_PROPERTY_NAME, kUriSan);
-  auth_context.add_cstring_property(GRPC_X509_LOCAL_PRINCIPAL_PROPERTY_NAME,
-                                    kLocalPrincipal);
-  EvaluateArgs::PerChannelArgs channel_args(
-      &auth_context,
-      ChannelArgs()
-          .Set(GRPC_ARG_ENDPOINT_PEER_ADDRESS, kPeerAddressUri)
-          .Set(GRPC_ARG_ENDPOINT_LOCAL_ADDRESS, kLocalAddressUri));
-  EvaluateArgs args(&batch, &channel_args);
-  ExtAuthzRequest params;
-  params.is_client_call = true;
-  params.path = kPath;
-  params.args = &args;
-  params.peer_certificate = kEncodedCert;
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-  ASSERT_TRUE(request.has_attributes());
-  const auto& attr = request.attributes();
-  EXPECT_TRUE(attr.has_request());
-  EXPECT_FALSE(attr.has_source());
-  EXPECT_FALSE(attr.has_destination());
-}
+//
+// Server request tests
+//
 
 // On the server side, source and destination are omitted when no EvaluateArgs
 // is supplied.
-TEST_F(CreateExtAuthzRequestTest, ServerRequestWithoutEvaluateArgs) {
+TEST_F(CreateExtAuthzRequestTest, WithoutEvaluateArgs) {
   ExtAuthzRequest params;
   params.is_client_call = false;
   params.path = kPath;
   auto serialized = CreateExtAuthzRequest(params);
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
-  ASSERT_TRUE(request.has_attributes());
+  EXPECT_TRUE(request.has_attributes());
   const auto& attr = request.attributes();
   EXPECT_TRUE(attr.has_request());
   EXPECT_FALSE(attr.has_source());
   EXPECT_FALSE(attr.has_destination());
 }
 
-TEST_F(CreateExtAuthzRequestTest, ServerRequestSourceAndDestination) {
+TEST_F(CreateExtAuthzRequestTest, SourceAndDestination) {
   grpc_metadata_batch batch;
   grpc_auth_context auth_context(/*chained=*/nullptr);
   auth_context.add_cstring_property(GRPC_PEER_URI_PROPERTY_NAME, kUriSan);
@@ -183,26 +167,15 @@ TEST_F(CreateExtAuthzRequestTest, ServerRequestSourceAndDestination) {
   auto serialized = CreateExtAuthzRequest(params);
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
-  ASSERT_TRUE(request.has_attributes());
   const auto& attr = request.attributes();
-  ASSERT_TRUE(attr.has_source());
-  ASSERT_TRUE(attr.source().has_address());
-  ASSERT_TRUE(attr.source().address().has_socket_address());
-  EXPECT_THAT(attr.source().address().socket_address().address(),
-              ::testing::StrEq(kPeerAddressHost));
-  EXPECT_EQ(attr.source().address().socket_address().port_value(),
-            kPeerAddressPort);
+  EXPECT_THAT(attr.source().address(),
+              IsTcpSocketAddress(kPeerAddressHost, kPeerAddressPort));
   // URI SAN takes precedence over DNS SAN and subject.
   EXPECT_THAT(attr.source().principal(), ::testing::StrEq(kUriSan));
   // Not requested, so not included.
   EXPECT_THAT(attr.source().certificate(), ::testing::IsEmpty());
-  ASSERT_TRUE(attr.has_destination());
-  ASSERT_TRUE(attr.destination().has_address());
-  ASSERT_TRUE(attr.destination().address().has_socket_address());
-  EXPECT_THAT(attr.destination().address().socket_address().address(),
-              ::testing::StrEq(kLocalAddressHost));
-  EXPECT_EQ(attr.destination().address().socket_address().port_value(),
-            kLocalAddressPort);
+  EXPECT_THAT(attr.destination().address(),
+              IsTcpSocketAddress(kLocalAddressHost, kLocalAddressPort));
   // The destination principal comes from this endpoint's own certificate,
   // and is never the peer's identity.
   EXPECT_THAT(attr.destination().principal(),
@@ -210,7 +183,7 @@ TEST_F(CreateExtAuthzRequestTest, ServerRequestSourceAndDestination) {
 }
 
 // IPv6 addresses are reported without the surrounding brackets.
-TEST_F(CreateExtAuthzRequestTest, ServerRequestIpv6Address) {
+TEST_F(CreateExtAuthzRequestTest, Ipv6Address) {
   grpc_metadata_batch batch;
   grpc_auth_context auth_context(/*chained=*/nullptr);
   EvaluateArgs::PerChannelArgs channel_args(
@@ -227,22 +200,40 @@ TEST_F(CreateExtAuthzRequestTest, ServerRequestIpv6Address) {
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
   const auto& attr = request.attributes();
-  ASSERT_TRUE(attr.source().address().has_socket_address());
-  EXPECT_THAT(attr.source().address().socket_address().address(),
-              ::testing::StrEq(kIpv6PeerAddressHost));
-  EXPECT_EQ(attr.source().address().socket_address().port_value(),
-            kIpv6PeerAddressPort);
-  ASSERT_TRUE(attr.destination().address().has_socket_address());
-  EXPECT_THAT(attr.destination().address().socket_address().address(),
-              ::testing::StrEq(kIpv6LocalAddressHost));
-  EXPECT_EQ(attr.destination().address().socket_address().port_value(),
-            kIpv6LocalAddressPort);
+  EXPECT_THAT(attr.source().address(),
+              IsTcpSocketAddress(kIpv6PeerAddressHost, kIpv6PeerAddressPort));
+  EXPECT_THAT(attr.destination().address(),
+              IsTcpSocketAddress(kIpv6LocalAddressHost, kIpv6LocalAddressPort));
+}
+
+// Non-IP addresses (such as Unix domain sockets) are omitted rather than
+// populated as a SocketAddress.
+TEST_F(CreateExtAuthzRequestTest, UnixDomainSocketAddressOmitted) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(/*chained=*/nullptr);
+  EvaluateArgs::PerChannelArgs channel_args(
+      &auth_context,
+      ChannelArgs()
+          .Set(GRPC_ARG_ENDPOINT_PEER_ADDRESS, "unix:/tmp/peer.sock")
+          .Set(GRPC_ARG_ENDPOINT_LOCAL_ADDRESS, "unix:/tmp/local.sock"));
+  EvaluateArgs args(&batch, &channel_args);
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  params.args = &args;
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
+  const auto& attr = request.attributes();
+  EXPECT_TRUE(attr.has_source());
+  EXPECT_FALSE(attr.source().has_address());
+  EXPECT_TRUE(attr.has_destination());
+  EXPECT_FALSE(attr.destination().has_address());
 }
 
 // The two sides are resolved independently: an unknown local address must not
-// suppress the source address (and vice versa; see
-// ServerRequestLocalAddressWithoutPeerAddress).
-TEST_F(CreateExtAuthzRequestTest, ServerRequestPeerAddressWithoutLocalAddress) {
+// suppress the source address (and vice versa; see LocalAddressOnly).
+TEST_F(CreateExtAuthzRequestTest, PeerAddressOnly) {
   grpc_metadata_batch batch;
   grpc_auth_context auth_context(/*chained=*/nullptr);
   EvaluateArgs::PerChannelArgs channel_args(
@@ -257,17 +248,14 @@ TEST_F(CreateExtAuthzRequestTest, ServerRequestPeerAddressWithoutLocalAddress) {
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
   const auto& attr = request.attributes();
-  ASSERT_TRUE(attr.source().address().has_socket_address());
-  EXPECT_THAT(attr.source().address().socket_address().address(),
-              ::testing::StrEq(kPeerAddressHost));
-  EXPECT_EQ(attr.source().address().socket_address().port_value(),
-            kPeerAddressPort);
-  ASSERT_TRUE(attr.has_destination());
+  EXPECT_THAT(attr.source().address(),
+              IsTcpSocketAddress(kPeerAddressHost, kPeerAddressPort));
+  EXPECT_TRUE(attr.has_destination());
   EXPECT_FALSE(attr.destination().has_address());
 }
 
 // An unknown peer address must not suppress the destination address.
-TEST_F(CreateExtAuthzRequestTest, ServerRequestLocalAddressWithoutPeerAddress) {
+TEST_F(CreateExtAuthzRequestTest, LocalAddressOnly) {
   grpc_metadata_batch batch;
   grpc_auth_context auth_context(/*chained=*/nullptr);
   EvaluateArgs::PerChannelArgs channel_args(
@@ -282,16 +270,13 @@ TEST_F(CreateExtAuthzRequestTest, ServerRequestLocalAddressWithoutPeerAddress) {
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
   const auto& attr = request.attributes();
-  ASSERT_TRUE(attr.has_source());
+  EXPECT_TRUE(attr.has_source());
   EXPECT_FALSE(attr.source().has_address());
-  ASSERT_TRUE(attr.destination().address().has_socket_address());
-  EXPECT_THAT(attr.destination().address().socket_address().address(),
-              ::testing::StrEq(kLocalAddressHost));
-  EXPECT_EQ(attr.destination().address().socket_address().port_value(),
-            kLocalAddressPort);
+  EXPECT_THAT(attr.destination().address(),
+              IsTcpSocketAddress(kLocalAddressHost, kLocalAddressPort));
 }
 
-TEST_F(CreateExtAuthzRequestTest, ServerRequestPrincipalFallsBackToDnsSan) {
+TEST_F(CreateExtAuthzRequestTest, PrincipalFallbackToDnsSan) {
   grpc_metadata_batch batch;
   grpc_auth_context auth_context(/*chained=*/nullptr);
   auth_context.add_cstring_property(GRPC_PEER_DNS_PROPERTY_NAME, kDnsSan);
@@ -305,12 +290,11 @@ TEST_F(CreateExtAuthzRequestTest, ServerRequestPrincipalFallsBackToDnsSan) {
   auto serialized = CreateExtAuthzRequest(params);
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
-  ASSERT_TRUE(request.attributes().has_source());
   EXPECT_THAT(request.attributes().source().principal(),
               ::testing::StrEq(kDnsSan));
 }
 
-TEST_F(CreateExtAuthzRequestTest, ServerRequestPrincipalFallsBackToSubject) {
+TEST_F(CreateExtAuthzRequestTest, PrincipalFallbackToSubject) {
   grpc_metadata_batch batch;
   grpc_auth_context auth_context(/*chained=*/nullptr);
   auth_context.add_cstring_property(GRPC_X509_SUBJECT_PROPERTY_NAME, kSubject);
@@ -323,14 +307,13 @@ TEST_F(CreateExtAuthzRequestTest, ServerRequestPrincipalFallsBackToSubject) {
   auto serialized = CreateExtAuthzRequest(params);
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
-  ASSERT_TRUE(request.attributes().has_source());
   EXPECT_THAT(request.attributes().source().principal(),
               ::testing::StrEq(kSubject));
 }
 
 // Empty SAN entries are skipped rather than being reported as the principal,
 // whether they come before or after the first usable one.
-TEST_F(CreateExtAuthzRequestTest, ServerRequestPrincipalSkipsEmptyUriSan) {
+TEST_F(CreateExtAuthzRequestTest, PrincipalSkipsEmptyUriSan) {
   grpc_metadata_batch batch;
   grpc_auth_context auth_context(/*chained=*/nullptr);
   auth_context.add_cstring_property(GRPC_PEER_URI_PROPERTY_NAME, "");
@@ -346,14 +329,53 @@ TEST_F(CreateExtAuthzRequestTest, ServerRequestPrincipalSkipsEmptyUriSan) {
   auto serialized = CreateExtAuthzRequest(params);
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
-  ASSERT_TRUE(request.attributes().has_source());
   EXPECT_THAT(request.attributes().source().principal(),
               ::testing::StrEq(kUriSan));
 }
 
+// When multiple non-empty URI SANs are present, the first one is used.
+TEST_F(CreateExtAuthzRequestTest, PrincipalMultipleUriSansUsesFirst) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(/*chained=*/nullptr);
+  auth_context.add_cstring_property(GRPC_PEER_URI_PROPERTY_NAME, kUriSan);
+  auth_context.add_cstring_property(GRPC_PEER_URI_PROPERTY_NAME,
+                                    "spiffe://other.com/bar/baz");
+  EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
+  EvaluateArgs args(&batch, &channel_args);
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  params.args = &args;
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
+  EXPECT_THAT(request.attributes().source().principal(),
+              ::testing::StrEq(kUriSan));
+}
+
+// Empty DNS SAN entries are skipped in favor of the first non-empty DNS SAN.
+TEST_F(CreateExtAuthzRequestTest, PrincipalSkipsEmptyDnsSan) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(/*chained=*/nullptr);
+  auth_context.add_cstring_property(GRPC_PEER_DNS_PROPERTY_NAME, "");
+  auth_context.add_cstring_property(GRPC_PEER_DNS_PROPERTY_NAME, kDnsSan);
+  auth_context.add_cstring_property(GRPC_X509_SUBJECT_PROPERTY_NAME, kSubject);
+  EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
+  EvaluateArgs args(&batch, &channel_args);
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  params.args = &args;
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
+  EXPECT_THAT(request.attributes().source().principal(),
+              ::testing::StrEq(kDnsSan));
+}
+
 // If every URI and DNS SAN is empty, we fall all the way through to the
 // subject.
-TEST_F(CreateExtAuthzRequestTest, ServerRequestPrincipalSkipsAllEmptySans) {
+TEST_F(CreateExtAuthzRequestTest, PrincipalSkipsAllEmptySans) {
   grpc_metadata_batch batch;
   grpc_auth_context auth_context(/*chained=*/nullptr);
   auth_context.add_cstring_property(GRPC_PEER_URI_PROPERTY_NAME, "");
@@ -368,14 +390,13 @@ TEST_F(CreateExtAuthzRequestTest, ServerRequestPrincipalSkipsAllEmptySans) {
   auto serialized = CreateExtAuthzRequest(params);
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
-  ASSERT_TRUE(request.attributes().has_source());
   EXPECT_THAT(request.attributes().source().principal(),
               ::testing::StrEq(kSubject));
 }
 
 // The peer's identity must never leak into destination.principal, and this
 // endpoint's identity must never leak into source.principal.
-TEST_F(CreateExtAuthzRequestTest, ServerRequestPrincipalsAreNotInterchanged) {
+TEST_F(CreateExtAuthzRequestTest, PrincipalsNotInterchanged) {
   grpc_metadata_batch batch;
   grpc_auth_context auth_context(/*chained=*/nullptr);
   auth_context.add_cstring_property(GRPC_PEER_URI_PROPERTY_NAME, kUriSan);
@@ -391,15 +412,13 @@ TEST_F(CreateExtAuthzRequestTest, ServerRequestPrincipalsAreNotInterchanged) {
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
   const auto& attr = request.attributes();
-  ASSERT_TRUE(attr.has_source());
   EXPECT_THAT(attr.source().principal(), ::testing::StrEq(kUriSan));
   // Only peer properties are set, so there is no local identity to report.
-  ASSERT_TRUE(attr.has_destination());
+  EXPECT_TRUE(attr.has_destination());
   EXPECT_THAT(attr.destination().principal(), ::testing::IsEmpty());
 }
 
-TEST_F(CreateExtAuthzRequestTest,
-       ServerRequestSourcePrincipalIgnoresLocalPrincipal) {
+TEST_F(CreateExtAuthzRequestTest, SourcePrincipalIgnoresLocalPrincipal) {
   grpc_metadata_batch batch;
   grpc_auth_context auth_context(/*chained=*/nullptr);
   auth_context.add_cstring_property(GRPC_X509_LOCAL_PRINCIPAL_PROPERTY_NAME,
@@ -414,9 +433,8 @@ TEST_F(CreateExtAuthzRequestTest,
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
   const auto& attr = request.attributes();
-  ASSERT_TRUE(attr.has_source());
+  EXPECT_TRUE(attr.has_source());
   EXPECT_THAT(attr.source().principal(), ::testing::IsEmpty());
-  ASSERT_TRUE(attr.has_destination());
   EXPECT_THAT(attr.destination().principal(),
               ::testing::StrEq(kLocalPrincipal));
 }
@@ -424,7 +442,7 @@ TEST_F(CreateExtAuthzRequestTest,
 // With an empty auth context and no endpoint addresses in the channel args,
 // source and destination are still present (because EvaluateArgs is supplied),
 // but have neither an address nor a principal.
-TEST_F(CreateExtAuthzRequestTest, ServerRequestWithoutConnectionAttributes) {
+TEST_F(CreateExtAuthzRequestTest, WithoutConnectionAttributes) {
   grpc_metadata_batch batch;
   grpc_auth_context auth_context(/*chained=*/nullptr);
   EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
@@ -437,15 +455,15 @@ TEST_F(CreateExtAuthzRequestTest, ServerRequestWithoutConnectionAttributes) {
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
   const auto& attr = request.attributes();
-  ASSERT_TRUE(attr.has_source());
+  EXPECT_TRUE(attr.has_source());
   EXPECT_FALSE(attr.source().has_address());
   EXPECT_THAT(attr.source().principal(), ::testing::IsEmpty());
-  ASSERT_TRUE(attr.has_destination());
+  EXPECT_TRUE(attr.has_destination());
   EXPECT_FALSE(attr.destination().has_address());
   EXPECT_THAT(attr.destination().principal(), ::testing::IsEmpty());
 }
 
-TEST_F(CreateExtAuthzRequestTest, ServerRequestWithPeerCertificate) {
+TEST_F(CreateExtAuthzRequestTest, WithPeerCertificate) {
   grpc_metadata_batch batch;
   grpc_auth_context auth_context(/*chained=*/nullptr);
   EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
@@ -458,9 +476,41 @@ TEST_F(CreateExtAuthzRequestTest, ServerRequestWithPeerCertificate) {
   auto serialized = CreateExtAuthzRequest(params);
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
-  ASSERT_TRUE(request.attributes().has_source());
   EXPECT_THAT(request.attributes().source().certificate(),
               ::testing::StrEq(kEncodedCert));
+}
+
+//
+// Client request tests
+//
+
+// On the client side, source and destination are omitted and the peer
+// certificate is ignored, even if connection attributes are available.
+TEST_F(CreateExtAuthzRequestTest, OmitsSourceAndDestination) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(/*chained=*/nullptr);
+  auth_context.add_cstring_property(GRPC_PEER_URI_PROPERTY_NAME, kUriSan);
+  auth_context.add_cstring_property(GRPC_X509_LOCAL_PRINCIPAL_PROPERTY_NAME,
+                                    kLocalPrincipal);
+  EvaluateArgs::PerChannelArgs channel_args(
+      &auth_context,
+      ChannelArgs()
+          .Set(GRPC_ARG_ENDPOINT_PEER_ADDRESS, kPeerAddressUri)
+          .Set(GRPC_ARG_ENDPOINT_LOCAL_ADDRESS, kLocalAddressUri));
+  EvaluateArgs args(&batch, &channel_args);
+  ExtAuthzRequest params;
+  params.is_client_call = true;
+  params.path = kPath;
+  params.args = &args;
+  params.peer_certificate = kEncodedCert;
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
+  EXPECT_TRUE(request.has_attributes());
+  const auto& attr = request.attributes();
+  EXPECT_TRUE(attr.has_request());
+  EXPECT_FALSE(attr.has_source());
+  EXPECT_FALSE(attr.has_destination());
 }
 
 TEST_F(CreateExtAuthzRequestTest, HttpFields) {
@@ -470,14 +520,13 @@ TEST_F(CreateExtAuthzRequestTest, HttpFields) {
   auto serialized = CreateExtAuthzRequest(params);
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
-  ASSERT_TRUE(request.has_attributes());
-  ASSERT_TRUE(request.attributes().has_request());
-  ASSERT_TRUE(request.attributes().request().has_http());
   const auto& http = request.attributes().request().http();
   EXPECT_THAT(http.method(), ::testing::StrEq(kMethodPost));
   EXPECT_THAT(http.path(), ::testing::StrEq(kPath));
   EXPECT_THAT(http.protocol(), ::testing::StrEq(kProtocolHttp2));
   EXPECT_THAT(http.size(), ::testing::Eq(-1));
+  EXPECT_TRUE(http.has_header_map());
+  EXPECT_THAT(http.header_map().headers(), ::testing::IsEmpty());
 }
 
 // The start time is far enough in the past that the test cannot pass by
@@ -491,9 +540,7 @@ TEST_F(CreateExtAuthzRequestTest, ExplicitStartTime) {
   auto serialized = CreateExtAuthzRequest(params);
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
-  ASSERT_TRUE(request.has_attributes());
-  ASSERT_TRUE(request.attributes().has_request());
-  ASSERT_TRUE(request.attributes().request().has_time());
+  EXPECT_TRUE(request.attributes().request().has_time());
   // Converting to the realtime clock is not exact, so allow a small tolerance.
   EXPECT_NEAR(request.attributes().request().time().seconds(),
               start_time.as_timespec(GPR_CLOCK_REALTIME).tv_sec, 1);
@@ -510,42 +557,15 @@ TEST_F(CreateExtAuthzRequestTest, DefaultStartTime) {
   const gpr_timespec after = gpr_now(GPR_CLOCK_REALTIME);
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
-  ASSERT_TRUE(request.has_attributes());
-  ASSERT_TRUE(request.attributes().has_request());
-  ASSERT_TRUE(request.attributes().request().has_time());
+  EXPECT_TRUE(request.attributes().request().has_time());
   EXPECT_GE(request.attributes().request().time().seconds(), before.tv_sec);
   EXPECT_LE(request.attributes().request().time().seconds(), after.tv_sec);
-}
-
-TEST_F(CreateExtAuthzRequestTest, HeaderEncodingTextAndBinary) {
-  grpc_metadata_batch batch;
-  batch.Append(kCustomTextKey, Slice::FromStaticString(kCustomTextVal),
-               [](absl::string_view, const Slice&) {});
-  batch.Append(kCustomBinKey, Slice::FromStaticString(kCustomBinVal),
-               [](absl::string_view, const Slice&) {});
-  ExtAuthzRequest params;
-  params.is_client_call = true;
-  params.path = kPath;
-  params.metadata = &batch;
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-  ASSERT_TRUE(request.has_attributes());
-  ASSERT_TRUE(request.attributes().has_request());
-  ASSERT_TRUE(request.attributes().request().has_http());
-  const auto& http = request.attributes().request().http();
-  ASSERT_TRUE(http.has_header_map());
-  // Per gRFC A102, the values of binary headers are base64-encoded.
-  EXPECT_THAT(http.header_map().headers(),
-              ::testing::ElementsAre(
-                  IsHeaderValue(kCustomTextKey, kCustomTextVal),
-                  IsHeaderValue(kCustomBinKey, kCustomBinValBase64)));
 }
 
 // kAllowPrefixDeny is matched by an allowed matcher, so it is excluded only
 // because it is also disallowed. kOther is not disallowed, so it is excluded
 // because no allowed matcher matches it.
-TEST_F(CreateExtAuthzRequestTest, HeaderFilteringAllowedAndDisallowed) {
+TEST_F(CreateExtAuthzRequestTest, RequestHeadersBothAllowedAndDisallowedSet) {
   grpc_metadata_batch batch;
   batch.Append(kAllowMe, Slice::FromStaticString(kVal1),
                [](absl::string_view, const Slice&) {});
@@ -577,48 +597,13 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFilteringAllowedAndDisallowed) {
   auto serialized = CreateExtAuthzRequest(params);
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
-  ASSERT_TRUE(request.has_attributes());
-  ASSERT_TRUE(request.attributes().has_request());
-  ASSERT_TRUE(request.attributes().request().has_http());
   const auto& http = request.attributes().request().http();
-  ASSERT_TRUE(http.has_header_map());
   EXPECT_THAT(http.header_map().headers(),
               ::testing::ElementsAre(IsHeaderValue(kAllowMe, kVal1),
                                      IsHeaderValue(kAllowPrefixFoo, kVal4)));
 }
 
-TEST_F(CreateExtAuthzRequestTest, HeaderFilteringDisallowedTakesPrecedence) {
-  grpc_metadata_batch batch;
-  batch.Append(kKey1, Slice::FromStaticString(kVal1),
-               [](absl::string_view, const Slice&) {});
-  ExtAuthzRequest params;
-  params.is_client_call = true;
-  params.path = kPath;
-  params.metadata = &batch;
-  const std::vector<StringMatcher> allowed_headers = {
-      StringMatcher::Create(StringMatcher::Type::kPrefix, kKeyPrefix,
-                            /*case_sensitive=*/false)
-          .value(),
-  };
-  params.allowed_headers = allowed_headers;
-  const std::vector<StringMatcher> disallowed_headers = {
-      StringMatcher::Create(StringMatcher::Type::kExact, kKey1,
-                            /*case_sensitive=*/false)
-          .value(),
-  };
-  params.disallowed_headers = disallowed_headers;
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-  ASSERT_TRUE(request.has_attributes());
-  ASSERT_TRUE(request.attributes().has_request());
-  ASSERT_TRUE(request.attributes().request().has_http());
-  const auto& http = request.attributes().request().http();
-  ASSERT_TRUE(http.has_header_map());
-  EXPECT_THAT(http.header_map().headers(), ::testing::IsEmpty());
-}
-
-TEST_F(CreateExtAuthzRequestTest, HeaderFilteringOnlyAllowed) {
+TEST_F(CreateExtAuthzRequestTest, RequestHeadersOnlyAllowedSet) {
   grpc_metadata_batch batch;
   batch.Append(kKey1, Slice::FromStaticString(kVal1),
                [](absl::string_view, const Slice&) {});
@@ -637,16 +622,12 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFilteringOnlyAllowed) {
   auto serialized = CreateExtAuthzRequest(params);
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
-  ASSERT_TRUE(request.has_attributes());
-  ASSERT_TRUE(request.attributes().has_request());
-  ASSERT_TRUE(request.attributes().request().has_http());
   const auto& http = request.attributes().request().http();
-  ASSERT_TRUE(http.has_header_map());
   EXPECT_THAT(http.header_map().headers(),
               ::testing::ElementsAre(IsHeaderValue(kKey1, kVal1)));
 }
 
-TEST_F(CreateExtAuthzRequestTest, HeaderFilteringOnlyDisallowed) {
+TEST_F(CreateExtAuthzRequestTest, RequestHeadersOnlyDisallowedSet) {
   grpc_metadata_batch batch;
   batch.Append(kKey1, Slice::FromStaticString(kVal1),
                [](absl::string_view, const Slice&) {});
@@ -665,20 +646,19 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFilteringOnlyDisallowed) {
   auto serialized = CreateExtAuthzRequest(params);
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
-  ASSERT_TRUE(request.has_attributes());
-  ASSERT_TRUE(request.attributes().has_request());
-  ASSERT_TRUE(request.attributes().request().has_http());
   const auto& http = request.attributes().request().http();
-  ASSERT_TRUE(http.has_header_map());
   EXPECT_THAT(http.header_map().headers(),
               ::testing::ElementsAre(IsHeaderValue(kKey2, kVal2)));
 }
 
-TEST_F(CreateExtAuthzRequestTest, HeaderFilteringDefaultForwardsAll) {
+TEST_F(CreateExtAuthzRequestTest,
+       RequestHeadersNeitherAllowedNorDisallowedSet) {
   grpc_metadata_batch batch;
   batch.Append(kKey1, Slice::FromStaticString(kVal1),
                [](absl::string_view, const Slice&) {});
   batch.Append(kKey2, Slice::FromStaticString(kVal2),
+               [](absl::string_view, const Slice&) {});
+  batch.Append(kCustomBinKey, Slice::FromStaticString(kCustomBinVal),
                [](absl::string_view, const Slice&) {});
   ExtAuthzRequest params;
   params.is_client_call = true;
@@ -687,20 +667,18 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFilteringDefaultForwardsAll) {
   auto serialized = CreateExtAuthzRequest(params);
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
-  ASSERT_TRUE(request.has_attributes());
-  ASSERT_TRUE(request.attributes().has_request());
-  ASSERT_TRUE(request.attributes().request().has_http());
   const auto& http = request.attributes().request().http();
-  ASSERT_TRUE(http.has_header_map());
+  // Per gRFC A102, the values of binary headers are base64-encoded.
   EXPECT_THAT(http.header_map().headers(),
-              ::testing::ElementsAre(IsHeaderValue(kKey1, kVal1),
-                                     IsHeaderValue(kKey2, kVal2)));
+              ::testing::ElementsAre(
+                  IsHeaderValue(kKey1, kVal1), IsHeaderValue(kKey2, kVal2),
+                  IsHeaderValue(kCustomBinKey, kCustomBinValBase64)));
 }
 
 // Known headers, such as :path, are included in header_map along with
 // unknown ones. The metadata batch encodes known headers first, followed by
 // unknown headers in insertion order.
-TEST_F(CreateExtAuthzRequestTest, HeaderMapIncludesPseudoHeaders) {
+TEST_F(CreateExtAuthzRequestTest, RequestHeadersPseudoHeaders) {
   grpc_metadata_batch batch;
   batch.Append(kKey1, Slice::FromStaticString(kVal1),
                [](absl::string_view, const Slice&) {});
@@ -714,11 +692,7 @@ TEST_F(CreateExtAuthzRequestTest, HeaderMapIncludesPseudoHeaders) {
   auto serialized = CreateExtAuthzRequest(params);
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
-  ASSERT_TRUE(request.has_attributes());
-  ASSERT_TRUE(request.attributes().has_request());
-  ASSERT_TRUE(request.attributes().request().has_http());
   const auto& http = request.attributes().request().http();
-  ASSERT_TRUE(http.has_header_map());
   EXPECT_THAT(http.header_map().headers(),
               ::testing::ElementsAre(IsHeaderValue(kPathHeader, kPath),
                                      IsHeaderValue(kKey1, kVal1),
@@ -727,7 +701,7 @@ TEST_F(CreateExtAuthzRequestTest, HeaderMapIncludesPseudoHeaders) {
 
 // Each value of a repeated header becomes a separate HeaderValue entry, in
 // order, rather than being joined into a single value.
-TEST_F(CreateExtAuthzRequestTest, HeaderMapRepeatedKeys) {
+TEST_F(CreateExtAuthzRequestTest, RequestHeadersRepeatedKeys) {
   grpc_metadata_batch batch;
   batch.Append(kKey1, Slice::FromStaticString(kVal1),
                [](absl::string_view, const Slice&) {});
@@ -740,11 +714,7 @@ TEST_F(CreateExtAuthzRequestTest, HeaderMapRepeatedKeys) {
   auto serialized = CreateExtAuthzRequest(params);
   ASSERT_TRUE(serialized.ok()) << serialized.status();
   auto request = ParseRequest(*serialized);
-  ASSERT_TRUE(request.has_attributes());
-  ASSERT_TRUE(request.attributes().has_request());
-  ASSERT_TRUE(request.attributes().request().has_http());
   const auto& http = request.attributes().request().http();
-  ASSERT_TRUE(http.has_header_map());
   EXPECT_THAT(http.header_map().headers(),
               ::testing::ElementsAre(IsHeaderValue(kKey1, kVal1),
                                      IsHeaderValue(kKey1, kVal2)));
@@ -767,7 +737,7 @@ TEST(GetUrlEncodedPemPeerCertificateTest, NoPeerCertificate) {
 // Matches Envoy's Http::Utility::PercentEncoding::urlEncode(): every
 // character other than ALPHA, DIGIT, '*', '-', '.' and '_' is percent-encoded
 // with uppercase hex digits.
-TEST(GetUrlEncodedPemPeerCertificateTest, PeerCertificate) {
+TEST(GetUrlEncodedPemPeerCertificateTest, ValidPeerCertificate) {
   grpc_auth_context auth_context(/*chained=*/nullptr);
   auth_context.add_cstring_property(GRPC_X509_PEM_CERT_PROPERTY_NAME,
                                     "-----BEGIN CERTIFICATE-----\n"
@@ -781,8 +751,7 @@ TEST(GetUrlEncodedPemPeerCertificateTest, PeerCertificate) {
 
 // Characters outside of Envoy's unreserved set are encoded too, including
 // carriage returns and characters that never appear in a well-formed PEM.
-TEST(GetUrlEncodedPemPeerCertificateTest,
-     PeerCertificateEncodesUnusualCharacters) {
+TEST(GetUrlEncodedPemPeerCertificateTest, EncodesUnusualCharacters) {
   grpc_auth_context auth_context(/*chained=*/nullptr);
   auth_context.add_cstring_property(GRPC_X509_PEM_CERT_PROPERTY_NAME,
                                     "aZ9*-._\r\n~:%");
@@ -901,7 +870,7 @@ class ParseExtAuthzResponseTest : public ::testing::Test {
   }
 };
 
-TEST_F(ParseExtAuthzResponseTest, MalformedProtobufFails) {
+TEST_F(ParseExtAuthzResponseTest, ResponseInvalid) {
   // Field 1 (length-delimited) with length 255, but no data.
   auto parsed = ExtAuthzResponse::Parse("\x0a\xff");
   EXPECT_EQ(parsed.status(),
@@ -909,7 +878,7 @@ TEST_F(ParseExtAuthzResponseTest, MalformedProtobufFails) {
 }
 
 // An empty CheckResponse has an unset status, which is treated as OK.
-TEST_F(ParseExtAuthzResponseTest, EmptyPayloadIsOk) {
+TEST_F(ParseExtAuthzResponseTest, ResponseEmpty) {
   auto parsed = ExtAuthzResponse::Parse("");
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_THAT(parsed->status_code, ::testing::Eq(GRPC_STATUS_OK));
@@ -922,7 +891,7 @@ TEST_F(ParseExtAuthzResponseTest, EmptyPayloadIsOk) {
 
 // The status field alone determines whether the RPC is allowed, so an unset
 // status is OK even if denied_response is set.
-TEST_F(ParseExtAuthzResponseTest, MissingStatusFieldIsOk) {
+TEST_F(ParseExtAuthzResponseTest, StatusMissing) {
   CheckResponse response;
   response.mutable_denied_response();
   auto parsed = ParseResponse(response);
@@ -934,7 +903,7 @@ TEST_F(ParseExtAuthzResponseTest, MissingStatusFieldIsOk) {
                    ::testing::IsEmpty()));
 }
 
-TEST_F(ParseExtAuthzResponseTest, InvalidStatusCodeIsDenied) {
+TEST_F(ParseExtAuthzResponseTest, StatusInvalidCode) {
   CheckResponse response;
   // Not a valid gRPC status code.
   response.mutable_status()->set_code(99);
@@ -944,18 +913,6 @@ TEST_F(ParseExtAuthzResponseTest, InvalidStatusCodeIsDenied) {
   EXPECT_THAT(parsed->response,
               IsDeniedResponse(::testing::Eq(GRPC_STATUS_PERMISSION_DENIED),
                                ::testing::IsEmpty()));
-}
-
-TEST_F(ParseExtAuthzResponseTest, StatusOkMissingOkResponseIsOk) {
-  CheckResponse response;
-  response.mutable_status()->set_code(GRPC_STATUS_OK);
-  auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_THAT(parsed->status_code, ::testing::Eq(GRPC_STATUS_OK));
-  EXPECT_THAT(
-      parsed->response,
-      IsOkResponse(IsHeaderMutation(::testing::IsEmpty(), ::testing::IsEmpty()),
-                   ::testing::IsEmpty()));
 }
 
 TEST_F(ParseExtAuthzResponseTest, OkResponseNoHeaders) {
@@ -1004,26 +961,7 @@ TEST_F(ParseExtAuthzResponseTest, OkResponseHeaderMutations) {
               XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd))));
 }
 
-// Per gRFC A102, the values of binary headers are base64-decoded.
-TEST_F(ParseExtAuthzResponseTest, OkResponseBinaryHeader) {
-  CheckResponse response;
-  response.mutable_status()->set_code(GRPC_STATUS_OK);
-  *response.mutable_ok_response()->add_headers() =
-      CreateRawHeaderValueOption(kCustomBinKey, kCustomBinValBase64);
-  auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_THAT(
-      parsed->response,
-      IsOkResponse(
-          IsHeaderMutation(
-              ::testing::ElementsAre(IsHeaderValueOption(
-                  kCustomBinKey, kCustomBinVal,
-                  XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd)),
-              ::testing::IsEmpty()),
-          ::testing::IsEmpty()));
-}
-
-TEST_F(ParseExtAuthzResponseTest, OkResponseInvalidHeaderFails) {
+TEST_F(ParseExtAuthzResponseTest, OkResponseHeaderInvalid) {
   CheckResponse response;
   response.mutable_status()->set_code(GRPC_STATUS_OK);
   *response.mutable_ok_response()->add_headers() =
@@ -1035,21 +973,7 @@ TEST_F(ParseExtAuthzResponseTest, OkResponseInvalidHeaderFails) {
                                 "not allowed]"));
 }
 
-// Pins the current behavior of the shared HeaderValue parser, which rejects a
-// header whose value and raw_value are both empty.
-TEST_F(ParseExtAuthzResponseTest, OkResponseHeaderMissingValueFails) {
-  CheckResponse response;
-  response.mutable_status()->set_code(GRPC_STATUS_OK);
-  auto* header = response.mutable_ok_response()->add_headers();
-  header->mutable_header()->set_key(std::string(kKey1));
-  auto parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(),
-            absl::InternalError("Failed to parse XdsHeaderValueOption: "
-                                "[field:header error:either value or raw_value "
-                                "must be set]"));
-}
-
-TEST_F(ParseExtAuthzResponseTest, OkResponseInvalidHeaderToRemoveFails) {
+TEST_F(ParseExtAuthzResponseTest, OkResponseHeaderToRemoveInvalid) {
   constexpr absl::string_view kInvalidHeaderKey = "invalid header key";
   CheckResponse response;
   response.mutable_status()->set_code(GRPC_STATUS_OK);
@@ -1061,7 +985,7 @@ TEST_F(ParseExtAuthzResponseTest, OkResponseInvalidHeaderToRemoveFails) {
                 "Invalid header name to remove: invalid header key"));
 }
 
-TEST_F(ParseExtAuthzResponseTest, OkResponseInvalidResponseHeaderToAddFails) {
+TEST_F(ParseExtAuthzResponseTest, OkResponseResponseHeaderToAddInvalid) {
   CheckResponse response;
   response.mutable_status()->set_code(GRPC_STATUS_OK);
   *response.mutable_ok_response()->add_response_headers_to_add() =
@@ -1073,7 +997,7 @@ TEST_F(ParseExtAuthzResponseTest, OkResponseInvalidResponseHeaderToAddFails) {
                                 "not allowed]"));
 }
 
-TEST_F(ParseExtAuthzResponseTest, StatusNotOkMissingDeniedResponseIsDenied) {
+TEST_F(ParseExtAuthzResponseTest, DeniedResponseMissing) {
   CheckResponse response;
   response.mutable_status()->set_code(GRPC_STATUS_UNAUTHENTICATED);
   auto parsed = ParseResponse(response);
@@ -1084,9 +1008,27 @@ TEST_F(ParseExtAuthzResponseTest, StatusNotOkMissingDeniedResponseIsDenied) {
                                ::testing::IsEmpty()));
 }
 
+// The status field alone determines whether the RPC is allowed, so an explicit
+// OK status with denied_response set is still allowed and ignores
+// denied_response.
+TEST_F(ParseExtAuthzResponseTest, StatusOkWithDeniedResponse) {
+  CheckResponse response;
+  response.mutable_status()->set_code(GRPC_STATUS_OK);
+  auto* denied = response.mutable_denied_response();
+  denied->mutable_status()->set_code(envoy::type::v3::Unauthorized);
+  *denied->add_headers() = CreateHeaderValueOption("grpc-status", "0");
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->status_code, ::testing::Eq(GRPC_STATUS_OK));
+  EXPECT_THAT(
+      parsed->response,
+      IsOkResponse(IsHeaderMutation(::testing::IsEmpty(), ::testing::IsEmpty()),
+                   ::testing::IsEmpty()));
+}
+
 // The status field alone determines whether the RPC is denied, so a non-OK
 // status with ok_response set is still denied.
-TEST_F(ParseExtAuthzResponseTest, StatusNotOkWithOkResponseIsDenied) {
+TEST_F(ParseExtAuthzResponseTest, StatusNotOkWithOkResponse) {
   CheckResponse response;
   response.mutable_status()->set_code(GRPC_STATUS_PERMISSION_DENIED);
   response.mutable_ok_response()->add_headers_to_remove(std::string(kKey1));
@@ -1101,7 +1043,7 @@ TEST_F(ParseExtAuthzResponseTest, StatusNotOkWithOkResponseIsDenied) {
 
 // Denied response headers are added to the trailers, where a grpc-* header
 // from the authz server, such as grpc-status, must not be allowed.
-TEST_F(ParseExtAuthzResponseTest, DeniedResponseInvalidHeaderFails) {
+TEST_F(ParseExtAuthzResponseTest, DeniedResponseHeaderInvalid) {
   CheckResponse response;
   response.mutable_status()->set_code(GRPC_STATUS_PERMISSION_DENIED);
   *response.mutable_denied_response()->add_headers() =
@@ -1113,31 +1055,24 @@ TEST_F(ParseExtAuthzResponseTest, DeniedResponseInvalidHeaderFails) {
                                 "\"grpc-status\" not allowed]"));
 }
 
-TEST_F(ParseExtAuthzResponseTest, DeniedResponseDefaultHttpStatus) {
-  CheckResponse response;
-  response.mutable_status()->set_code(GRPC_STATUS_PERMISSION_DENIED);
-  response.mutable_denied_response();
-  auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_THAT(parsed->status_code,
-              ::testing::Eq(GRPC_STATUS_PERMISSION_DENIED));
-  EXPECT_THAT(parsed->response,
-              IsDeniedResponse(::testing::Eq(GRPC_STATUS_PERMISSION_DENIED),
-                               ::testing::IsEmpty()));
-}
-
-TEST_F(ParseExtAuthzResponseTest, DeniedResponseHttpStatusMapping) {
+TEST_F(ParseExtAuthzResponseTest, DeniedResponse) {
   CheckResponse response;
   response.mutable_status()->set_code(GRPC_STATUS_PERMISSION_DENIED);
   auto* denied = response.mutable_denied_response();
   denied->mutable_status()->set_code(envoy::type::v3::Unauthorized);
+  *denied->add_headers() =
+      CreateHeaderValueOption(kDenyReasonHeaderKey, kDenyReasonHeaderVal);
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_THAT(parsed->status_code,
               ::testing::Eq(GRPC_STATUS_PERMISSION_DENIED));
-  EXPECT_THAT(parsed->response,
-              IsDeniedResponse(::testing::Eq(GRPC_STATUS_UNAUTHENTICATED),
-                               ::testing::IsEmpty()));
+  EXPECT_THAT(
+      parsed->response,
+      IsDeniedResponse(
+          ::testing::Eq(GRPC_STATUS_UNAUTHENTICATED),
+          ::testing::ElementsAre(IsHeaderValueOption(
+              kDenyReasonHeaderKey, kDenyReasonHeaderVal,
+              XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd))));
 }
 
 // A denied RPC must never be failed with OK, so HTTP 200 (which is not in the
@@ -1154,26 +1089,6 @@ TEST_F(ParseExtAuthzResponseTest, DeniedResponseHttpStatusOkMapsToUnknown) {
                                ::testing::IsEmpty()));
 }
 
-TEST_F(ParseExtAuthzResponseTest, DeniedResponseHeaders) {
-  CheckResponse response;
-  response.mutable_status()->set_code(GRPC_STATUS_PERMISSION_DENIED);
-  auto* denied = response.mutable_denied_response();
-  denied->mutable_status()->set_code(envoy::type::v3::Forbidden);
-  *denied->add_headers() =
-      CreateHeaderValueOption(kDenyReasonHeaderKey, kDenyReasonHeaderVal);
-  auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_THAT(parsed->status_code,
-              ::testing::Eq(GRPC_STATUS_PERMISSION_DENIED));
-  EXPECT_THAT(
-      parsed->response,
-      IsDeniedResponse(
-          ::testing::Eq(GRPC_STATUS_PERMISSION_DENIED),
-          ::testing::ElementsAre(IsHeaderValueOption(
-              kDenyReasonHeaderKey, kDenyReasonHeaderVal,
-              XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd))));
-}
-
 TEST_F(ParseExtAuthzResponseTest, DeniedResponsePreservesStatus) {
   CheckResponse response;
   response.mutable_status()->set_code(GRPC_STATUS_UNAUTHENTICATED);
@@ -1188,145 +1103,10 @@ TEST_F(ParseExtAuthzResponseTest, DeniedResponsePreservesStatus) {
                                ::testing::IsEmpty()));
 }
 
-// Per gRFC A102, raw_value is used when both raw_value and value are set.
-TEST_F(ParseExtAuthzResponseTest, RawValuePreferredOverValue) {
-  CheckResponse response;
-  response.mutable_status()->set_code(GRPC_STATUS_OK);
-  auto* header = response.mutable_ok_response()->add_headers();
-  header->mutable_header()->set_key(std::string(kKey1));
-  header->mutable_header()->set_value(std::string(kVal1));
-  header->mutable_header()->set_raw_value(std::string(kVal2));
-  auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_THAT(
-      parsed->response,
-      IsOkResponse(
-          IsHeaderMutation(
-              ::testing::ElementsAre(IsHeaderValueOption(
-                  kKey1, kVal2,
-                  XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd)),
-              ::testing::IsEmpty()),
-          ::testing::IsEmpty()));
-}
-
-// Since raw_value is preferred, an invalid raw_value is an error even if
-// value is valid.
-TEST_F(ParseExtAuthzResponseTest, InvalidRawValueFailsEvenIfValueIsValid) {
-  CheckResponse response;
-  response.mutable_status()->set_code(GRPC_STATUS_OK);
-  auto* header = response.mutable_ok_response()->add_headers();
-  header->mutable_header()->set_key(std::string(kKey1));
-  header->mutable_header()->set_value(std::string(kVal1));
-  header->mutable_header()->set_raw_value("\x01");
-  auto parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(),
-            absl::InternalError("Failed to parse XdsHeaderValueOption: "
-                                "[field:header.raw_value "
-                                "error:Illegal header value]"));
-}
-
-// When raw_value is unset, the value of a binary header is read from value,
-// and it is base64-decoded too.
-TEST_F(ParseExtAuthzResponseTest, BinaryHeaderFromValueField) {
-  CheckResponse response;
-  response.mutable_status()->set_code(GRPC_STATUS_OK);
-  *response.mutable_ok_response()->add_headers() =
-      CreateHeaderValueOption(kCustomBinKey, kCustomBinValBase64);
-  auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_THAT(
-      parsed->response,
-      IsOkResponse(
-          IsHeaderMutation(
-              ::testing::ElementsAre(IsHeaderValueOption(
-                  kCustomBinKey, kCustomBinVal,
-                  XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd)),
-              ::testing::IsEmpty()),
-          ::testing::IsEmpty()));
-}
-
-TEST_F(ParseExtAuthzResponseTest, BinaryHeaderInvalidBase64Fails) {
-  CheckResponse response;
-  response.mutable_status()->set_code(GRPC_STATUS_OK);
-  *response.mutable_ok_response()->add_headers() =
-      CreateRawHeaderValueOption(kCustomBinKey, "not base64!");
-  auto parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(),
-            absl::InternalError("Failed to parse XdsHeaderValueOption: "
-                                "[field:header.raw_value "
-                                "error:invalid base64]"));
-}
-
-// Header keys must be valid gRPC header names (gRFC A102).
-TEST_F(ParseExtAuthzResponseTest, InvalidHeaderKeysFail) {
-  struct TestCase {
-    std::string key;
-    std::string expected_error;
-  };
-  for (const TestCase& test_case : {
-           TestCase{"", "Metadata keys cannot be zero length"},
-           TestCase{"Key1", "Illegal header key"},
-           TestCase{"key 1", "Illegal header key"},
-           TestCase{":authority", "header \":authority\" not allowed"},
-           TestCase{"grpc-timeout", "header \"grpc-timeout\" not allowed"},
-           TestCase{std::string(16385, 'a'), "longer than 16384 bytes"},
-       }) {
-    CheckResponse response;
-    response.mutable_status()->set_code(GRPC_STATUS_OK);
-    *response.mutable_ok_response()->add_headers() =
-        CreateHeaderValueOption(test_case.key, kVal1);
-    auto parsed = ParseResponse(response);
-    EXPECT_EQ(parsed.status(),
-              absl::InternalError(absl::StrCat(
-                  "Failed to parse XdsHeaderValueOption: [field:header.key "
-                  "error:",
-                  test_case.expected_error, "]")))
-        << test_case.key.substr(0, 20);
-  }
-}
-
-// Non-binary header values must be valid gRPC header values and no longer
-// than 32768 bytes (gRFC A102).
-TEST_F(ParseExtAuthzResponseTest, InvalidHeaderValuesFail) {
-  struct TestCase {
-    std::string value;
-    std::string expected_error;
-  };
-  for (const TestCase& test_case : {
-           TestCase{"\x01", "Illegal header value"},
-           TestCase{"a\nb", "Illegal header value"},
-           TestCase{std::string(32769, 'a'), "longer than 32768 bytes"},
-       }) {
-    CheckResponse response;
-    response.mutable_status()->set_code(GRPC_STATUS_OK);
-    *response.mutable_ok_response()->add_headers() =
-        CreateRawHeaderValueOption(kKey1, test_case.value);
-    auto parsed = ParseResponse(response);
-    EXPECT_EQ(parsed.status(), absl::InternalError(absl::StrCat(
-                                   "Failed to parse XdsHeaderValueOption: "
-                                   "[field:header.raw_value error:",
-                                   test_case.expected_error, "]")))
-        << test_case.value.substr(0, 20);
-  }
-}
-
-// headers_to_remove entries must be valid gRPC header names.
-TEST_F(ParseExtAuthzResponseTest, InvalidHeaderNamesToRemoveFail) {
-  for (absl::string_view key : {"", "Key1", ":path"}) {
-    CheckResponse response;
-    response.mutable_status()->set_code(GRPC_STATUS_OK);
-    response.mutable_ok_response()->add_headers_to_remove(std::string(key));
-    auto parsed = ParseResponse(response);
-    EXPECT_EQ(parsed.status(), absl::InvalidArgumentError(absl::StrCat(
-                                   "Invalid header name to remove: ", key)))
-        << key;
-  }
-}
-
 // Removals of valid header names that gRPC never allows to be mutated, such
 // as "host" and grpc-* headers, are not rejected by the parser; the filter
 // handles them according to the header mutation rules.
-TEST_F(ParseExtAuthzResponseTest, ProtectedHeaderNamesToRemoveAreParsed) {
+TEST_F(ParseExtAuthzResponseTest, HeaderProtectedNamesToRemoveParsed) {
   CheckResponse response;
   response.mutable_status()->set_code(GRPC_STATUS_OK);
   response.mutable_ok_response()->add_headers_to_remove("host");
