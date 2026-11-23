@@ -4151,7 +4151,6 @@ class ClientLbSubchannelMetricsTest : public ClientLbEnd2endTest {
 };
 
 TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
-  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   StartServers(1, {}, grpc::InsecureServerCredentials());
   const int port = servers_[0]->port_;
   std::string target = grpc_core::LocalIpAndPort(port);

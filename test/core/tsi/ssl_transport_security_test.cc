@@ -38,6 +38,7 @@
 #include <tuple>
 #include <vector>
 
+#include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/telemetry/instrument.h"
 #include "src/core/tsi/tls_telemetry.h"
 #include "src/core/tsi/transport_security.h"
@@ -269,6 +270,12 @@ class SslTransportSecurityTest
       verify_root_cert_subject_ = verify_root_cert_subject;
     }
 
+    void SetExpectedRootCertSubjects(absl::string_view client_root_subject,
+                                     absl::string_view server_root_subject) {
+      expected_client_root_cert_subject_ = std::string(client_root_subject);
+      expected_server_root_cert_subject_ = std::string(server_root_subject);
+    }
+
     ssl_key_cert_lib* MutableKeyCertLib() { return key_cert_lib_.get(); }
 
     void SetForceClientAuth(bool force_client_auth) {
@@ -330,6 +337,16 @@ class SslTransportSecurityTest
       expected_negotiated_group_ = expected_negotiated_group;
     }
 
+    void OverrideServerSignatureAlgorithms(
+        const std::vector<grpc_tls_signature_algorithm>& signature_algorithms) {
+      server_signature_algorithms_ = signature_algorithms;
+    }
+
+    void OverrideClientSignatureAlgorithms(
+        const std::vector<grpc_tls_signature_algorithm>& signature_algorithms) {
+      client_signature_algorithms_ = signature_algorithms;
+    }
+
     void SetServerExpectsHandshakeFailure(
         bool server_expects_handshake_failure) {
       server_expects_handshake_failure_ = server_expects_handshake_failure;
@@ -387,6 +404,7 @@ class SslTransportSecurityTest
       ssl_alpn_lib* alpn_lib = ssl_fixture->alpn_lib_;
       // Create client handshaker factory.
       tsi_ssl_client_handshaker_options client_options;
+      client_options.cipher_suites = grpc_get_ssl_cipher_suites();
       if (key_cert_lib->use_pem_root_certs &&
           !key_cert_lib->root_cert.empty()) {
         client_options.root_cert_info =
@@ -417,6 +435,10 @@ class SslTransportSecurityTest
         client_options.key_exchange_groups =
             ssl_fixture->client_key_exchange_groups_.value();
       }
+      if (ssl_fixture->client_signature_algorithms_.has_value()) {
+        client_options.signature_algorithms =
+            ssl_fixture->client_signature_algorithms_.value();
+      }
       if (ssl_fixture->client_ekm_label_.has_value()) {
         client_options.exported_keying_material_label =
             *ssl_fixture->client_ekm_label_;
@@ -428,6 +450,7 @@ class SslTransportSecurityTest
                 TSI_OK);
       // Create server handshaker factory.
       tsi_ssl_server_handshaker_options server_options;
+      server_options.cipher_suites = grpc_get_ssl_cipher_suites();
       if (alpn_lib->alpn_mode == ALPN_SERVER_NO_CLIENT ||
           alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ||
           alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_MISMATCH) {
@@ -475,6 +498,10 @@ class SslTransportSecurityTest
       if (ssl_fixture->server_key_exchange_groups_.has_value()) {
         server_options.key_exchange_groups =
             ssl_fixture->server_key_exchange_groups_.value();
+      }
+      if (ssl_fixture->server_signature_algorithms_.has_value()) {
+        server_options.signature_algorithms =
+            ssl_fixture->server_signature_algorithms_.value();
       }
       if (ssl_fixture->server_ekm_label_.has_value()) {
         server_options.exported_keying_material_label =
@@ -743,13 +770,12 @@ class SslTransportSecurityTest
       tsi_peer_destruct(peer);
     }
 
-    static void CheckVerifiedRootCertSubject(const tsi_peer* peer) {
+    static void CheckVerifiedRootCertSubject(const tsi_peer* peer,
+                                             absl::string_view expected_match) {
       const tsi_peer_property* verified_root_cert_subject =
           tsi_peer_get_property_by_name(
               peer, TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY);
       ASSERT_NE(verified_root_cert_subject, nullptr);
-      std::string expected_match =
-          "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
       ASSERT_EQ(expected_match,
                 std::string(verified_root_cert_subject->value.data,
                             verified_root_cert_subject->value.length));
@@ -810,7 +836,8 @@ class SslTransportSecurityTest
         }
         if (ssl_fixture->verify_root_cert_subject_) {
           if (!ssl_fixture->session_reused_) {
-            CheckVerifiedRootCertSubject(&peer);
+            CheckVerifiedRootCertSubject(
+                &peer, ssl_fixture->expected_client_root_cert_subject_);
           } else {
             CheckVerifiedRootCertSubjectUnset(&peer);
           }
@@ -866,7 +893,8 @@ class SslTransportSecurityTest
           }
         }
         if (ssl_fixture->force_client_auth_ && !ssl_fixture->session_reused_) {
-          CheckVerifiedRootCertSubject(&peer);
+          CheckVerifiedRootCertSubject(
+              &peer, ssl_fixture->expected_server_root_cert_subject_);
         } else {
           CheckVerifiedRootCertSubjectUnset(&peer);
         }
@@ -896,6 +924,10 @@ class SslTransportSecurityTest
     size_t network_bio_buf_size_;
     size_t ssl_bio_buf_size_;
     bool verify_root_cert_subject_;
+    std::string expected_client_root_cert_subject_ =
+        "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
+    std::string expected_server_root_cert_subject_ =
+        "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
     tsi_tls_version tls_version_;
     bool send_client_ca_list_;
     std::optional<std::string> alpn_client_overriden_protocols_ = std::nullopt;
@@ -907,6 +939,10 @@ class SslTransportSecurityTest
     std::optional<std::vector<grpc_tls_key_exchange_group>>
         server_key_exchange_groups_ = std::nullopt;
     std::optional<std::string> expected_negotiated_group_ = std::nullopt;
+    std::optional<std::vector<grpc_tls_signature_algorithm>>
+        client_signature_algorithms_ = std::nullopt;
+    std::optional<std::vector<grpc_tls_signature_algorithm>>
+        server_signature_algorithms_ = std::nullopt;
 
     tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
     tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
@@ -1899,15 +1935,13 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
   auto tls_version = std::get<0>(GetParam());
   SetUpSslFixture(tls_version,
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
-  // The client default protocols set by the handshaker factory are [toto, baz].
   ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_X25519});
   ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_SECP256R1});
-  // In TLS1.2, on key exchange group mismatch, it will fall back to an ECDHE
-  // ciphersuite, provided there is a matching one between the client and server
-  // TLS1.3 is stricter and requires a match, and will thus fail in this test
-  // case.
-  ssl_fixture_->SetServerExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
-  ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
+  // With gRPC's default cipher suites (ECDHE-only for TLS 1.2 and TLS 1.3),
+  // there is no non-ephemeral fallback when key exchange groups do not overlap,
+  // so both TLS 1.2 and TLS 1.3 fail the handshake.
+  ssl_fixture_->SetServerExpectsHandshakeFailure(true);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(true);
   DoHandshake();
 }
 
@@ -1996,6 +2030,34 @@ TEST_P(SslTransportSecurityTest, SuccessfulHandshakeClientSpecifiesP256) {
   DoHandshake();
 }
 
+TEST_P(SslTransportSecurityTest, TestSignatureAlgorithmSuccess) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->OverrideClientSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA256,
+       GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA256});
+  ssl_fixture_->OverrideServerSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA256,
+       GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA256});
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, TestSignatureAlgorithmMismatch) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  // Default fixture uses RSA certificates and gRPC's default cipher suites
+  // (ECDHE-only for TLS 1.2 and TLS 1.3), so restricting signature algorithms
+  // to ECDSA P-256 causes handshake failure in both TLS 1.2 and TLS 1.3.
+  ssl_fixture_->OverrideClientSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256});
+  ssl_fixture_->OverrideServerSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256});
+  ssl_fixture_->SetServerExpectsHandshakeFailure(true);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(true);
+  DoHandshake();
+}
+
 TEST_P(SslTransportSecurityTest, TestExportedKeyingMaterialMatchingLabels) {
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
@@ -2005,6 +2067,42 @@ TEST_P(SslTransportSecurityTest, TestExportedKeyingMaterialMatchingLabels) {
   // DoHandshake() calls CheckHandshakerPeers(), which will verify that both the
   // client and server handshakes were successful, and that the client and
   // server EKMs are equal, because the labels and lengths match.
+}
+
+TEST(SslTransportSecurityTest,
+     TestDuplicateSignatureAlgorithmFailsClientFactoryCreation) {
+  tsi_ssl_client_handshaker_factory* client_handshaker_factory = nullptr;
+  tsi_ssl_client_handshaker_options options;
+  options.skip_server_certificate_verification = true;
+  options.signature_algorithms = {
+      GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256,
+      GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256};
+
+  ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
+                &options, &client_handshaker_factory),
+            TSI_INVALID_ARGUMENT);
+  ASSERT_EQ(client_handshaker_factory, nullptr);
+}
+
+TEST(SslTransportSecurityTest,
+     TestDuplicateSignatureAlgorithmFailsServerFactoryCreation) {
+  tsi_ssl_server_handshaker_factory* server_handshaker_factory = nullptr;
+  std::string cert_chain = testing::GetFileContents(
+      absl::StrCat(kSslTsiTestCredentialsDir, "server0.pem"));
+  PemKeyCertPair cert_pair(testing::GetFileContents(absl::StrCat(
+                               kSslTsiTestCredentialsDir, "server0.key")),
+                           cert_chain);
+  tsi_ssl_server_handshaker_options options;
+  options.key_cert_pairs_or_selector = PemKeyCertPairList{cert_pair};
+  options.root_cert_info = std::make_shared<tsi::RootCertInfo>(cert_chain);
+  options.signature_algorithms = {
+      GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA256,
+      GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA256};
+
+  ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
+                &options, &server_handshaker_factory),
+            TSI_INVALID_ARGUMENT);
+  ASSERT_EQ(server_handshaker_factory, nullptr);
 }
 
 TEST_P(SslTransportSecurityTest, TestExportedKeyingMaterialDifferentLabels) {
@@ -2098,6 +2196,308 @@ TEST(SslTransportSecurityTest,
 }
 
 #endif  // OPENSSL_VERSION_NUMBER >= 0x10101000L
+
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+constexpr absl::string_view kSslTsiMldsaTestCredentialsDir =
+    "test/core/tsi/test_creds/mldsa/";
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeMldsa44) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  key_cert_lib->root_cert = GetFileContents(
+      absl::StrCat(kSslTsiMldsaTestCredentialsDir, "ca_mldsa44.pem"));
+  tsi_ssl_root_certs_store_destroy(key_cert_lib->root_store);
+  key_cert_lib->root_store =
+      tsi_ssl_root_certs_store_create(key_cert_lib->root_cert.c_str());
+  key_cert_lib->server_pem_key_cert_pairs.clear();
+  key_cert_lib->server_pem_key_cert_pairs.emplace_back(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa44.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa44.pem")));
+  key_cert_lib->client_pem_key_cert_pair = PemKeyCertPair(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa44.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa44.pem")));
+  ssl_fixture_->SetExpectedRootCertSubjects(
+      "CN=testca_mldsa44,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU",
+      "CN=testca_mldsa44,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  ssl_fixture_->SetServerNameIndication("foo.test.google.fr");
+  ssl_fixture_->SetForceClientAuth(true);
+  ssl_fixture_->OverrideClientSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44});
+  ssl_fixture_->OverrideServerSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44});
+  // ML-DSA is only supported in TLS 1.3.
+  ssl_fixture_->SetServerExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeMldsa65) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  key_cert_lib->root_cert = GetFileContents(
+      absl::StrCat(kSslTsiMldsaTestCredentialsDir, "ca_mldsa65.pem"));
+  tsi_ssl_root_certs_store_destroy(key_cert_lib->root_store);
+  key_cert_lib->root_store =
+      tsi_ssl_root_certs_store_create(key_cert_lib->root_cert.c_str());
+  key_cert_lib->server_pem_key_cert_pairs.clear();
+  key_cert_lib->server_pem_key_cert_pairs.emplace_back(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa65.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa65.pem")));
+  key_cert_lib->client_pem_key_cert_pair = PemKeyCertPair(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa65.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa65.pem")));
+  ssl_fixture_->SetExpectedRootCertSubjects(
+      "CN=testca_mldsa65,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU",
+      "CN=testca_mldsa65,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  ssl_fixture_->SetServerNameIndication("foo.test.google.fr");
+  ssl_fixture_->SetForceClientAuth(true);
+  ssl_fixture_->OverrideClientSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65});
+  ssl_fixture_->OverrideServerSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65});
+  // ML-DSA is only supported in TLS 1.3.
+  ssl_fixture_->SetServerExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeMldsa87) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  key_cert_lib->root_cert = GetFileContents(
+      absl::StrCat(kSslTsiMldsaTestCredentialsDir, "ca_mldsa87.pem"));
+  tsi_ssl_root_certs_store_destroy(key_cert_lib->root_store);
+  key_cert_lib->root_store =
+      tsi_ssl_root_certs_store_create(key_cert_lib->root_cert.c_str());
+  key_cert_lib->server_pem_key_cert_pairs.clear();
+  key_cert_lib->server_pem_key_cert_pairs.emplace_back(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa87.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa87.pem")));
+  key_cert_lib->client_pem_key_cert_pair = PemKeyCertPair(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa87.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa87.pem")));
+  ssl_fixture_->SetExpectedRootCertSubjects(
+      "CN=testca_mldsa87,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU",
+      "CN=testca_mldsa87,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  ssl_fixture_->SetServerNameIndication("foo.test.google.fr");
+  ssl_fixture_->SetForceClientAuth(true);
+  ssl_fixture_->OverrideClientSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87});
+  ssl_fixture_->OverrideServerSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87});
+  // ML-DSA is only supported in TLS 1.3.
+  ssl_fixture_->SetServerExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  DoHandshake();
+}
+
+// In TLS 1.3 mTLS, BoringSSL generates two NewSessionTicket messages on the
+// server that each embed the client's certificate chain, and defers flushing
+// them until the server's first SSL_write call (in the TSI frame protector).
+// With a 2-certificate ML-DSA-87 client chain (~15 KB), the two queued session
+// tickets (~30 KB) exceed the default 17 KB BIO pair buffer size, causing
+// SSL_write to return SSL_ERROR_WANT_WRITE. This test verifies that
+// DoSslWrite, SslProtectorProtect, and SslProtectorProtectFlush handle
+// SSL_ERROR_WANT_WRITE (TSI_DRAIN_BUFFER) by draining the BIO across multiple
+// flushes rather than failing the connection.
+TEST_P(SslTransportSecurityTest, SuccessfulRoundTripMldsa87Chain) {
+  auto tls_version = std::get<0>(GetParam());
+  if (tls_version == TSI_TLS1_2) return;
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  key_cert_lib->root_cert = GetFileContents(
+      absl::StrCat(kSslTsiMldsaTestCredentialsDir, "ca_mldsa87.pem"));
+  tsi_ssl_root_certs_store_destroy(key_cert_lib->root_store);
+  key_cert_lib->root_store =
+      tsi_ssl_root_certs_store_create(key_cert_lib->root_cert.c_str());
+  key_cert_lib->server_pem_key_cert_pairs.clear();
+  key_cert_lib->server_pem_key_cert_pairs.emplace_back(
+      GetFileContents(absl::StrCat(kSslTsiMldsaTestCredentialsDir,
+                                   "server_chain_mldsa87.key")),
+      GetFileContents(absl::StrCat(kSslTsiMldsaTestCredentialsDir,
+                                   "server_chain_mldsa87.pem")));
+  key_cert_lib->client_pem_key_cert_pair = PemKeyCertPair(
+      GetFileContents(absl::StrCat(kSslTsiMldsaTestCredentialsDir,
+                                   "client_chain_mldsa87.key")),
+      GetFileContents(absl::StrCat(kSslTsiMldsaTestCredentialsDir,
+                                   "client_chain_mldsa87.pem")));
+  ssl_fixture_->SetExpectedRootCertSubjects(
+      "CN=testca_mldsa87,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU",
+      "CN=testca_mldsa87,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  ssl_fixture_->SetServerNameIndication("foo.test.google.fr");
+  ssl_fixture_->SetForceClientAuth(true);
+  ssl_fixture_->OverrideClientSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87});
+  ssl_fixture_->OverrideServerSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87});
+  DoRoundTrip();
+}
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeMixedMldsaCerts) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  key_cert_lib->root_cert =
+      absl::StrCat(GetFileContents(absl::StrCat(kSslTsiMldsaTestCredentialsDir,
+                                                "ca_mldsa87.pem")),
+                   GetFileContents(absl::StrCat(kSslTsiMldsaTestCredentialsDir,
+                                                "ca_mldsa44.pem")));
+  tsi_ssl_root_certs_store_destroy(key_cert_lib->root_store);
+  key_cert_lib->root_store =
+      tsi_ssl_root_certs_store_create(key_cert_lib->root_cert.c_str());
+  key_cert_lib->server_pem_key_cert_pairs.clear();
+  key_cert_lib->server_pem_key_cert_pairs.emplace_back(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa87.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa87.pem")));
+  key_cert_lib->client_pem_key_cert_pair = PemKeyCertPair(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa44.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa44.pem")));
+  ssl_fixture_->SetExpectedRootCertSubjects(
+      "CN=testca_mldsa87,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU",
+      "CN=testca_mldsa44,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  ssl_fixture_->SetServerNameIndication("foo.test.google.fr");
+  ssl_fixture_->SetForceClientAuth(true);
+  ssl_fixture_->OverrideClientSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65,
+       GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87,
+       GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44});
+  ssl_fixture_->OverrideServerSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256,
+       GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44,
+       GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87});
+  // ML-DSA is only supported in TLS 1.3.
+  ssl_fixture_->SetServerExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeClassicalAndMldsaCerts) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  key_cert_lib->root_cert = absl::StrCat(
+      GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "ca.pem")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "ca_mldsa65.pem")));
+  tsi_ssl_root_certs_store_destroy(key_cert_lib->root_store);
+  key_cert_lib->root_store =
+      tsi_ssl_root_certs_store_create(key_cert_lib->root_cert.c_str());
+  key_cert_lib->client_pem_key_cert_pair = PemKeyCertPair(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa65.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa65.pem")));
+  ssl_fixture_->SetExpectedRootCertSubjects(
+      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU",
+      "CN=testca_mldsa65,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  ssl_fixture_->SetServerNameIndication("foo.test.google.fr");
+  ssl_fixture_->SetForceClientAuth(true);
+  ssl_fixture_->OverrideClientSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256,
+       GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA256,
+       GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65});
+  ssl_fixture_->OverrideServerSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87,
+       GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65,
+       GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA256});
+  // ML-DSA client certificate is only supported in TLS 1.3.
+  ssl_fixture_->SetServerExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, MldsaSignatureAlgorithmMismatch) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  key_cert_lib->root_cert = GetFileContents(
+      absl::StrCat(kSslTsiMldsaTestCredentialsDir, "ca_mldsa65.pem"));
+  tsi_ssl_root_certs_store_destroy(key_cert_lib->root_store);
+  key_cert_lib->root_store =
+      tsi_ssl_root_certs_store_create(key_cert_lib->root_cert.c_str());
+  key_cert_lib->server_pem_key_cert_pairs.clear();
+  key_cert_lib->server_pem_key_cert_pairs.emplace_back(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa65.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa65.pem")));
+  ssl_fixture_->SetServerNameIndication("foo.test.google.fr");
+  ssl_fixture_->OverrideClientSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87});
+  ssl_fixture_->OverrideServerSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65});
+  ssl_fixture_->SetServerExpectsHandshakeFailure(true);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(true);
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest,
+       FailedHandshakeMixedMldsaCertsClientCertNotInServerList) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  key_cert_lib->root_cert =
+      absl::StrCat(GetFileContents(absl::StrCat(kSslTsiMldsaTestCredentialsDir,
+                                                "ca_mldsa87.pem")),
+                   GetFileContents(absl::StrCat(kSslTsiMldsaTestCredentialsDir,
+                                                "ca_mldsa44.pem")));
+  tsi_ssl_root_certs_store_destroy(key_cert_lib->root_store);
+  key_cert_lib->root_store =
+      tsi_ssl_root_certs_store_create(key_cert_lib->root_cert.c_str());
+  key_cert_lib->server_pem_key_cert_pairs.clear();
+  key_cert_lib->server_pem_key_cert_pairs.emplace_back(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa87.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa87.pem")));
+  key_cert_lib->client_pem_key_cert_pair = PemKeyCertPair(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa44.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa44.pem")));
+  ssl_fixture_->SetServerNameIndication("foo.test.google.fr");
+  ssl_fixture_->SetForceClientAuth(true);
+  // Client accepts server's ML-DSA-87 cert, but server's list omits ML-DSA-44
+  // required by the client's certificate.
+  ssl_fixture_->OverrideClientSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87,
+       GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44});
+  ssl_fixture_->OverrideServerSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87,
+       GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65});
+  ssl_fixture_->SetServerExpectsHandshakeFailure(true);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(true);
+  DoHandshake();
+}
+#endif  // defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >=
+        // 0x30500000L
 
 }  // namespace
 }  // namespace testing

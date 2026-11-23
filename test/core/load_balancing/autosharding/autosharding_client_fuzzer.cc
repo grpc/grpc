@@ -34,7 +34,7 @@
 #include "src/core/util/wait_for_single_owner.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
-#include "test/core/load_balancing/autosharding_client_fuzzer.pb.h"
+#include "test/core/load_balancing/autosharding/autosharding_client_fuzzer.pb.h"
 #include "test/core/xds/xds_transport_fake.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"

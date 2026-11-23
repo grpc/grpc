@@ -20,6 +20,7 @@
 #include <stdint.h>
 
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -29,20 +30,24 @@
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
+#include "envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb.h"
 #include "envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h"
 #include "envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.h"
 #include "envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h"
 #include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "src/core/config/experiment_env_var.h"
+#include "src/core/load_balancing/autosharding/autosharding.h"
 #include "src/core/load_balancing/weighted_round_robin/weighted_round_robin.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/xds/grpc/xds_grpc_service_parser.h"
 #include "src/core/xds/grpc/xds_http_composite_filter.h"
 #include "src/core/xds/grpc/xds_http_ext_authz_filter.h"
 #include "src/core/xds/grpc/xds_http_ext_proc_filter.h"
@@ -51,6 +56,8 @@
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
 #include "src/core/xds/grpc/xds_http_stateful_session_filter.h"
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
+#include "src/core/xds/grpc/xds_server_grpc.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 
 namespace grpc_core {
@@ -125,8 +132,8 @@ class RoundRobinLbPolicyConfigFactory final
   Json::Object ConvertXdsLbPolicyConfig(
       const XdsLbPolicyRegistry* /*registry*/,
       const XdsResourceType::DecodeContext& /*context*/,
-      absl::string_view /*configuration*/, ValidationErrors* /*errors*/,
-      int /*recursion_depth*/) override {
+      absl::string_view /*configuration*/, XdsGrpcServiceMap& /*grpc_services*/,
+      ValidationErrors* /*errors*/, int /*recursion_depth*/) override {
     return Json::Object{{"round_robin", Json::FromObject({})}};
   }
 
@@ -143,8 +150,8 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory final
   Json::Object ConvertXdsLbPolicyConfig(
       const XdsLbPolicyRegistry* /*registry*/,
       const XdsResourceType::DecodeContext& context,
-      absl::string_view configuration, ValidationErrors* errors,
-      int /*recursion_depth*/) override {
+      absl::string_view configuration, XdsGrpcServiceMap& /*grpc_services*/,
+      ValidationErrors* errors, int /*recursion_depth*/) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_parse(
             configuration.data(), configuration.size(), context.arena);
@@ -242,8 +249,8 @@ class RingHashLbPolicyConfigFactory final
   Json::Object ConvertXdsLbPolicyConfig(
       const XdsLbPolicyRegistry* /*registry*/,
       const XdsResourceType::DecodeContext& context,
-      absl::string_view configuration, ValidationErrors* errors,
-      int /*recursion_depth*/) override {
+      absl::string_view configuration, XdsGrpcServiceMap& /*grpc_services*/,
+      ValidationErrors* errors, int /*recursion_depth*/) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_parse(
             configuration.data(), configuration.size(), context.arena);
@@ -305,8 +312,8 @@ class WrrLocalityLbPolicyConfigFactory final
   Json::Object ConvertXdsLbPolicyConfig(
       const XdsLbPolicyRegistry* registry,
       const XdsResourceType::DecodeContext& context,
-      absl::string_view configuration, ValidationErrors* errors,
-      int recursion_depth) override {
+      absl::string_view configuration, XdsGrpcServiceMap& grpc_services,
+      ValidationErrors* errors, int recursion_depth) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_parse(
             configuration.data(), configuration.size(), context.arena);
@@ -323,7 +330,8 @@ class WrrLocalityLbPolicyConfigFactory final
       return {};
     }
     auto child_policy = registry->ConvertXdsLbPolicyConfig(
-        context, endpoint_picking_policy, errors, recursion_depth + 1);
+        context, endpoint_picking_policy, grpc_services, errors,
+        recursion_depth + 1);
     return Json::Object{
         {"xds_wrr_locality_experimental",
          Json::FromObject(
@@ -344,8 +352,8 @@ class PickFirstLbPolicyConfigFactory final
   Json::Object ConvertXdsLbPolicyConfig(
       const XdsLbPolicyRegistry* /*registry*/,
       const XdsResourceType::DecodeContext& context,
-      absl::string_view configuration, ValidationErrors* errors,
-      int /*recursion_depth*/) override {
+      absl::string_view configuration, XdsGrpcServiceMap& /*grpc_services*/,
+      ValidationErrors* errors, int /*recursion_depth*/) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst_parse(
             configuration.data(), configuration.size(), context.arena);
@@ -370,6 +378,76 @@ class PickFirstLbPolicyConfigFactory final
   }
 };
 
+// Converts the Autosharding proto to the autosharding_experimental LB
+// policy config (gRFC A119).
+class AutoshardingLbPolicyConfigFactory final
+    : public XdsLbPolicyRegistry::ConfigFactory {
+ public:
+  Json::Object ConvertXdsLbPolicyConfig(
+      const XdsLbPolicyRegistry* /*registry*/,
+      const XdsResourceType::DecodeContext& context,
+      absl::string_view configuration, XdsGrpcServiceMap& grpc_services,
+      ValidationErrors* errors, int /*recursion_depth*/) override {
+    const auto* resource =
+        envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding_parse(
+            configuration.data(), configuration.size(), context.arena);
+    if (resource == nullptr) {
+      errors->AddError("can't decode Autosharding LB policy config");
+      return {};
+    }
+    Json::Object config;
+    // grpc_service
+    {
+      ValidationErrors::ScopedField field(errors, ".grpc_service");
+      auto grpc_service = std::make_shared<
+          GrpcXdsServerTarget>(ParseXdsGrpcService(
+          context,
+          envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding_grpc_service(
+              resource),
+          errors));
+      // The LB policy passes the key to the channel factory that the
+      // CDS policy creates from the map.
+      std::string key = grpc_service->Key();
+      config["channelFactoryKey"] = Json::FromString(key);
+      grpc_services[std::move(key)] = std::move(grpc_service);
+    }
+    // The LB policy validates the remaining fields when the cluster parser
+    // checks the generated config.
+    // autosharding_target
+    config["autoshardingTarget"] = Json::FromString(UpbStringToStdString(
+        envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding_autosharding_target(
+            resource)));
+    // key_header_name
+    config["keyHeaderName"] = Json::FromString(UpbStringToStdString(
+        envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding_key_header_name(
+            resource)));
+    // enable_fallback
+    config["enableFallback"] = Json::FromBool(
+        envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding_enable_fallback(
+            resource));
+    // initial_assignment_timeout
+    const auto* duration_proto =
+        envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding_initial_assignment_timeout(
+            resource);
+    if (duration_proto != nullptr) {
+      ValidationErrors::ScopedField field(errors,
+                                          ".initial_assignment_timeout");
+      Duration duration = ParseDuration(duration_proto, errors);
+      config["initialAssignmentTimeout"] =
+          Json::FromString(duration.ToJsonString());
+    }
+    return Json::Object{
+        {"autosharding_experimental", Json::FromObject(std::move(config))}};
+  }
+
+  absl::string_view type() override { return Type(); }
+
+  static absl::string_view Type() {
+    return "envoy.extensions.load_balancing_policies.autosharding.v3."
+           "Autosharding";
+  }
+};
+
 }  // namespace
 
 XdsLbPolicyRegistry GrpcXdsBootstrapBuilder::CreateXdsLbPolicyRegistry() {
@@ -381,6 +459,10 @@ XdsLbPolicyRegistry GrpcXdsBootstrapBuilder::CreateXdsLbPolicyRegistry() {
   registry.RegisterFactory(
       std::make_unique<WrrLocalityLbPolicyConfigFactory>());
   registry.RegisterFactory(std::make_unique<PickFirstLbPolicyConfigFactory>());
+  if (AutoshardingLbEnabled()) {
+    registry.RegisterFactory(
+        std::make_unique<AutoshardingLbPolicyConfigFactory>());
+  }
   return registry;
 }
 
