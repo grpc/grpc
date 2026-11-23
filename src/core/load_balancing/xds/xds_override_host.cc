@@ -934,6 +934,10 @@ void XdsOverrideHostLb::CreateSubchannelForAddress(absl::string_view address) {
   // Step 2.
   auto subchannel = channel_control_helper()->CreateSubchannel(
       *addr, per_endpoint_args, args_);
+  // This could conceivably happen if the channel is shutting down as we
+  // get the pick.  If subchannel creation fails, there's not much we can do,
+  // but any pending RPC should wind up being cancelled anyway.
+  if (subchannel == nullptr) return;
   auto wrapper = MakeRefCounted<SubchannelWrapper>(
       std::move(subchannel), RefAsSubclass<XdsOverrideHostLb>());
   // Step 3.
@@ -999,6 +1003,8 @@ RefCountedPtr<SubchannelInterface> XdsOverrideHostLb::Helper::CreateSubchannel(
   }
   auto subchannel = parent()->channel_control_helper()->CreateSubchannel(
       address, per_address_args, args);
+  // If the channel is shutting down, we can't create a subchannel.
+  if (subchannel == nullptr) return nullptr;
   return parent()->AdoptSubchannel(address, std::move(subchannel));
 }
 

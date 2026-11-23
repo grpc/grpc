@@ -17,6 +17,8 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_CLUSTER_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_CLUSTER_H
 
+#include <algorithm>
+#include <memory>
 #include <optional>
 #include <string>
 #include <variant>
@@ -28,6 +30,7 @@
 #include "src/core/xds/grpc/xds_health_status.h"
 #include "src/core/xds/grpc/xds_metadata.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
+#include "src/core/xds/grpc/xds_server_grpc_interface.h"
 #include "src/core/xds/grpc/xds_tls_context.h"
 #include "src/core/xds/xds_client/xds_backend_metric_propagation.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
@@ -51,6 +54,15 @@ inline bool LrsBackendMetricPropagationEqual(
   if (p2 == nullptr) return false;
   // Neither one is null, so compare them.
   return *p1 == *p2;
+}
+
+inline bool GrpcServiceMapsEqual(const XdsGrpcServiceMap& map1,
+                                 const XdsGrpcServiceMap& map2) {
+  return std::equal(map1.begin(), map1.end(), map2.begin(), map2.end(),
+                    [](const auto& entry1, const auto& entry2) {
+                      return entry1.first == entry2.first &&
+                             entry1.second->Equals(*entry2.second);
+                    });
 }
 
 struct XdsClusterResource : public XdsResourceType::ResourceData {
@@ -100,6 +112,10 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   // The LB policy to use for locality and endpoint picking.
   Json::Array lb_policy_config;
+  // GrpcService protos parsed by the xDS LB policy registry from the
+  // cluster's LB policy config.  The CDS LB policy creates a channel
+  // factory for them (gRFC A119).
+  XdsGrpcServiceMap lb_policy_grpc_services;
 
   // Note: Remaining fields are not used for aggregate clusters.
 
@@ -129,6 +145,8 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   bool operator==(const XdsClusterResource& other) const {
     return type == other.type && lb_policy_config == other.lb_policy_config &&
+           GrpcServiceMapsEqual(lb_policy_grpc_services,
+                                other.lb_policy_grpc_services) &&
            LrsServersEqual(lrs_load_reporting_server,
                            other.lrs_load_reporting_server) &&
            LrsBackendMetricPropagationEqual(

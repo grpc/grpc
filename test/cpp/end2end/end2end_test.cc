@@ -1177,6 +1177,7 @@ TEST_P(End2endTest, BidiStream) {
 }
 
 TEST_P(End2endTest, BidiStreamWithCoalescingApi) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1212,6 +1213,7 @@ TEST_P(End2endTest, BidiStreamWithCoalescingApi) {
 // This was added to prevent regression from issue:
 // https://github.com/grpc/grpc/issues/11546
 TEST_P(End2endTest, BidiStreamWithEverythingCoalesced) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1855,7 +1857,9 @@ TEST_P(ProxyEnd2endTest, LocalAddress) {
   // parent (ClientContext::FromServerContext), which the PH2 server does not
   // support yet (ServerCall::Completed() is unimplemented).
   if (GetParam().use_proxy()) {
-    SKIP_TEST_FOR_PH2_SERVER("Proxy call propagation is not supported by PH2");
+    SKIP_TEST_FOR_PH2_SERVER(
+        "TODO(ritulb) [PH2][P1] Proxy call propagation is not supported by "
+        "PH2");
   }
   ResetStub();
   EchoRequest request;

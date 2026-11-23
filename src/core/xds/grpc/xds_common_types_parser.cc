@@ -214,23 +214,35 @@ StringMatcher StringMatcherParseInternal(
   }
   StringMatcher::Type type;
   std::string matcher;
+  // Name of the field holding the pattern, if the pattern must be non-empty.
+  absl::string_view non_empty_field;
   if (proto.HasExact()) {
     type = StringMatcher::Type::kExact;
     matcher = UpbStringToStdString(proto.GetExact());
   } else if (proto.HasPrefix()) {
     type = StringMatcher::Type::kPrefix;
     matcher = UpbStringToStdString(proto.GetPrefix());
+    non_empty_field = ".prefix";
   } else if (proto.HasSuffix()) {
     type = StringMatcher::Type::kSuffix;
     matcher = UpbStringToStdString(proto.GetSuffix());
+    non_empty_field = ".suffix";
   } else if (proto.HasContains()) {
     type = StringMatcher::Type::kContains;
     matcher = UpbStringToStdString(proto.GetContains());
+    non_empty_field = ".contains";
   } else if (proto.HasSafeRegex()) {
     type = StringMatcher::Type::kSafeRegex;
     matcher = UpbStringToStdString(proto.GetSafeRegex());
+    non_empty_field = ".safe_regex.regex";
   } else {
     errors->AddError("invalid string matcher");
+    return StringMatcher();
+  }
+  // As in Envoy, only exact matchers may have an empty pattern.
+  if (!non_empty_field.empty() && matcher.empty()) {
+    ValidationErrors::ScopedField field(errors, non_empty_field);
+    errors->AddError("must be non-empty");
     return StringMatcher();
   }
   const bool ignore_case = proto.IgnoreCase();
@@ -473,7 +485,7 @@ std::optional<std::string> GetHeaderValue(upb_StringView upb_value,
   absl::string_view value = UpbStringToAbsl(upb_value);
   if (value.empty()) return std::nullopt;
   ValidationErrors::ScopedField field(errors, field_name);
-  if (value.size() > 16384) errors->AddError("longer than 16384 bytes");
+  if (value.size() > 32768) errors->AddError("longer than 32768 bytes");
   if (is_binary) {
     std::string decoded_value;
     if (!absl::Base64Unescape(value, &decoded_value)) {

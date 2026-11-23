@@ -60,18 +60,18 @@ class GreeterClientReactor final
   }
 
   void Start() {
-    absl::MutexLock lock(&mu_);
+    absl::MutexLock lock(mu_);
     StartCall();
     Write();
   }
 
   ~GreeterClientReactor() override {
-    absl::MutexLock lock(&mu_);
+    absl::MutexLock lock(mu_);
     mu_.Await(absl::Condition(+[](bool* done) { return *done; }, &done_));
   }
 
   void OnWriteDone(bool ok) override {
-    absl::MutexLock lock(&mu_);
+    absl::MutexLock lock(mu_);
     std::cout << "Writing took " << absl::Now() - *time_ << std::endl;
     time_ = std::nullopt;
     if (ok) {
@@ -86,7 +86,7 @@ class GreeterClientReactor final
       std::cout << "Done with error: [" << status.error_code() << "] "
                 << status.error_message() << "\n";
     }
-    absl::MutexLock lock(&mu_);
+    absl::MutexLock lock(mu_);
     done_ = true;
   }
 

@@ -115,7 +115,7 @@ class Http2ClientTransport final : public ClientTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Deprecated Stuff
 
-  // TODO(tjagtap) : [PH2][EXT] : Remove after event engine rollout
+  // TODO(tjagtap) [PH2][P4][EXT] Remove after event engine rollout
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
 
@@ -291,6 +291,12 @@ class Http2ClientTransport final : public ClientTransport,
   // add frames to this buffer in PrepareControlFrames, they can use this to
   // do post processing after the write is done.
   void NotifyUrgentFramesWriteDone();
+
+  void StartWriteCycle() {
+    transport_write_context_.StartWriteCycle();
+    http2_transport_stats_.BeginWrite(
+        transport_write_context_.GetWriteCycle().GetTargetWriteSize());
+  }
 
   absl::Status DequeueStreamFrames(RefCountedPtr<Stream> stream,
                                    WriteCycle& write_cycle);

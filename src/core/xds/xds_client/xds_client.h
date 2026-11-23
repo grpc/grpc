@@ -44,6 +44,7 @@
 #include "src/core/xds/xds_client/xds_metrics.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "src/core/xds/xds_client/xds_transport_factory.h"
 #include "upb/reflection/def.hpp"
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_set.h"
@@ -240,9 +241,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
     const XdsBootstrap::XdsServer& server_;  // Owned by bootstrap.
 
-    RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
-    RefCountedPtr<XdsTransportFactory::XdsTransport::ConnectivityFailureWatcher>
-        failure_watcher_;
+    RefCountedPtr<XdsTransport> transport_;
+    RefCountedPtr<XdsTransport::ConnectivityFailureWatcher> failure_watcher_;
 
     bool shutting_down_ = false;
 
@@ -360,6 +360,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::vector<RefCountedPtr<XdsChannel>> xds_channels;
     std::map<const XdsResourceType*, std::map<XdsResourceKey, ResourceState>>
         type_map;
+
+    bool HasUncachedResources() const;
+    bool ContainsChannel(XdsChannel* xds_channel) const;
   };
 
   absl::Status AppendNodeToStatus(const absl::Status& status) const;
@@ -389,8 +392,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Gets the type for resource_type, or null if the type is unknown.
   const XdsResourceType* GetResourceTypeLocked(absl::string_view resource_type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-
-  bool HasUncachedResources(const AuthorityState& authority_state);
 
   void MaybeRemoveUnsubscribedCacheEntriesForTypeLocked(
       XdsChannel* xds_channel, const XdsResourceType* type)

@@ -69,6 +69,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
@@ -104,7 +105,7 @@ class Http2ServerTransport final : public ServerTransport,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
       absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings,
-      grpc_closure* on_close_callback);
+      absl::AnyInvocable<void()> on_close_callback);
 
   Http2ServerTransport(const Http2ServerTransport&) = delete;
   Http2ServerTransport& operator=(const Http2ServerTransport&) = delete;
@@ -120,7 +121,7 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Deprecated Stuff
 
-  // TODO(tjagtap) : [PH2][EXT] : Remove after event engine rollout
+  // TODO(tjagtap) [PH2][P4][EXT] Remove after event engine rollout
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
 
@@ -309,6 +310,12 @@ class Http2ServerTransport final : public ServerTransport,
   // add frames to this buffer in PrepareControlFrames, they can use this to
   // do post processing after the write is done.
   void NotifyUrgentFramesWriteDone();
+
+  void StartWriteCycle() {
+    transport_write_context_.StartWriteCycle();
+    http2_transport_stats_.BeginWrite(
+        transport_write_context_.GetWriteCycle().GetTargetWriteSize());
+  }
 
   absl::Status DequeueStreamFrames(RefCountedPtr<Stream> stream,
                                    WriteCycle& write_cycle);
@@ -512,7 +519,8 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Stream Operations
 
-  absl::Status InitializeStream(Stream& stream);
+  // Creates and initializes the Arena for a new incoming stream.
+  RefCountedPtr<Arena> MakeStreamArena();
 
   // Runs on the transport party.
   std::optional<RefCountedPtr<Stream>> MakeStream(
@@ -761,14 +769,15 @@ class Http2ServerTransport final : public ServerTransport,
 
   HPackCompressor encoder_;
   TransportShutdownTracker shutdown_tracker_;
-  grpc_closure* on_close_callback_;
+  absl::AnyInvocable<void()> on_close_callback_;
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_server", GRPC_CHANNEL_READY};
 
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
   bool is_goaway_received_;
-
+  // Only accessed on the transport party.
+  bool is_multiplexer_loop_spawned_ = false;
   bool should_reset_ping_clock_;
   bool max_concurrent_streams_overload_protection_ = false;
   Http2TransportStats http2_transport_stats_;
@@ -786,7 +795,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   // Duration between two consecutive keepalive pings.
   Duration keepalive_time_;
-  GRPC_UNUSED bool test_only_ack_pings_;
+  bool test_only_ack_pings_;
   std::optional<PingManager> ping_manager_;
   std::optional<KeepaliveManager> keepalive_manager_;
 
@@ -803,6 +812,10 @@ class Http2ServerTransport final : public ServerTransport,
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
   TarpitManager tarpit_manager_;
+
+  // Holds the stats plugins configured for the server.
+  const std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group_;
 };
 
 // TODO(tjagtap) : [PH2][P1] : Handle the case where a Server receives two

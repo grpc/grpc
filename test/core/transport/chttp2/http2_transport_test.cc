@@ -22,6 +22,8 @@
 #include <grpc/event_engine/slice.h>
 #include <grpc/grpc.h>
 
+#include <algorithm>
+#include <climits>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -58,9 +60,10 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/time.h"
+#include "test/core/transport/chttp2/http2_common_test_inputs.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
 #include "gtest/gtest.h"
+#include "absl/cleanup/cleanup.h"
 #include "absl/functional/function_ref.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -261,15 +264,21 @@ TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
 
   {
     // 2. Test Server Defaults
+    const Http2KeepaliveDefaults server_defaults =
+        GetHttp2KeepaliveDefaults(/*is_client=*/false);
     TransportChannelArgs args;
     ReadChannelArgs(ChannelArgs(), args, settings, transport_flow_control,
                     /*is_client=*/false);
 
-    EXPECT_EQ(args.keepalive_time, Duration::Hours(2));
-    EXPECT_EQ(args.keepalive_timeout, Duration::Seconds(20));
+    EXPECT_EQ(args.keepalive_time, server_defaults.keepalive_time);
+    EXPECT_EQ(args.keepalive_timeout,
+              server_defaults.keepalive_time == Duration::Infinity()
+                  ? Duration::Infinity()
+                  : server_defaults.keepalive_timeout);
     EXPECT_EQ(args.ping_timeout, Duration::Minutes(1));
     EXPECT_EQ(args.settings_timeout, Duration::Minutes(1));
-    EXPECT_EQ(args.keepalive_permit_without_calls, false);
+    EXPECT_EQ(args.keepalive_permit_without_calls,
+              server_defaults.keepalive_permit_without_calls);
     EXPECT_EQ(transport_flow_control.ph2_enable_rx_crypto(), false);
     EXPECT_EQ(args.max_usable_hpack_table_size, -1);
     EXPECT_GE(args.max_header_list_size_soft_limit, 8192u);
@@ -315,6 +324,224 @@ TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
 
     EXPECT_EQ(args.settings_timeout, Duration::Seconds(80));
   }
+}
+
+TransportChannelArgs ReadTransportChannelArgs(const ChannelArgs& channel_args,
+                                              const bool is_client) {
+  Http2Settings settings;
+  chttp2::TransportFlowControl transport_flow_control(
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+  TransportChannelArgs args;
+  ReadChannelArgs(channel_args, args, settings, transport_flow_control,
+                  is_client);
+  return args;
+}
+
+// Verifies that ReadChannelArgs() resolves the keepalive settings of a client
+// or server transport with no keepalive channel args to `expected`.
+void VerifyKeepaliveDefaults(const Http2KeepaliveDefaults& expected,
+                             const bool is_client) {
+  SCOPED_TRACE(is_client ? "client" : "server");
+  const TransportChannelArgs args =
+      ReadTransportChannelArgs(ChannelArgs(), is_client);
+
+  EXPECT_EQ(args.keepalive_time, expected.keepalive_time);
+  EXPECT_EQ(args.keepalive_permit_without_calls,
+            expected.keepalive_permit_without_calls);
+  if (expected.keepalive_time == Duration::Infinity()) {
+    // Keepalive is disabled, so no keepalive, ping or settings timeout applies.
+    EXPECT_EQ(args.keepalive_timeout, Duration::Infinity());
+    EXPECT_EQ(args.ping_timeout, Duration::Infinity());
+    EXPECT_EQ(args.settings_timeout, Duration::Infinity());
+    return;
+  }
+  EXPECT_EQ(args.keepalive_timeout, expected.keepalive_timeout);
+  EXPECT_EQ(args.ping_timeout, Duration::Minutes(1));
+  EXPECT_EQ(args.settings_timeout,
+            std::max(expected.keepalive_timeout * 2, Duration::Minutes(1)));
+}
+
+// Tests configuring default keepalive settings via
+// SetHttp2KeepaliveDefaultsFromChannelArgs() and verifies how
+// ReadChannelArgs() resolves them against channel args.
+TEST(Http2CommonTransportTest, TestReadTransportChannelArgsKeepaliveDefaults) {
+  // Save the current keepalive defaults and restore them when the test
+  // finishes.
+  const Http2KeepaliveDefaults saved_client_defaults =
+      GetHttp2KeepaliveDefaults(/*is_client=*/true);
+  const Http2KeepaliveDefaults saved_server_defaults =
+      GetHttp2KeepaliveDefaults(/*is_client=*/false);
+  const absl::Cleanup restore_keepalive_defaults = [saved_client_defaults,
+                                                    saved_server_defaults] {
+    TestOnlySetHttp2KeepaliveDefaults(saved_client_defaults,
+                                      /*is_client=*/true);
+    TestOnlySetHttp2KeepaliveDefaults(saved_server_defaults,
+                                      /*is_client=*/false);
+  };
+
+  // 1. Override the server keepalive defaults and verify that a server
+  // transport with empty channel args uses them.
+  SetHttp2KeepaliveDefaultsFromChannelArgs(
+      ChannelArgs()
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 600000)    // 10min
+          .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 15000)  // 15s
+          .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true),
+      /*is_client=*/false);
+  const Http2KeepaliveDefaults overridden_server_defaults = {
+      /*keepalive_time=*/Duration::Minutes(10),
+      /*keepalive_timeout=*/Duration::Seconds(15),
+      /*keepalive_permit_without_calls=*/true};
+  VerifyKeepaliveDefaults(overridden_server_defaults, /*is_client=*/false);
+
+  // 2. Verify that the client defaults are unaffected by the server override.
+  VerifyKeepaliveDefaults(saved_client_defaults, /*is_client=*/true);
+
+  // 3. Override the client keepalive defaults and verify that the server
+  // defaults are unaffected by the client override.
+  SetHttp2KeepaliveDefaultsFromChannelArgs(
+      ChannelArgs()
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 45000)     // 45s
+          .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 10000)  // 10s
+          .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true),
+      /*is_client=*/true);
+  const Http2KeepaliveDefaults overridden_client_defaults = {
+      /*keepalive_time=*/Duration::Seconds(45),
+      /*keepalive_timeout=*/Duration::Seconds(10),
+      /*keepalive_permit_without_calls=*/true};
+  VerifyKeepaliveDefaults(overridden_client_defaults, /*is_client=*/true);
+  VerifyKeepaliveDefaults(overridden_server_defaults, /*is_client=*/false);
+
+  // 4. Verify that explicit channel args take precedence over the defaults.
+  const TransportChannelArgs explicit_args = ReadTransportChannelArgs(
+      ChannelArgs()
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 30000)    // 30s
+          .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 5000)  // 5s
+          .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, false),
+      /*is_client=*/false);
+  EXPECT_EQ(explicit_args.keepalive_time, Duration::Seconds(30));
+  EXPECT_EQ(explicit_args.keepalive_timeout, Duration::Seconds(5));
+  EXPECT_EQ(explicit_args.keepalive_permit_without_calls, false);
+
+  // 5. Verify that updating a subset of keepalive args leaves the other
+  // defaults unchanged.
+  SetHttp2KeepaliveDefaultsFromChannelArgs(
+      ChannelArgs().Set(GRPC_ARG_KEEPALIVE_TIME_MS, 300000),  // 5min
+      /*is_client=*/false);
+  const Http2KeepaliveDefaults partially_updated_server_defaults = {
+      /*keepalive_time=*/Duration::Minutes(5),
+      /*keepalive_timeout=*/Duration::Seconds(15),
+      /*keepalive_permit_without_calls=*/true};
+  VerifyKeepaliveDefaults(partially_updated_server_defaults,
+                          /*is_client=*/false);
+
+  // 6. Verify that empty channel args leave the defaults of both sides
+  // unchanged.
+  SetHttp2KeepaliveDefaultsFromChannelArgs(ChannelArgs(), /*is_client=*/true);
+  SetHttp2KeepaliveDefaultsFromChannelArgs(ChannelArgs(), /*is_client=*/false);
+  VerifyKeepaliveDefaults(overridden_client_defaults, /*is_client=*/true);
+  VerifyKeepaliveDefaults(partially_updated_server_defaults,
+                          /*is_client=*/false);
+}
+
+// Tests edge case handling for keepalive defaults and channel args.
+TEST(Http2CommonTransportTest,
+     TestReadTransportChannelArgsKeepaliveDefaultsEdgeValues) {
+  // Save the current keepalive defaults and restore them when the test
+  // finishes.
+  const Http2KeepaliveDefaults saved_client_defaults =
+      GetHttp2KeepaliveDefaults(/*is_client=*/true);
+  const Http2KeepaliveDefaults saved_server_defaults =
+      GetHttp2KeepaliveDefaults(/*is_client=*/false);
+  const absl::Cleanup restore_keepalive_defaults = [saved_client_defaults,
+                                                    saved_server_defaults] {
+    TestOnlySetHttp2KeepaliveDefaults(saved_client_defaults,
+                                      /*is_client=*/true);
+    TestOnlySetHttp2KeepaliveDefaults(saved_server_defaults,
+                                      /*is_client=*/false);
+  };
+
+  // 1. The setter clamps a non-positive keepalive time to 1ms and a negative
+  // keepalive timeout to zero.
+  SetHttp2KeepaliveDefaultsFromChannelArgs(
+      ChannelArgs()
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 0)
+          .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, -1)
+          .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, false),
+      /*is_client=*/false);
+  const Http2KeepaliveDefaults clamped_server_defaults = {
+      /*keepalive_time=*/Duration::Milliseconds(1),
+      /*keepalive_timeout=*/Duration::Zero(),
+      /*keepalive_permit_without_calls=*/false};
+  VerifyKeepaliveDefaults(clamped_server_defaults, /*is_client=*/false);
+
+  // 2. INT_MAX maps to an infinite keepalive time and timeout, which disables
+  // keepalive by default.
+  SetHttp2KeepaliveDefaultsFromChannelArgs(
+      ChannelArgs()
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MAX)
+          .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, INT_MAX),
+      /*is_client=*/false);
+  const Http2KeepaliveDefaults infinite_server_defaults = {
+      /*keepalive_time=*/Duration::Infinity(),
+      /*keepalive_timeout=*/Duration::Infinity(),
+      /*keepalive_permit_without_calls=*/false};
+  EXPECT_EQ(GetHttp2KeepaliveDefaults(/*is_client=*/false).keepalive_timeout,
+            Duration::Infinity());
+  VerifyKeepaliveDefaults(infinite_server_defaults, /*is_client=*/false);
+
+  // 3. INT_MIN maps to a negative infinite duration, which the setter clamps
+  // like any other non-positive value.
+  SetHttp2KeepaliveDefaultsFromChannelArgs(
+      ChannelArgs()
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MIN)
+          .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, INT_MIN),
+      /*is_client=*/false);
+  VerifyKeepaliveDefaults(clamped_server_defaults, /*is_client=*/false);
+
+  // 4. ReadChannelArgs() applies the same clamping to explicit keepalive
+  // channel args.
+  const TransportChannelArgs clamped_args =
+      ReadTransportChannelArgs(ChannelArgs()
+                                   .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 0)
+                                   .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, -1),
+                               /*is_client=*/true);
+  EXPECT_EQ(clamped_args.keepalive_time, Duration::Milliseconds(1));
+  EXPECT_EQ(clamped_args.keepalive_timeout, Duration::Zero());
+  const TransportChannelArgs negative_infinite_args =
+      ReadTransportChannelArgs(ChannelArgs()
+                                   .Set(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MIN)
+                                   .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, INT_MIN),
+                               /*is_client=*/true);
+  EXPECT_EQ(negative_infinite_args.keepalive_time, Duration::Milliseconds(1));
+  EXPECT_EQ(negative_infinite_args.keepalive_timeout, Duration::Zero());
+
+  // 5. An explicit infinite keepalive time disables the keepalive, ping and
+  // settings timeouts even when the defaults are finite.
+  SetHttp2KeepaliveDefaultsFromChannelArgs(
+      ChannelArgs()
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 600000)     // 10min
+          .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 15000),  // 15s
+      /*is_client=*/false);
+  const TransportChannelArgs infinite_time_args = ReadTransportChannelArgs(
+      ChannelArgs().Set(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MAX),
+      /*is_client=*/false);
+  EXPECT_EQ(infinite_time_args.keepalive_time, Duration::Infinity());
+  EXPECT_EQ(infinite_time_args.keepalive_timeout, Duration::Infinity());
+  EXPECT_EQ(infinite_time_args.ping_timeout, Duration::Infinity());
+  EXPECT_EQ(infinite_time_args.settings_timeout, Duration::Infinity());
+
+  // 6. An explicit keepalive timeout is still honoured when the keepalive time
+  // is infinite.
+  const TransportChannelArgs explicit_timeout_args = ReadTransportChannelArgs(
+      ChannelArgs()
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MAX)
+          .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 5000),  // 5s
+      /*is_client=*/false);
+  EXPECT_EQ(explicit_timeout_args.keepalive_time, Duration::Infinity());
+  EXPECT_EQ(explicit_timeout_args.keepalive_timeout, Duration::Seconds(5));
+  EXPECT_EQ(explicit_timeout_args.ping_timeout, Duration::Infinity());
+  EXPECT_EQ(explicit_timeout_args.settings_timeout, Duration::Minutes(1));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -617,6 +844,7 @@ TEST(Http2CommonTransportTest,
   chttp2::TransportFlowControl flow_control(
       /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
+  Http2TransportStats http2_transport_stats((ChannelArgs()));
   EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow);
 
   Http2WindowUpdateFrame frame;
@@ -625,13 +853,15 @@ TEST(Http2CommonTransportTest,
   // If stream_id != 0 and stream is null, no change in flow control window.
   frame.stream_id = 1;
   ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
-                                              /*stream=*/nullptr);
+                                              /*stream=*/nullptr,
+                                              http2_transport_stats);
   EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow);
 
   // If stream_id == 0, transport flow control window should increase.
   frame.stream_id = 0;
   ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
-                                              /*stream=*/nullptr);
+                                              /*stream=*/nullptr,
+                                              http2_transport_stats);
   EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow + 1000);
 
   // If increment is 0, no change in flow control window.
@@ -640,18 +870,21 @@ TEST(Http2CommonTransportTest,
   frame.increment = 0;
   frame.stream_id = 0;
   ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
-                                              /*stream=*/nullptr);
+                                              /*stream=*/nullptr,
+                                              http2_transport_stats);
   EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow + 1000);
   frame.stream_id = 1;
   ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
-                                              /*stream=*/nullptr);
+                                              /*stream=*/nullptr,
+                                              http2_transport_stats);
   EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow + 1000);
 
   // Large increment
   frame.increment = 10000;
   frame.stream_id = 0;
   ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
-                                              /*stream=*/nullptr);
+                                              /*stream=*/nullptr,
+                                              http2_transport_stats);
   EXPECT_EQ(flow_control.remote_window(),
             chttp2::kDefaultWindow + 1000 + 10000);
 }
@@ -659,6 +892,7 @@ TEST(Http2CommonTransportTest,
 TEST_P(TestsNeedingStreamObjects,
        ProcessIncomingWindowUpdateFrameFlowControlWithStream) {
   RefCountedPtr<Stream> stream = CreateMinimalTestStream(1);
+  Http2TransportStats http2_transport_stats((ChannelArgs()));
   EXPECT_EQ(transport_flow_control_.remote_window(), chttp2::kDefaultWindow);
   EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 0);
 
@@ -668,15 +902,15 @@ TEST_P(TestsNeedingStreamObjects,
   // If stream_id != 0 and stream is not null, stream flow control window
   // should increase.
   frame.stream_id = 1;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream.get());
+  ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, transport_flow_control_, stream.get(), http2_transport_stats);
   EXPECT_EQ(transport_flow_control_.remote_window(), chttp2::kDefaultWindow);
   EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
 
   // If stream_id == 0, transport flow control window should increase.
   frame.stream_id = 0;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream.get());
+  ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, transport_flow_control_, stream.get(), http2_transport_stats);
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
   EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
@@ -686,14 +920,14 @@ TEST_P(TestsNeedingStreamObjects,
   // layer, we should be graceful with it at this layer.
   frame.increment = 0;
   frame.stream_id = 0;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream.get());
+  ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, transport_flow_control_, stream.get(), http2_transport_stats);
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
   EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
   frame.stream_id = 1;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream.get());
+  ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, transport_flow_control_, stream.get(), http2_transport_stats);
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
   EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
@@ -701,11 +935,94 @@ TEST_P(TestsNeedingStreamObjects,
   // Large increment
   frame.increment = 10000;
   frame.stream_id = 1;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream.get());
+  ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, transport_flow_control_, stream.get(), http2_transport_stats);
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
   EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000 + 10000);
+}
+
+TEST_P(TestsNeedingStreamObjects,
+       ProcessIncomingWindowUpdateFrameFlowControlRecordsStats) {
+  // Purpose: Verify that ProcessIncomingWindowUpdateFrameFlowControl records
+  // stream and transport remote window update sizes and periods via
+  // Http2TransportStats.
+  // Assertions:
+  // - Stream WINDOW_UPDATE with nullptr stream is ignored and records no stats.
+  // - First stream/transport WINDOW_UPDATE records remote window update size,
+  //   but does not record period (since initial timestamp is InfPast).
+  // - Second stream/transport WINDOW_UPDATE records both remote window update
+  //   size and window update period.
+  RefCountedPtr<Stream> stream = CreateMinimalTestStream(1u);
+  Http2TransportStats http2_transport_stats((ChannelArgs()));
+  const Http2GlobalStatsTestHelper stats_helper;
+
+  Http2WindowUpdateFrame frame;
+
+  // Step 1: Stream WINDOW_UPDATE with nullptr stream (closed/unknown stream)
+  // should be ignored and record no stats.
+  frame.stream_id = 1u;
+  frame.increment = 500u;
+  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
+                                              /*stream=*/nullptr,
+                                              http2_transport_stats);
+
+  stats_helper.ExpectStreamRemoteWindowUpdateTotalCount(
+      /*expected_count=*/0.0);
+  stats_helper.ExpectStreamWindowUpdatePeriodTotalCount(
+      /*expected_count=*/0.0);
+
+  // Step 2: First stream WINDOW_UPDATE (stream_id = 1, increment = 1000).
+  // Should record remote window update size, but NOT period.
+  frame.stream_id = 1u;
+  frame.increment = 1000u;
+  ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, transport_flow_control_, stream.get(), http2_transport_stats);
+
+  stats_helper.ExpectStreamRemoteWindowUpdate(/*value=*/1000,
+                                              /*expected_count=*/1u);
+  stats_helper.ExpectStreamWindowUpdatePeriodTotalCount(
+      /*expected_count=*/0.0);
+
+  // Step 3: Second stream WINDOW_UPDATE (stream_id = 1, increment = 10000).
+  // Should record both remote window update size and period.
+  frame.stream_id = 1u;
+  frame.increment = 10000u;
+  ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, transport_flow_control_, stream.get(), http2_transport_stats);
+
+  stats_helper.ExpectStreamRemoteWindowUpdate(/*value=*/1000,
+                                              /*expected_count=*/1u);
+  stats_helper.ExpectStreamRemoteWindowUpdate(/*value=*/10000,
+                                              /*expected_count=*/1u);
+  stats_helper.ExpectStreamWindowUpdatePeriodTotalCount(
+      /*expected_count=*/1.0);
+
+  // Step 4: First transport WINDOW_UPDATE (stream_id = 0, increment = 1000).
+  // Should record remote window update size, but NOT period.
+  frame.stream_id = 0u;
+  frame.increment = 1000u;
+  ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, transport_flow_control_, stream.get(), http2_transport_stats);
+
+  stats_helper.ExpectTransportRemoteWindowUpdate(/*value=*/1000,
+                                                 /*expected_count=*/1u);
+  stats_helper.ExpectTransportWindowUpdatePeriodTotalCount(
+      /*expected_count=*/0.0);
+
+  // Step 5: Second transport WINDOW_UPDATE (stream_id = 0, increment = 10000).
+  // Should record both remote window update size and period.
+  frame.stream_id = 0u;
+  frame.increment = 10000u;
+  ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, transport_flow_control_, stream.get(), http2_transport_stats);
+
+  stats_helper.ExpectTransportRemoteWindowUpdate(/*value=*/1000,
+                                                 /*expected_count=*/1u);
+  stats_helper.ExpectTransportRemoteWindowUpdate(/*value=*/10000,
+                                                 /*expected_count=*/1u);
+  stats_helper.ExpectTransportWindowUpdatePeriodTotalCount(
+      /*expected_count=*/1.0);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

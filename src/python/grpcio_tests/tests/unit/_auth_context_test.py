@@ -144,6 +144,7 @@ class AuthContextTest(unittest.TestCase):
                     _SERVER_HOST_OVERRIDE.encode("ascii")
                 ],
                 "ssl_tls_version": [b"TLSv1.3"],
+                "x509_local_principal": [b"*.test.google.fr"],
             },
             auth_ctx,
         )

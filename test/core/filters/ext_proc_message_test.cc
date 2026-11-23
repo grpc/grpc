@@ -1113,7 +1113,9 @@ TEST_F(ParseExtProcResponseTest, RequestHeadersCommonResponseNull) {
   envoy::service::ext_proc::v3::ProcessingResponse response;
   response.mutable_request_headers();
   auto parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(), absl::InternalError("common_response is not set"));
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->response,
+              IsRequestHeaders(::testing::IsEmpty(), ::testing::IsEmpty()));
 }
 
 TEST_F(ParseExtProcResponseTest, ResponseHeadersMutation) {
@@ -1173,7 +1175,9 @@ TEST_F(ParseExtProcResponseTest, ResponseHeadersCommonResponseNull) {
   envoy::service::ext_proc::v3::ProcessingResponse response;
   response.mutable_response_headers();
   auto parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(), absl::InternalError("common_response is not set"));
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->response,
+              IsResponseHeaders(::testing::IsEmpty(), ::testing::IsEmpty()));
 }
 
 TEST_F(ParseExtProcResponseTest, RequestBodyMutation) {
@@ -1242,7 +1246,7 @@ TEST_F(ParseExtProcResponseTest, RequestBodyCommonResponseNull) {
   envoy::service::ext_proc::v3::ProcessingResponse response;
   response.mutable_request_body();
   auto parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(), absl::InternalError("common_response is not set"));
+  EXPECT_EQ(parsed.status(), absl::InternalError("body_mutation is not set"));
 }
 
 TEST_F(ParseExtProcResponseTest, RequestBodyBodyMutationNull) {
@@ -1389,7 +1393,7 @@ TEST_F(ParseExtProcResponseTest, ResponseBodyCommonResponseNull) {
   envoy::service::ext_proc::v3::ProcessingResponse response;
   response.mutable_response_body();
   auto parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(), absl::InternalError("common_response is not set"));
+  EXPECT_EQ(parsed.status(), absl::InternalError("body_mutation is not set"));
 }
 
 TEST_F(ParseExtProcResponseTest, ResponseBodyBodyMutationNull) {

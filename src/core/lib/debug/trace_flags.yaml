@@ -286,9 +286,9 @@ security_connector_refcount:
   debug_only: true
   default: false
   description: Refcounting for security connectors (part of channel credentials).
-server_channel:
+server:
   default: false
-  description: Lightweight trace of significant server channel events.
+  description: Traces significant server events.
 server_config_selector_interceptor:
   default: false
   description: Traces calls in the server config selector interceptor.

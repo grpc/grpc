@@ -74,6 +74,9 @@ std::string XdsBootstrapBuilder::Build() {
   }
   fields.push_back(MakeCertificateProviderText());
   fields.push_back(MakeAuthorityText());
+  if (!allowed_grpc_services_.empty()) {
+    fields.push_back(MakeAllowedGrpcServicesText());
+  }
   return absl::StrCat("{", absl::StrJoin(fields, ",\n"), "}");
 }
 
@@ -176,6 +179,18 @@ std::string XdsBootstrapBuilder::MakeAuthorityText() {
   }
   return absl::StrCat("\"authorities\": {\n", absl::StrJoin(entries, ",\n"),
                       "\n}");
+}
+
+std::string XdsBootstrapBuilder::MakeAllowedGrpcServicesText() {
+  std::vector<std::string> entries;
+  entries.reserve(allowed_grpc_services_.size());
+  for (const auto& [target_uri, channel_creds_type] : allowed_grpc_services_) {
+    entries.push_back(absl::StrFormat(
+        "    \"%s\": {\n      \"channel_creds\": [{\"type\": \"%s\"}]\n    }",
+        target_uri, channel_creds_type));
+  }
+  return absl::StrCat("  \"allowed_grpc_services\": {\n",
+                      absl::StrJoin(entries, ",\n"), "\n  }");
 }
 
 //

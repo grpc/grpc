@@ -31,11 +31,17 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
+#include <optional>
+#include <string>
+#include <utility>
+
+#include "src/core/tsi/ssl_types.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/match.h"
 
 namespace tsi {
 
@@ -85,6 +91,13 @@ tsi_result DoSslWrite(SSL* ssl, unsigned char* unprotected_bytes,
       LOG(ERROR)
           << "Peer tried to renegotiate SSL connection. This is unsupported.";
       return TSI_UNIMPLEMENTED;
+    } else if (ssl_write_result == SSL_ERROR_WANT_WRITE) {
+      // The underlying BIO write buffer is full (for example, when TLS 1.3
+      // flushes deferred post-handshake NewSessionTicket messages containing a
+      // large post-quantum client certificate chain that exceeds the 17 KB
+      // default BIO ring buffer). Signal the caller to drain network_io and
+      // retry SSL_write.
+      return TSI_DRAIN_BUFFER;
     } else {
       LOG(ERROR) << "SSL_write failed with error "
                  << SslErrorString(ssl_write_result);
@@ -162,9 +175,14 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
   }
 
   // If we can, prepare the buffer, send it to SSL_write and read.
-  memcpy(buffer + buffer_offset, unprotected_bytes, available);
+  // When retrying after a previous TSI_DRAIN_BUFFER, buffer_offset ==
+  // buffer_size (so available == 0) and buffer already holds the frame to be
+  // written.
+  if (available > 0) {
+    memcpy(buffer + buffer_offset, unprotected_bytes, available);
+  }
   result = DoSslWrite(ssl, buffer, buffer_size);
-  if (result != TSI_OK) return result;
+  if (result != TSI_OK && result != TSI_DRAIN_BUFFER) return result;
 
   GRPC_CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
   read_from_ssl = BIO_read(network_io, protected_output_frames,
@@ -175,7 +193,10 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
   }
   *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
   *unprotected_bytes_size = available;
-  buffer_offset = 0;
+  // If DoSslWrite returned TSI_DRAIN_BUFFER, keep buffer_offset at buffer_size
+  // so subsequent Protect/ProtectFlush calls retry DoSslWrite after draining
+  // network_io.
+  buffer_offset = (result == TSI_DRAIN_BUFFER) ? buffer_size : 0;
   return TSI_OK;
 }
 
@@ -191,13 +212,21 @@ tsi_result SslProtectorProtectFlush(size_t& buffer_offset,
 
   if (buffer_offset != 0) {
     result = DoSslWrite(ssl, buffer, buffer_offset);
-    if (result != TSI_OK) return result;
-    buffer_offset = 0;
+    if (result == TSI_OK) {
+      buffer_offset = 0;
+    } else if (result != TSI_DRAIN_BUFFER) {
+      return result;
+    }
+    // On TSI_DRAIN_BUFFER, retain buffer_offset so we retry DoSslWrite on the
+    // next flush iteration after draining network_io below.
   }
 
   pending = static_cast<int>(BIO_pending(network_io));
   GRPC_CHECK_GE(pending, 0);
-  *still_pending_size = static_cast<size_t>(pending);
+  // Include any unwritten bytes remaining in buffer_offset in
+  // still_pending_size so the caller continues flushing until both the BIO and
+  // the internal buffer are completely drained.
+  *still_pending_size = static_cast<size_t>(pending) + buffer_offset;
   if (*still_pending_size == 0) return TSI_OK;
 
   GRPC_CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
@@ -210,7 +239,7 @@ tsi_result SslProtectorProtectFlush(size_t& buffer_offset,
   *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
   pending = static_cast<int>(BIO_pending(network_io));
   GRPC_CHECK_GE(pending, 0);
-  *still_pending_size = static_cast<size_t>(pending);
+  *still_pending_size = static_cast<size_t>(pending) + buffer_offset;
   return TSI_OK;
 }
 
@@ -431,26 +460,131 @@ absl::StatusOr<EVP_PKEY*> ParsePemPrivateKey(
   return pkey;
 }
 
-absl::StatusOr<std::string> ParseUriString(GENERAL_NAME* subject_alt_name) {
-  if (subject_alt_name == nullptr || subject_alt_name->type != GEN_URI) {
-    return absl::InvalidArgumentError("Could not parse ASN1 string to UTF8");
-  }
-  // This shouldn't be a possible if statement to enter because if the type is
-  // GEN_URI it then by definition should have a d.uniformResourceIdentifier.
-  // But we can still keep it for safety.
-  if (subject_alt_name->d.uniformResourceIdentifier == nullptr) {
+namespace {
+
+// Converts \a value to a UTF-8 string.  An empty \a value yields an empty
+// string.
+absl::StatusOr<std::string> Asn1StringToUtf8(ASN1_STRING* value) {
+  if (value == nullptr) {
     return absl::InvalidArgumentError("Could not parse ASN1 string to UTF8");
   }
   unsigned char* name = nullptr;
-  int name_size =
-      ASN1_STRING_to_UTF8(&name, subject_alt_name->d.uniformResourceIdentifier);
-  if (name_size < 0 || name == nullptr) {
+  const int name_size = ASN1_STRING_to_UTF8(&name, value);
+  // Don't rely on version-specific guarantees about whether `name` is
+  // allocated on failure or for an empty string: free it on every path
+  // (OPENSSL_free is a no-op on nullptr) and never read from a null buffer.
+  if (name_size < 0 || (name_size > 0 && name == nullptr)) {
     OPENSSL_free(name);
     return absl::InvalidArgumentError("Could not parse ASN1 string to UTF8");
   }
-  std::string ret(reinterpret_cast<char const*>(name), name_size);
+  std::string ret;
+  if (name_size > 0) {
+    ret.assign(reinterpret_cast<char const*>(name), name_size);
+  }
   OPENSSL_free(name);
   return ret;
+}
+
+}  // namespace
+
+absl::StatusOr<std::string> ParseUriString(GENERAL_NAME* subject_alt_name) {
+  if (subject_alt_name == nullptr || subject_alt_name->type != GEN_URI) {
+    return absl::InternalError(
+        "Tried to convert subject alternative name to a URI but it is not a "
+        "URI.");
+  }
+  return Asn1StringToUtf8(subject_alt_name->d.uniformResourceIdentifier);
+}
+
+absl::StatusOr<std::string> ParseDnsString(GENERAL_NAME* subject_alt_name) {
+  if (subject_alt_name == nullptr || subject_alt_name->type != GEN_DNS) {
+    return absl::InternalError(
+        "Tried to convert subject alternative name to a DNS name but it is not "
+        "a DNS name.");
+  }
+  return Asn1StringToUtf8(subject_alt_name->d.dNSName);
+}
+
+absl::StatusOr<std::string> X509SubjectRfc2253(X509* cert) {
+  if (cert == nullptr) {
+    return absl::InvalidArgumentError("cert is null");
+  }
+  X509_NAME* subject_name = X509_get_subject_name(cert);
+  if (subject_name == nullptr) {
+    return absl::NotFoundError("Could not get subject name from certificate.");
+  }
+  BIO* bio = BIO_new(BIO_s_mem());
+  if (bio == nullptr) {
+    return absl::ResourceExhaustedError("Could not allocate BIO.");
+  }
+  int status = X509_NAME_print_ex(bio, subject_name, 0, XN_FLAG_RFC2253);
+  char* contents = nullptr;
+  long len = BIO_get_mem_data(bio, &contents);
+  if (status < 0 || len < 0 || (len > 0 && contents == nullptr)) {
+    BIO_free(bio);
+    return absl::InternalError("Could not get subject entry from certificate.");
+  }
+  std::string subject;
+  if (len > 0) {
+    subject.assign(contents, static_cast<size_t>(len));
+  }
+  // Otherwise len == 0: the certificate has a well-formed but empty subject (an
+  // X509_NAME with no RDNs), so X509_NAME_print_ex wrote nothing to the BIO.
+  // RFC 5280 section 4.1.2.6 permits this when the subject identity is instead
+  // carried in a critical subjectAltName extension. In this case `contents` may
+  // be nullptr or point to an empty buffer, so it must not be dereferenced;
+  // report an empty subject instead.
+  BIO_free(bio);
+  return subject;
+}
+
+namespace {
+
+// Returns \a parsed, the result of parsing a SAN, if it can be used as a
+// principal: it parsed successfully, is non-empty and contains no embedded
+// null byte.
+std::optional<std::string> SanAsPrincipal(absl::StatusOr<std::string> parsed) {
+  if (!parsed.ok()) {
+    LOG(ERROR) << "Could not parse SAN: " << parsed.status();
+    return std::nullopt;
+  }
+  if (parsed->empty()) return std::nullopt;
+  if (absl::StrContains(*parsed, '\0')) {
+    LOG(ERROR) << "SAN contains embedded null byte.";
+    return std::nullopt;
+  }
+  return *std::move(parsed);
+}
+
+}  // namespace
+
+absl::StatusOr<std::string> X509Principal(X509* cert) {
+  GRPC_DCHECK_NE(cert, nullptr);
+  GENERAL_NAMES* subject_alt_names = static_cast<GENERAL_NAMES*>(
+      X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr));
+  if (subject_alt_names != nullptr) {
+    // A single pass finds both the first usable URI SAN and the first usable
+    // DNS SAN; a URI SAN wins wherever it appears in the list.
+    std::optional<std::string> uri_san;
+    std::optional<std::string> dns_san;
+    const size_t subject_alt_name_count =
+        sk_GENERAL_NAME_num(subject_alt_names);
+    for (size_t i = 0; i < subject_alt_name_count; ++i) {
+      GENERAL_NAME* subject_alt_name =
+          sk_GENERAL_NAME_value(subject_alt_names, TSI_SIZE_AS_SIZE(i));
+      if (subject_alt_name == nullptr) continue;
+      if (subject_alt_name->type == GEN_URI) {
+        uri_san = SanAsPrincipal(ParseUriString(subject_alt_name));
+        if (uri_san.has_value()) break;
+      } else if (subject_alt_name->type == GEN_DNS && !dns_san.has_value()) {
+        dns_san = SanAsPrincipal(ParseDnsString(subject_alt_name));
+      }
+    }
+    sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);
+    if (uri_san.has_value()) return *std::move(uri_san);
+    if (dns_san.has_value()) return *std::move(dns_san);
+  }
+  return X509SubjectRfc2253(cert);
 }
 
 absl::StatusOr<absl::string_view> ConvertKeyExchangeGroupToString(
@@ -482,6 +616,58 @@ absl::StatusOr<absl::string_view> ConvertKeyExchangeGroupToString(
       return absl::InvalidArgumentError("Unspecified key exchange group.");
     default:
       return absl::InvalidArgumentError("Unknown key exchange group.");
+  }
+}
+
+absl::StatusOr<absl::string_view> ConvertSignatureAlgorithmToString(
+    grpc_tls_signature_algorithm algorithm) {
+  switch (algorithm) {
+    case GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA256:
+      return "rsa_pkcs1_sha256";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA384:
+      return "rsa_pkcs1_sha384";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA512:
+      return "rsa_pkcs1_sha512";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256:
+      return "ecdsa_secp256r1_sha256";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP384R1_SHA384:
+      return "ecdsa_secp384r1_sha384";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP521R1_SHA512:
+      return "ecdsa_secp521r1_sha512";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA256:
+      return "rsa_pss_rsae_sha256";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA384:
+      return "rsa_pss_rsae_sha384";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA512:
+      return "rsa_pss_rsae_sha512";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44:
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+      return "mldsa44";
+#else
+      return absl::InvalidArgumentError(
+          "ML_DSA_44 is not supported in this OpenSSL version with "
+          "SSL_CTX_set1_sigalgs_list.");
+#endif
+    case GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65:
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+      return "mldsa65";
+#else
+      return absl::InvalidArgumentError(
+          "ML_DSA_65 is not supported in this OpenSSL version with "
+          "SSL_CTX_set1_sigalgs_list.");
+#endif
+    case GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87:
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+      return "mldsa87";
+#else
+      return absl::InvalidArgumentError(
+          "ML_DSA_87 is not supported in this OpenSSL version with "
+          "SSL_CTX_set1_sigalgs_list.");
+#endif
+    case GRPC_TLS_SIGNATURE_ALGORITHM_UNSPECIFIED:
+      return absl::InvalidArgumentError("Unspecified signature algorithm.");
+    default:
+      return absl::InvalidArgumentError("Unknown signature algorithm.");
   }
 }
 

@@ -220,7 +220,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
       state_ = SettingsState::kFirstPeerSettingsReceived;
     }
     ++num_acks_to_send_;
-    for (const auto& setting : settings) {
+    for (const Http2SettingsFrame::Setting& setting : settings) {
       // RFC9113: An endpoint that receives a SETTINGS frame with any unknown or
       // unsupported identifier MUST ignore that setting.
       if (Http2Settings::IsKnownSettingId(setting.id)) {

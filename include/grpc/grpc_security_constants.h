@@ -46,6 +46,8 @@ extern "C" {
 #define GRPC_SSL_SESSION_REUSED_PROPERTY "ssl_session_reused"
 #define GRPC_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP_PROPERTY_NAME \
   "ssl_negotiated_key_exchange_group"
+#define GRPC_SSL_EXPORTED_KEYING_MATERIAL_PROPERTY_NAME \
+  "ssl_exported_keying_material"
 #define GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME "security_level"
 #define GRPC_PEER_DNS_PROPERTY_NAME "peer_dns"
 #define GRPC_PEER_SPIFFE_ID_PROPERTY_NAME "peer_spiffe_id"
@@ -162,6 +164,36 @@ typedef enum {
   /** MLKEM1024 key exchange. Post-quantum cryptography. */
   GRPC_TLS_GROUP_MLKEM1024,
 } grpc_tls_key_exchange_group;
+
+/** TLS signature algorithms. */
+typedef enum {
+  /** Unspecified signature algorithm. */
+  GRPC_TLS_SIGNATURE_ALGORITHM_UNSPECIFIED,
+  /** RSA PKCS#1 v1.5 with SHA-256. */
+  GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA256,
+  /** RSA PKCS#1 v1.5 with SHA-384. */
+  GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA384,
+  /** RSA PKCS#1 v1.5 with SHA-512. */
+  GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA512,
+  /** ECDSA with secp256r1 (P-256) and SHA-256. */
+  GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256,
+  /** ECDSA with secp384r1 (P-384) and SHA-384. */
+  GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP384R1_SHA384,
+  /** ECDSA with secp521r1 (P-521) and SHA-512. */
+  GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP521R1_SHA512,
+  /** RSA-PSS with RSAE key and SHA-256. */
+  GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA256,
+  /** RSA-PSS with RSAE key and SHA-384. */
+  GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA384,
+  /** RSA-PSS with RSAE key and SHA-512. */
+  GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA512,
+  /** ML-DSA-44 post-quantum signature algorithm. */
+  GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44,
+  /** ML-DSA-65 post-quantum signature algorithm. */
+  GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65,
+  /** ML-DSA-87 post-quantum signature algorithm. */
+  GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87,
+} grpc_tls_signature_algorithm;
 
 #ifdef __cplusplus
 }

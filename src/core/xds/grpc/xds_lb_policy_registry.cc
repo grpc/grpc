@@ -34,7 +34,8 @@ namespace grpc_core {
 Json::Array XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_cluster_v3_LoadBalancingPolicy* lb_policy,
-    ValidationErrors* errors, int recursion_depth) const {
+    XdsGrpcServiceMap& grpc_services, ValidationErrors* errors,
+    int recursion_depth) const {
   constexpr int kMaxRecursionDepth = 16;
   if (recursion_depth >= kMaxRecursionDepth) {
     errors->AddError(
@@ -69,7 +70,8 @@ Json::Array XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
       if (config_factory_it != policy_config_factories_.end()) {
         return Json::Array{Json::FromObject(
             config_factory_it->second->ConvertXdsLbPolicyConfig(
-                this, context, *serialized_value, errors, recursion_depth))};
+                this, context, *serialized_value, grpc_services, errors,
+                recursion_depth))};
       }
     }
     // Check for custom LB policy type.

@@ -47,17 +47,30 @@ class BenchmarkServer
     else
       cred = :this_port_is_insecure
     end
+    server_args = {
+      'grpc.server.max_pending_requests' => 4096,
+      'grpc.server.max_pending_requests_hard_limit' => 8192
+    }
+    config.channel_args.each do |arg|
+      if arg.value == :str_value
+        server_args[arg.name] = arg.str_value
+      elsif arg.value == :int_value
+        server_args[arg.name] = arg.int_value
+      end
+    end
     # Make sure server can handle the large number of calls in benchmarks
     # TODO: @apolcyn, if scenario config increases total outstanding
     # calls then will need to increase the pool size too
-    @server = GRPC::RpcServer.new(pool_size: 1024, max_waiting_requests: 1024)
+    @server = GRPC::RpcServer.new(pool_size: 2048, max_waiting_requests: 2048,
+                                  server_args: server_args)
     @port = @server.add_http2_port("0.0.0.0:" + port.to_s, cred)
     @server.handle(BenchmarkServiceImpl.new)
     @start_time = Time.now
     t = Thread.new {
       @server.run
     }
-    t.abort_on_exception
+    t.abort_on_exception = true
+    @server.wait_till_running
   end
   def mark(reset)
     s = Grpc::Testing::ServerStats.new(time_elapsed:

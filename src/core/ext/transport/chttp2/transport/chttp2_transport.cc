@@ -981,10 +981,7 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     t->ep.reset();
   }
   t->MaybeNotifyOnReceiveSettingsLocked(error);
-  if (t->notify_on_close != nullptr) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, t->notify_on_close, error);
-    t->notify_on_close = nullptr;
-  }
+  t->MaybeNotifyOnCloseLocked();
 }
 
 #ifndef NDEBUG
@@ -3261,6 +3258,9 @@ static void grpc_chttp2_config_default_keepalive_args_server(
           .value_or(g_default_server_keepalive_permit_without_calls);
 }
 
+// TODO(ritulb) [PH2][P4][CHTTP2] : Once CHTTP2 is deleted, migrate callers to
+// grpc_core::SetHttp2KeepaliveDefaultsFromChannelArgs() and
+// delete this function.
 void grpc_chttp2_config_default_keepalive_args(
     const grpc_core::ChannelArgs& channel_args, const bool is_client) {
   if (is_client) {
@@ -3270,6 +3270,7 @@ void grpc_chttp2_config_default_keepalive_args(
   }
   grpc_core::Chttp2PingAbusePolicy::SetDefaults(channel_args);
   grpc_core::Chttp2PingRatePolicy::SetDefaults(channel_args);
+  grpc_core::SetHttp2KeepaliveDefaultsFromChannelArgs(channel_args, is_client);
 }
 
 static void init_keepalive_ping(
@@ -3601,7 +3602,7 @@ void grpc_chttp2_transport_start_reading(
     absl::AnyInvocable<void(absl::StatusOr<uint32_t>)>
         notify_on_receive_settings,
     grpc_pollset_set* interested_parties_until_recv_settings,
-    grpc_closure* notify_on_close) {
+    absl::AnyInvocable<void()> notify_on_close) {
   auto t = reinterpret_cast<grpc_chttp2_transport*>(transport)->Ref();
   if (read_buffer != nullptr) {
     grpc_slice_buffer_move_into(read_buffer, &t->read_buffer);
@@ -3612,19 +3613,17 @@ void grpc_chttp2_transport_start_reading(
                              notify_on_receive_settings =
                                  std::move(notify_on_receive_settings),
                              interested_parties_until_recv_settings,
-                             notify_on_close](grpc_error_handle) mutable {
+                             notify_on_close = std::move(notify_on_close)](
+                                grpc_error_handle) mutable {
         t->interested_parties_until_recv_settings =
             interested_parties_until_recv_settings;
         t->notify_on_receive_settings = std::move(notify_on_receive_settings);
+        t->notify_on_close = std::move(notify_on_close);
         if (!t->closed_with_error.ok()) {
           t->MaybeNotifyOnReceiveSettingsLocked(t->closed_with_error);
-          if (notify_on_close != nullptr) {
-            grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_on_close,
-                                    t->closed_with_error);
-          }
+          t->MaybeNotifyOnCloseLocked();
           return;
         }
-        t->notify_on_close = notify_on_close;
         read_action_locked(std::move(t), absl::OkStatus());
       }),
       absl::OkStatus());
@@ -3765,4 +3764,16 @@ void grpc_chttp2_transport::MaybeNotifyOnReceiveSettingsLocked(
         // closures on the ExecCtx.
         notify_on_receive_settings = nullptr;
       });
+}
+
+void grpc_chttp2_transport::MaybeNotifyOnCloseLocked() {
+  if (notify_on_close == nullptr) return;
+  event_engine->Run([notify_on_close = std::move(notify_on_close)]() mutable {
+    grpc_core::ExecCtx exec_ctx;
+    notify_on_close();
+    // Ensure the captured callback is destroyed while ExecCtx is still
+    // alive. Its destructor may trigger work that needs to schedule
+    // closures on the ExecCtx.
+    notify_on_close = nullptr;
+  });
 }

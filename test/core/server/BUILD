@@ -41,27 +41,3 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
-
-grpc_cc_test(
-    name = "xds_channel_stack_modifier_test",
-    srcs = ["xds_channel_stack_modifier_test.cc"],
-    external_deps = ["gtest"],
-    tags = ["no_test_ios"],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:config",
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc",
-        "//:grpc_base",
-        "//:grpc_opencensus_plugin",
-        "//:iomgr",
-        "//src/core:channel_args",
-        "//src/core:channel_init",
-        "//src/core:channel_stack_type",
-        "//src/core:grpc_xds_channel_stack_modifier",
-        "//src/core:iomgr_fwd",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)

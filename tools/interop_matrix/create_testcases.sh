@@ -30,6 +30,7 @@ CMDS_SH="${GRPC_ROOT}/interop_client_cmds.sh"
 TESTCASES_DIR=${GRPC_ROOT}/tools/interop_matrix/testcases
 
 echo "Create '$LANG' test cases for gRPC release '${RELEASE:=master}'"
+CUSTOM_FILE_NAME="${CUSTOM_FILE_NAME:-$RELEASE}"
 
 # Clean up
 function cleanup {
@@ -49,38 +50,38 @@ function cleanup {
 }
 
 function createtests {
-# Invoke run_interop_test in manual mode.
-# TODO(adelez): Add cloud_gateways when we figure out how to skip them if not 
-# running in GCE.
-if [ $1 == "cxx" ]; then
-client_lang="c++"
-else
-client_lang=$1
-fi
-echo $client_lang
+  # Invoke run_interop_test in manual mode.
+  # TODO(adelez): Add cloud_gateways when we figure out how to skip them if not
+  # running in GCE.
+  if [ $1 == "cxx" ]; then
+    client_lang="c++"
+  else
+    client_lang=$1
+  fi
+    echo $client_lang
 
-${GRPC_ROOT}/tools/run_tests/run_interop_tests.py -l $client_lang --use_docker \
-  --cloud_to_prod --prod_servers default gateway_v4 --manual_run --custom_credentials_type tls
+  ${GRPC_ROOT}/tools/run_tests/run_interop_tests.py -l $client_lang --use_docker \
+    --cloud_to_prod --prod_servers default gateway_v4 --manual_run --custom_credentials_type tls
 
-trap cleanup EXIT
-# TODO(adelez): add test auth tests but do not run if not testing on GCE.
-# Running the testcases as sanity unless we are asked to skip.
-[ -z "$SKIP_TEST" ] && (echo "Running test cases: $CMDS_SH"; sh $CMDS_SH)
+  trap cleanup EXIT
+  # TODO(adelez): add test auth tests but do not run if not testing on GCE.
+  # Running the testcases as sanity unless we are asked to skip.
+  [ -z "$SKIP_TEST" ] && (echo "Running test cases: $CMDS_SH"; sh $CMDS_SH)
 
-mkdir -p $TESTCASES_DIR
-testcase=$TESTCASES_DIR/$1__$RELEASE
-if [ -e $testcase ]; then
-  echo "Updating: $testcase"
-  diff $testcase $CMDS_SH || true
-fi
-mv $CMDS_SH $testcase
-chmod a+x $testcase
-echo "Test cases created: $testcase"
+  mkdir -p $TESTCASES_DIR
+  testcase=$TESTCASES_DIR/$1__$CUSTOM_FILE_NAME
+  if [ -e $testcase ]; then
+    echo "Updating: $testcase"
+    diff $testcase $CMDS_SH || true
+  fi
+  mv $CMDS_SH $testcase
+  chmod a+x $testcase
+  echo "Test cases created: $testcase"
 }
 
 if [ $LANG == "csharp" ]; then
-createtests "csharp"
-createtests "csharpcoreclr"
+  createtests "csharp"
+  createtests "csharpcoreclr"
 else
-createtests $LANG
-fi 
+  createtests $LANG
+fi

@@ -20,6 +20,7 @@
 #include <string>
 
 #include "src/core/config/experiment_env_var.h"
+#include "src/core/load_balancing/autosharding/autosharding.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_reader.h"
@@ -36,6 +37,11 @@ namespace grpc_core {
 // TODO(roth): Remove this once the feature passes interop tests.
 bool XdsExtProcOnClientEnabled() {
   return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
+}
+
+// TODO(roth, rishesh): Remove this once the feature passes interop tests.
+bool XdsExtProcOnServerEnabled() {
+  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_SERVER");
 }
 
 //
@@ -217,7 +223,11 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
    public:
     bool IsEnabled(absl::string_view key) const override {
       if (key == "federation") return XdsFederationEnabled();
-      if (key == "grpc_service") return XdsExtProcOnClientEnabled();
+      if (key == "grpc_service") {
+        // The autosharding LB policy parses a GrpcService (gRFC A119).
+        return XdsExtProcOnClientEnabled() || XdsExtProcOnServerEnabled() ||
+               AutoshardingLbEnabled();
+      }
       return true;
     }
   };

@@ -73,30 +73,30 @@ class Party::Handle final : public Wakeable {
 
   // Activity is going away... drop its reference and sever the connection back.
   void DropActivity() ABSL_LOCKS_EXCLUDED(mu_) {
-    mu_.Lock();
+    mu_.lock();
     GRPC_CHECK_NE(party_, nullptr);
     party_ = nullptr;
-    mu_.Unlock();
+    mu_.unlock();
     Unref();
   }
 
   void WakeupGeneric(WakeupMask wakeup_mask,
                      void (Party::*wakeup_method)(WakeupMask))
       ABSL_LOCKS_EXCLUDED(mu_) {
-    mu_.Lock();
+    mu_.lock();
     // Note that activity refcount can drop to zero, but we could win the lock
     // against DropActivity, so we need to only increase activities refcount if
     // it is non-zero.
     Party* party = party_;
     if (party != nullptr && party->RefIfNonZero()) {
-      mu_.Unlock();
+      mu_.unlock();
       // Activity still exists and we have a reference: wake it up, which will
       // drop the ref.
       (party->*wakeup_method)(wakeup_mask);
     } else {
       // Could not get the activity - it's either gone or going. No need to wake
       // it up!
-      mu_.Unlock();
+      mu_.unlock();
     }
     // Drop the ref to the handle (we have one ref = one wakeup semantics).
     Unref();

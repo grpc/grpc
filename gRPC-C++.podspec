@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.86.0-dev'
+  version = '1.87.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -316,6 +316,7 @@ Pod::Spec.new do |s|
                       'src/core/channelz/ztrace_collector.h',
                       'src/core/client_channel/backup_poller.h',
                       'src/core/client_channel/buffered_call.h',
+                      'src/core/client_channel/channel_factory.h',
                       'src/core/client_channel/client_channel.h',
                       'src/core/client_channel/client_channel_args.h',
                       'src/core/client_channel/client_channel_factory.h',
@@ -327,6 +328,7 @@ Pod::Spec.new do |s|
                       'src/core/client_channel/direct_channel.h',
                       'src/core/client_channel/dynamic_filters.h',
                       'src/core/client_channel/global_subchannel_pool.h',
+                      'src/core/client_channel/lame_channel.h',
                       'src/core/client_channel/lb_metadata.h',
                       'src/core/client_channel/load_balanced_call_destination.h',
                       'src/core/client_channel/local_subchannel_pool.h',
@@ -414,7 +416,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/http/server/http_server_filter.h',
                       'src/core/ext/filters/message_size/message_size_filter.h',
                       'src/core/ext/filters/rbac/rbac_filter.h',
-                      'src/core/ext/filters/rbac/rbac_service_config_parser.h',
                       'src/core/ext/filters/stateful_session/stateful_session_filter.h',
                       'src/core/ext/transport/chttp2/alpn/alpn.h',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.h',
@@ -646,6 +647,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h',
                       'src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.h',
+                      'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb.h',
+                      'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h',
                       'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/common/v3/common.upb.h',
@@ -738,6 +741,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.h',
                       'src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb.h',
                       'src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.h',
+                      'src/core/ext/upb-gen/google/api/field_behavior.upb.h',
+                      'src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.h',
                       'src/core/ext/upb-gen/google/api/http.upb.h',
                       'src/core/ext/upb-gen/google/api/http.upb_minitable.h',
                       'src/core/ext/upb-gen/google/api/httpbody.upb.h',
@@ -774,6 +779,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.h',
                       'src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb.h',
                       'src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.h',
+                      'src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb.h',
+                      'src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h',
@@ -1271,6 +1278,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/transport_fwd.h',
                       'src/core/load_balancing/address_filtering.h',
                       'src/core/load_balancing/autosharding/autosharding.h',
+                      'src/core/load_balancing/autosharding/autosharding_assignment.h',
+                      'src/core/load_balancing/autosharding/autosharding_client.h',
                       'src/core/load_balancing/backend_metric_data.h',
                       'src/core/load_balancing/backend_metric_parser.h',
                       'src/core/load_balancing/child_policy_handler.h',
@@ -1321,7 +1330,6 @@ Pod::Spec.new do |s|
                       'src/core/server/server_config_selector.h',
                       'src/core/server/server_config_selector_filter.h',
                       'src/core/server/server_interface.h',
-                      'src/core/server/xds_channel_stack_modifier.h',
                       'src/core/server/xds_server_config_fetcher.h',
                       'src/core/service_config/service_config.h',
                       'src/core/service_config/service_config_call_data.h',
@@ -1508,6 +1516,7 @@ Pod::Spec.new do |s|
                       'src/core/xds/grpc/xds_server_grpc_interface.h',
                       'src/core/xds/grpc/xds_tls_context.h',
                       'src/core/xds/grpc/xds_tls_context_parser.h',
+                      'src/core/xds/grpc/xds_transport_factory_grpc.h',
                       'src/core/xds/grpc/xds_transport_grpc.h',
                       'src/core/xds/xds_client/lrs_client.h',
                       'src/core/xds/xds_client/xds_api.h',
@@ -1520,6 +1529,7 @@ Pod::Spec.new do |s|
                       'src/core/xds/xds_client/xds_resource_type.h',
                       'src/core/xds/xds_client/xds_resource_type_impl.h',
                       'src/core/xds/xds_client/xds_transport.h',
+                      'src/core/xds/xds_client/xds_transport_factory.h',
                       'src/cpp/client/call_context_registry.cc',
                       'src/cpp/client/call_credentials.cc',
                       'src/cpp/client/channel_cc.cc',
@@ -1777,6 +1787,7 @@ Pod::Spec.new do |s|
                               'src/core/channelz/ztrace_collector.h',
                               'src/core/client_channel/backup_poller.h',
                               'src/core/client_channel/buffered_call.h',
+                              'src/core/client_channel/channel_factory.h',
                               'src/core/client_channel/client_channel.h',
                               'src/core/client_channel/client_channel_args.h',
                               'src/core/client_channel/client_channel_factory.h',
@@ -1788,6 +1799,7 @@ Pod::Spec.new do |s|
                               'src/core/client_channel/direct_channel.h',
                               'src/core/client_channel/dynamic_filters.h',
                               'src/core/client_channel/global_subchannel_pool.h',
+                              'src/core/client_channel/lame_channel.h',
                               'src/core/client_channel/lb_metadata.h',
                               'src/core/client_channel/load_balanced_call_destination.h',
                               'src/core/client_channel/local_subchannel_pool.h',
@@ -1874,7 +1886,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/http/server/http_server_filter.h',
                               'src/core/ext/filters/message_size/message_size_filter.h',
                               'src/core/ext/filters/rbac/rbac_filter.h',
-                              'src/core/ext/filters/rbac/rbac_service_config_parser.h',
                               'src/core/ext/filters/stateful_session/stateful_session_filter.h',
                               'src/core/ext/transport/chttp2/alpn/alpn.h',
                               'src/core/ext/transport/chttp2/client/chttp2_connector.h',
@@ -2106,6 +2117,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h',
                               'src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.h',
+                              'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb.h',
+                              'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h',
                               'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/common/v3/common.upb.h',
@@ -2198,6 +2211,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.h',
                               'src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb.h',
                               'src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.h',
+                              'src/core/ext/upb-gen/google/api/field_behavior.upb.h',
+                              'src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.h',
                               'src/core/ext/upb-gen/google/api/http.upb.h',
                               'src/core/ext/upb-gen/google/api/http.upb_minitable.h',
                               'src/core/ext/upb-gen/google/api/httpbody.upb.h',
@@ -2234,6 +2249,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.h',
                               'src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb.h',
                               'src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.h',
+                              'src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb.h',
+                              'src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h',
@@ -2731,6 +2748,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/transport_fwd.h',
                               'src/core/load_balancing/address_filtering.h',
                               'src/core/load_balancing/autosharding/autosharding.h',
+                              'src/core/load_balancing/autosharding/autosharding_assignment.h',
+                              'src/core/load_balancing/autosharding/autosharding_client.h',
                               'src/core/load_balancing/backend_metric_data.h',
                               'src/core/load_balancing/backend_metric_parser.h',
                               'src/core/load_balancing/child_policy_handler.h',
@@ -2781,7 +2800,6 @@ Pod::Spec.new do |s|
                               'src/core/server/server_config_selector.h',
                               'src/core/server/server_config_selector_filter.h',
                               'src/core/server/server_interface.h',
-                              'src/core/server/xds_channel_stack_modifier.h',
                               'src/core/server/xds_server_config_fetcher.h',
                               'src/core/service_config/service_config.h',
                               'src/core/service_config/service_config_call_data.h',
@@ -2968,6 +2986,7 @@ Pod::Spec.new do |s|
                               'src/core/xds/grpc/xds_server_grpc_interface.h',
                               'src/core/xds/grpc/xds_tls_context.h',
                               'src/core/xds/grpc/xds_tls_context_parser.h',
+                              'src/core/xds/grpc/xds_transport_factory_grpc.h',
                               'src/core/xds/grpc/xds_transport_grpc.h',
                               'src/core/xds/xds_client/lrs_client.h',
                               'src/core/xds/xds_client/xds_api.h',
@@ -2980,6 +2999,7 @@ Pod::Spec.new do |s|
                               'src/core/xds/xds_client/xds_resource_type.h',
                               'src/core/xds/xds_client/xds_resource_type_impl.h',
                               'src/core/xds/xds_client/xds_transport.h',
+                              'src/core/xds/xds_client/xds_transport_factory.h',
                               'src/cpp/client/client_stats_interceptor.h',
                               'src/cpp/client/create_channel_internal.h',
                               'src/cpp/client/secure_credentials.h',
@@ -3170,7 +3190,7 @@ Pod::Spec.new do |s|
     # excludes windows-only files.
     #
     # See also https://github.com/abseil/abseil-cpp/pull/2138
-    for abseil_dir in ../abseil $(find . -type d -path "*/Pods/abseil" 2>/dev/null); do
+    for abseil_dir in ../abseil ../../Release/abseil "$HOME/Library/Caches/CocoaPods/Pods/Release/abseil" ${TMPDIR%/}/CocoaPods-Lint-*/Pods/abseil /tmp/CocoaPods-Lint-*/Pods/abseil $(find . -type d -path "*/Pods/abseil" 2>/dev/null); do
       if [ -d "$abseil_dir" ]; then
         find "$abseil_dir" -name "time_zone_name_win.cc" -exec rm -f {} +
       fi

@@ -94,8 +94,6 @@ TEST_F(RingHashTest, Basic) {
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   auto* address0_attribute = MakeHashAttribute(kAddresses[0]);
   ExpectPickQueued(picker.get(), {address0_attribute});
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
@@ -119,8 +117,6 @@ TEST_F(RingHashTest, SameAddressListedMultipleTimes) {
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   auto* address0_attribute = MakeHashAttribute(kAddresses[0]);
   ExpectPickQueued(picker.get(), {address0_attribute});
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
@@ -148,8 +144,6 @@ TEST_F(RingHashTest, MultipleAddressesPerEndpoint) {
   // Normal connection to first address of the first endpoint.
   auto* address0_attribute = MakeHashAttribute(kEndpoint1Addresses[0]);
   ExpectPickQueued(picker.get(), {address0_attribute});
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   auto* subchannel = FindSubchannel(kEndpoint1Addresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
@@ -171,8 +165,6 @@ TEST_F(RingHashTest, MultipleAddressesPerEndpoint) {
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // The LB policy will try to reconnect when it gets another pick.
   ExpectPickQueued(picker.get(), {address0_attribute});
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_CONNECTING);
@@ -210,8 +202,6 @@ TEST_F(RingHashTest,
   // which will fail.
   auto* address0_attribute = MakeHashAttribute(kAddresses[0]);
   ExpectPickQueued(picker.get(), {address0_attribute});
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   EXPECT_TRUE(subchannels[0]->ConnectionRequested());
   for (size_t i = 1; i < subchannels.size(); ++i) {
     EXPECT_FALSE(subchannels[i]->ConnectionRequested()) << "index " << i;
@@ -340,8 +330,6 @@ TEST_F(RingHashTest, EndpointHashKeys) {
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   auto* hash_attribute = MakeHashAttributeForString(kHashKeys[1]);
   ExpectPickQueued(picker.get(), {hash_attribute});
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   auto* subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
@@ -394,8 +382,6 @@ TEST_F(RingHashTest, RequestHashHeader) {
       absl::StrCat(absl::StripPrefix(kAddresses[0], "ipv4:"), "_0");
   std::map<std::string, std::string> metadata = {{"foo", hash_key}};
   ExpectPickQueued(picker.get(), /*call_attributes=*/{}, metadata);
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
@@ -419,8 +405,6 @@ TEST_F(RingHashTest, RequestHashHeaderNotPresent) {
       absl::OkStatus());
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   ExpectPickQueued(picker.get());
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   // It will randomly pick one.
   size_t index = 0;
   SubchannelState* subchannel = nullptr;

@@ -170,6 +170,7 @@ class OutlierDetectionTest : public LoadBalancingPolicyTest {
   }
 
   uint64_t GetEnforcedEjectionCount(absl::string_view detection_method) {
+    DrainPendingWork();
     const absl::string_view kLabelValues[] = {target_, kBackendServiceName,
                                               detection_method};
     return stats_plugin_
@@ -179,6 +180,7 @@ class OutlierDetectionTest : public LoadBalancingPolicyTest {
 
   uint64_t GetUnenforcedEjectionCount(absl::string_view detection_method,
                                       absl::string_view unenforced_reason) {
+    DrainPendingWork();
     const absl::string_view kLabelValues[] = {
         target_, kBackendServiceName, detection_method, unenforced_reason};
     return stats_plugin_
