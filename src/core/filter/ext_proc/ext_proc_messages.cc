@@ -319,97 +319,6 @@ absl::StatusOr<ExtProcResponse> ExtProcResponse::Parse(
 
 namespace {
 
-// An encoder class used with grpc_metadata_batch::Encode() to iterate over all
-// metadata entries in a batch and populate a upb envoy.config.core.v3.HeaderMap
-// message.
-//
-// Filters metadata entries against allowed and disallowed StringMatcher lists:
-// - If disallowed matchers are specified and a header key matches, it is
-// skipped.
-// - If allowed matchers are specified, only matching header keys are included.
-// - In accordance with gRFC A102, for each forwarded header, the raw_value
-// field is
-//   populated instead of the value field to preserve exact binary/raw header
-//   bytes.
-// TODO(rishesh): Move UpbHeaderMapEncoder to a common place shared with
-// ext_authz.
-class UpbHeaderMapEncoder {
- public:
-  UpbHeaderMapEncoder(envoy_config_core_v3_HeaderMap* header_map,
-                      upb_Arena* arena,
-                      const std::vector<StringMatcher>& allowed_headers,
-                      const std::vector<StringMatcher>& disallowed_headers)
-      : header_map_(header_map),
-        arena_(arena),
-        allowed_headers_(allowed_headers),
-        disallowed_headers_(disallowed_headers) {}
-
-  void Encode(const Slice& key, const Slice& value) {
-    // The slices are owned by the metadata batch, which outlives serialization
-    // of the request, so their contents do not need to be copied.
-    Append(key.as_string_view(), StdStringToUpbString(value.as_string_view()));
-  }
-
-  template <typename Which>
-  void Encode(Which, const typename Which::ValueType& value) {
-    // Which::Encode() returns a temporary Slice, and for inlined slices the
-    // bytes live inside that temporary, so they must be copied onto the arena:
-    // the upb message only retains a pointer to them, and the request is
-    // serialized long after this returns.
-    Append(Which::key(), CopyStdStringToUpbString(
-                             Which::Encode(value).as_string_view(), arena_));
-  }
-
- private:
-  ABSL_ATTRIBUTE_NOINLINE static bool HeaderInMatcher(
-      absl::string_view key, const std::vector<StringMatcher>& matchers) {
-    for (const auto& matcher : matchers) {
-      if (matcher.Match(key)) return true;
-    }
-    return false;
-  }
-
-  ABSL_ATTRIBUTE_NOINLINE bool ShouldForwardHeader(
-      absl::string_view key) const {
-    if (disallowed_headers_.empty()) {
-      return allowed_headers_.empty() || HeaderInMatcher(key, allowed_headers_);
-    }
-    if (HeaderInMatcher(key, disallowed_headers_)) {
-      return false;
-    }
-    return allowed_headers_.empty() || HeaderInMatcher(key, allowed_headers_);
-  }
-
-  ABSL_ATTRIBUTE_NOINLINE void Append(absl::string_view key,
-                                      upb_StringView value) {
-    if (!ShouldForwardHeader(key)) {
-      return;
-    }
-    auto* value_msg =
-        envoy_config_core_v3_HeaderMap_add_headers(header_map_, arena_);
-    envoy_config_core_v3_HeaderValue_set_key(value_msg,
-                                             StdStringToUpbString(key));
-    // Per gRFC A102, when writing, we always set the raw_value field and never
-    // the value field.
-    envoy_config_core_v3_HeaderValue_set_raw_value(value_msg, value);
-  }
-
-  envoy_config_core_v3_HeaderMap* header_map_;
-  upb_Arena* arena_;
-  const std::vector<StringMatcher>& allowed_headers_;
-  const std::vector<StringMatcher>& disallowed_headers_;
-};
-
-void PopulateMetadataBatchToHeaderMap(
-    grpc_metadata_batch& batch,
-    const std::vector<StringMatcher>& allowed_headers,
-    const std::vector<StringMatcher>& disallowed_headers, upb_Arena* arena,
-    envoy_config_core_v3_HeaderMap* header_map) {
-  UpbHeaderMapEncoder encoder(header_map, arena, allowed_headers,
-                              disallowed_headers);
-  batch.Encode(&encoder);
-}
-
 void SetExtProcRequestHeaders(
     upb_Arena* arena, envoy_config_core_v3_HeaderMap* headers,
     envoy_service_ext_proc_v3_ProcessingRequest* request) {
@@ -682,12 +591,12 @@ std::string ComputeSha256PeerCertificateDigest(
 namespace {
 
 envoy_config_core_v3_HeaderMap* CreateUpbHeaderMap(
-    upb_Arena* arena, grpc_metadata_batch& metadata,
+    upb_Arena* arena, const grpc_metadata_batch& metadata,
     const std::vector<StringMatcher>& allowed_headers,
     const std::vector<StringMatcher>& disallowed_headers) {
   auto* upb_headers = envoy_config_core_v3_HeaderMap_new(arena);
-  PopulateMetadataBatchToHeaderMap(metadata, allowed_headers,
-                                   disallowed_headers, arena, upb_headers);
+  PopulateHeaderMap(metadata, allowed_headers, disallowed_headers, arena,
+                    upb_headers);
   return upb_headers;
 }
 
