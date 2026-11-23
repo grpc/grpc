@@ -160,6 +160,8 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
     }
 
    private:
+    std::string DebugTag(const ExtAuthzFilter* filter) const;
+
     // OkResponse.response_headers_to_add, to be applied to the server initial
     // metadata, or to the trailing metadata if the RPC is Trailers-Only.
     std::vector<XdsHeaderValueOption> response_headers_to_add_;

@@ -18,6 +18,7 @@
 
 #include <grpc/support/time.h>
 
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -35,6 +36,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/promise.h"
@@ -303,6 +305,15 @@ void AddHeaders(const std::vector<XdsHeaderValueOption>& headers,
 
 }  // namespace
 
+std::string ExtAuthzFilter::Call::DebugTag(const ExtAuthzFilter* filter) const {
+  return absl::StrCat(
+      "[",
+      Activity::current() != nullptr ? Activity::current()->DebugTag()
+                                     : "<unknown>",
+      " ext_authz_filter=0x", absl::Hex(reinterpret_cast<uintptr_t>(filter)),
+      " ext_authz_call=0x", absl::Hex(reinterpret_cast<uintptr_t>(this)), "] ");
+}
+
 ArenaPromise<absl::Status> ExtAuthzFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ExtAuthzFilter* filter) {
   const auto& config = *filter->config_;
@@ -311,6 +322,9 @@ ArenaPromise<absl::Status> ExtAuthzFilter::Call::OnClientInitialMetadata(
     uint32_t random_number =
         absl::Uniform<uint32_t>(SharedBitGen(), 0, Config::kFilterEnabledMax);
     if (random_number >= config.filter_enabled) {
+      GRPC_TRACE_LOG(ext_authz_filter, INFO)
+          << DebugTag(filter)
+          << "filter disabled, deny_at_disable=" << config.deny_at_disable;
       filter->RecordFilterDisabledRpc();
       // If the filter is disabled, deny the request if configured to do so.
       if (config.deny_at_disable) {
@@ -373,7 +387,8 @@ ArenaPromise<absl::Status> ExtAuthzFilter::Call::OnClientInitialMetadata(
         HandleFailure(*filter, config, md, payload.status().message()));
   }
   // Start the call to the external authorization service.
-  GRPC_TRACE_LOG(ext_authz_filter, INFO) << "starting ext_authz call";
+  GRPC_TRACE_LOG(ext_authz_filter, INFO)
+      << DebugTag(filter) << "starting ext_authz call";
   // Pass the data plane RPC's tracing context, so that the ext_authz call is
   // traced as its child.
   auto call = MakeRefCounted<XdsStreamingCallPromiseWrapper>(
@@ -400,6 +415,9 @@ ArenaPromise<absl::Status> ExtAuthzFilter::Call::OnClientInitialMetadata(
       // Holds a ref to call until its status is received, since dropping the
       // last ref cancels it.
       [this, &md, filter, call](absl::Status status) -> absl::Status {
+        GRPC_TRACE_LOG(ext_authz_filter, INFO)
+            << DebugTag(filter)
+            << "ext_authz call completed: status=" << status;
         const auto& config = *filter->config_;
         if (!status.ok()) {
           return HandleFailure(*filter, config, md, status.message());
@@ -419,6 +437,10 @@ ArenaPromise<absl::Status> ExtAuthzFilter::Call::OnClientInitialMetadata(
             response->response,
             [&](const ExtAuthzResponse::DeniedResponse& denied)
                 -> absl::Status {
+              GRPC_TRACE_LOG(ext_authz_filter, INFO)
+                  << DebugTag(filter)
+                  << "ext_authz denied request: status=" << denied.status
+                  << " message=" << response->status_message;
               auto trailers =
                   GetAllowedMutations(rules, denied.headers, "mutation");
               if (!trailers.ok()) {
@@ -439,6 +461,8 @@ ArenaPromise<absl::Status> ExtAuthzFilter::Call::OnClientInitialMetadata(
                                   status_message);
             },
             [&](const ExtAuthzResponse::OkResponse& ok_resp) -> absl::Status {
+              GRPC_TRACE_LOG(ext_authz_filter, INFO)
+                  << DebugTag(filter) << "ext_authz allowed request";
               // Check all of the mutations before applying any of them, so
               // that none of them are applied if any of them fails.
               auto additions = GetAllowedMutations(
@@ -498,9 +522,17 @@ void ExtAuthzFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
 
 ExtAuthzFilter::ExtAuthzChannel::ExtAuthzChannel(
     GrpcXdsServerTarget server, RefCountedPtr<XdsTransport> transport)
-    : server_(std::move(server)), transport_(std::move(transport)) {}
+    : server_(std::move(server)), transport_(std::move(transport)) {
+  GRPC_TRACE_LOG(ext_authz_filter, INFO)
+      << "creating ext_authz channel " << this << " for server "
+      << server_.server_uri();
+}
 
-ExtAuthzFilter::ExtAuthzChannel::~ExtAuthzChannel() = default;
+ExtAuthzFilter::ExtAuthzChannel::~ExtAuthzChannel() {
+  GRPC_TRACE_LOG(ext_authz_filter, INFO)
+      << "destroying ext_authz channel " << this << " for server "
+      << server_.server_uri();
+}
 
 //
 // ExtAuthzFilter
