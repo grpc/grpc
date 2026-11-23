@@ -375,7 +375,7 @@ TEST_F(V3BridgeTest, TrailingMetadataWaitsForInitialMetadataInV2Pipe) {
         Arena::MakePooledForOverwrite<ServerMetadata>());
     auto next_initial_metadata = server_initial_metadata.receiver.Next();
     EXPECT_THAT(push_initial_metadata(), IsPending());
-    EXPECT_THAT(next_initial_metadata(), IsPending());
+    EXPECT_TRUE(next_initial_metadata().pending());
     drain();
     // The v2 stack then finishes the call before it polls the v2 pipe again.
     send_trailing_metadata = true;
@@ -387,7 +387,7 @@ TEST_F(V3BridgeTest, TrailingMetadataWaitsForInitialMetadataInV2Pipe) {
     EXPECT_THAT(promise(), IsPending());
     // Once the v2 pipe releases the initial metadata, the promise completes.
     auto initial_metadata = next_initial_metadata();
-    ASSERT_THAT(initial_metadata, IsReady());
+    ASSERT_TRUE(initial_metadata.ready());
     EXPECT_FALSE(initial_metadata.value().has_value());
     auto result = promise();
     ASSERT_THAT(result, IsReady());
