@@ -119,7 +119,6 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 inline bool IsPromiseFilterClientHalfCloseEnabled() { return false; }
-inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsReplaceAuthFilterEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RETURN_PREEXISTING_ERRORS
@@ -202,7 +201,6 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 inline bool IsPromiseFilterClientHalfCloseEnabled() { return false; }
-inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsReplaceAuthFilterEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RETURN_PREEXISTING_ERRORS
@@ -285,7 +283,6 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 inline bool IsPromiseFilterClientHalfCloseEnabled() { return false; }
-inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsReplaceAuthFilterEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RETURN_PREEXISTING_ERRORS
@@ -350,7 +347,6 @@ enum ExperimentIds {
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdPromiseBatchCleanupOnCancel,
   kExperimentIdPromiseFilterClientHalfClose,
-  kExperimentIdRecvMessageFilterBypassFix,
   kExperimentIdReplaceAuthFilter,
   kExperimentIdRetryInCallv3,
   kExperimentIdReturnPreexistingErrors,
@@ -539,10 +535,6 @@ inline bool IsPromiseBatchCleanupOnCancelEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_CLIENT_HALF_CLOSE
 inline bool IsPromiseFilterClientHalfCloseEnabled() {
   return IsExperimentEnabled<kExperimentIdPromiseFilterClientHalfClose>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_RECV_MESSAGE_FILTER_BYPASS_FIX
-inline bool IsRecvMessageFilterBypassFixEnabled() {
-  return IsExperimentEnabled<kExperimentIdRecvMessageFilterBypassFix>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REPLACE_AUTH_FILTER
 inline bool IsReplaceAuthFilterEnabled() {

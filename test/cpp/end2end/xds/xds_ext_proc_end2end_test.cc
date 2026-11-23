@@ -24,13 +24,7 @@
 #include <utility>
 #include <vector>
 
-#include "envoy/config/cluster/v3/cluster.pb.h"
-#include "envoy/extensions/filters/http/ext_proc/v3/ext_proc.pb.h"
-#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
-#include "envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.pb.h"
-#include "envoy/service/ext_proc/v3/external_processor.grpc.pb.h"
 #include "src/core/config/config_vars.h"
-#include "src/core/lib/experiments/config.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/sync.h"
 #include "test/core/filters/ext_proc_test_util.h"
@@ -45,6 +39,11 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "envoy/config/cluster/v3/cluster.pb.h"
+#include "envoy/extensions/filters/http/ext_proc/v3/ext_proc.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
+#include "envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.pb.h"
+#include "envoy/service/ext_proc/v3/external_processor.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -1923,7 +1922,6 @@ TEST_P(XdsExtProcUntrustedXdsServerEnd2endTest,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_core::ForceEnableExperiment("recv_message_filter_bypass_fix", true);
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up

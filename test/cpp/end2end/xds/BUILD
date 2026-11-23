@@ -1004,7 +1004,6 @@ grpc_cc_test(
         "//:grpc++",
         "//:orphanable",
         "//src/core:client_channel_backup_poller",
-        "//src/core:experiments",
         "//src/core:sync",
         "//test/core/filters:ext_proc_test_util",
         "//test/core/test_util:fake_stats_plugin",

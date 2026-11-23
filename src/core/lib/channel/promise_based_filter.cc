@@ -864,7 +864,7 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
       break;
     case State::kCompletedWhileBatchCompleted:
     case State::kBatchCompleted: {
-      if (IsRecvMessageFilterBypassFixEnabled() && discard_buffered_message) {
+      if (discard_buffered_message) {
         state_ = State::kBatchCompletedButCancelled;
         // Store the cancellation status so that WakeInsideCombiner() can
         // propagate it to the application's message ready callback instead of
@@ -884,15 +884,8 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
     case State::kPulledFromPipe:
     case State::kPushedToPipe: {
       // Discard the buffered message only when the call is being torn down
-      // (short-circuit / cancellation / server-initiated non-OK);
-      // With the feature disabled, fall back to keying the discard off a
-      // non-OK trailing status.
-      bool discard =
-          IsRecvMessageFilterBypassFixEnabled()
-              ? discard_buffered_message
-              : metadata.get(GrpcStatusMetadata())
-                        .value_or(GRPC_STATUS_UNKNOWN) != GRPC_STATUS_OK;
-      if (!discard) {
+      // (short-circuit / cancellation / server-initiated non-OK).
+      if (!discard_buffered_message) {
         if (state_ == State::kCompletedWhilePulledFromPipe ||
             state_ == State::kPulledFromPipe) {
           state_ = State::kCompletedWhilePulledFromPipe;
@@ -902,13 +895,9 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
       } else {
         push_.reset();
         next_.reset();
-        if (IsRecvMessageFilterBypassFixEnabled()) {
-          completed_status_ = StatusFromMetadata(metadata);
-          if (intercepted_slice_buffer_ != nullptr) {
-            *intercepted_slice_buffer_ = std::nullopt;
-          }
-        } else {
-          completed_status_ = StatusFromMetadata(metadata);
+        completed_status_ = StatusFromMetadata(metadata);
+        if (intercepted_slice_buffer_ != nullptr) {
+          *intercepted_slice_buffer_ = std::nullopt;
         }
         flusher->AddClosure(intercepted_on_complete_, completed_status_,
                             "recv_message_done");
@@ -916,7 +905,7 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
       }
     } break;
     case State::kBatchCompletedNoPipe:
-      if (IsRecvMessageFilterBypassFixEnabled() && discard_buffered_message) {
+      if (discard_buffered_message) {
         // Store the cancellation status so that WakeInsideCombiner() can
         // propagate it to the application's message ready callback instead of
         // defaulting to OK.
@@ -986,15 +975,6 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
                           completed_status_, "recv_message");
       break;
     case State::kCompletedWhileBatchCompleted:
-      if (!IsRecvMessageFilterBypassFixEnabled()) {
-        // existing behavior
-        interceptor()->Push()->Close();
-        state_ = State::kCancelled;
-        flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
-                            completed_status_, "recv_message");
-        break;
-      }
-      [[fallthrough]];
     case State::kBatchCompleted:
       if (completed_status_.ok() && intercepted_slice_buffer_->has_value()) {
         if (!allow_push_to_pipe) break;
@@ -1290,33 +1270,29 @@ class ClientCallData::PollContext {
             self_->send_message()->Done(*md, flusher_);
           }
           if (self_->receive_message() != nullptr) {
-            if (IsRecvMessageFilterBypassFixEnabled()) {
-              // The promise produced its own terminal metadata while a
-              // message was still in flight: the call is being
-              // short-circuited, so that message is discarded rather than
-              // delivered.
-              self_->receive_message()->Done(*md, flusher_,
-                                             /*discard_buffered_message=*/true);
-              // Done() defers the completion closure to WakeInsideCombiner,
-              // which already ran this poll. If the pump isn't idle, repoll to
-              // drain it, else the call stalls.
-              if (!self_->receive_message()->IsIdle()) {
-                repoll_ = true;
-              }
-              // The promise terminated with its own (error) metadata while the
-              // transport's trailing metadata was queued behind the receive
-              // message pump. The buffered message was discarded above; since
-              // receive_message()->IsIdle() will not become true until the
-              // pending message completion callbacks execute, immediately
-              // promote the queued trailing metadata to kComplete so the
-              // synchronous handling below picks it up within this polling
-              // pass.
-              if (self_->recv_trailing_state_ ==
-                  RecvTrailingState::kCompletedQueuedBehindReceiveMessage) {
-                self_->recv_trailing_state_ = RecvTrailingState::kComplete;
-              }
-            } else {
-              self_->receive_message()->Done(*md, flusher_);
+            // The promise produced its own terminal metadata while a
+            // message was still in flight: the call is being
+            // short-circuited, so that message is discarded rather than
+            // delivered.
+            self_->receive_message()->Done(*md, flusher_,
+                                           /*discard_buffered_message=*/true);
+            // Done() defers the completion closure to WakeInsideCombiner,
+            // which already ran this poll. If the pump isn't idle, repoll to
+            // drain it, else the call stalls.
+            if (!self_->receive_message()->IsIdle()) {
+              repoll_ = true;
+            }
+            // The promise terminated with its own (error) metadata while the
+            // transport's trailing metadata was queued behind the receive
+            // message pump. The buffered message was discarded above; since
+            // receive_message()->IsIdle() will not become true until the
+            // pending message completion callbacks execute, immediately
+            // promote the queued trailing metadata to kComplete so the
+            // synchronous handling below picks it up within this polling
+            // pass.
+            if (self_->recv_trailing_state_ ==
+                RecvTrailingState::kCompletedQueuedBehindReceiveMessage) {
+              self_->recv_trailing_state_ = RecvTrailingState::kComplete;
             }
           }
           if (self_->recv_trailing_state_ == RecvTrailingState::kComplete) {
@@ -2009,8 +1985,7 @@ void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
   }
   // Record that we've got the callback.
   GRPC_CHECK(recv_trailing_state_ == RecvTrailingState::kForwarded);
-  if (IsRecvMessageFilterBypassFixEnabled() && receive_message() != nullptr &&
-      !receive_message()->IsIdle()) {
+  if (receive_message() != nullptr && !receive_message()->IsIdle()) {
     // If the receive message pump is still active processing a message,
     // queue the trailing metadata until the pump goes idle to avoid bypassing
     // the message interceptors of filters higher in the stack.

@@ -183,10 +183,6 @@ const char* const description_promise_filter_client_half_close =
     "bridge.";
 const char* const additional_constraints_promise_filter_client_half_close =
     "{}";
-const char* const description_recv_message_filter_bypass_fix =
-    "Receive message bypass happen if trailing metadata is received while "
-    "Server Initial Metadata is getting processed.";
-const char* const additional_constraints_recv_message_filter_bypass_fix = "{}";
 const char* const description_replace_auth_filter =
     "Replacing ServerAuthFilter in Call V3.";
 const char* const additional_constraints_replace_auth_filter = "{}";
@@ -378,10 +374,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"promise_filter_client_half_close",
      description_promise_filter_client_half_close,
      additional_constraints_promise_filter_client_half_close, nullptr, 0, false,
-     true},
-    {"recv_message_filter_bypass_fix",
-     description_recv_message_filter_bypass_fix,
-     additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
      true},
     {"replace_auth_filter", description_replace_auth_filter,
      additional_constraints_replace_auth_filter, nullptr, 0, false, true},
@@ -604,10 +596,6 @@ const char* const description_promise_filter_client_half_close =
     "bridge.";
 const char* const additional_constraints_promise_filter_client_half_close =
     "{}";
-const char* const description_recv_message_filter_bypass_fix =
-    "Receive message bypass happen if trailing metadata is received while "
-    "Server Initial Metadata is getting processed.";
-const char* const additional_constraints_recv_message_filter_bypass_fix = "{}";
 const char* const description_replace_auth_filter =
     "Replacing ServerAuthFilter in Call V3.";
 const char* const additional_constraints_replace_auth_filter = "{}";
@@ -799,10 +787,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"promise_filter_client_half_close",
      description_promise_filter_client_half_close,
      additional_constraints_promise_filter_client_half_close, nullptr, 0, false,
-     true},
-    {"recv_message_filter_bypass_fix",
-     description_recv_message_filter_bypass_fix,
-     additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
      true},
     {"replace_auth_filter", description_replace_auth_filter,
      additional_constraints_replace_auth_filter, nullptr, 0, false, true},
@@ -1025,10 +1009,6 @@ const char* const description_promise_filter_client_half_close =
     "bridge.";
 const char* const additional_constraints_promise_filter_client_half_close =
     "{}";
-const char* const description_recv_message_filter_bypass_fix =
-    "Receive message bypass happen if trailing metadata is received while "
-    "Server Initial Metadata is getting processed.";
-const char* const additional_constraints_recv_message_filter_bypass_fix = "{}";
 const char* const description_replace_auth_filter =
     "Replacing ServerAuthFilter in Call V3.";
 const char* const additional_constraints_replace_auth_filter = "{}";
@@ -1220,10 +1200,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"promise_filter_client_half_close",
      description_promise_filter_client_half_close,
      additional_constraints_promise_filter_client_half_close, nullptr, 0, false,
-     true},
-    {"recv_message_filter_bypass_fix",
-     description_recv_message_filter_bypass_fix,
-     additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
      true},
     {"replace_auth_filter", description_replace_auth_filter,
      additional_constraints_replace_auth_filter, nullptr, 0, false, true},

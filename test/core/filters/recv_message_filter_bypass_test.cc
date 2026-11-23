@@ -44,7 +44,6 @@
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -385,9 +384,6 @@ class FakeCallStack {
 // the filter (mutated), not bypassed.
 TEST(RecvMessageFilterBypassTest,
      InboundMessageFilteredWhenInitialMetadataStalledOkTrailing) {
-  if (!IsRecvMessageFilterBypassFixEnabled()) {
-    GTEST_SKIP() << "Test fail without experiment";
-  }
   ExecCtx exec_ctx;
   // Create Call stack StallFilter - Transport
   MetadataStallController control;
@@ -425,9 +421,6 @@ TEST(RecvMessageFilterBypassTest,
 // bypassed.
 TEST(RecvMessageFilterBypassTest,
      InboundMessageFilteredWhenInitialMetadataStalledNonOkTrailing) {
-  if (!IsRecvMessageFilterBypassFixEnabled()) {
-    GTEST_SKIP() << "Test fail without experiment";
-  }
   ExecCtx exec_ctx;
   // Create call stack
   MetadataStallController control;
@@ -467,9 +460,6 @@ TEST(RecvMessageFilterBypassTest,
 // Trailing metadata is received while B is stalling initial metadata.
 TEST(RecvMessageFilterBypassTest,
      InboundMessageFilteredWhenInitialMetadataStalledOkTrailingTwoFilters) {
-  if (!IsRecvMessageFilterBypassFixEnabled()) {
-    GTEST_SKIP() << "Test fail without experiment";
-  }
   ExecCtx exec_ctx;
   // Create call stack
   MetadataStallController control;
@@ -507,9 +497,6 @@ TEST(RecvMessageFilterBypassTest,
 // Out-of-band cancellation while a message is parked. The parked message
 // must be discarded, and the message read callback must return failed status.
 TEST(RecvMessageFilterBypassTest, StalledMessageCancelled) {
-  if (!IsRecvMessageFilterBypassFixEnabled()) {
-    GTEST_SKIP() << "Test fail without experiment";
-  }
   ExecCtx exec_ctx;
   // Create CallStack
   MetadataStallController control;
@@ -550,9 +537,6 @@ TEST(RecvMessageFilterBypassTest, StalledMessageCancelled) {
 // Test Stalled message is discarded for immediate non-ok response
 TEST(RecvMessageFilterBypassTest,
      StalledMessageImmediateResponseDiscardsParkedMessage) {
-  if (!IsRecvMessageFilterBypassFixEnabled()) {
-    GTEST_SKIP() << "Test fail without experiment";
-  }
   ExecCtx exec_ctx;
   // Create CallStack
   MetadataStallController control;
@@ -590,7 +574,6 @@ TEST(RecvMessageFilterBypassTest,
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc_core::ForceEnableExperiment("recv_message_filter_bypass_fix", true);
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestGrpcScope grpc_scope;
