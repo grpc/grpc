@@ -141,6 +141,7 @@ class OpenTelemetryPluginBuilderImpl {
   // grpc.client.attempt.duration
   // grpc.client.attempt.sent_total_compressed_message_size
   // grpc.client.attempt.rcvd_total_compressed_message_size
+  // grpc.client.call.duration
   // grpc.server.call.started
   // grpc.server.call.duration
   // grpc.server.call.sent_total_compressed_message_size
@@ -390,6 +391,7 @@ class OpenTelemetryPluginImpl
       std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>
           transparent_retries;
       std::unique_ptr<opentelemetry::metrics::Histogram<double>> retry_delay;
+      std::unique_ptr<opentelemetry::metrics::Histogram<double>> duration;
     } call;
     struct Attempt {
       std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>> started;

@@ -38,6 +38,7 @@ grpc_fuzz_test(
         "client_call_test.cc",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "fuzztest",
         "fuzztest_main",

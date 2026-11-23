@@ -70,6 +70,7 @@ class OpenTelemetryPlugin {
 /// grpc.client.attempt.duration
 /// grpc.client.attempt.sent_total_compressed_message_size
 /// grpc.client.attempt.rcvd_total_compressed_message_size
+/// grpc.client.call.duration
 /// grpc.server.call.started
 /// grpc.server.call.duration
 /// grpc.server.call.sent_total_compressed_message_size
@@ -89,6 +90,8 @@ class OpenTelemetryPluginBuilder {
   static constexpr absl::string_view
       kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName =
           "grpc.client.attempt.rcvd_total_compressed_message_size";
+  static constexpr absl::string_view kClientCallDurationInstrumentName =
+      "grpc.client.call.duration";
   static constexpr absl::string_view kServerCallStartedInstrumentName =
       "grpc.server.call.started";
   static constexpr absl::string_view kServerCallDurationInstrumentName =

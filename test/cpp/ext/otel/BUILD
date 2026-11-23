@@ -80,6 +80,7 @@ grpc_cc_test(
         "otel/api",
         "otel/sdk/src/metrics",
         "absl/functional:any_invocable",
+        "absl/strings:string_view",
         "otel/sdk:headers",
     ],
     tags = [

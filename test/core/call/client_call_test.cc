@@ -16,9 +16,11 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/status.h>
 
 #include <memory>
 #include <optional>
+#include <string>
 #include <utility>
 
 #include "src/core/call/metadata.h"
@@ -34,13 +36,35 @@
 #include "test/core/call/yodel/yodel_test.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "gtest/gtest.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 
 namespace grpc_core {
 
 namespace {
 const absl::string_view kDefaultPath = "/foo/bar";
-}
+
+class RecordingClientCallTracer : public ClientCallTracerInterface {
+ public:
+  void RecordAnnotation(absl::string_view) override {}
+  void RecordAnnotation(const Annotation&) override {}
+  std::string TraceId() override { return ""; }
+  std::string SpanId() override { return ""; }
+  bool IsSampled() override { return false; }
+  CallAttemptTracer* StartNewAttempt(bool) override { return nullptr; }
+  void RecordEnd(const absl::Status& status) override {
+    record_end_count_++;
+    last_status_ = status;
+  }
+
+  int record_end_count() const { return record_end_count_; }
+  const absl::Status& last_status() const { return last_status_; }
+
+ private:
+  int record_end_count_ = 0;
+  absl::Status last_status_;
+};
+}  // namespace
 
 class ClientCallTest : public YodelTest {
  protected:
@@ -58,12 +82,17 @@ class ClientCallTest : public YodelTest {
     grpc_compression_options GetCompressionOptions() const {
       return compression_options_;
     }
+    bool enable_call_tracer() const { return enable_call_tracer_; }
     GlobalStatsPluginRegistry::StatsPluginGroup* GetStatsPluginGroup() const {
       return stats_plugin_group_;
     }
 
     CallOptions& SetTimeout(Duration timeout) {
       timeout_ = timeout;
+      return *this;
+    }
+    CallOptions& EnableCallTracer() {
+      enable_call_tracer_ = true;
       return *this;
     }
 
@@ -93,6 +122,7 @@ class ClientCallTest : public YodelTest {
         {0, GRPC_COMPRESS_LEVEL_NONE},
         {0, GRPC_COMPRESS_NONE},
     };
+    bool enable_call_tracer_ = false;
     GlobalStatsPluginRegistry::StatsPluginGroup* stats_plugin_group_ = nullptr;
   };
 
@@ -101,12 +131,21 @@ class ClientCallTest : public YodelTest {
     RefCountedPtr<Arena> arena = SimpleArenaAllocator()->MakeArena();
     arena->SetContext<grpc_event_engine::experimental::EventEngine>(
         event_engine().get());
+    if (options.enable_call_tracer()) {
+      call_tracer_ = std::make_unique<RecordingClientCallTracer>();
+      SetClientCallTracer(arena.get(), {call_tracer_.get()});
+    }
     call_ = MakeClientCall(
         nullptr, 0u, cq_, options.GetPath(), options.GetAuthority(),
         options.GetRegisteredMethod(), options.GetTimeout() + Timestamp::Now(),
         options.GetCompressionOptions(), std::move(arena), destination_,
         options.GetStatsPluginGroup());
     return call_;
+  }
+
+  const RecordingClientCallTracer& call_tracer() const {
+    CHECK_NE(call_tracer_, nullptr);
+    return *call_tracer_;
   }
 
   BatchBuilder NewBatch(int tag) {
@@ -192,6 +231,7 @@ class ClientCallTest : public YodelTest {
   std::optional<CallHandler> handler_;
   std::unique_ptr<CqVerifier> cq_verifier_;
   int expectations_ = 0;
+  std::unique_ptr<RecordingClientCallTracer> call_tracer_;
 };
 
 #define CLIENT_CALL_TEST(name) YODEL_TEST(ClientCallTest, name)
@@ -319,6 +359,72 @@ CLIENT_CALL_TEST(NegativeDeadline) {
   EXPECT_LE(now - start, Duration::Milliseconds(100))
       << GRPC_DUMP_ARGS(now, start);
   WaitForAllPendingWork();
+}
+
+CLIENT_CALL_TEST(RecordEndOnReceivedOkStatus) {
+  InitCall(CallOptions().EnableCallTracer());
+  IncomingStatusOnClient status;
+  NewBatch(1).SendInitialMetadata({}).RecvStatusOnClient(status);
+  SpawnTestSeq(
+      handler(), "pull-initial-metadata",
+      [this]() { return handler().PullClientInitialMetadata(); },
+      [this](ValueOrFailure<ClientMetadataHandle> md) {
+        CHECK(md.ok());
+        handler().PushServerTrailingMetadata(
+            ServerMetadataFromStatus(absl::OkStatus()));
+        return Immediate(Empty{});
+      });
+  Expect(1, true);
+  TickThroughCqExpectations();
+  EXPECT_EQ(status.status(), GRPC_STATUS_OK);
+  EXPECT_EQ(call_tracer().record_end_count(), 1);
+  EXPECT_EQ(call_tracer().last_status(), absl::OkStatus());
+  WaitForAllPendingWork();
+}
+
+CLIENT_CALL_TEST(RecordEndOnReceivedErrorStatus) {
+  InitCall(CallOptions().EnableCallTracer());
+  IncomingStatusOnClient status;
+  NewBatch(1).SendInitialMetadata({}).RecvStatusOnClient(status);
+  SpawnTestSeq(
+      handler(), "pull-initial-metadata",
+      [this]() { return handler().PullClientInitialMetadata(); },
+      [this](ValueOrFailure<ClientMetadataHandle> md) {
+        CHECK(md.ok());
+        handler().PushServerTrailingMetadata(
+            ServerMetadataFromStatus(GRPC_STATUS_INTERNAL, "test error"));
+        return Immediate(Empty{});
+      });
+  Expect(1, true);
+  TickThroughCqExpectations();
+  EXPECT_EQ(status.status(), GRPC_STATUS_INTERNAL);
+  EXPECT_EQ(call_tracer().record_end_count(), 1);
+  EXPECT_EQ(call_tracer().last_status(), absl::InternalError("test error"));
+  WaitForAllPendingWork();
+}
+
+CLIENT_CALL_TEST(RecordEndOnCancelBeforeInvoke) {
+  grpc_call_cancel(InitCall(CallOptions().EnableCallTracer()), nullptr);
+  IncomingStatusOnClient status;
+  NewBatch(1).RecvStatusOnClient(status);
+  Expect(1, true);
+  TickThroughCqExpectations();
+  EXPECT_EQ(status.status(), GRPC_STATUS_CANCELLED);
+  EXPECT_EQ(call_tracer().record_end_count(), 1);
+  EXPECT_EQ(call_tracer().last_status(), absl::CancelledError("CANCELLED"));
+}
+
+CLIENT_CALL_TEST(RecordEndOnCancelWithStatusBeforeInvoke) {
+  grpc_call_cancel_with_status(InitCall(CallOptions().EnableCallTracer()),
+                               GRPC_STATUS_PERMISSION_DENIED, "denied",
+                               nullptr);
+  IncomingStatusOnClient status;
+  NewBatch(1).RecvStatusOnClient(status).SendInitialMetadata({});
+  Expect(1, true);
+  TickThroughCqExpectations();
+  EXPECT_EQ(status.status(), GRPC_STATUS_PERMISSION_DENIED);
+  EXPECT_EQ(call_tracer().record_end_count(), 1);
+  EXPECT_EQ(call_tracer().last_status(), absl::PermissionDeniedError("denied"));
 }
 
 // Verifies that when a StatsPluginGroup is passed to MakeClientCall(),
