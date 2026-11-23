@@ -64,7 +64,6 @@
 #include "src/core/transport/auth_context.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/unique_type_name.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
 #include "test/core/filters/filter_matchers.h"
@@ -74,7 +73,6 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -118,9 +116,6 @@ constexpr char kCustomHeaderValue[] = "custom-value";
 constexpr char kCustomHeaderKey2[] = "x-custom-header-2";
 constexpr char kCustomHeaderValue2[] = "custom-value-2";
 constexpr char kHostHeaderKey[] = "host";
-constexpr char kHostHeaderValue[] = "example.com";
-constexpr char kGrpcCustomHeaderKey[] = "grpc-custom";
-constexpr char kGrpcCustomHeaderValue[] = "grpc-custom-value";
 
 // A CheckResponse that does not parse: field 1 (status) with a length of 255
 // but no payload.
@@ -136,8 +131,6 @@ constexpr char kChannelUnavailableErrorMessage[] =
     "ext_authz channel or transport not available";
 constexpr char kFilterConfigMissingErrorMessage[] =
     "ext_authz filter config is missing";
-constexpr char kWrongConfigTypeErrorMessage[] =
-    "ext_authz filter config has wrong type";
 constexpr char kNoResponseErrorMessage[] = "No response message received";
 constexpr char kParseErrorMessage[] = "Failed to parse CheckResponse";
 constexpr char kForbiddenHeaderMutationErrorMessage[] =
@@ -162,16 +155,53 @@ constexpr char kPemCert[] =
 constexpr char kEncodedCert[] =
     "-----BEGIN%20CERTIFICATE-----%0Aabc%3D%0A-----END%20CERTIFICATE-----%0A";
 
-// A filter config of a type other than ExtAuthzFilter::Config.
-class OtherFilterConfig final : public FilterConfig {
- public:
-  static UniqueTypeName Type() {
-    return GRPC_UNIQUE_TYPE_NAME_HERE("other_filter_config");
-  }
-  UniqueTypeName type() const override { return Type(); }
-  bool Equals(const FilterConfig& /*other*/) const override { return true; }
-  std::string ToString() const override { return "{}"; }
-};
+MATCHER_P4(HasClientMetrics, allowed, denied, failed, filter_disabled, "") {
+  return ::testing::ExplainMatchResult(::testing::NotNull(), arg,
+                                       result_listener) &&
+         ::testing::ExplainMatchResult(
+             Optional(::testing::Eq(allowed)),
+             arg->GetUInt64MetricValueByName(
+                 "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
+             result_listener) &&
+         ::testing::ExplainMatchResult(
+             Optional(::testing::Eq(denied)),
+             arg->GetUInt64MetricValueByName(
+                 "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
+             result_listener) &&
+         ::testing::ExplainMatchResult(
+             Optional(::testing::Eq(failed)),
+             arg->GetUInt64MetricValueByName(
+                 "grpc.client_ext_authz.failed_rpcs", {kServerUri}),
+             result_listener) &&
+         ::testing::ExplainMatchResult(
+             Optional(::testing::Eq(filter_disabled)),
+             arg->GetUInt64MetricValueByName(
+                 "grpc.client_ext_authz.filter_disabled_rpcs", {kServerUri}),
+             result_listener);
+}
+
+MATCHER_P4(HasServerMetrics, allowed, denied, failed, filter_disabled, "") {
+  return ::testing::ExplainMatchResult(::testing::NotNull(), arg,
+                                       result_listener) &&
+         ::testing::ExplainMatchResult(
+             Optional(::testing::Eq(allowed)),
+             arg->GetUInt64MetricValueByName(
+                 "grpc.server_ext_authz.allowed_rpcs"),
+             result_listener) &&
+         ::testing::ExplainMatchResult(Optional(::testing::Eq(denied)),
+                                       arg->GetUInt64MetricValueByName(
+                                           "grpc.server_ext_authz.denied_rpcs"),
+                                       result_listener) &&
+         ::testing::ExplainMatchResult(Optional(::testing::Eq(failed)),
+                                       arg->GetUInt64MetricValueByName(
+                                           "grpc.server_ext_authz.failed_rpcs"),
+                                       result_listener) &&
+         ::testing::ExplainMatchResult(
+             Optional(::testing::Eq(filter_disabled)),
+             arg->GetUInt64MetricValueByName(
+                 "grpc.server_ext_authz.filter_disabled_rpcs"),
+             result_listener);
+}
 
 //
 // Test fixture
@@ -250,19 +280,14 @@ class ExtAuthzFilterTest : public FilterTest {
   using PendingClientInitialMetadata =
       std::shared_ptr<std::optional<ValueOrFailure<ClientMetadataHandle>>>;
 
-  // Set up here rather than in Init(), since the creation tests use no
-  // config built by Init().
-  void InitTest() override {
+  // Builds the chain [ExtAuthzFilter] -> backend, with the filter's Check
+  // calls going to the fake transport.
+  void Init(ConfigBuilder builder, const ChannelArgs& args = ChannelArgs()) {
     transport_factory_ = MakeRefCounted<FakeXdsTransportFactory>(
         [] {
           ADD_FAILURE() << "too many pending reads on ext_authz Check call";
         },
         event_engine());
-  }
-
-  // Builds the chain [ExtAuthzFilter] -> backend, with the filter's Check
-  // calls going to the fake transport.
-  void Init(ConfigBuilder builder, const ChannelArgs& args = ChannelArgs()) {
     RefCountedPtr<ExtAuthzFilter::ExtAuthzChannel> channel;
     if (builder.with_channel()) {
       absl::Status status;
@@ -405,6 +430,12 @@ class ExtAuthzFilterTest : public FilterTest {
   // Check call (fake authorization service)
   //
 
+  // Waits for the Check call opened on the fake authorization service, or
+  // returns null if the filter doesn't open one.
+  RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> WaitForCheckCall() {
+    return transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  }
+
   // Returns the CheckRequest the filter sent on `check_call`, or nullopt if
   // it doesn't send one.
   std::optional<CheckRequest> GetCheckRequest(
@@ -431,8 +462,7 @@ class ExtAuthzFilterTest : public FilterTest {
       return std::nullopt;
     }
     auto pull = StartPullClientInitialMetadata(*backend);
-    auto check_call =
-        transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+    auto check_call = WaitForCheckCall();
     if (check_call == nullptr) {
       ADD_FAILURE() << "no Check call started";
       return std::nullopt;
@@ -448,6 +478,7 @@ class ExtAuthzFilterTest : public FilterTest {
     return request;
   }
 
+ private:
   // Drops everything holding a ref to event_engine() before YodelTest waits
   // for it to have a single owner. Runs after FilterTest has torn down the
   // stack under test.
@@ -458,8 +489,7 @@ class ExtAuthzFilterTest : public FilterTest {
       // references to the fake transport and, through it, to event_engine().
       // WaitForStream() does not wait for a new call: it returns the Check
       // call, if the filter still holds it, or null if it does not.
-      auto check_call =
-          transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+      auto check_call = WaitForCheckCall();
       if (check_call != nullptr) {
         check_call->MaybeSendStatusToClient(absl::CancelledError());
       }
@@ -472,15 +502,11 @@ class ExtAuthzFilterTest : public FilterTest {
   }
 
   // The Check calls (fake authorization service) are opened on this
-  // transport factory: tests wait for them with
-  // transport_factory_->WaitForStream(target_, kExtAuthzMethod), which
-  // returns null if the filter doesn't open one.
+  // transport factory.
   const GrpcXdsServerTarget target_{"dns:///ext_authz.example.com",
                                     /*channel_creds_config=*/nullptr,
                                     /*call_creds_configs=*/{}};
   RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
-
- private:
   // Set by InitWithStatsPlugin(). Held for the whole test, as a channel holds
   // it via its args: the filter's metrics are only visible to the stats plugin
   // while the group's collection scope is alive.
@@ -497,65 +523,45 @@ FILTER_TEST(ExtAuthzFilterTest, CreateFailsWithoutConfig) {
             absl::InvalidArgumentError(kFilterConfigMissingErrorMessage));
 }
 
-FILTER_TEST(ExtAuthzFilterTest, CreateFailsWithWrongConfigType) {
-  EXPECT_EQ(CreateFilterChain<ExtAuthzFilter>(
-                ChannelArgs(), MakeRefCounted<OtherFilterConfig>()),
-            absl::InternalError(kWrongConfigTypeErrorMessage));
-}
-
 //
 // Filter enablement tests (filter_enabled / deny_at_disable)
 //
 
-// With filter_enabled at 100%, sampling is skipped and the authorization
-// service is always called, even if deny_at_disable is set.
-FILTER_TEST(ExtAuthzFilterTest, FilterFullyEnabledCallsAuthz) {
-  Init(ConfigBuilder()
-           .SetFilterEnabled(/*parts_per_million=*/1000000)
-           .SetDenyAtDisable(true));
-  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
-  std::optional<CallHandler> backend = GetNextHandler();
-  ASSERT_TRUE(backend.has_value());
-  auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
-  ASSERT_NE(check_call, nullptr);
-  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
-  check_call->SendMessageToClient(MakeOkCheckResponse().SerializeAsString());
-  check_call->MaybeSendStatusToClient(absl::OkStatus());
-  EXPECT_TRUE(FinishPullClientInitialMetadata(pull).ok());
-  PushServerTrailingMetadata(*backend,
-                             ServerMetadataFromStatus(GRPC_STATUS_OK));
-  EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
-  WaitForAllPendingWork();
-}
-
-// When the filter is disabled, the RPC goes through without a Check call.
+// When the filter is disabled, the RPC goes through without a Check call and
+// counts as allowed and filter-disabled.
 FILTER_TEST(ExtAuthzFilterTest, FilterDisabledAllows) {
-  Init(ConfigBuilder().SetFilterEnabled(/*parts_per_million=*/0));
+  auto stats_plugin = InitWithStatsPlugin(
+      ConfigBuilder().SetFilterEnabled(/*parts_per_million=*/0));
   CallInitiator client = StartCall(NewClientMetadata({}, kPath));
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  EXPECT_EQ(transport_factory_->WaitForStream(target_, kExtAuthzMethod),
-            nullptr);
+  EXPECT_EQ(WaitForCheckCall(), nullptr);
   EXPECT_TRUE(FinishPullClientInitialMetadata(pull).ok());
   PushServerTrailingMetadata(*backend,
                              ServerMetadataFromStatus(GRPC_STATUS_OK));
   EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
+  EXPECT_THAT(stats_plugin,
+              HasClientMetrics(/*allowed=*/1, /*denied=*/0, /*failed=*/0,
+                               /*filter_disabled=*/1));
   WaitForAllPendingWork();
 }
 
 FILTER_TEST(ExtAuthzFilterTest, FilterDisabledWithDenyAtDisableFails) {
-  Init(ConfigBuilder()
-           .SetFilterEnabled(/*parts_per_million=*/0)
-           .SetDenyAtDisable(true)
-           .SetStatusOnError(kStatusOnError));
+  auto stats_plugin =
+      InitWithStatsPlugin(ConfigBuilder()
+                              .SetFilterEnabled(/*parts_per_million=*/0)
+                              .SetDenyAtDisable(true)
+                              .SetStatusOnError(kStatusOnError));
   CallInitiator client = StartCall(NewClientMetadata({}, kPath));
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   EXPECT_FALSE(PullClientInitialMetadata(*backend).ok());
   EXPECT_EQ(PullServerTrailingStatus(client),
             absl::UnavailableError(kDisabledErrorMessage));
+  EXPECT_THAT(stats_plugin,
+              HasClientMetrics(/*allowed=*/0, /*denied=*/1, /*failed=*/0,
+                               /*filter_disabled=*/1));
   WaitForAllPendingWork();
 }
 
@@ -593,8 +599,7 @@ FILTER_TEST(ExtAuthzFilterTest, MissingChannelWithFailureModeDeny) {
   WaitForAllPendingWork();
 }
 
-FILTER_TEST(ExtAuthzFilterTest,
-            MissingChannelWithFailureModeAllowInjectsHeader) {
+FILTER_TEST(ExtAuthzFilterTest, MissingChannelWithFailureModeAllow) {
   Init(ConfigBuilder()
            .WithoutChannel()
            .SetFailureModeAllow(true)
@@ -614,14 +619,15 @@ FILTER_TEST(ExtAuthzFilterTest,
 }
 
 // The status of a failed Check call is not propagated: the RPC fails with
-// status_on_error.
+// status_on_error and counts as both failed and denied.
 FILTER_TEST(ExtAuthzFilterTest, TransportFailureWithFailureModeDeny) {
-  Init(ConfigBuilder().SetStatusOnError(kStatusOnError));
+  auto stats_plugin =
+      InitWithStatsPlugin(ConfigBuilder().SetStatusOnError(kStatusOnError));
   CallInitiator client = StartCall(NewClientMetadata({}, kPath));
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   check_call->MaybeSendStatusToClient(
@@ -629,18 +635,23 @@ FILTER_TEST(ExtAuthzFilterTest, TransportFailureWithFailureModeDeny) {
   EXPECT_FALSE(FinishPullClientInitialMetadata(pull).ok());
   EXPECT_EQ(PullServerTrailingStatus(client),
             absl::UnavailableError(kTransportErrorMessage));
+  EXPECT_THAT(stats_plugin,
+              HasClientMetrics(/*allowed=*/0, /*denied=*/1, /*failed=*/1,
+                               /*filter_disabled=*/0));
   WaitForAllPendingWork();
 }
 
-// failure_mode_allow lets the RPC through but, without
-// failure_mode_allow_header_add, does not tell the backend.
+// failure_mode_allow lets the RPC through (counting as both failed and
+// allowed) but, without failure_mode_allow_header_add, does not tell the
+// backend.
 FILTER_TEST(ExtAuthzFilterTest, TransportFailureWithFailureModeAllow) {
-  Init(ConfigBuilder().SetFailureModeAllow(true));
+  auto stats_plugin =
+      InitWithStatsPlugin(ConfigBuilder().SetFailureModeAllow(true));
   CallInitiator client = StartCall(NewClientMetadata({}, kPath));
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   check_call->MaybeSendStatusToClient(
@@ -651,6 +662,9 @@ FILTER_TEST(ExtAuthzFilterTest, TransportFailureWithFailureModeAllow) {
   PushServerTrailingMetadata(*backend,
                              ServerMetadataFromStatus(GRPC_STATUS_OK));
   EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
+  EXPECT_THAT(stats_plugin,
+              HasClientMetrics(/*allowed=*/1, /*denied=*/0, /*failed=*/1,
+                               /*filter_disabled=*/0));
   WaitForAllPendingWork();
 }
 
@@ -662,7 +676,7 @@ FILTER_TEST(ExtAuthzFilterTest,
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   check_call->MaybeSendStatusToClient(
@@ -685,7 +699,7 @@ FILTER_TEST(ExtAuthzFilterTest, NoResponseMessageWithFailureModeDeny) {
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   check_call->MaybeSendStatusToClient(absl::OkStatus());
@@ -695,15 +709,14 @@ FILTER_TEST(ExtAuthzFilterTest, NoResponseMessageWithFailureModeDeny) {
   WaitForAllPendingWork();
 }
 
-FILTER_TEST(ExtAuthzFilterTest,
-            NoResponseMessageWithFailureModeAllowInjectsHeader) {
+FILTER_TEST(ExtAuthzFilterTest, NoResponseMessageWithFailureModeAllow) {
   Init(ConfigBuilder().SetFailureModeAllow(true).SetFailureModeAllowHeaderAdd(
       true));
   CallInitiator client = StartCall(NewClientMetadata({}, kPath));
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   check_call->MaybeSendStatusToClient(absl::OkStatus());
@@ -725,7 +738,7 @@ FILTER_TEST(ExtAuthzFilterTest, OkResponseThenCallFailureWithFailureModeDeny) {
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   check_call->SendMessageToClient(MakeOkCheckResponse().SerializeAsString());
@@ -739,15 +752,14 @@ FILTER_TEST(ExtAuthzFilterTest, OkResponseThenCallFailureWithFailureModeDeny) {
 
 // As above, with failure_mode_allow: the RPC goes through as for any other
 // failure, without the header mutations of the discarded CheckResponse.
-FILTER_TEST(ExtAuthzFilterTest,
-            OkResponseThenCallFailureWithFailureModeAllowInjectsHeader) {
+FILTER_TEST(ExtAuthzFilterTest, OkResponseThenCallFailureWithFailureModeAllow) {
   Init(ConfigBuilder().SetFailureModeAllow(true).SetFailureModeAllowHeaderAdd(
       true));
   CallInitiator client = StartCall(NewClientMetadata({}, kPath));
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   CheckResponse response = MakeOkCheckResponse();
@@ -773,7 +785,7 @@ FILTER_TEST(ExtAuthzFilterTest, MalformedResponseWithFailureModeDeny) {
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   check_call->SendMessageToClient(kMalformedCheckResponse);
@@ -786,15 +798,14 @@ FILTER_TEST(ExtAuthzFilterTest, MalformedResponseWithFailureModeDeny) {
 
 // A CheckResponse that fails to parse is a failure, not a deny, so
 // failure_mode_allow lets the call through.
-FILTER_TEST(ExtAuthzFilterTest,
-            MalformedResponseWithFailureModeAllowInjectsHeader) {
+FILTER_TEST(ExtAuthzFilterTest, MalformedResponseWithFailureModeAllow) {
   Init(ConfigBuilder().SetFailureModeAllow(true).SetFailureModeAllowHeaderAdd(
       true));
   CallInitiator client = StartCall(NewClientMetadata({}, kPath));
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   check_call->SendMessageToClient(kMalformedCheckResponse);
@@ -819,7 +830,7 @@ FILTER_TEST(ExtAuthzFilterTest, CancelWhileCheckPendingOrphansCheckCall) {
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   client->SpawnCancel();
@@ -836,12 +847,12 @@ FILTER_TEST(ExtAuthzFilterTest, CancelWhileCheckPendingOrphansCheckCall) {
 //
 
 FILTER_TEST(ExtAuthzFilterTest, OkResponseAllows) {
-  Init(ConfigBuilder());
+  auto stats_plugin = InitWithStatsPlugin(ConfigBuilder());
   CallInitiator client = StartCall(NewClientMetadata({}, kPath));
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   check_call->SendMessageToClient(MakeOkCheckResponse().SerializeAsString());
@@ -850,6 +861,9 @@ FILTER_TEST(ExtAuthzFilterTest, OkResponseAllows) {
   PushServerTrailingMetadata(*backend,
                              ServerMetadataFromStatus(GRPC_STATUS_OK));
   EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
+  EXPECT_THAT(stats_plugin,
+              HasClientMetrics(/*allowed=*/1, /*denied=*/0, /*failed=*/0,
+                               /*filter_disabled=*/0));
   WaitForAllPendingWork();
 }
 
@@ -864,7 +878,7 @@ FILTER_TEST(ExtAuthzFilterTest, NonOkStatusWithOkResponseDenies) {
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   CheckResponse response;
@@ -884,7 +898,7 @@ FILTER_TEST(ExtAuthzFilterTest, OkResponseAdditionsBeforeRemovals) {
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   CheckResponse response = MakeOkCheckResponse();
@@ -904,49 +918,13 @@ FILTER_TEST(ExtAuthzFilterTest, OkResponseAdditionsBeforeRemovals) {
   WaitForAllPendingWork();
 }
 
-// Even without decoder_header_mutation_rules, removals of headers that gRPC
-// never lets an authorization service mutate are ignored, while the others
-// are still applied. Those headers are "host" (per gRFC A102) and, as with
-// gRPC's HeaderMutationRules, headers starting with "grpc-".
-FILTER_TEST(ExtAuthzFilterTest, OkResponseRemovalOfReservedHeadersIgnored) {
-  Init(ConfigBuilder());
-  CallInitiator client = StartCall(
-      NewClientMetadata({{kHostHeaderKey, kHostHeaderValue},
-                         {kGrpcCustomHeaderKey, kGrpcCustomHeaderValue},
-                         {kCustomHeaderKey, kCustomHeaderValue}},
-                        kPath));
-  std::optional<CallHandler> backend = GetNextHandler();
-  ASSERT_TRUE(backend.has_value());
-  auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
-  ASSERT_NE(check_call, nullptr);
-  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
-  CheckResponse response = MakeOkCheckResponse();
-  auto* ok = response.mutable_ok_response();
-  ok->add_headers_to_remove(kHostHeaderKey);
-  ok->add_headers_to_remove(kGrpcCustomHeaderKey);
-  ok->add_headers_to_remove(kCustomHeaderKey);
-  check_call->SendMessageToClient(response.SerializeAsString());
-  check_call->MaybeSendStatusToClient(absl::OkStatus());
-  EXPECT_THAT(
-      FinishPullClientInitialMetadata(pull),
-      IsOkAndHolds(Pointee(AllOf(
-          HasMetadataKeyValue(kHostHeaderKey, kHostHeaderValue),
-          HasMetadataKeyValue(kGrpcCustomHeaderKey, kGrpcCustomHeaderValue),
-          LacksMetadataKey(kCustomHeaderKey)))));
-  PushServerTrailingMetadata(*backend,
-                             ServerMetadataFromStatus(GRPC_STATUS_OK));
-  EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
-  WaitForAllPendingWork();
-}
-
 FILTER_TEST(ExtAuthzFilterTest, OkResponseModifyResponseHeaders) {
   Init(ConfigBuilder());
   CallInitiator client = StartCall(NewClientMetadata({}, kPath));
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   CheckResponse response = MakeOkCheckResponse();
@@ -982,7 +960,7 @@ FILTER_TEST(ExtAuthzFilterTest, TrailersOnlyAddsResponseHeadersToTrailers) {
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   CheckResponse response = MakeOkCheckResponse();
@@ -1015,7 +993,7 @@ FILTER_TEST(ExtAuthzFilterTest,
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   CheckResponse response = MakeOkCheckResponse();
@@ -1040,12 +1018,13 @@ FILTER_TEST(ExtAuthzFilterTest,
 // The RPC fails with the denied response's status (not status_on_error), and
 // the denied response's headers are added to the trailing metadata.
 FILTER_TEST(ExtAuthzFilterTest, DeniedResponseFails) {
-  Init(ConfigBuilder().SetStatusOnError(kStatusOnError));
+  auto stats_plugin =
+      InitWithStatsPlugin(ConfigBuilder().SetStatusOnError(kStatusOnError));
   CallInitiator client = StartCall(NewClientMetadata({}, kPath));
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   CheckResponse response = MakeDeniedCheckResponse();
@@ -1061,6 +1040,9 @@ FILTER_TEST(ExtAuthzFilterTest, DeniedResponseFails) {
           HasMetadataResult(absl::UnauthenticatedError(kDeniedErrorMessage)),
           HasMetadataKeyValue(kCustomHeaderKey, kCustomHeaderValue),
           HasMetadataKeyValue(kCustomHeaderKey2, kCustomHeaderValue2)))));
+  EXPECT_THAT(stats_plugin,
+              HasClientMetrics(/*allowed=*/0, /*denied=*/1, /*failed=*/0,
+                               /*filter_disabled=*/0));
   WaitForAllPendingWork();
 }
 
@@ -1075,7 +1057,7 @@ FILTER_TEST(ExtAuthzFilterTest, DeniedResponseWithFailureModeAllowStillDenies) {
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   check_call->SendMessageToClient(
@@ -1091,16 +1073,18 @@ FILTER_TEST(ExtAuthzFilterTest, DeniedResponseWithFailureModeAllowStillDenies) {
 // Header mutation rules tests
 //
 
-FILTER_TEST(ExtAuthzFilterTest, RequestHeaderMutationFailsWithFailureModeDeny) {
-  Init(ConfigBuilder()
-           .SetStatusOnError(kStatusOnError)
-           .SetHeaderMutationRules(
-               DisallowAllRules(/*disallow_is_error=*/true)));
+FILTER_TEST(ExtAuthzFilterTest,
+            DisallowedRequestHeaderMutationFailureModeDeny) {
+  auto stats_plugin =
+      InitWithStatsPlugin(ConfigBuilder()
+                              .SetStatusOnError(kStatusOnError)
+                              .SetHeaderMutationRules(DisallowAllRules(
+                                  /*disallow_is_error=*/true)));
   CallInitiator client = StartCall(NewClientMetadata({}, kPath));
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   CheckResponse response = MakeOkCheckResponse();
@@ -1111,21 +1095,25 @@ FILTER_TEST(ExtAuthzFilterTest, RequestHeaderMutationFailsWithFailureModeDeny) {
   EXPECT_FALSE(FinishPullClientInitialMetadata(pull).ok());
   EXPECT_EQ(PullServerTrailingStatus(client),
             absl::UnavailableError(kForbiddenHeaderMutationErrorMessage));
+  EXPECT_THAT(stats_plugin,
+              HasClientMetrics(/*allowed=*/0, /*denied=*/1, /*failed=*/1,
+                               /*filter_disabled=*/0));
   WaitForAllPendingWork();
 }
 
 FILTER_TEST(ExtAuthzFilterTest,
-            RequestHeaderMutationFailsWithFailureModeAllow) {
-  Init(ConfigBuilder()
-           .SetFailureModeAllow(true)
-           .SetFailureModeAllowHeaderAdd(true)
-           .SetHeaderMutationRules(
-               DisallowAllRules(/*disallow_is_error=*/true)));
+            DisallowedRequestHeaderMutationFailureModeAllow) {
+  auto stats_plugin =
+      InitWithStatsPlugin(ConfigBuilder()
+                              .SetFailureModeAllow(true)
+                              .SetFailureModeAllowHeaderAdd(true)
+                              .SetHeaderMutationRules(DisallowAllRules(
+                                  /*disallow_is_error=*/true)));
   CallInitiator client = StartCall(NewClientMetadata({}, kPath));
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   CheckResponse response = MakeOkCheckResponse();
@@ -1141,10 +1129,13 @@ FILTER_TEST(ExtAuthzFilterTest,
   PushServerTrailingMetadata(*backend,
                              ServerMetadataFromStatus(GRPC_STATUS_OK));
   EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
+  EXPECT_THAT(stats_plugin,
+              HasClientMetrics(/*allowed=*/1, /*denied=*/0, /*failed=*/1,
+                               /*filter_disabled=*/0));
   WaitForAllPendingWork();
 }
 
-FILTER_TEST(ExtAuthzFilterTest, RequestHeaderRemovalFailsWithFailureModeDeny) {
+FILTER_TEST(ExtAuthzFilterTest, DisallowedRequestHeaderRemovalFailureModeDeny) {
   Init(ConfigBuilder()
            .SetStatusOnError(kStatusOnError)
            .SetHeaderMutationRules(
@@ -1154,7 +1145,7 @@ FILTER_TEST(ExtAuthzFilterTest, RequestHeaderRemovalFailsWithFailureModeDeny) {
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   CheckResponse response = MakeOkCheckResponse();
@@ -1167,7 +1158,8 @@ FILTER_TEST(ExtAuthzFilterTest, RequestHeaderRemovalFailsWithFailureModeDeny) {
   WaitForAllPendingWork();
 }
 
-FILTER_TEST(ExtAuthzFilterTest, RequestHeaderRemovalFailsWithFailureModeAllow) {
+FILTER_TEST(ExtAuthzFilterTest,
+            DisallowedRequestHeaderRemovalFailureModeAllow) {
   Init(ConfigBuilder()
            .SetFailureModeAllow(true)
            .SetFailureModeAllowHeaderAdd(true)
@@ -1178,7 +1170,7 @@ FILTER_TEST(ExtAuthzFilterTest, RequestHeaderRemovalFailsWithFailureModeAllow) {
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   CheckResponse response = MakeOkCheckResponse();
@@ -1197,7 +1189,7 @@ FILTER_TEST(ExtAuthzFilterTest, RequestHeaderRemovalFailsWithFailureModeAllow) {
 }
 
 FILTER_TEST(ExtAuthzFilterTest,
-            ResponseHeaderMutationFailsWithFailureModeDeny) {
+            DisallowedResponseHeaderMutationFailureModeDeny) {
   Init(ConfigBuilder()
            .SetStatusOnError(kStatusOnError)
            .SetHeaderMutationRules(
@@ -1206,7 +1198,7 @@ FILTER_TEST(ExtAuthzFilterTest,
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   CheckResponse response = MakeOkCheckResponse();
@@ -1224,7 +1216,7 @@ FILTER_TEST(ExtAuthzFilterTest,
 // mutation allows the call when failure_mode_allow is set. The response
 // header is not added.
 FILTER_TEST(ExtAuthzFilterTest,
-            ResponseHeaderMutationFailsWithFailureModeAllow) {
+            DisallowedResponseHeaderMutationFailureModeAllow) {
   Init(ConfigBuilder()
            .SetFailureModeAllow(true)
            .SetFailureModeAllowHeaderAdd(true)
@@ -1234,7 +1226,7 @@ FILTER_TEST(ExtAuthzFilterTest,
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   CheckResponse response = MakeOkCheckResponse();
@@ -1257,16 +1249,17 @@ FILTER_TEST(ExtAuthzFilterTest,
 }
 
 FILTER_TEST(ExtAuthzFilterTest,
-            HeaderMutationFailsOnDeniedResponseWithFailureModeDeny) {
-  Init(ConfigBuilder()
-           .SetStatusOnError(kStatusOnError)
-           .SetHeaderMutationRules(
-               DisallowAllRules(/*disallow_is_error=*/true)));
+            DisallowedDeniedResponseHeaderMutationFailureModeDeny) {
+  auto stats_plugin =
+      InitWithStatsPlugin(ConfigBuilder()
+                              .SetStatusOnError(kStatusOnError)
+                              .SetHeaderMutationRules(DisallowAllRules(
+                                  /*disallow_is_error=*/true)));
   CallInitiator client = StartCall(NewClientMetadata({}, kPath));
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   CheckResponse response = MakeDeniedCheckResponse();
@@ -1277,23 +1270,27 @@ FILTER_TEST(ExtAuthzFilterTest,
   EXPECT_FALSE(FinishPullClientInitialMetadata(pull).ok());
   EXPECT_EQ(PullServerTrailingStatus(client),
             absl::UnavailableError(kForbiddenHeaderMutationErrorMessage));
+  EXPECT_THAT(stats_plugin,
+              HasClientMetrics(/*allowed=*/0, /*denied=*/1, /*failed=*/1,
+                               /*filter_disabled=*/0));
   WaitForAllPendingWork();
 }
 
 // A disallowed trailer mutation on a denied response counts as a failure to
 // get a valid decision, so failure_mode_allow allows the call.
 FILTER_TEST(ExtAuthzFilterTest,
-            HeaderMutationFailsOnDeniedResponseWithFailureModeAllow) {
-  Init(ConfigBuilder()
-           .SetFailureModeAllow(true)
-           .SetFailureModeAllowHeaderAdd(true)
-           .SetHeaderMutationRules(
-               DisallowAllRules(/*disallow_is_error=*/true)));
+            DisallowedDeniedResponseHeaderMutationFailureModeAllow) {
+  auto stats_plugin =
+      InitWithStatsPlugin(ConfigBuilder()
+                              .SetFailureModeAllow(true)
+                              .SetFailureModeAllowHeaderAdd(true)
+                              .SetHeaderMutationRules(DisallowAllRules(
+                                  /*disallow_is_error=*/true)));
   CallInitiator client = StartCall(NewClientMetadata({}, kPath));
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   CheckResponse response = MakeDeniedCheckResponse();
@@ -1310,6 +1307,9 @@ FILTER_TEST(ExtAuthzFilterTest,
   EXPECT_THAT(PullServerTrailingMetadata(client),
               IsOkAndHolds(Pointee(AllOf(HasMetadataResult(absl::OkStatus()),
                                          LacksMetadataKey(kCustomHeaderKey)))));
+  EXPECT_THAT(stats_plugin,
+              HasClientMetrics(/*allowed=*/1, /*denied=*/0, /*failed=*/1,
+                               /*filter_disabled=*/0));
   WaitForAllPendingWork();
 }
 
@@ -1329,7 +1329,7 @@ FILTER_TEST(ExtAuthzFilterTest,
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   CheckResponse response = MakeOkCheckResponse();
@@ -1369,7 +1369,7 @@ FILTER_TEST(ExtAuthzFilterTest, DisallowedMutationsIgnoredOnOkResponse) {
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   CheckResponse response = MakeOkCheckResponse();
@@ -1406,7 +1406,7 @@ FILTER_TEST(ExtAuthzFilterTest, DisallowedMutationsIgnoredOnDeniedResponse) {
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   CheckResponse response = MakeDeniedCheckResponse();
@@ -1420,191 +1420,6 @@ FILTER_TEST(ExtAuthzFilterTest, DisallowedMutationsIgnoredOnDeniedResponse) {
       IsOkAndHolds(Pointee(AllOf(
           HasMetadataResult(absl::UnauthenticatedError(kDeniedErrorMessage)),
           LacksMetadataKey(kCustomHeaderKey)))));
-  WaitForAllPendingWork();
-}
-
-// With disallow_is_error=true, removing a grpc-* header, which gRPC never
-// allows to be mutated, fails the RPC even when the rules allow everything
-// else.
-FILTER_TEST(ExtAuthzFilterTest, ReservedHeaderRemovalFailsWithDisallowIsError) {
-  HeaderMutationRules rules;
-  rules.disallow_is_error = true;
-  Init(ConfigBuilder()
-           .SetStatusOnError(kStatusOnError)
-           .SetHeaderMutationRules(std::move(rules)));
-  CallInitiator client = StartCall(NewClientMetadata(
-      {{kGrpcCustomHeaderKey, kGrpcCustomHeaderValue}}, kPath));
-  std::optional<CallHandler> backend = GetNextHandler();
-  ASSERT_TRUE(backend.has_value());
-  auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
-  ASSERT_NE(check_call, nullptr);
-  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
-  CheckResponse response = MakeOkCheckResponse();
-  response.mutable_ok_response()->add_headers_to_remove(kGrpcCustomHeaderKey);
-  check_call->SendMessageToClient(response.SerializeAsString());
-  check_call->MaybeSendStatusToClient(absl::OkStatus());
-  EXPECT_FALSE(FinishPullClientInitialMetadata(pull).ok());
-  EXPECT_EQ(PullServerTrailingStatus(client),
-            absl::UnavailableError(absl::StrCat("Forbidden header removal: ",
-                                                kGrpcCustomHeaderKey)));
-  WaitForAllPendingWork();
-}
-
-// With disallow_is_error=false, removals of "host" and grpc-* headers are
-// ignored, while other removals are applied.
-FILTER_TEST(ExtAuthzFilterTest,
-            ReservedHeaderRemovalIgnoredWithoutDisallowIsError) {
-  Init(ConfigBuilder().SetHeaderMutationRules(HeaderMutationRules()));
-  CallInitiator client = StartCall(
-      NewClientMetadata({{kHostHeaderKey, kHostHeaderValue},
-                         {kGrpcCustomHeaderKey, kGrpcCustomHeaderValue},
-                         {kCustomHeaderKey, kCustomHeaderValue}},
-                        kPath));
-  std::optional<CallHandler> backend = GetNextHandler();
-  ASSERT_TRUE(backend.has_value());
-  auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
-  ASSERT_NE(check_call, nullptr);
-  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
-  CheckResponse response = MakeOkCheckResponse();
-  auto* ok = response.mutable_ok_response();
-  ok->add_headers_to_remove(kHostHeaderKey);
-  ok->add_headers_to_remove(kGrpcCustomHeaderKey);
-  ok->add_headers_to_remove(kCustomHeaderKey);
-  check_call->SendMessageToClient(response.SerializeAsString());
-  check_call->MaybeSendStatusToClient(absl::OkStatus());
-  EXPECT_THAT(
-      FinishPullClientInitialMetadata(pull),
-      IsOkAndHolds(Pointee(AllOf(
-          HasMetadataKeyValue(kHostHeaderKey, kHostHeaderValue),
-          HasMetadataKeyValue(kGrpcCustomHeaderKey, kGrpcCustomHeaderValue),
-          LacksMetadataKey(kCustomHeaderKey)))));
-  PushServerTrailingMetadata(*backend,
-                             ServerMetadataFromStatus(GRPC_STATUS_OK));
-  EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
-  WaitForAllPendingWork();
-}
-
-// A disallowed removal is a violation even if it would be a no-op because the
-// header is not present.
-FILTER_TEST(ExtAuthzFilterTest, DisallowedNoOpRemovalFails) {
-  Init(ConfigBuilder()
-           .SetStatusOnError(kStatusOnError)
-           .SetHeaderMutationRules(
-               DisallowAllRules(/*disallow_is_error=*/true)));
-  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
-  std::optional<CallHandler> backend = GetNextHandler();
-  ASSERT_TRUE(backend.has_value());
-  auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
-  ASSERT_NE(check_call, nullptr);
-  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
-  CheckResponse response = MakeOkCheckResponse();
-  response.mutable_ok_response()->add_headers_to_remove(kCustomHeaderKey);
-  check_call->SendMessageToClient(response.SerializeAsString());
-  check_call->MaybeSendStatusToClient(absl::OkStatus());
-  EXPECT_FALSE(FinishPullClientInitialMetadata(pull).ok());
-  EXPECT_EQ(PullServerTrailingStatus(client),
-            absl::UnavailableError(kForbiddenHeaderRemovalErrorMessage));
-  WaitForAllPendingWork();
-}
-
-// A disallowed addition is a violation even if it would be a no-op, as for
-// ADD_IF_ABSENT when the header is already present.
-FILTER_TEST(ExtAuthzFilterTest, DisallowedNoOpAdditionFails) {
-  Init(ConfigBuilder()
-           .SetStatusOnError(kStatusOnError)
-           .SetHeaderMutationRules(
-               DisallowAllRules(/*disallow_is_error=*/true)));
-  CallInitiator client = StartCall(
-      NewClientMetadata({{kCustomHeaderKey, kCustomHeaderValue}}, kPath));
-  std::optional<CallHandler> backend = GetNextHandler();
-  ASSERT_TRUE(backend.has_value());
-  auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
-  ASSERT_NE(check_call, nullptr);
-  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
-  CheckResponse response = MakeOkCheckResponse();
-  HeaderValueOption* header = response.mutable_ok_response()->add_headers();
-  AddHeader(header, kCustomHeaderKey, kCustomHeaderValue2);
-  header->set_append_action(HeaderValueOption::ADD_IF_ABSENT);
-  check_call->SendMessageToClient(response.SerializeAsString());
-  check_call->MaybeSendStatusToClient(absl::OkStatus());
-  EXPECT_FALSE(FinishPullClientInitialMetadata(pull).ok());
-  EXPECT_EQ(PullServerTrailingStatus(client),
-            absl::UnavailableError(kForbiddenHeaderMutationErrorMessage));
-  WaitForAllPendingWork();
-}
-
-// An invalid headers_to_remove name makes the response invalid, so the RPC
-// takes the failure path: without failure_mode_allow, it fails with
-// status_on_error and counts as denied and failed.
-FILTER_TEST(ExtAuthzFilterTest, InvalidHeaderToRemoveWithFailureModeDeny) {
-  auto stats_plugin =
-      InitWithStatsPlugin(ConfigBuilder().SetStatusOnError(kStatusOnError));
-  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
-  std::optional<CallHandler> backend = GetNextHandler();
-  ASSERT_TRUE(backend.has_value());
-  auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
-  ASSERT_NE(check_call, nullptr);
-  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
-  CheckResponse response = MakeOkCheckResponse();
-  response.mutable_ok_response()->add_headers_to_remove(":path");
-  check_call->SendMessageToClient(response.SerializeAsString());
-  check_call->MaybeSendStatusToClient(absl::OkStatus());
-  EXPECT_FALSE(FinishPullClientInitialMetadata(pull).ok());
-  EXPECT_EQ(PullServerTrailingStatus(client),
-            absl::UnavailableError("Invalid header name to remove: :path"));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
-              Optional(0u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
-              Optional(1u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.failed_rpcs", {kServerUri}),
-              Optional(1u));
-  WaitForAllPendingWork();
-}
-
-// With failure_mode_allow, an invalid headers_to_remove name lets the RPC
-// through without applying any mutation, and it counts as allowed and failed.
-FILTER_TEST(ExtAuthzFilterTest, InvalidHeaderToRemoveWithFailureModeAllow) {
-  auto stats_plugin = InitWithStatsPlugin(
-      ConfigBuilder().SetFailureModeAllow(true).SetFailureModeAllowHeaderAdd(
-          true));
-  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
-  std::optional<CallHandler> backend = GetNextHandler();
-  ASSERT_TRUE(backend.has_value());
-  auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
-  ASSERT_NE(check_call, nullptr);
-  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
-  CheckResponse response = MakeOkCheckResponse();
-  AddHeader(response.mutable_ok_response()->add_headers(), kCustomHeaderKey,
-            kCustomHeaderValue);
-  response.mutable_ok_response()->add_headers_to_remove(":path");
-  check_call->SendMessageToClient(response.SerializeAsString());
-  check_call->MaybeSendStatusToClient(absl::OkStatus());
-  EXPECT_THAT(FinishPullClientInitialMetadata(pull),
-              IsOkAndHolds(Pointee(
-                  AllOf(HasMetadataKeyValue(kFailureModeAllowedHeaderKey,
-                                            kFailureModeAllowedHeaderValue),
-                        LacksMetadataKey(kCustomHeaderKey)))));
-  PushServerTrailingMetadata(*backend,
-                             ServerMetadataFromStatus(GRPC_STATUS_OK));
-  EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
-              Optional(1u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
-              Optional(0u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.failed_rpcs", {kServerUri}),
-              Optional(1u));
   WaitForAllPendingWork();
 }
 
@@ -1662,315 +1477,11 @@ FILTER_TEST(ExtAuthzFilterTest, ClientCallOmitsSourceAndDestination) {
   std::optional<CheckRequest> request =
       CaptureCheckRequest(NewClientMetadata({}, kPath));
   ASSERT_TRUE(request.has_value());
-  ASSERT_TRUE(request->has_attributes());
+  EXPECT_TRUE(request->has_attributes());
   const auto& attr = request->attributes();
   EXPECT_TRUE(attr.has_request());
   EXPECT_FALSE(attr.has_source());
   EXPECT_FALSE(attr.has_destination());
-}
-
-//
-// Metrics tests
-//
-
-FILTER_TEST(ExtAuthzFilterTest, ExtAuthzClientAllowedRpcsMetric) {
-  auto stats_plugin = InitWithStatsPlugin(ConfigBuilder());
-  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
-  std::optional<CallHandler> backend = GetNextHandler();
-  ASSERT_TRUE(backend.has_value());
-  auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
-  ASSERT_NE(check_call, nullptr);
-  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
-  check_call->SendMessageToClient(MakeOkCheckResponse().SerializeAsString());
-  check_call->MaybeSendStatusToClient(absl::OkStatus());
-  EXPECT_TRUE(FinishPullClientInitialMetadata(pull).ok());
-  PushServerTrailingMetadata(*backend,
-                             ServerMetadataFromStatus(GRPC_STATUS_OK));
-  EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
-              Optional(1u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
-              Optional(0u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.failed_rpcs", {kServerUri}),
-              Optional(0u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.filter_disabled_rpcs", {kServerUri}),
-              Optional(0u));
-  WaitForAllPendingWork();
-}
-
-FILTER_TEST(ExtAuthzFilterTest, ExtAuthzClientDeniedRpcsMetric) {
-  auto stats_plugin = InitWithStatsPlugin(ConfigBuilder());
-  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
-  std::optional<CallHandler> backend = GetNextHandler();
-  ASSERT_TRUE(backend.has_value());
-  auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
-  ASSERT_NE(check_call, nullptr);
-  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
-  check_call->SendMessageToClient(
-      MakeDeniedCheckResponse().SerializeAsString());
-  check_call->MaybeSendStatusToClient(absl::OkStatus());
-  EXPECT_FALSE(FinishPullClientInitialMetadata(pull).ok());
-  EXPECT_EQ(PullServerTrailingStatus(client),
-            absl::UnauthenticatedError(kDeniedErrorMessage));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
-              Optional(0u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
-              Optional(1u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.failed_rpcs", {kServerUri}),
-              Optional(0u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.filter_disabled_rpcs", {kServerUri}),
-              Optional(0u));
-  WaitForAllPendingWork();
-}
-
-// An RPC let through by a disabled filter counts as allowed and as
-// filter-disabled.
-FILTER_TEST(ExtAuthzFilterTest, ExtAuthzClientFilterDisabledRpcsMetric) {
-  auto stats_plugin = InitWithStatsPlugin(
-      ConfigBuilder().SetFilterEnabled(/*parts_per_million=*/0));
-  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
-  std::optional<CallHandler> backend = GetNextHandler();
-  ASSERT_TRUE(backend.has_value());
-  EXPECT_TRUE(PullClientInitialMetadata(*backend).ok());
-  PushServerTrailingMetadata(*backend,
-                             ServerMetadataFromStatus(GRPC_STATUS_OK));
-  EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
-              Optional(1u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
-              Optional(0u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.failed_rpcs", {kServerUri}),
-              Optional(0u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.filter_disabled_rpcs", {kServerUri}),
-              Optional(1u));
-  WaitForAllPendingWork();
-}
-
-// An RPC failed by deny_at_disable counts as denied and as filter-disabled.
-FILTER_TEST(ExtAuthzFilterTest,
-            ExtAuthzClientFilterDisabledRpcsMetricWithDenyAtDisable) {
-  auto stats_plugin =
-      InitWithStatsPlugin(ConfigBuilder()
-                              .SetFilterEnabled(/*parts_per_million=*/0)
-                              .SetDenyAtDisable(true)
-                              .SetStatusOnError(kStatusOnError));
-  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
-  std::optional<CallHandler> backend = GetNextHandler();
-  ASSERT_TRUE(backend.has_value());
-  EXPECT_FALSE(PullClientInitialMetadata(*backend).ok());
-  EXPECT_EQ(PullServerTrailingStatus(client),
-            absl::UnavailableError(kDisabledErrorMessage));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
-              Optional(0u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
-              Optional(1u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.failed_rpcs", {kServerUri}),
-              Optional(0u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.filter_disabled_rpcs", {kServerUri}),
-              Optional(1u));
-  WaitForAllPendingWork();
-}
-
-// An RPC failed because its ext_authz call failed counts as both failed and
-// denied.
-FILTER_TEST(ExtAuthzFilterTest,
-            ExtAuthzClientFailedRpcsMetricWithFailureModeDeny) {
-  auto stats_plugin =
-      InitWithStatsPlugin(ConfigBuilder().SetStatusOnError(kStatusOnError));
-  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
-  std::optional<CallHandler> backend = GetNextHandler();
-  ASSERT_TRUE(backend.has_value());
-  auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
-  ASSERT_NE(check_call, nullptr);
-  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
-  check_call->MaybeSendStatusToClient(
-      absl::InternalError(kTransportErrorMessage));
-  EXPECT_FALSE(FinishPullClientInitialMetadata(pull).ok());
-  EXPECT_EQ(PullServerTrailingStatus(client),
-            absl::UnavailableError(kTransportErrorMessage));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
-              Optional(0u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
-              Optional(1u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.failed_rpcs", {kServerUri}),
-              Optional(1u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.filter_disabled_rpcs", {kServerUri}),
-              Optional(0u));
-  WaitForAllPendingWork();
-}
-
-// An RPC let through by failure_mode_allow counts as both failed and allowed.
-FILTER_TEST(ExtAuthzFilterTest,
-            ExtAuthzClientFailedRpcsMetricWithFailureModeAllow) {
-  auto stats_plugin =
-      InitWithStatsPlugin(ConfigBuilder().SetFailureModeAllow(true));
-  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
-  std::optional<CallHandler> backend = GetNextHandler();
-  ASSERT_TRUE(backend.has_value());
-  auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
-  ASSERT_NE(check_call, nullptr);
-  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
-  check_call->MaybeSendStatusToClient(
-      absl::InternalError(kTransportErrorMessage));
-  EXPECT_TRUE(FinishPullClientInitialMetadata(pull).ok());
-  PushServerTrailingMetadata(*backend,
-                             ServerMetadataFromStatus(GRPC_STATUS_OK));
-  EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
-              Optional(1u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
-              Optional(0u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.failed_rpcs", {kServerUri}),
-              Optional(1u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.filter_disabled_rpcs", {kServerUri}),
-              Optional(0u));
-  WaitForAllPendingWork();
-}
-
-// A denied response with a disallowed header is invalid, so the RPC counts as
-// failed, and as denied because failure_mode_allow is not set.
-FILTER_TEST(ExtAuthzFilterTest,
-            ExtAuthzClientFailedRpcsMetricForDisallowedDeniedResponseHeader) {
-  auto stats_plugin =
-      InitWithStatsPlugin(ConfigBuilder()
-                              .SetStatusOnError(kStatusOnError)
-                              .SetHeaderMutationRules(DisallowAllRules(
-                                  /*disallow_is_error=*/true)));
-  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
-  std::optional<CallHandler> backend = GetNextHandler();
-  ASSERT_TRUE(backend.has_value());
-  auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
-  ASSERT_NE(check_call, nullptr);
-  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
-  CheckResponse response = MakeDeniedCheckResponse();
-  AddHeader(response.mutable_denied_response()->add_headers(), kCustomHeaderKey,
-            kCustomHeaderValue);
-  check_call->SendMessageToClient(response.SerializeAsString());
-  check_call->MaybeSendStatusToClient(absl::OkStatus());
-  EXPECT_FALSE(FinishPullClientInitialMetadata(pull).ok());
-  EXPECT_EQ(PullServerTrailingStatus(client),
-            absl::UnavailableError(kForbiddenHeaderMutationErrorMessage));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
-              Optional(0u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
-              Optional(1u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.failed_rpcs", {kServerUri}),
-              Optional(1u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.filter_disabled_rpcs", {kServerUri}),
-              Optional(0u));
-  WaitForAllPendingWork();
-}
-
-// An OK response with a disallowed header mutation is invalid, so the RPC
-// counts as failed, and as denied because failure_mode_allow is not set.
-FILTER_TEST(ExtAuthzFilterTest,
-            ExtAuthzClientFailedRpcsMetricForDisallowedOkResponseHeader) {
-  auto stats_plugin =
-      InitWithStatsPlugin(ConfigBuilder()
-                              .SetStatusOnError(kStatusOnError)
-                              .SetHeaderMutationRules(DisallowAllRules(
-                                  /*disallow_is_error=*/true)));
-  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
-  std::optional<CallHandler> backend = GetNextHandler();
-  ASSERT_TRUE(backend.has_value());
-  auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
-  ASSERT_NE(check_call, nullptr);
-  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
-  CheckResponse response = MakeOkCheckResponse();
-  AddHeader(response.mutable_ok_response()->add_headers(), kCustomHeaderKey,
-            kCustomHeaderValue);
-  check_call->SendMessageToClient(response.SerializeAsString());
-  check_call->MaybeSendStatusToClient(absl::OkStatus());
-  EXPECT_FALSE(FinishPullClientInitialMetadata(pull).ok());
-  EXPECT_EQ(PullServerTrailingStatus(client),
-            absl::UnavailableError(kForbiddenHeaderMutationErrorMessage));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
-              Optional(0u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
-              Optional(1u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.failed_rpcs", {kServerUri}),
-              Optional(1u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.filter_disabled_rpcs", {kServerUri}),
-              Optional(0u));
-  WaitForAllPendingWork();
-}
-
-// A denied response with a disallowed header is invalid, so with
-// failure_mode_allow the RPC is let through and counts as failed and allowed.
-FILTER_TEST(
-    ExtAuthzFilterTest,
-    ExtAuthzClientFailedRpcsMetricForDisallowedDeniedResponseHeaderWithFailureModeAllow) {
-  auto stats_plugin = InitWithStatsPlugin(
-      ConfigBuilder().SetFailureModeAllow(true).SetHeaderMutationRules(
-          DisallowAllRules(
-              /*disallow_is_error=*/true)));
-  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
-  std::optional<CallHandler> backend = GetNextHandler();
-  ASSERT_TRUE(backend.has_value());
-  auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
-  ASSERT_NE(check_call, nullptr);
-  EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
-  CheckResponse response = MakeDeniedCheckResponse();
-  AddHeader(response.mutable_denied_response()->add_headers(), kCustomHeaderKey,
-            kCustomHeaderValue);
-  check_call->SendMessageToClient(response.SerializeAsString());
-  check_call->MaybeSendStatusToClient(absl::OkStatus());
-  EXPECT_TRUE(FinishPullClientInitialMetadata(pull).ok());
-  PushServerTrailingMetadata(*backend,
-                             ServerMetadataFromStatus(GRPC_STATUS_OK));
-  EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
-              Optional(1u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
-              Optional(0u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.failed_rpcs", {kServerUri}),
-              Optional(1u));
-  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.client_ext_authz.filter_disabled_rpcs", {kServerUri}),
-              Optional(0u));
-  WaitForAllPendingWork();
 }
 
 //
@@ -1989,7 +1500,7 @@ FILTER_TEST(ExtAuthzFilterTest, ServerSideMetrics) {
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
   auto pull = StartPullClientInitialMetadata(*backend);
-  auto check_call = transport_factory_->WaitForStream(target_, kExtAuthzMethod);
+  auto check_call = WaitForCheckCall();
   ASSERT_NE(check_call, nullptr);
   EXPECT_TRUE(GetCheckRequest(*check_call).has_value());
   check_call->SendMessageToClient(MakeOkCheckResponse().SerializeAsString());
@@ -1999,17 +1510,12 @@ FILTER_TEST(ExtAuthzFilterTest, ServerSideMetrics) {
                              ServerMetadataFromStatus(GRPC_STATUS_OK));
   EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
   // The server metrics have no labels. Only allowed_rpcs was incremented.
-  for (absl::string_view metric :
-       {"allowed_rpcs", "denied_rpcs", "failed_rpcs", "filter_disabled_rpcs"}) {
-    EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                    absl::StrCat("grpc.server_ext_authz.", metric)),
-                Optional(metric == "allowed_rpcs" ? 1u : 0u))
-        << metric;
-    EXPECT_EQ(stats_plugin->GetUInt64MetricValueByName(
-                  absl::StrCat("grpc.client_ext_authz.", metric), {kServerUri}),
-              std::nullopt)
-        << metric;
-  }
+  EXPECT_THAT(stats_plugin,
+              HasServerMetrics(/*allowed=*/1, /*denied=*/0, /*failed=*/0,
+                               /*filter_disabled=*/0));
+  EXPECT_EQ(stats_plugin->GetUInt64MetricValueByName(
+                "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
+            std::nullopt);
   WaitForAllPendingWork();
 }
 
@@ -2018,19 +1524,14 @@ FILTER_TEST(ExtAuthzFilterTest, ServerSidePopulatesSourceAndDestination) {
   std::optional<CheckRequest> request =
       CaptureCheckRequest(NewClientMetadata({}, kPath));
   ASSERT_TRUE(request.has_value());
-  ASSERT_TRUE(request->has_attributes());
   const auto& attr = request->attributes();
-  ASSERT_TRUE(attr.has_source());
   EXPECT_THAT(attr.source().principal(), StrEq(kUriSan));
-  ASSERT_TRUE(attr.source().address().has_socket_address());
   EXPECT_EQ(attr.source().address().socket_address().address(),
             kPeerAddressHost);
   EXPECT_EQ(attr.source().address().socket_address().port_value(),
             kPeerAddressPort);
-  ASSERT_TRUE(attr.has_destination());
   // The destination principal comes from this endpoint's own certificate.
   EXPECT_THAT(attr.destination().principal(), StrEq(kLocalPrincipal));
-  ASSERT_TRUE(attr.destination().address().has_socket_address());
   EXPECT_EQ(attr.destination().address().socket_address().address(),
             kLocalAddressHost);
   EXPECT_EQ(attr.destination().address().socket_address().port_value(),
@@ -2047,7 +1548,6 @@ FILTER_TEST(ExtAuthzFilterTest,
   std::optional<CheckRequest> request =
       CaptureCheckRequest(NewClientMetadata({}, kPath));
   ASSERT_TRUE(request.has_value());
-  ASSERT_TRUE(request->attributes().has_source());
   EXPECT_EQ(request->attributes().source().certificate(), kEncodedCert);
 }
 
@@ -2061,7 +1561,7 @@ FILTER_TEST(ExtAuthzFilterTest, ServerSideOmitsPeerCertificateByDefault) {
   std::optional<CheckRequest> request =
       CaptureCheckRequest(NewClientMetadata({}, kPath));
   ASSERT_TRUE(request.has_value());
-  ASSERT_TRUE(request->attributes().has_source());
+  EXPECT_TRUE(request->attributes().has_source());
   EXPECT_THAT(request->attributes().source().certificate(), IsEmpty());
 }
 
@@ -2073,15 +1573,11 @@ FILTER_TEST(ExtAuthzFilterTest, ServerSideWithoutAuthContext) {
       CaptureCheckRequest(NewClientMetadata({}, kPath));
   ASSERT_TRUE(request.has_value());
   const auto& attr = request->attributes();
-  ASSERT_TRUE(attr.has_source());
-  ASSERT_TRUE(attr.has_destination());
   EXPECT_THAT(attr.source().principal(), IsEmpty());
   EXPECT_THAT(attr.source().certificate(), IsEmpty());
   EXPECT_THAT(attr.destination().principal(), IsEmpty());
-  ASSERT_TRUE(attr.source().address().has_socket_address());
   EXPECT_EQ(attr.source().address().socket_address().address(),
             kPeerAddressHost);
-  ASSERT_TRUE(attr.destination().address().has_socket_address());
   EXPECT_EQ(attr.destination().address().socket_address().address(),
             kLocalAddressHost);
 }

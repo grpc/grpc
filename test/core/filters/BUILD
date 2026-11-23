@@ -574,7 +574,6 @@ grpc_fuzz_test(
         "//src/core:metrics",
         "//src/core:poll",
         "//src/core:status_flag",
-        "//src/core:unique_type_name",
         "//src/core:xds_common_types",
         "//src/core:xds_server_grpc",
         "//test/core/test_util:fake_stats_plugin",
