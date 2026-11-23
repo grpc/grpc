@@ -44,8 +44,8 @@ constexpr char kServerUri[] = "dns:///server.example.com";
 
 std::unique_ptr<ExtAuthzFilter> CreateFilter(const ChannelArgs& args) {
   auto filter = ExtAuthzFilter::Create(
-      args, ChannelFilter::Args(nullptr,
-                                MakeRefCounted<ExtAuthzFilter::Config>()));
+      args,
+      ChannelFilter::Args(nullptr, MakeRefCounted<ExtAuthzFilter::Config>()));
   CHECK(filter.ok()) << filter.status();
   return std::move(*filter);
 }

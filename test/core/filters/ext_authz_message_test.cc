@@ -1302,11 +1302,10 @@ TEST_F(ParseExtAuthzResponseTest, InvalidHeaderValuesFail) {
     *response.mutable_ok_response()->add_headers() =
         CreateRawHeaderValueOption(kKey1, test_case.value);
     auto parsed = ParseResponse(response);
-    EXPECT_EQ(parsed.status(),
-              absl::InternalError(absl::StrCat(
-                  "Failed to parse XdsHeaderValueOption: "
-                  "[field:header.raw_value error:",
-                  test_case.expected_error, "]")))
+    EXPECT_EQ(parsed.status(), absl::InternalError(absl::StrCat(
+                                   "Failed to parse XdsHeaderValueOption: "
+                                   "[field:header.raw_value error:",
+                                   test_case.expected_error, "]")))
         << test_case.value.substr(0, 20);
   }
 }
@@ -1318,9 +1317,8 @@ TEST_F(ParseExtAuthzResponseTest, InvalidHeaderNamesToRemoveFail) {
     response.mutable_status()->set_code(GRPC_STATUS_OK);
     response.mutable_ok_response()->add_headers_to_remove(std::string(key));
     auto parsed = ParseResponse(response);
-    EXPECT_EQ(parsed.status(),
-              absl::InvalidArgumentError(
-                  absl::StrCat("Invalid header name to remove: ", key)))
+    EXPECT_EQ(parsed.status(), absl::InvalidArgumentError(absl::StrCat(
+                                   "Invalid header name to remove: ", key)))
         << key;
   }
 }
@@ -1336,9 +1334,9 @@ TEST_F(ParseExtAuthzResponseTest, ProtectedHeaderNamesToRemoveAreParsed) {
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_THAT(parsed->response,
-              IsOkResponse(IsHeaderMutation(::testing::IsEmpty(),
-                                            ::testing::ElementsAre(
-                                                "host", "grpc-timeout")),
+              IsOkResponse(IsHeaderMutation(
+                               ::testing::IsEmpty(),
+                               ::testing::ElementsAre("host", "grpc-timeout")),
                            ::testing::IsEmpty()));
 }
 

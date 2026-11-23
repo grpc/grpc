@@ -352,8 +352,8 @@ class XdsExtAuthzTest : public XdsEnd2endTest {
       google::protobuf::Map<std::string, google::protobuf::Any>*
           typed_per_filter_config,
       const grpc::protobuf::Message& config) {
-    (void)(*typed_per_filter_config)[std::string(kFilterInstanceName)]
-        .PackFrom(config);
+    (void)(*typed_per_filter_config)[std::string(kFilterInstanceName)].PackFrom(
+        config);
   }
 
   XdsBootstrapBuilder MakeExtAuthzBootstrapBuilder() {
@@ -981,8 +981,7 @@ TEST_P(XdsExtAuthzTest, ExtAuthzVirtualHostDisabledFilterEnabledByRoute) {
   envoy::config::route::v3::FilterConfig filter_config;
   (void)filter_config.mutable_config()->PackFrom(ExtAuthzPerRoute());
   filter_config.set_disabled(true);
-  SetExtAuthzOverride(vhost->mutable_typed_per_filter_config(),
-                      filter_config);
+  SetExtAuthzOverride(vhost->mutable_typed_per_filter_config(), filter_config);
   const envoy::config::route::v3::Route default_route = vhost->routes(0);
   vhost->clear_routes();
   // Echo1: the filter is enabled by the route's override.
@@ -1014,8 +1013,7 @@ TEST_P(XdsExtAuthzTest, ExtAuthzClusterWeightOverrideEnablesFilter) {
   envoy::config::route::v3::FilterConfig filter_config;
   (void)filter_config.mutable_config()->PackFrom(ExtAuthzPerRoute());
   filter_config.set_disabled(true);
-  SetExtAuthzOverride(route->mutable_typed_per_filter_config(),
-                      filter_config);
+  SetExtAuthzOverride(route->mutable_typed_per_filter_config(), filter_config);
   auto* weighted_cluster =
       route->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster->set_name(kDefaultClusterName);
@@ -1031,7 +1029,8 @@ TEST_P(XdsExtAuthzTest, ExtAuthzClusterWeightOverrideEnablesFilter) {
 // on the Check call (gRFC A102).
 TEST_P(XdsExtAuthzTest, ExtAuthzTrustedXdsServerSendsInitialMetadata) {
   auto ext_authz_config = BuildExtAuthzConfig();
-  auto* header = ext_authz_config.mutable_grpc_service()->add_initial_metadata();
+  auto* header =
+      ext_authz_config.mutable_grpc_service()->add_initial_metadata();
   header->set_key(kInitialMetadataKey);
   header->set_value(kInitialMetadataValue);
   SetExtAuthzListenerAndStart(ext_authz_config);
@@ -1060,7 +1059,8 @@ TEST_P(XdsExtAuthzTest, ExtAuthzUntrustedXdsServerUsesAllowedGrpcServices) {
       "file_plugin");
   (void)google_grpc->add_channel_credentials_plugin()->PackFrom(
       tls_credentials);
-  auto* header = ext_authz_config.mutable_grpc_service()->add_initial_metadata();
+  auto* header =
+      ext_authz_config.mutable_grpc_service()->add_initial_metadata();
   header->set_key(kInitialMetadataKey);
   header->set_value(kInitialMetadataValue);
   SetExtAuthzListenerAndStart(ext_authz_config);
@@ -1076,7 +1076,8 @@ TEST_P(XdsExtAuthzTest, ExtAuthzUntrustedXdsServerUsesAllowedGrpcServices) {
 // A92), so the Check calls keep using the same connection.
 TEST_P(XdsExtAuthzTest, ExtAuthzLdsUpdateKeepsSideChannel) {
   auto ext_authz_config = BuildExtAuthzConfig();
-  auto* header = ext_authz_config.mutable_grpc_service()->add_initial_metadata();
+  auto* header =
+      ext_authz_config.mutable_grpc_service()->add_initial_metadata();
   header->set_key(kInitialMetadataKey);
   header->set_value("v1");
   SetExtAuthzListenerAndStart(ext_authz_config);

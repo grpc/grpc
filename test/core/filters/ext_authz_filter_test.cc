@@ -966,10 +966,11 @@ FILTER_TEST(ExtAuthzFilterTest, OkResponseModifyResponseHeaders) {
           HasMetadataKeyValue(kCustomHeaderKey2, kCustomHeaderValue2))))));
   PushServerTrailingMetadata(*backend,
                              ServerMetadataFromStatus(GRPC_STATUS_OK));
-  EXPECT_THAT(PullServerTrailingMetadata(client),
-              IsOkAndHolds(Pointee(AllOf(HasMetadataResult(absl::OkStatus()),
-                                         LacksMetadataKey(kCustomHeaderKey),
-                                         LacksMetadataKey(kCustomHeaderKey2)))));
+  EXPECT_THAT(
+      PullServerTrailingMetadata(client),
+      IsOkAndHolds(Pointee(AllOf(HasMetadataResult(absl::OkStatus()),
+                                 LacksMetadataKey(kCustomHeaderKey),
+                                 LacksMetadataKey(kCustomHeaderKey2)))));
   WaitForAllPendingWork();
 }
 
@@ -999,10 +1000,9 @@ FILTER_TEST(ExtAuthzFilterTest, TrailersOnlyAddsResponseHeadersToTrailers) {
   PushServerTrailingMetadata(*backend,
                              ServerMetadataFromStatus(GRPC_STATUS_OK));
   EXPECT_THAT(PullServerTrailingMetadata(client),
-              IsOkAndHolds(Pointee(
-                  AllOf(HasMetadataResult(absl::OkStatus()),
-                        HasMetadataKeyValue(kCustomHeaderKey,
-                                            kCustomHeaderValue)))));
+              IsOkAndHolds(Pointee(AllOf(
+                  HasMetadataResult(absl::OkStatus()),
+                  HasMetadataKeyValue(kCustomHeaderKey, kCustomHeaderValue)))));
   WaitForAllPendingWork();
 }
 
@@ -1027,10 +1027,9 @@ FILTER_TEST(ExtAuthzFilterTest,
   PushServerTrailingMetadata(*backend,
                              ServerMetadataFromStatus(GRPC_STATUS_OK));
   EXPECT_THAT(PullServerTrailingMetadata(client),
-              IsOkAndHolds(Pointee(
-                  AllOf(HasMetadataResult(absl::OkStatus()),
-                        HasMetadataKeyValue(kCustomHeaderKey,
-                                            kCustomHeaderValue)))));
+              IsOkAndHolds(Pointee(AllOf(
+                  HasMetadataResult(absl::OkStatus()),
+                  HasMetadataKeyValue(kCustomHeaderKey, kCustomHeaderValue)))));
   WaitForAllPendingWork();
 }
 
@@ -1573,10 +1572,9 @@ FILTER_TEST(ExtAuthzFilterTest, InvalidHeaderToRemoveWithFailureModeDeny) {
 // With failure_mode_allow, an invalid headers_to_remove name lets the RPC
 // through without applying any mutation, and it counts as allowed and failed.
 FILTER_TEST(ExtAuthzFilterTest, InvalidHeaderToRemoveWithFailureModeAllow) {
-  auto stats_plugin =
-      InitWithStatsPlugin(ConfigBuilder()
-                              .SetFailureModeAllow(true)
-                              .SetFailureModeAllowHeaderAdd(true));
+  auto stats_plugin = InitWithStatsPlugin(
+      ConfigBuilder().SetFailureModeAllow(true).SetFailureModeAllowHeaderAdd(
+          true));
   CallInitiator client = StartCall(NewClientMetadata({}, kPath));
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());
@@ -1940,11 +1938,10 @@ FILTER_TEST(ExtAuthzFilterTest,
 FILTER_TEST(
     ExtAuthzFilterTest,
     ExtAuthzClientFailedRpcsMetricForDisallowedDeniedResponseHeaderWithFailureModeAllow) {
-  auto stats_plugin =
-      InitWithStatsPlugin(ConfigBuilder()
-                              .SetFailureModeAllow(true)
-                              .SetHeaderMutationRules(DisallowAllRules(
-                                  /*disallow_is_error=*/true)));
+  auto stats_plugin = InitWithStatsPlugin(
+      ConfigBuilder().SetFailureModeAllow(true).SetHeaderMutationRules(
+          DisallowAllRules(
+              /*disallow_is_error=*/true)));
   CallInitiator client = StartCall(NewClientMetadata({}, kPath));
   std::optional<CallHandler> backend = GetNextHandler();
   ASSERT_TRUE(backend.has_value());

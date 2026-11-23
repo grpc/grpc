@@ -20,10 +20,10 @@
 #include <vector>
 
 #include "envoy/service/auth/v3/external_auth.pb.h"
+#include "fuzztest/fuzztest.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/filter/ext_authz/ext_authz_messages.h"
 #include "src/core/lib/slice/slice.h"
-#include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
@@ -40,8 +40,8 @@ using ::envoy::service::auth::v3::CheckResponse;
 // is never failed with OK.
 void CheckParsedResponse(const ExtAuthzResponse& response) {
   if (response.status_code == GRPC_STATUS_OK) {
-    EXPECT_TRUE(
-        std::holds_alternative<ExtAuthzResponse::OkResponse>(response.response));
+    EXPECT_TRUE(std::holds_alternative<ExtAuthzResponse::OkResponse>(
+        response.response));
     return;
   }
   const auto* denied =
@@ -102,16 +102,15 @@ void CreateExtAuthzRequestRoundTrips(
 // to valid header characters, which are valid UTF-8.  Header values are
 // bytes fields, so they are arbitrary.
 FUZZ_TEST(ExtAuthzMessageFuzzer, CreateExtAuthzRequestRoundTrips)
-    .WithDomains(
-        fuzztest::Arbitrary<bool>(),
-        fuzztest::StringOf(fuzztest::InRange<char>(0x20, 0x7e)),
-        fuzztest::VectorOf(fuzztest::PairOf(
-            fuzztest::StringOf(fuzztest::OneOf(
-                                   fuzztest::InRange<char>('a', 'z'),
-                                   fuzztest::InRange<char>('0', '9'),
-                                   fuzztest::ElementOf({'-', '_', '.'})))
-                .WithMinSize(1),
-            fuzztest::Arbitrary<std::string>())));
+    .WithDomains(fuzztest::Arbitrary<bool>(),
+                 fuzztest::StringOf(fuzztest::InRange<char>(0x20, 0x7e)),
+                 fuzztest::VectorOf(fuzztest::PairOf(
+                     fuzztest::StringOf(
+                         fuzztest::OneOf(fuzztest::InRange<char>('a', 'z'),
+                                         fuzztest::InRange<char>('0', '9'),
+                                         fuzztest::ElementOf({'-', '_', '.'})))
+                         .WithMinSize(1),
+                     fuzztest::Arbitrary<std::string>())));
 
 }  // namespace
 }  // namespace grpc_core
