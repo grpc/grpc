@@ -507,7 +507,6 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:scoped_env_var",
         "//test/cpp/util:tls_test_utils",
-        "@envoy_api//envoy/config/common/mutation_rules/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/ext_authz/v3:pkg_cc_proto",
