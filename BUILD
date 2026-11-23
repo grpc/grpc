@@ -285,7 +285,7 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "googol"  # @unused
+g_stands_for = "gannet"  # @unused
 
 core_version = "59.0.0"  # @unused
 
