@@ -751,15 +751,6 @@ TEST_F(CreateExtAuthzRequestTest, HeaderMapRepeatedKeys) {
 }
 
 //
-// UrlEncode() tests
-//
-
-// Bytes outside of the ASCII range are encoded as unsigned values.
-TEST(UrlEncodeTest, NonAsciiBytes) {
-  EXPECT_EQ(UrlEncode(absl::string_view("\x80\xff", 2)), "%80%FF");
-}
-
-//
 // GetUrlEncodedPemPeerCertificate() tests
 //
 
@@ -807,14 +798,28 @@ TEST(GetUrlEncodedPemPeerCertificateTest, EmptyPeerCertificate) {
               ::testing::IsEmpty());
 }
 
+// Bytes outside of the ASCII range are encoded as unsigned values.
+TEST(GetUrlEncodedPemPeerCertificateTest, NonAsciiBytes) {
+  grpc_auth_context auth_context(/*chained=*/nullptr);
+  auth_context.add_property(GRPC_X509_PEM_CERT_PROPERTY_NAME, "\x80\xff", 2);
+  EXPECT_THAT(GetUrlEncodedPemPeerCertificate(&auth_context),
+              ::testing::StrEq("%80%FF"));
+}
+
 // Every character in Envoy's unreserved set is left as is, and a space is
 // encoded as "%20" rather than "+".
-TEST(UrlEncodeTest, UnreservedCharactersAndSpace) {
-  constexpr absl::string_view kUnreserved =
+TEST(GetUrlEncodedPemPeerCertificateTest, UnreservedCharactersAndSpace) {
+  constexpr const char* kUnreserved =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789*-._";
-  EXPECT_EQ(UrlEncode(kUnreserved), kUnreserved);
-  EXPECT_EQ(UrlEncode("a b+c"), "a%20b%2Bc");
-  EXPECT_EQ(UrlEncode(""), "");
+  grpc_auth_context auth_context(/*chained=*/nullptr);
+  auth_context.add_cstring_property(GRPC_X509_PEM_CERT_PROPERTY_NAME,
+                                    kUnreserved);
+  EXPECT_THAT(GetUrlEncodedPemPeerCertificate(&auth_context),
+              ::testing::StrEq(kUnreserved));
+  grpc_auth_context space_context(/*chained=*/nullptr);
+  space_context.add_cstring_property(GRPC_X509_PEM_CERT_PROPERTY_NAME, "a b+c");
+  EXPECT_THAT(GetUrlEncodedPemPeerCertificate(&space_context),
+              ::testing::StrEq("a%20b%2Bc"));
 }
 
 //
@@ -828,8 +833,8 @@ MATCHER_P3(IsHeaderValueOption, key, value, append_action, "") {
                                        result_listener);
 }
 
-MATCHER_P2(IsHeaderMutation, set_headers_matcher, remove_headers_matcher, "") {
-  return ::testing::ExplainMatchResult(set_headers_matcher, arg.set_headers,
+MATCHER_P2(IsHeaderMutation, add_headers_matcher, remove_headers_matcher, "") {
+  return ::testing::ExplainMatchResult(add_headers_matcher, arg.add_headers,
                                        result_listener) &&
          ::testing::ExplainMatchResult(remove_headers_matcher,
                                        arg.remove_headers, result_listener);

@@ -442,7 +442,7 @@ ArenaPromise<absl::Status> ExtAuthzFilter::Call::OnClientInitialMetadata(
               // Check all of the mutations before applying any of them, so
               // that none of them are applied if any of them fails.
               auto additions = GetAllowedMutations(
-                  rules, ok_resp.header_mutation.set_headers, "mutation");
+                  rules, ok_resp.header_mutation.add_headers, "mutation");
               if (!additions.ok()) {
                 return HandleFailure(*filter, config, md,
                                      additions.status().message());

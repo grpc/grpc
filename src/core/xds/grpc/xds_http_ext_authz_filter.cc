@@ -17,7 +17,6 @@
 #include "src/core/xds/grpc/xds_http_ext_authz_filter.h"
 
 #include <memory>
-#include <optional>
 #include <string>
 #include <utility>
 #include <vector>

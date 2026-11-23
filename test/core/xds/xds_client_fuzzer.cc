@@ -28,8 +28,6 @@
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/listener/v3/listener.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
-#include "envoy/config/route/v3/route_components.pb.h"
-#include "envoy/extensions/filters/http/ext_authz/v3/ext_authz.pb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
@@ -54,7 +52,6 @@
 #include "src/core/xds/xds_client/xds_client.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
-#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/xds/xds_client_fuzzer.pb.h"
 #include "test/core/xds/xds_client_test_peer.h"
 #include "test/core/xds/xds_transport_fake.h"
@@ -348,13 +345,6 @@ class Fuzzer {
     stream->MaybeSendStatusToClient(std::move(status));
   }
 
-  // Enable the experimental xDS ext_authz filter (gRFC A92) on both sides, so
-  // that its config parsing, including the allowed_grpc_services bootstrap
-  // field, is fuzzed.
-  grpc_core::testing::ScopedExperimentalEnvVar ext_authz_on_client_{
-      "GRPC_EXPERIMENTAL_XDS_EXT_AUTHZ_ON_CLIENT"};
-  grpc_core::testing::ScopedExperimentalEnvVar ext_authz_on_server_{
-      "GRPC_EXPERIMENTAL_XDS_EXT_AUTHZ_ON_SERVER"};
   std::shared_ptr<FuzzingEventEngine> event_engine_;
   RefCountedPtr<XdsClient> xds_client_;
   RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
@@ -704,154 +694,6 @@ static const char* kBasicSocketListener = R"pb(
   }
 )pb";
 
-// An API listener with the ext_authz filter (gRFC A92).  The xDS server is not
-// trusted, so the ext_authz service is in the bootstrap's
-// allowed_grpc_services.
-static const char* kExtAuthzApiListener = R"pb(
-  bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}], \"allowed_grpc_services\": {\"localhost:1234\": {\"channel_creds\": [{\"type\": \"insecure\"}]}}}"
-  actions {
-    start_watch {
-      resource_type { listener {} }
-      resource_name: "server.example.com"
-    }
-  }
-  actions {
-    read_message_from_client {
-      stream_id { ads {} }
-      ok: true
-    }
-  }
-  actions {
-    send_message_to_client {
-      stream_id { ads {} }
-      response {
-        version_info: "1"
-        nonce: "A"
-        type_url: "type.googleapis.com/envoy.config.listener.v3.Listener"
-        resources {
-          [type.googleapis.com/envoy.config.listener.v3.Listener] {
-            name: "server.example.com"
-            api_listener {
-              api_listener {
-                [type.googleapis.com/envoy.extensions.filters.network
-                     .http_connection_manager.v3.HttpConnectionManager] {
-                  rds {
-                    config_source {
-                      ads {}
-                      resource_api_version: V3
-                    }
-                    route_config_name: "route_config1"
-                  }
-                  http_filters {
-                    name: "envoy.filters.http.ext_authz"
-                    typed_config {
-                      [type.googleapis.com/
-                       envoy.extensions.filters.http.ext_authz.v3.ExtAuthz] {
-                        grpc_service {
-                          google_grpc { target_uri: "localhost:1234" }
-                          timeout { seconds: 5 }
-                        }
-                        filter_enabled {
-                          default_value { numerator: 50 denominator: HUNDRED }
-                        }
-                        deny_at_disable { default_value { value: true } }
-                        failure_mode_allow: true
-                        failure_mode_allow_header_add: true
-                        status_on_error { code: Unauthorized }
-                        allowed_headers { patterns { prefix: "x-" } }
-                        disallowed_headers { patterns { exact: "x-secret" } }
-                        decoder_header_mutation_rules {
-                          disallow_expression { regex: "x-internal-.*" }
-                          disallow_is_error { value: true }
-                        }
-                        include_peer_certificate: true
-                      }
-                    }
-                  }
-                  http_filters {
-                    name: "envoy.filters.http.router"
-                    typed_config {
-                      [type.googleapis.com/
-                       envoy.extensions.filters.http.router.v3.Router] {}
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-)pb";
-
-// A RouteConfiguration with ext_authz overrides (gRFC A92): the virtual host
-// disables the filter and a route re-enables it.
-static const char* kExtAuthzRouteConfig = R"pb(
-  bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
-  actions {
-    start_watch {
-      resource_type { route_config {} }
-      resource_name: "route_config1"
-    }
-  }
-  actions {
-    read_message_from_client {
-      stream_id { ads {} }
-      ok: true
-    }
-  }
-  actions {
-    send_message_to_client {
-      stream_id { ads {} }
-      response {
-        version_info: "1"
-        nonce: "A"
-        type_url: "type.googleapis.com/envoy.config.route.v3.RouteConfiguration"
-        resources {
-          [type.googleapis.com/envoy.config.route.v3.RouteConfiguration] {
-            name: "route_config1"
-            virtual_hosts {
-              domains: "*"
-              typed_per_filter_config {
-                key: "envoy.filters.http.ext_authz"
-                value {
-                  [type.googleapis.com/envoy.config.route.v3.FilterConfig] {
-                    config {
-                      [type.googleapis.com/envoy.extensions.filters.http
-                           .ext_authz.v3.ExtAuthzPerRoute] { disabled: true }
-                    }
-                    disabled: true
-                  }
-                }
-              }
-              routes {
-                match { prefix: "/service/" }
-                route { cluster: "cluster1" }
-                typed_per_filter_config {
-                  key: "envoy.filters.http.ext_authz"
-                  value {
-                    [type.googleapis.com/envoy.extensions.filters.http
-                         .ext_authz.v3.ExtAuthzPerRoute] {
-                      check_settings {
-                        context_extensions { key: "foo" value: "bar" }
-                      }
-                    }
-                  }
-                }
-              }
-              routes {
-                match { prefix: "" }
-                route { cluster: "cluster1" }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-)pb";
-
 // Force linker to not strip symbols necessary for runtime reflection.
 //
 // This class is used to solve the following error when parsing protobuf.Any
@@ -895,11 +737,6 @@ class ForceLinkMessageReflectionWorkaround {
         envoy::extensions::filters::http::router::v3::Router>();
     ForceLinkMessageReflection<
         envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext>();
-    ForceLinkMessageReflection<
-        envoy::extensions::filters::http::ext_authz::v3::ExtAuthz>();
-    ForceLinkMessageReflection<
-        envoy::extensions::filters::http::ext_authz::v3::ExtAuthzPerRoute>();
-    ForceLinkMessageReflection<envoy::config::route::v3::FilterConfig>();
   }
 };
 
@@ -921,17 +758,7 @@ FUZZ_TEST(XdsClientFuzzer, Fuzz)
     .WithDomains(::fuzztest::Arbitrary<xds_client_fuzzer::Msg>().WithSeeds(
         {ParseTestProto(kBasicApiListener), ParseTestProto(kBasicRouteConfig),
          ParseTestProto(kBasicCluster), ParseTestProto(kBasicEndpoint),
-         ParseTestProto(kBasicSocketListener),
-         ParseTestProto(kExtAuthzApiListener),
-         ParseTestProto(kExtAuthzRouteConfig)}));
-
-TEST(XdsClientFuzzer, ExtAuthzApiListener) {
-  Fuzz(ParseTestProto(kExtAuthzApiListener));
-}
-
-TEST(XdsClientFuzzer, ExtAuthzRouteConfig) {
-  Fuzz(ParseTestProto(kExtAuthzRouteConfig));
-}
+         ParseTestProto(kBasicSocketListener)}));
 
 TEST(XdsClientFuzzer, XdsServersEmpty) {
   Fuzz(ParseTestProto(R"pb(

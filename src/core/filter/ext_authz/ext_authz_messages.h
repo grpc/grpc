@@ -44,7 +44,7 @@ struct ExtAuthzResponse {
   struct HeaderMutation {
     // Headers to append or set on the data plane RPC's request headers
     // (from OkHttpResponse.headers).
-    std::vector<XdsHeaderValueOption> set_headers;
+    std::vector<XdsHeaderValueOption> add_headers;
     // Request headers to remove from the data plane RPC
     // (from OkHttpResponse.headers_to_remove).
     std::vector<std::string> remove_headers;
@@ -174,12 +174,6 @@ struct ExtAuthzRequest {
   // copied into this struct on every RPC.)
   absl::string_view peer_certificate;
 };
-
-// Percent-encodes \a value exactly the way that Envoy's
-// Http::Utility::PercentEncoding::urlEncode() does: every character other than
-// ALPHA, DIGIT, '*', '-', '.' and '_' is encoded as %XX, using uppercase
-// hexadecimal digits (see RFC 3986 section 2.1).
-std::string UrlEncode(absl::string_view value);
 
 // Computes the value of the AttributeContext.source.certificate field (see
 // gRFC A92): the URL-encoded PEM-encoded peer certificate, which is obtained

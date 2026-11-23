@@ -109,7 +109,10 @@ XdsHttpFilterRegistry GrpcXdsBootstrapBuilder::CreateXdsHttpFilterRegistry(
         IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_SERVER")) {
       registry.RegisterFilter(std::make_unique<XdsHttpExtProcFilterFactory>());
     }
-    if (XdsExtAuthzOnClientEnabled() || XdsExtAuthzOnServerEnabled()) {
+    if (IsExperimentEnvVarEnabled(
+            "GRPC_EXPERIMENTAL_XDS_EXT_AUTHZ_ON_CLIENT") ||
+        IsExperimentEnvVarEnabled(
+            "GRPC_EXPERIMENTAL_XDS_EXT_AUTHZ_ON_SERVER")) {
       registry.RegisterFilter(std::make_unique<XdsHttpExtAuthzFilterFactory>());
     }
     MutexLock lock(g_mu);

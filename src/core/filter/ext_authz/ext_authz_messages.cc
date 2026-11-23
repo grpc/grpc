@@ -33,7 +33,6 @@
 #include "envoy/service/auth/v3/attribute_context.upb.h"
 #include "envoy/service/auth/v3/external_auth.upb.h"
 #include "envoy/type/v3/http_status.upb.h"
-#include "google/protobuf/timestamp.upb.h"
 #include "google/rpc/status.upb.h"
 #include "src/core/call/evaluate_args.h"
 #include "src/core/call/status_util.h"
@@ -49,7 +48,6 @@
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
-#include "upb/base/string_view.h"
 #include "upb/mem/arena.h"
 #include "upb/mem/arena.hpp"
 #include "absl/base/attributes.h"
@@ -318,17 +316,26 @@ envoy_service_auth_v3_AttributeContext* CreateAttributeContext(
 // GetUrlEncodedPemPeerCertificate()
 //
 
-// Percent-encodes \a value exactly the way that Envoy's
-// Http::Utility::PercentEncoding::urlEncode() does: every character other than
-// ALPHA, DIGIT, '*', '-', '.' and '_' is encoded as %XX, using uppercase
-// hexadecimal digits (see RFC 3986 section 2.1).  This ensures that ext_authz
-// servers see the same value regardless of whether the client is gRPC or
-// Envoy.
-std::string UrlEncode(absl::string_view value) {
+// TODO(rishesh): Computing this in the ext_authz filter is sub-optimal,
+// because we will wind up computing it once for each filter chain. We should
+// eventually fix that by creating a common connection context object, and this
+// should be storable as one of the elements of that context.
+std::string GetUrlEncodedPemPeerCertificate(grpc_auth_context* auth_context) {
+  if (auth_context == nullptr) return "";
+  absl::string_view pem_cert =
+      GetAuthPropertyValue(auth_context, GRPC_X509_PEM_CERT_PROPERTY_NAME);
+  if (pem_cert.empty()) return "";
+  // AttributeContext.Peer.certificate is documented as the peer certificate
+  // "encoded in URL and PEM format". Percent-encode pem_cert the way Envoy's
+  // Http::Utility::PercentEncoding::urlEncode() does: every character other
+  // than ALPHA, DIGIT, '*', '-', '.' and '_' is encoded as %XX using uppercase
+  // hexadecimal digits (see RFC 3986 section 2.1). This ensures that ext_authz
+  // servers see the same value regardless of whether the client is gRPC or
+  // Envoy.
   static constexpr char kHexDigits[] = "0123456789ABCDEF";
   std::string encoded;
-  encoded.reserve(value.size());
-  for (const char c : value) {
+  encoded.reserve(pem_cert.size());
+  for (const char c : pem_cert) {
     const auto byte = static_cast<unsigned char>(c);
     if (absl::ascii_isalnum(byte) || c == '*' || c == '-' || c == '.' ||
         c == '_') {
@@ -340,20 +347,6 @@ std::string UrlEncode(absl::string_view value) {
     }
   }
   return encoded;
-}
-
-// TODO(rishesh): Computing this in the ext_authz filter is sub-optimal,
-// because we will wind up computing it once for each filter chain. We should
-// eventually fix that by creating a common connection context object, and this
-// should be storable as one of the elements of that context.
-std::string GetUrlEncodedPemPeerCertificate(grpc_auth_context* auth_context) {
-  if (auth_context == nullptr) return "";
-  absl::string_view pem_cert =
-      GetAuthPropertyValue(auth_context, GRPC_X509_PEM_CERT_PROPERTY_NAME);
-  if (pem_cert.empty()) return "";
-  // AttributeContext.Peer.certificate is documented as the peer certificate
-  // "encoded in URL and PEM format".
-  return UrlEncode(pem_cert);
 }
 
 //
@@ -394,69 +387,6 @@ absl::StatusOr<std::vector<XdsHeaderValueOption>> ParseExtAuthzHeaderOptions(
   return result;
 }
 
-// Parses OkHttpResponse.  An unset message means there are no header
-// mutations to apply.
-absl::StatusOr<ExtAuthzResponse::OkResponse> ParseOkResponse(
-    const envoy_service_auth_v3_OkHttpResponse* ok_resp) {
-  ExtAuthzResponse::OkResponse ok_response;
-  if (ok_resp == nullptr) return ok_response;
-  size_t size = 0;
-  // headers
-  const auto* upb_headers =
-      envoy_service_auth_v3_OkHttpResponse_headers(ok_resp, &size);
-  auto headers = ParseExtAuthzHeaderOptions(upb_headers, size);
-  if (!headers.ok()) return headers.status();
-  ok_response.header_mutation.set_headers = std::move(*headers);
-  // headers_to_remove
-  auto headers_to_remove =
-      envoy_service_auth_v3_OkHttpResponse_headers_to_remove(ok_resp, &size);
-  for (size_t i = 0; i < size; ++i) {
-    absl::string_view key = UpbStringToAbsl(headers_to_remove[i]);
-    if (ValidateHeaderKeyIsLegal(key) != ValidateMetadataResult::kOk) {
-      return absl::InvalidArgumentError(
-          absl::StrCat("Invalid header name to remove: ", key));
-    }
-    ok_response.header_mutation.remove_headers.push_back(std::string(key));
-  }
-  // response_headers_to_add
-  const auto* upb_response_headers_to_add =
-      envoy_service_auth_v3_OkHttpResponse_response_headers_to_add(ok_resp,
-                                                                   &size);
-  auto response_headers_to_add =
-      ParseExtAuthzHeaderOptions(upb_response_headers_to_add, size);
-  if (!response_headers_to_add.ok()) return response_headers_to_add.status();
-  ok_response.response_headers_to_add = std::move(*response_headers_to_add);
-  return ok_response;
-}
-
-// Parses DeniedHttpResponse.  An unset message means the RPC is failed with
-// the default status and no trailer mutations.
-absl::StatusOr<ExtAuthzResponse::DeniedResponse> ParseDeniedResponse(
-    const envoy_service_auth_v3_DeniedHttpResponse* denied) {
-  ExtAuthzResponse::DeniedResponse denied_response;
-  if (denied == nullptr) return denied_response;
-  // status
-  if (const auto* http_status =
-          envoy_service_auth_v3_DeniedHttpResponse_status(denied);
-      http_status != nullptr) {
-    denied_response.status = grpc_http2_status_to_grpc_status(
-        envoy_type_v3_HttpStatus_code(http_status));
-    // HTTP 200 is not in the HTTP-to-gRPC status mapping, and a denied RPC
-    // must never be failed with OK, which would let it through instead.
-    if (denied_response.status == GRPC_STATUS_OK) {
-      denied_response.status = GRPC_STATUS_UNKNOWN;
-    }
-  }
-  // headers
-  size_t size = 0;
-  const auto* upb_headers =
-      envoy_service_auth_v3_DeniedHttpResponse_headers(denied, &size);
-  auto headers = ParseExtAuthzHeaderOptions(upb_headers, size);
-  if (!headers.ok()) return headers.status();
-  denied_response.headers = std::move(*headers);
-  return denied_response;
-}
-
 }  // namespace
 
 absl::StatusOr<ExtAuthzResponse> ExtAuthzResponse::Parse(
@@ -484,15 +414,67 @@ absl::StatusOr<ExtAuthzResponse> ExtAuthzResponse::Parse(
   }
   // ok_response or denied_response
   if (ext_authz_response.status_code == GRPC_STATUS_OK) {
-    auto ok_response = ParseOkResponse(
-        envoy_service_auth_v3_CheckResponse_ok_response(response));
-    if (!ok_response.ok()) return ok_response.status();
-    ext_authz_response.response = std::move(*ok_response);
+    OkResponse ok_response;
+    if (const auto* ok_resp =
+            envoy_service_auth_v3_CheckResponse_ok_response(response);
+        ok_resp != nullptr) {
+      size_t size = 0;
+      // headers
+      const auto* upb_headers =
+          envoy_service_auth_v3_OkHttpResponse_headers(ok_resp, &size);
+      auto headers = ParseExtAuthzHeaderOptions(upb_headers, size);
+      if (!headers.ok()) return headers.status();
+      ok_response.header_mutation.add_headers = std::move(*headers);
+      // headers_to_remove
+      auto headers_to_remove =
+          envoy_service_auth_v3_OkHttpResponse_headers_to_remove(ok_resp,
+                                                                 &size);
+      for (size_t i = 0; i < size; ++i) {
+        absl::string_view key = UpbStringToAbsl(headers_to_remove[i]);
+        if (ValidateHeaderKeyIsLegal(key) != ValidateMetadataResult::kOk) {
+          return absl::InvalidArgumentError(
+              absl::StrCat("Invalid header name to remove: ", key));
+        }
+        ok_response.header_mutation.remove_headers.push_back(std::string(key));
+      }
+      // response_headers_to_add
+      const auto* upb_response_headers_to_add =
+          envoy_service_auth_v3_OkHttpResponse_response_headers_to_add(ok_resp,
+                                                                       &size);
+      auto response_headers_to_add =
+          ParseExtAuthzHeaderOptions(upb_response_headers_to_add, size);
+      if (!response_headers_to_add.ok()) {
+        return response_headers_to_add.status();
+      }
+      ok_response.response_headers_to_add = std::move(*response_headers_to_add);
+    }
+    ext_authz_response.response = std::move(ok_response);
   } else {
-    auto denied_response = ParseDeniedResponse(
-        envoy_service_auth_v3_CheckResponse_denied_response(response));
-    if (!denied_response.ok()) return denied_response.status();
-    ext_authz_response.response = std::move(*denied_response);
+    DeniedResponse denied_response;
+    if (const auto* denied =
+            envoy_service_auth_v3_CheckResponse_denied_response(response);
+        denied != nullptr) {
+      // status
+      if (const auto* http_status =
+              envoy_service_auth_v3_DeniedHttpResponse_status(denied);
+          http_status != nullptr) {
+        denied_response.status = grpc_http2_status_to_grpc_status(
+            envoy_type_v3_HttpStatus_code(http_status));
+        // HTTP 200 is not in the HTTP-to-gRPC status mapping, and a denied RPC
+        // must never be failed with OK, which would let it through instead.
+        if (denied_response.status == GRPC_STATUS_OK) {
+          denied_response.status = GRPC_STATUS_UNKNOWN;
+        }
+      }
+      // headers
+      size_t size = 0;
+      const auto* upb_headers =
+          envoy_service_auth_v3_DeniedHttpResponse_headers(denied, &size);
+      auto headers = ParseExtAuthzHeaderOptions(upb_headers, size);
+      if (!headers.ok()) return headers.status();
+      denied_response.headers = std::move(*headers);
+    }
+    ext_authz_response.response = std::move(denied_response);
   }
   return ext_authz_response;
 }
