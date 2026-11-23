@@ -165,12 +165,15 @@ class Server(_base_server.Server):
         This method immediately stops the server from servicing new RPCs in
         all cases.
 
-        If a grace period is specified, this method waits until all active
-        RPCs are finished or until the grace period is reached. RPCs that haven't
+        The `grace` argument is required and must be either a number or None.
+        In both cases this coroutine completes only once the server has
+        fully stopped.
+
+        If `grace` is a number, this method waits until all active RPCs are
+        finished or until the grace period is reached. RPCs that haven't
         been terminated within the grace period are aborted.
-        If a grace period is not specified (by passing None for grace), all
-        existing RPCs are aborted immediately and this method blocks until
-        the last RPC handler terminates.
+        If `grace` is None, all existing RPCs are aborted immediately and
+        this method waits until the last RPC handler terminates.
 
         This method is idempotent and may be called at any time. Passing a
         smaller grace value in a subsequent call will have the effect of
@@ -180,7 +183,8 @@ class Server(_base_server.Server):
         (i.e. the most restrictive grace value is used).
 
         Args:
-          grace: A duration of time in seconds or None.
+          grace: Required. A duration of time in seconds, or None to abort all
+            active RPCs immediately.
         """
         await self._server.shutdown(grace)
 
@@ -210,7 +214,10 @@ class Server(_base_server.Server):
         return await self._server.wait_for_termination(timeout)
 
     def __del__(self):
-        """Schedules a graceful shutdown in current event loop.
+        """Schedules an immediate shutdown in current event loop.
+
+        Active RPCs are aborted without a grace period (equivalent to
+        calling stop(None)).
 
         The Cython AioServer doesn't hold a ref-count to this class. It should
         be safe to slightly extend the underlying Cython object's life span.
