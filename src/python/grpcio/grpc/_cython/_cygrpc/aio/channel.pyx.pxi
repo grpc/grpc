@@ -105,8 +105,15 @@ cdef class AioChannel:
         self._status = AIO_CHANNEL_STATUS_CLOSING
 
     def close(self):
+        cdef grpc_channel *c_channel = self.channel
         self._status = AIO_CHANNEL_STATUS_DESTROYED
-        grpc_channel_destroy(self.channel)
+        # Releasing the GIL is required here: if this channel holds the last
+        # reference to the EventEngine, grpc_channel_destroy() may shut it down
+        # and block until its worker threads exit. Those workers may need the
+        # GIL to run Python callbacks (e.g. destroying call credentials plugins),
+        # so holding it here can deadlock.
+        with nogil:
+            grpc_channel_destroy(c_channel)
 
     def closed(self):
         return self._status in (AIO_CHANNEL_STATUS_CLOSING, AIO_CHANNEL_STATUS_DESTROYED)
