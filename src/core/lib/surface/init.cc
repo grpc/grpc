@@ -30,6 +30,7 @@
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/security_connector.h"
+#include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/filter/auth/auth_filters.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
@@ -39,6 +40,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/security/authorization/grpc_server_authz_filter.h"
+#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/util/fork.h"
@@ -73,10 +75,16 @@ void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
       .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
-  builder->channel_init()
-      ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
-      .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
-  auto& authz_registration =
+  ChannelInit::FilterRegistration& server_auth_registration =
+      builder->channel_init()
+          ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
+          .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
+  if (IsReplaceAuthFilterEnabled()) {
+    server_auth_registration.IfNot([](const ChannelArgs& args) {
+      return args.GetBool(GRPC_ARG_DISABLE_SERVER_AUTH_FILTER).value_or(false);
+    });
+  }
+  ChannelInit::FilterRegistration& authz_registration =
       builder->channel_init()
           ->RegisterFilter<GrpcServerAuthzFilter>(GRPC_SERVER_CHANNEL)
           .IfHasChannelArg(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER);
@@ -203,8 +211,8 @@ void grpc_maybe_wait_for_async_shutdown(void) {
 
 bool grpc_wait_for_shutdown_with_timeout(absl::Duration timeout) {
   GRPC_TRACE_LOG(api, INFO) << "grpc_wait_for_shutdown_with_timeout()";
-  const auto started = absl::Now();
-  const auto deadline = started + timeout;
+  const absl::Time started = absl::Now();
+  const absl::Time deadline = started + timeout;
   gpr_once_init(&g_basic_init, do_basic_init);
   grpc_core::MutexLock lock(*g_init_mu);
   while (g_initializations != 0) {

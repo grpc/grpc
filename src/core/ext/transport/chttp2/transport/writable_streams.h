@@ -199,7 +199,7 @@ class WritableStreams {
         return std::nullopt;
       }
       for (uint8_t i = 0; i < buckets_.size(); ++i) {
-        auto& bucket = buckets_[i];
+        std::queue<StreamPtr>& bucket = buckets_[i];
         if (!bucket.empty()) {
           if (i == kWaitForTransportFlowControlIndex &&
               !transport_tokens_available) {

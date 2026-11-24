@@ -56,6 +56,11 @@ exports_files(
     ],
 )
 
+exports_files(
+    ["src/cpp/server/load_reporter/constants.h"],
+    visibility = ["//src/core:__pkg__"],
+)
+
 bool_flag(
     name = "small_client",
     build_setting_default = False,
@@ -285,11 +290,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "googol"  # @unused
+g_stands_for = "garfield"  # @unused
 
-core_version = "58.0.0"  # @unused
+core_version = "59.0.0"  # @unused
 
-version = "1.86.0-dev"  # @unused
+version = "1.87.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -329,6 +334,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/grpc_audit_logging.h",
     "include/grpc/grpc_crl_provider.h",
     "include/grpc/private_key_signer.h",
+    "include/grpc/channel_factory.h",
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
@@ -667,6 +673,7 @@ grpc_cc_library(
         "server",
         "transport_auth_context",
         "//src/core:channel_args",
+        "//src/core:channel_factory",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
         "//src/core:client_channel_backup_poller",
@@ -773,6 +780,7 @@ grpc_cc_library(
         "tsi_base",
         "uri",
         "//src/core:channel_args",
+        "//src/core:channel_factory",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
         "//src/core:channelz_v2tov1_legacy_api",
@@ -3031,7 +3039,6 @@ grpc_cc_library(
         "grpc++_config_proto",
         ":channelz_cc_grpc",
         "//src/core:channelz_v2tov1_convert",
-        "//src/core:experiments",
         "//src/core:notification",
         "//src/proto/grpc/channelz/v2:service_cc_grpc",
     ],
@@ -4721,6 +4728,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_transport",
+    hdrs = [
+        "//src/core:xds/xds_client/xds_transport.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+    ],
+    visibility = ["//bazel:xds_client_core"],
+    deps = [
+        "orphanable",
+        "ref_counted_ptr",
+        "//src/core:dual_ref_counted",
+        "//src/core:ref_counted",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_client",
     srcs = [
         "//src/core:xds/xds_client/lrs_client.cc",
@@ -4738,7 +4763,7 @@ grpc_cc_library(
         "//src/core:xds/xds_client/xds_metrics.h",
         "//src/core:xds/xds_client/xds_resource_type.h",
         "//src/core:xds/xds_client/xds_resource_type_impl.h",
-        "//src/core:xds/xds_client/xds_transport.h",
+        "//src/core:xds/xds_client/xds_transport_factory.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -4778,6 +4803,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "uri",
         "work_serializer",
+        "xds_transport",
         "//src/core:down_cast",
         "//src/core:dual_ref_counted",
         "//src/core:experiment_env_var",
@@ -4978,6 +5004,7 @@ grpc_cc_library(
         "stats",
         "//src/core:decode_huff",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/core:hpack_constants",
         "//src/core:match",
@@ -5199,6 +5226,7 @@ grpc_cc_library(
         "src/cpp/util/status.cc",
     ],
     external_deps = [
+        "absl/log:log",
         "absl/status",
         "absl/strings",
     ],
@@ -5438,6 +5466,11 @@ grpc_upb_proto_reflection_library(
 grpc_upb_proto_library(
     name = "envoy_type_http_upb",
     deps = ["@envoy_api//envoy/type/http/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_load_balancing_policies_autosharding_upb",
+    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/autosharding/v3:pkg"],
 )
 
 grpc_upb_proto_library(

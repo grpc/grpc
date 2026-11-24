@@ -86,8 +86,8 @@ cdef class _AioCall(GrpcCallWrapper):
         else:
             return _NON_OK_CALL_REPRESENTATION.format(
                 self.__class__.__name__,
-                self._status.details(),
                 _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[self._status.code()],
+                self._status.details(),
                 self._status.debug_error_string())
 
     def __repr__(self) -> str:

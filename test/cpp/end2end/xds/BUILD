@@ -195,6 +195,7 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:certificate_provider_registry",
         "//src/core:env",
+        "//src/core:experiments",
         "//src/core:grpc_audit_logging",
         "//src/core:grpc_check",
         "//src/core:grpc_fake_credentials",
@@ -569,7 +570,6 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
         "//test/core/test_util:xds_http_add_header_filter",
-        "//test/cpp/end2end:end2end_test_utils",
         "@com_github_cncf_xds//xds/type/matcher/v3:pkg_cc_proto",
         "@com_github_cncf_xds//xds/type/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
@@ -809,6 +809,39 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "xds_autosharding_end2end_test",
+    size = "large",
+    srcs = ["xds_autosharding_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+        "absl/time",
+    ],
+    linkstatic = True,  # Fixes dyld error on MacOS
+    tags = [
+        "no_test_ios",
+        "no_windows",
+        "xds_end2end_test",
+    ],
+    deps = [
+        ":xds_end2end_test_lib",
+        "//:config_vars",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+        "//test/core/test_util:scoped_env_var",
+        "//test/cpp/end2end:autosharding_test_server",
+        "@envoy_api//envoy/config/cluster/v3:pkg_cc_proto",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/grpc_service/channel_credentials/insecure/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/load_balancing_policies/autosharding/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/load_balancing_policies/wrr_locality/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_pick_first_end2end_test",
     size = "large",
     srcs = ["xds_pick_first_end2end_test.cc"],
@@ -957,7 +990,7 @@ grpc_cc_test(
         "gtest",
     ],
     linkstatic = True,
-    shard_count = 10,
+    shard_count = 4,
     tags = [
         "no_test_ios",
         "no_windows",
@@ -973,16 +1006,14 @@ grpc_cc_test(
         "//src/core:client_channel_backup_poller",
         "//src/core:experiments",
         "//src/core:sync",
+        "//test/core/filters:ext_proc_test_util",
         "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
-        "//test/cpp/end2end:end2end_test_utils",
         "@envoy_api//envoy/config/cluster/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/common/mutation_rules/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/ext_proc/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
-        "@envoy_api//envoy/extensions/grpc_service/call_credentials/access_token/v3:pkg_cc_proto",
-        "@envoy_api//envoy/extensions/grpc_service/channel_credentials/google_default/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/grpc_service/channel_credentials/insecure/v3:pkg_cc_proto",
         "@envoy_api//envoy/service/ext_proc/v3:pkg_cc_grpc",
         "@envoy_api//envoy/service/ext_proc/v3:pkg_cc_proto",

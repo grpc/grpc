@@ -28,6 +28,7 @@
 #include <grpcpp/server_builder.h>
 
 #include <memory>
+#include <mutex>
 #include <utility>
 
 #include "test/core/test_util/port.h"
@@ -98,16 +99,55 @@ class KeyExchangeGroupCheckingVerifier : public ExternalCertificateVerifier {
   std::string expected_group_;
 };
 
+// Intercepts server Echo to capture the TLS Exported Keying Material from the
+// server's AuthContext.
+class EkmCapturingService : public TestServiceImpl {
+ public:
+  Status Echo(ServerContext* context, const EchoRequest* request,
+              EchoResponse* response) override {
+    std::shared_ptr<const AuthContext> auth_context = context->auth_context();
+    if (auth_context != nullptr) {
+      std::vector<grpc::string_ref> properties =
+          auth_context->FindPropertyValues(
+              GRPC_SSL_EXPORTED_KEYING_MATERIAL_PROPERTY_NAME);
+      if (!properties.empty()) {
+        std::lock_guard<std::mutex> lock(mu_);
+        server_ekm_ = std::string(properties[0].data(), properties[0].length());
+      }
+    }
+    return TestServiceImpl::Echo(context, request, response);
+  }
+
+  std::string server_ekm() const {
+    std::lock_guard<std::mutex> lock(mu_);
+    return server_ekm_;
+  }
+
+ private:
+  mutable std::mutex mu_;
+  std::string server_ekm_;
+};
+
 class TlsCredentialsTest : public ::testing::Test {
  protected:
-  void RunServer(absl::Notification* notification,
-                 const std::vector<grpc_tls_key_exchange_group>*
-                     key_exchange_groups = nullptr) {
-    std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+  void RunServer(
+      absl::Notification* notification,
+      const std::vector<grpc_tls_key_exchange_group>* key_exchange_groups =
+          nullptr,
+      const std::string* ekm_label = nullptr, size_t ekm_length = 0,
+      absl::string_view ca_cert_path = kCaCertPath,
+      absl::string_view server_cert_path = kServerCertPath,
+      absl::string_view server_key_path = kServerKeyPath,
+      grpc_ssl_client_certificate_request_type cert_request_type =
+          GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
+      const std::vector<grpc_tls_signature_algorithm>* signature_algorithms =
+          nullptr) {
+    std::string root_cert =
+        grpc_core::testing::GetFileContents(std::string(ca_cert_path));
     std::string server_key =
-        grpc_core::testing::GetFileContents(kServerKeyPath);
+        grpc_core::testing::GetFileContents(std::string(server_key_path));
     std::string server_cert =
-        grpc_core::testing::GetFileContents(kServerCertPath);
+        grpc_core::testing::GetFileContents(std::string(server_cert_path));
     grpc::experimental::IdentityKeyCertPair key_cert_pair = {server_key,
                                                              server_cert};
     std::vector<grpc::experimental::IdentityKeyCertPair>
@@ -123,8 +163,16 @@ class TlsCredentialsTest : public ::testing::Test {
     grpc::experimental::TlsServerCredentialsOptions server_options =
         *std::move(server_options_or);
     server_options.set_root_certificate_provider(certificate_provider);
+    server_options.set_cert_request_type(cert_request_type);
     if (key_exchange_groups != nullptr) {
       server_options.set_key_exchange_groups(*key_exchange_groups);
+    }
+    if (signature_algorithms != nullptr) {
+      server_options.set_signature_algorithms(*signature_algorithms);
+    }
+    if (ekm_label != nullptr) {
+      server_options.set_exported_keying_material_options(*ekm_label,
+                                                          ekm_length);
     }
     grpc::ServerBuilder builder;
     builder.AddListeningPort(
@@ -143,7 +191,8 @@ class TlsCredentialsTest : public ::testing::Test {
     }
   }
 
-  TestServiceImpl service_;
+  // Declared before server_ so it outlives the server.
+  EkmCapturingService service_;
   std::unique_ptr<Server> server_ = nullptr;
   std::thread* server_thread_ = nullptr;
   std::string server_addr_;
@@ -226,9 +275,216 @@ TEST_F(TlsCredentialsTest, SkipServerCertificateVerification) {
 
   DoRpc(server_addr_, tls_options);
 }
+
+TEST_F(TlsCredentialsTest, ExportedKeyingMaterial) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  const std::string kEkmLabel = "test_label";
+  constexpr size_t kEkmLength = 32;
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, /*key_exchange_groups=*/nullptr, &kEkmLabel,
+              kEkmLength);
+  });
+  notification.WaitForNotification();
+
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+  tls_options.set_check_call_host(false);
+  tls_options.set_verify_server_certs(false);
+  tls_options.set_exported_keying_material_options(kEkmLabel, kEkmLength);
+
+  std::shared_ptr<Channel> channel =
+      grpc::CreateChannel(server_addr_, TlsCredentials(tls_options));
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+  grpc::testing::EchoRequest request;
+  grpc::testing::EchoResponse response;
+  request.set_message(kMessage);
+  ClientContext context;
+  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/10));
+  grpc::Status result = stub->Echo(&context, request, &response);
+  EXPECT_TRUE(result.ok()) << "Echo failed: " << result.error_code() << ", "
+                           << result.error_message() << ", "
+                           << result.error_details();
+  EXPECT_EQ(response.message(), kMessage);
+
+  std::shared_ptr<const AuthContext> client_auth_context =
+      context.auth_context();
+  ASSERT_NE(client_auth_context, nullptr);
+  // Extract EKM from the client AuthContext and verify it's valid and equal
+  // to the EKM that the server derives.
+  std::vector<grpc::string_ref> client_properties =
+      client_auth_context->FindPropertyValues(
+          GRPC_SSL_EXPORTED_KEYING_MATERIAL_PROPERTY_NAME);
+  ASSERT_EQ(client_properties.size(), 1u);
+  EXPECT_EQ(client_properties[0].length(), kEkmLength);
+  std::string client_ekm(client_properties[0].data(),
+                         client_properties[0].length());
+
+  EXPECT_FALSE(client_ekm.empty());
+  // Ensure that implementation doesn't just derive a null-filled buffer.
+  EXPECT_THAT(client_ekm, ::testing::Not(::testing::Each('\0')));
+  EXPECT_EQ(service_.server_ekm(), client_ekm);
+}
+
+// Both peers must configure the same label to derive the same value, so a
+// label mismatch must produce different keying material on each side. This
+// also ensures the label is actually an input to the derivation.
+TEST_F(TlsCredentialsTest, ExportedKeyingMaterialWithDifferentLabelsDiffers) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  const std::string kServerEkmLabel = "server_label";
+  const std::string kClientEkmLabel = "client_label";
+  constexpr size_t kEkmLength = 32;
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, /*key_exchange_groups=*/nullptr, &kServerEkmLabel,
+              kEkmLength);
+  });
+  notification.WaitForNotification();
+
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+  tls_options.set_check_call_host(false);
+  tls_options.set_verify_server_certs(false);
+  tls_options.set_exported_keying_material_options(kClientEkmLabel, kEkmLength);
+
+  std::shared_ptr<Channel> channel =
+      grpc::CreateChannel(server_addr_, TlsCredentials(tls_options));
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+  grpc::testing::EchoRequest request;
+  grpc::testing::EchoResponse response;
+  request.set_message(kMessage);
+  ClientContext context;
+  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/10));
+  grpc::Status result = stub->Echo(&context, request, &response);
+  ASSERT_TRUE(result.ok()) << "Echo failed: " << result.error_code() << ", "
+                           << result.error_message() << ", "
+                           << result.error_details();
+
+  std::shared_ptr<const AuthContext> client_auth_context =
+      context.auth_context();
+  ASSERT_NE(client_auth_context, nullptr);
+  std::vector<grpc::string_ref> client_properties =
+      client_auth_context->FindPropertyValues(
+          GRPC_SSL_EXPORTED_KEYING_MATERIAL_PROPERTY_NAME);
+  ASSERT_EQ(client_properties.size(), 1u);
+  std::string client_ekm(client_properties[0].data(),
+                         client_properties[0].length());
+  std::string server_ekm = service_.server_ekm();
+  ASSERT_EQ(client_ekm.length(), kEkmLength);
+  ASSERT_EQ(server_ekm.length(), kEkmLength);
+  EXPECT_NE(client_ekm, server_ekm);
+}
+
+TEST_F(TlsCredentialsTest, ExportedKeyingMaterialNotConfigured) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() { RunServer(&notification); });
+  notification.WaitForNotification();
+
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+  tls_options.set_check_call_host(false);
+  tls_options.set_verify_server_certs(false);
+  // Don't set EKM options on tls_options here.
+
+  std::shared_ptr<Channel> channel =
+      grpc::CreateChannel(server_addr_, TlsCredentials(tls_options));
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+  grpc::testing::EchoRequest request;
+  grpc::testing::EchoResponse response;
+  request.set_message(kMessage);
+  ClientContext context;
+  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/10));
+  grpc::Status result = stub->Echo(&context, request, &response);
+  EXPECT_TRUE(result.ok()) << "Echo failed: " << result.error_code() << ", "
+                           << result.error_message() << ", "
+                           << result.error_details();
+  EXPECT_EQ(response.message(), kMessage);
+
+  // EKM should not be in the client AuthContext since it was not configured
+  // in the TlsChannelCredentialsOptions.
+  std::shared_ptr<const AuthContext> client_auth_context =
+      context.auth_context();
+  ASSERT_NE(client_auth_context, nullptr);
+  std::vector<grpc::string_ref> client_properties =
+      client_auth_context->FindPropertyValues(
+          GRPC_SSL_EXPORTED_KEYING_MATERIAL_PROPERTY_NAME);
+  EXPECT_TRUE(client_properties.empty());
+}
+
+TEST_F(TlsCredentialsTest, ExportedKeyingMaterialDerivationFailureFailsRpc) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() { RunServer(&notification); });
+  notification.WaitForNotification();
+
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+  tls_options.set_check_call_host(false);
+  tls_options.set_verify_server_certs(false);
+  tls_options.set_min_tls_version(grpc_tls_version::TLS1_3);
+  // Under TLS 1.3, the exporter is built on HKDF-Expand, which cannot produce
+  // more than 255 * HashLen bytes, so this length is guaranteed to be
+  // underivable.
+  tls_options.set_exported_keying_material_options("test_label",
+                                                   /*length=*/100000);
+
+  // Exporting keying material fails, so the RPC should also fail.
+  DoRpcAndExpectFailure(server_addr_, tls_options,
+                        grpc::StatusCode::UNAVAILABLE);
+}
 #endif  // OPENSSL_VERSION_NUMBER >= 0x1100000
 
 #if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+constexpr absl::string_view kCaMldsa44CertPath =
+    "test/core/tsi/test_creds/mldsa/ca_mldsa44.pem";
+constexpr absl::string_view kServerMldsa44CertPath =
+    "test/core/tsi/test_creds/mldsa/server_mldsa44.pem";
+constexpr absl::string_view kServerMldsa44KeyPath =
+    "test/core/tsi/test_creds/mldsa/server_mldsa44.key";
+constexpr absl::string_view kClientMldsa44CertPath =
+    "test/core/tsi/test_creds/mldsa/client_mldsa44.pem";
+constexpr absl::string_view kClientMldsa44KeyPath =
+    "test/core/tsi/test_creds/mldsa/client_mldsa44.key";
+
+constexpr absl::string_view kCaMldsa65CertPath =
+    "test/core/tsi/test_creds/mldsa/ca_mldsa65.pem";
+constexpr absl::string_view kServerMldsa65CertPath =
+    "test/core/tsi/test_creds/mldsa/server_mldsa65.pem";
+constexpr absl::string_view kServerMldsa65KeyPath =
+    "test/core/tsi/test_creds/mldsa/server_mldsa65.key";
+constexpr absl::string_view kClientMldsa65CertPath =
+    "test/core/tsi/test_creds/mldsa/client_mldsa65.pem";
+constexpr absl::string_view kClientMldsa65KeyPath =
+    "test/core/tsi/test_creds/mldsa/client_mldsa65.key";
+
+constexpr absl::string_view kCaMldsa87CertPath =
+    "test/core/tsi/test_creds/mldsa/ca_mldsa87.pem";
+constexpr absl::string_view kServerMldsa87CertPath =
+    "test/core/tsi/test_creds/mldsa/server_mldsa87.pem";
+constexpr absl::string_view kServerMldsa87KeyPath =
+    "test/core/tsi/test_creds/mldsa/server_mldsa87.key";
+constexpr absl::string_view kClientMldsa87CertPath =
+    "test/core/tsi/test_creds/mldsa/client_mldsa87.pem";
+constexpr absl::string_view kClientMldsa87KeyPath =
+    "test/core/tsi/test_creds/mldsa/client_mldsa87.key";
+constexpr absl::string_view kServerChainMldsa87CertPath =
+    "test/core/tsi/test_creds/mldsa/server_chain_mldsa87.pem";
+constexpr absl::string_view kServerChainMldsa87KeyPath =
+    "test/core/tsi/test_creds/mldsa/server_chain_mldsa87.key";
+constexpr absl::string_view kClientChainMldsa87CertPath =
+    "test/core/tsi/test_creds/mldsa/client_chain_mldsa87.pem";
+constexpr absl::string_view kClientChainMldsa87KeyPath =
+    "test/core/tsi/test_creds/mldsa/client_chain_mldsa87.key";
+
 TEST_F(TlsCredentialsTest, KeyExchangeGroupMlkem) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
@@ -277,6 +533,254 @@ TEST_F(TlsCredentialsTest, KeyExchangeGroupMlkem1024) {
   tls_options.set_sni_override("foo.test.google.fr");
   DoRpc(server_addr_, tls_options,
         /*expected_key_exchange_group=*/"id-alg-ml-kem-1024");
+}
+
+struct MldsaTestParam {
+  std::string test_name;
+  std::vector<absl::string_view> ca_cert_paths;
+  absl::string_view server_cert_path;
+  absl::string_view server_key_path;
+  absl::string_view client_cert_path;
+  absl::string_view client_key_path;
+  std::vector<grpc_tls_signature_algorithm> server_signature_algorithms;
+  std::vector<grpc_tls_signature_algorithm> client_signature_algorithms;
+};
+
+class TlsMldsaCredentialsTest
+    : public TlsCredentialsTest,
+      public ::testing::WithParamInterface<std::tuple<MldsaTestParam, bool>> {};
+
+// Note on Mldsa87Chain with MutualTls:
+// In TLS 1.3 mTLS, BoringSSL generates two NewSessionTicket messages on the
+// server that each embed the client's certificate chain, and defers flushing
+// them until the server's first SSL_write call (in the TSI frame protector).
+// With a 2-certificate ML-DSA-87 client chain (~15 KB), the two queued session
+// tickets (~30 KB) exceed the default 17 KB BIO pair buffer size, causing
+// SSL_write to return SSL_ERROR_WANT_WRITE. That case verifies that DoSslWrite,
+// SslProtectorProtect, and SslProtectorProtectFlush handle SSL_ERROR_WANT_WRITE
+// (TSI_DRAIN_BUFFER) by draining the BIO across multiple flushes rather than
+// failing the connection.
+TEST_P(TlsMldsaCredentialsTest, HandshakeAndRpc) {
+  const MldsaTestParam& param = std::get<0>(GetParam());
+  const bool mutual_tls = std::get<1>(GetParam());
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  std::string root_cert;
+  for (absl::string_view path : param.ca_cert_paths) {
+    absl::StrAppend(&root_cert,
+                    grpc_core::testing::GetFileContents(std::string(path)));
+  }
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    std::string server_key =
+        grpc_core::testing::GetFileContents(std::string(param.server_key_path));
+    std::string server_cert = grpc_core::testing::GetFileContents(
+        std::string(param.server_cert_path));
+    auto server_certificate_provider =
+        std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+    ASSERT_EQ(server_certificate_provider->UpdateRoot(root_cert),
+              absl::OkStatus());
+    ASSERT_EQ(server_certificate_provider->UpdateIdentityKeyCertPair(
+                  std::vector<grpc::experimental::IdentityKeyOrSignerCertPair>{
+                      {server_key, server_cert}}),
+              absl::OkStatus());
+    auto server_options_or =
+        grpc::experimental::TlsServerCredentialsOptions::Create(
+            server_certificate_provider);
+    ASSERT_TRUE(server_options_or.ok());
+    grpc::experimental::TlsServerCredentialsOptions server_options =
+        *std::move(server_options_or);
+    server_options.set_signature_algorithms(param.server_signature_algorithms);
+    if (mutual_tls) {
+      server_options.set_root_certificate_provider(server_certificate_provider);
+      server_options.set_cert_request_type(
+          GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+    }
+    grpc::ServerBuilder builder;
+    builder.AddListeningPort(
+        server_addr_, grpc::experimental::TlsServerCredentials(server_options));
+    builder.RegisterService(&service_);
+    server_ = builder.BuildAndStart();
+    notification.Notify();
+    server_->Wait();
+  });
+  notification.WaitForNotification();
+
+  auto client_certificate_provider =
+      std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+  ASSERT_EQ(client_certificate_provider->UpdateRoot(root_cert),
+            absl::OkStatus());
+  if (mutual_tls) {
+    std::string client_key =
+        grpc_core::testing::GetFileContents(std::string(param.client_key_path));
+    std::string client_cert = grpc_core::testing::GetFileContents(
+        std::string(param.client_cert_path));
+    ASSERT_EQ(client_certificate_provider->UpdateIdentityKeyCertPair(
+                  std::vector<grpc::experimental::IdentityKeyOrSignerCertPair>{
+                      {client_key, client_cert}}),
+              absl::OkStatus());
+  }
+
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+  tls_options.set_check_call_host(false);
+  tls_options.set_root_certificate_provider(client_certificate_provider);
+  if (mutual_tls) {
+    tls_options.set_identity_certificate_provider(client_certificate_provider);
+  }
+  tls_options.set_sni_override("foo.test.google.fr");
+  tls_options.set_signature_algorithms(param.client_signature_algorithms);
+  DoRpc(server_addr_, tls_options);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    TlsMldsaCredentialsTests, TlsMldsaCredentialsTest,
+    ::testing::Combine(
+        ::testing::Values(
+            MldsaTestParam{"Mldsa44",
+                           {kCaMldsa44CertPath},
+                           kServerMldsa44CertPath,
+                           kServerMldsa44KeyPath,
+                           kClientMldsa44CertPath,
+                           kClientMldsa44KeyPath,
+                           {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44},
+                           {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44}},
+            MldsaTestParam{"Mldsa65",
+                           {kCaMldsa65CertPath},
+                           kServerMldsa65CertPath,
+                           kServerMldsa65KeyPath,
+                           kClientMldsa65CertPath,
+                           kClientMldsa65KeyPath,
+                           {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65},
+                           {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65}},
+            MldsaTestParam{"Mldsa87",
+                           {kCaMldsa87CertPath},
+                           kServerMldsa87CertPath,
+                           kServerMldsa87KeyPath,
+                           kClientMldsa87CertPath,
+                           kClientMldsa87KeyPath,
+                           {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87},
+                           {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87}},
+            MldsaTestParam{"Mldsa87Chain",
+                           {kCaMldsa87CertPath},
+                           kServerChainMldsa87CertPath,
+                           kServerChainMldsa87KeyPath,
+                           kClientChainMldsa87CertPath,
+                           kClientChainMldsa87KeyPath,
+                           {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87},
+                           {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87}},
+            MldsaTestParam{"MixedMldsa87ServerAndMldsa44Client",
+                           {kCaMldsa87CertPath, kCaMldsa44CertPath},
+                           kServerMldsa87CertPath,
+                           kServerMldsa87KeyPath,
+                           kClientMldsa44CertPath,
+                           kClientMldsa44KeyPath,
+                           {GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256,
+                            GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44,
+                            GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87},
+                           {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65,
+                            GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87,
+                            GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44}},
+            MldsaTestParam{"MixedRsaServerAndMldsa65Client",
+                           {kCaCertPath, kCaMldsa65CertPath},
+                           kServerCertPath,
+                           kServerKeyPath,
+                           kClientMldsa65CertPath,
+                           kClientMldsa65KeyPath,
+                           {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87,
+                            GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65,
+                            GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA256},
+                           {GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256,
+                            GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA256,
+                            GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65}}),
+        ::testing::Bool()),
+    [](const ::testing::TestParamInfo<TlsMldsaCredentialsTest::ParamType>&
+           info) {
+      return absl::StrCat(std::get<0>(info.param).test_name, "_",
+                          std::get<1>(info.param) ? "MutualTls" : "Tls");
+    });
+
+TEST_F(TlsCredentialsTest, Mldsa65SignatureAlgorithmMismatchFails) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  const std::vector<grpc_tls_signature_algorithm> server_signature_algorithms =
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65};
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, /*key_exchange_groups=*/nullptr,
+              /*ekm_label=*/nullptr, /*ekm_length=*/0, kCaMldsa65CertPath,
+              kServerMldsa65CertPath, kServerMldsa65KeyPath,
+              GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
+              &server_signature_algorithms);
+  });
+  notification.WaitForNotification();
+
+  std::string root_cert =
+      grpc_core::testing::GetFileContents(std::string(kCaMldsa65CertPath));
+  auto client_certificate_provider =
+      std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+  ASSERT_EQ(client_certificate_provider->UpdateRoot(root_cert),
+            absl::OkStatus());
+
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+  tls_options.set_check_call_host(false);
+  tls_options.set_root_certificate_provider(client_certificate_provider);
+  tls_options.set_sni_override("foo.test.google.fr");
+  tls_options.set_signature_algorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256});
+  DoRpcAndExpectFailure(server_addr_, tls_options,
+                        grpc::StatusCode::UNAVAILABLE);
+}
+
+TEST_F(TlsCredentialsTest,
+       MixedMldsaCertsClientAlgorithmNotSupportedByServerFails) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  // Server presents an ML-DSA-87 certificate, but its signature algorithm list
+  // does not include ML-DSA-44 (used by the client's certificate).
+  const std::vector<grpc_tls_signature_algorithm> server_signature_algorithms =
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87,
+       GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65};
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, /*key_exchange_groups=*/nullptr,
+              /*ekm_label=*/nullptr, /*ekm_length=*/0, kCaMldsa44CertPath,
+              kServerMldsa87CertPath, kServerMldsa87KeyPath,
+              GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+              &server_signature_algorithms);
+  });
+  notification.WaitForNotification();
+
+  std::string root_cert =
+      grpc_core::testing::GetFileContents(std::string(kCaMldsa87CertPath));
+  std::string client_key =
+      grpc_core::testing::GetFileContents(std::string(kClientMldsa44KeyPath));
+  std::string client_cert =
+      grpc_core::testing::GetFileContents(std::string(kClientMldsa44CertPath));
+  auto client_certificate_provider =
+      std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+  ASSERT_EQ(client_certificate_provider->UpdateRoot(root_cert),
+            absl::OkStatus());
+  ASSERT_EQ(client_certificate_provider->UpdateIdentityKeyCertPair(
+                std::vector<grpc::experimental::IdentityKeyOrSignerCertPair>{
+                    {client_key, client_cert}}),
+            absl::OkStatus());
+
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+  tls_options.set_check_call_host(false);
+  tls_options.set_root_certificate_provider(client_certificate_provider);
+  tls_options.set_identity_certificate_provider(client_certificate_provider);
+  tls_options.set_sni_override("foo.test.google.fr");
+  tls_options.set_signature_algorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87,
+       GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44});
+  DoRpcAndExpectFailure(server_addr_, tls_options,
+                        grpc::StatusCode::UNAVAILABLE);
 }
 #endif  // defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >=
         // 0x30500000L

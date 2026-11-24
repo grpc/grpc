@@ -50,6 +50,7 @@ _LOGGED_FIELDS = ["repoRuleName", "name", "canonicalName", "apparentName"]
 _BAZEL_URLS = [
     "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-linux-arm64",
     "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-linux-x86_64",
+    "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-darwin-arm64",
     "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-darwin-x86_64",
     "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-windows-x86_64.exe",
 ]

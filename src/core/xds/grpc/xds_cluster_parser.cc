@@ -315,7 +315,8 @@ void ParseLbPolicyConfig(const XdsResourceType::DecodeContext& context,
     ValidationErrors::ScopedField field(errors, ".load_balancing_policy");
     const size_t original_error_count = errors->size();
     cds_update->lb_policy_config = registry.ConvertXdsLbPolicyConfig(
-        context, load_balancing_policy, errors);
+        context, load_balancing_policy, cds_update->lb_policy_grpc_services,
+        errors);
     // If there were no conversion errors, validate that the converted config
     // parses with the gRPC LB policy registry.
     if (original_error_count == errors->size()) {
@@ -487,7 +488,11 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
     errors.AddError("unknown discovery type");
   }
   // Check the LB policy.
-  ParseLbPolicyConfig(context, cluster, cds_update.get(), &errors);
+  // Skip this for aggregate clusters, as per gRFC A75.
+  if (!std::holds_alternative<XdsClusterResource::Aggregate>(
+          cds_update->type)) {
+    ParseLbPolicyConfig(context, cluster, cds_update.get(), &errors);
+  }
   // transport_socket
   auto* transport_socket =
       envoy_config_cluster_v3_Cluster_transport_socket(cluster);

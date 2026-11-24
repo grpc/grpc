@@ -16,13 +16,18 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 
+#include <climits>
 #include <memory>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
+#include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
@@ -36,6 +41,24 @@
 
 namespace grpc_core {
 namespace {
+
+// Verifies that PH2's ReadChannelArgs() resolves the same keepalive settings
+// from `channel_args` as the CHTTP2 transport `t`.
+void VerifyPh2KeepaliveParity(const grpc_chttp2_transport* t,
+                              const ChannelArgs& channel_args,
+                              const bool is_client) {
+  Http2Settings settings;
+  chttp2::TransportFlowControl transport_flow_control(
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+  http2::TransportChannelArgs ph2_args;
+  http2::ReadChannelArgs(channel_args, ph2_args, settings,
+                         transport_flow_control, is_client);
+  EXPECT_EQ(ph2_args.keepalive_time, t->keepalive_time);
+  EXPECT_EQ(ph2_args.keepalive_timeout, t->keepalive_timeout);
+  EXPECT_EQ(ph2_args.keepalive_permit_without_calls,
+            t->keepalive_permit_without_calls);
+}
 
 class ConfigurationTest : public ::testing::Test {
  protected:
@@ -65,7 +88,13 @@ TEST_F(ConfigurationTest, ClientKeepaliveDefaults) {
   EXPECT_EQ(t->keepalive_timeout, Duration::Infinity());
   EXPECT_EQ(t->keepalive_permit_without_calls, false);
   EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 2);
+  VerifyPh2KeepaliveParity(t, args_, /*is_client=*/true);
   t->Orphan();
+  const Http2KeepaliveDefaults ph2_client_defaults =
+      GetHttp2KeepaliveDefaults(/*is_client=*/true);
+  EXPECT_EQ(ph2_client_defaults.keepalive_time, Duration::Infinity());
+  EXPECT_EQ(ph2_client_defaults.keepalive_timeout, Duration::Seconds(20));
+  EXPECT_EQ(ph2_client_defaults.keepalive_permit_without_calls, false);
 }
 
 TEST_F(ConfigurationTest, ClientKeepaliveExplicitArgs) {
@@ -84,6 +113,7 @@ TEST_F(ConfigurationTest, ClientKeepaliveExplicitArgs) {
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
   EXPECT_EQ(t->keepalive_permit_without_calls, true);
   EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 3);
+  VerifyPh2KeepaliveParity(t, args_, /*is_client=*/true);
   t->Orphan();
 }
 
@@ -103,7 +133,13 @@ TEST_F(ConfigurationTest, ServerKeepaliveDefaults) {
   EXPECT_EQ(t->ping_abuse_policy.TestOnlyMinPingIntervalWithoutData(),
             Duration::Minutes(5));
   EXPECT_EQ(t->ping_abuse_policy.TestOnlyMaxPingStrikes(), 2);
+  VerifyPh2KeepaliveParity(t, args_, /*is_client=*/false);
   t->Orphan();
+  const Http2KeepaliveDefaults ph2_server_defaults =
+      GetHttp2KeepaliveDefaults(/*is_client=*/false);
+  EXPECT_EQ(ph2_server_defaults.keepalive_time, Duration::Hours(2));
+  EXPECT_EQ(ph2_server_defaults.keepalive_timeout, Duration::Seconds(20));
+  EXPECT_EQ(ph2_server_defaults.keepalive_permit_without_calls, false);
 }
 
 TEST_F(ConfigurationTest, ServerKeepaliveExplicitArgs) {
@@ -129,6 +165,7 @@ TEST_F(ConfigurationTest, ServerKeepaliveExplicitArgs) {
   EXPECT_EQ(t->ping_abuse_policy.TestOnlyMinPingIntervalWithoutData(),
             Duration::Seconds(20));
   EXPECT_EQ(t->ping_abuse_policy.TestOnlyMaxPingStrikes(), 0);
+  VerifyPh2KeepaliveParity(t, args_, /*is_client=*/false);
   t->Orphan();
 }
 
@@ -156,6 +193,7 @@ TEST_F(ConfigurationTest, ModifyClientDefaults) {
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
   EXPECT_EQ(t->keepalive_permit_without_calls, true);
   EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 3);
+  VerifyPh2KeepaliveParity(t, args_, /*is_client=*/true);
   t->Orphan();
 }
 
@@ -189,6 +227,137 @@ TEST_F(ConfigurationTest, ModifyServerDefaults) {
   EXPECT_EQ(t->ping_abuse_policy.TestOnlyMinPingIntervalWithoutData(),
             Duration::Seconds(20));
   EXPECT_EQ(t->ping_abuse_policy.TestOnlyMaxPingStrikes(), 0);
+  VerifyPh2KeepaliveParity(t, args_, /*is_client=*/false);
+  t->Orphan();
+}
+
+TEST_F(ConfigurationTest, ModifyClientDefaultsPartialArgs) {
+  ExecCtx exec_ctx;
+  grpc_chttp2_config_default_keepalive_args(
+      args_.Set(GRPC_ARG_KEEPALIVE_TIME_MS, 20000)
+          .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 10000)
+          .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true),
+      /*is_client=*/true);
+  grpc_chttp2_config_default_keepalive_args(
+      args_.Set(GRPC_ARG_KEEPALIVE_TIME_MS, 30000), /*is_client=*/true);
+  grpc_chttp2_transport* t =
+      reinterpret_cast<grpc_chttp2_transport*>(grpc_create_chttp2_transport(
+          args_,
+          OrphanablePtr<grpc_endpoint>(
+              mock_endpoint_controller_->TakeCEndpoint()),
+          /*is_client=*/true));
+  EXPECT_EQ(t->keepalive_time, Duration::Seconds(30));
+  EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
+  EXPECT_EQ(t->keepalive_permit_without_calls, true);
+  VerifyPh2KeepaliveParity(t, args_, /*is_client=*/true);
+  t->Orphan();
+}
+
+TEST_F(ConfigurationTest, ModifyServerDefaultsPartialArgs) {
+  ExecCtx exec_ctx;
+  grpc_chttp2_config_default_keepalive_args(
+      args_.Set(GRPC_ARG_KEEPALIVE_TIME_MS, 20000)
+          .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 10000)
+          .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true),
+      /*is_client=*/false);
+  grpc_chttp2_config_default_keepalive_args(
+      args_.Set(GRPC_ARG_KEEPALIVE_TIME_MS, 30000), /*is_client=*/false);
+  grpc_chttp2_transport* t =
+      reinterpret_cast<grpc_chttp2_transport*>(grpc_create_chttp2_transport(
+          args_,
+          OrphanablePtr<grpc_endpoint>(
+              mock_endpoint_controller_->TakeCEndpoint()),
+          /*is_client=*/false));
+  EXPECT_EQ(t->keepalive_time, Duration::Seconds(30));
+  EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
+  EXPECT_EQ(t->keepalive_permit_without_calls, true);
+  VerifyPh2KeepaliveParity(t, args_, /*is_client=*/false);
+  t->Orphan();
+}
+
+// A negative default keepalive timeout is clamped to zero on the client.
+TEST_F(ConfigurationTest, ModifyClientDefaultsNegativeTimeout) {
+  ExecCtx exec_ctx;
+  grpc_chttp2_config_default_keepalive_args(
+      args_.Set(GRPC_ARG_KEEPALIVE_TIME_MS, 30000)
+          .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, -1)
+          .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true),
+      /*is_client=*/true);
+  grpc_chttp2_transport* t =
+      reinterpret_cast<grpc_chttp2_transport*>(grpc_create_chttp2_transport(
+          args_,
+          OrphanablePtr<grpc_endpoint>(
+              mock_endpoint_controller_->TakeCEndpoint()),
+          /*is_client=*/true));
+  EXPECT_EQ(t->keepalive_time, Duration::Seconds(30));
+  EXPECT_EQ(t->keepalive_timeout, Duration::Zero());
+  EXPECT_EQ(t->keepalive_permit_without_calls, true);
+  VerifyPh2KeepaliveParity(t, args_, /*is_client=*/true);
+  t->Orphan();
+}
+
+// A negative default keepalive timeout is clamped to zero on the server.
+TEST_F(ConfigurationTest, ModifyServerDefaultsNegativeTimeout) {
+  ExecCtx exec_ctx;
+  grpc_chttp2_config_default_keepalive_args(
+      args_.Set(GRPC_ARG_KEEPALIVE_TIME_MS, 30000)
+          .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, -1)
+          .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true),
+      /*is_client=*/false);
+  grpc_chttp2_transport* t =
+      reinterpret_cast<grpc_chttp2_transport*>(grpc_create_chttp2_transport(
+          args_,
+          OrphanablePtr<grpc_endpoint>(
+              mock_endpoint_controller_->TakeCEndpoint()),
+          /*is_client=*/false));
+  EXPECT_EQ(t->keepalive_time, Duration::Seconds(30));
+  EXPECT_EQ(t->keepalive_timeout, Duration::Zero());
+  EXPECT_EQ(t->keepalive_permit_without_calls, true);
+  VerifyPh2KeepaliveParity(t, args_, /*is_client=*/false);
+  t->Orphan();
+}
+
+// An INT_MAX default keepalive time disables keepalive on the client, which
+// also makes the keepalive timeout infinite regardless of its default.
+TEST_F(ConfigurationTest, ModifyClientDefaultsInfiniteKeepaliveTime) {
+  ExecCtx exec_ctx;
+  grpc_chttp2_config_default_keepalive_args(
+      args_.Set(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MAX)
+          .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 10000)
+          .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true),
+      /*is_client=*/true);
+  grpc_chttp2_transport* t =
+      reinterpret_cast<grpc_chttp2_transport*>(grpc_create_chttp2_transport(
+          args_,
+          OrphanablePtr<grpc_endpoint>(
+              mock_endpoint_controller_->TakeCEndpoint()),
+          /*is_client=*/true));
+  EXPECT_EQ(t->keepalive_time, Duration::Infinity());
+  EXPECT_EQ(t->keepalive_timeout, Duration::Infinity());
+  EXPECT_EQ(t->keepalive_permit_without_calls, true);
+  VerifyPh2KeepaliveParity(t, args_, /*is_client=*/true);
+  t->Orphan();
+}
+
+// An INT_MAX default keepalive time disables keepalive on the server, which
+// also makes the keepalive timeout infinite regardless of its default.
+TEST_F(ConfigurationTest, ModifyServerDefaultsInfiniteKeepaliveTime) {
+  ExecCtx exec_ctx;
+  grpc_chttp2_config_default_keepalive_args(
+      args_.Set(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MAX)
+          .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 10000)
+          .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true),
+      /*is_client=*/false);
+  grpc_chttp2_transport* t =
+      reinterpret_cast<grpc_chttp2_transport*>(grpc_create_chttp2_transport(
+          args_,
+          OrphanablePtr<grpc_endpoint>(
+              mock_endpoint_controller_->TakeCEndpoint()),
+          /*is_client=*/false));
+  EXPECT_EQ(t->keepalive_time, Duration::Infinity());
+  EXPECT_EQ(t->keepalive_timeout, Duration::Infinity());
+  EXPECT_EQ(t->keepalive_permit_without_calls, true);
+  VerifyPh2KeepaliveParity(t, args_, /*is_client=*/false);
   t->Orphan();
 }
 

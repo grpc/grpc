@@ -44,15 +44,12 @@ def grpc_deps():
     if "zlib" not in native.existing_rules():
         http_archive(
             name = "zlib",
-            patch_args = ["-p1"],
-            patches = [
-                "@com_github_grpc_grpc//bazel/zlib:add_custom_build_file.patch",
-            ],
-            sha256 = "da8937719bb6e9600a671f320934c0db3b8020c9c30fecda60b5a5ebdc9a1ea0",
-            strip_prefix = "zlib-f1f503da85d52e56aae11557b4d79a42bcaa2b86",
+            build_file = "@com_github_grpc_grpc//third_party:zlib.BUILD",
+            sha256 = "b9258cf6254e7f7c37f1cd61dba943a1c5ea3cff5718c789834dac359094f5f7",
+            strip_prefix = "zlib-da607da739fa6047df13e66a2af6b8bec7c2a498",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/madler/zlib/archive/f1f503da85d52e56aae11557b4d79a42bcaa2b86.tar.gz",
-                "https://github.com/madler/zlib/archive/f1f503da85d52e56aae11557b4d79a42bcaa2b86.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/madler/zlib/archive/da607da739fa6047df13e66a2af6b8bec7c2a498.tar.gz",
+                "https://github.com/madler/zlib/archive/da607da739fa6047df13e66a2af6b8bec7c2a498.tar.gz",
             ],
         )
 
@@ -140,11 +137,11 @@ def grpc_deps():
         http_archive(
             name = "com_github_cares_cares",
             build_file = "@com_github_grpc_grpc//third_party:cares/cares.BUILD",
-            sha256 = "cd1968cd09d384a5c553c82bf53ba458e47e9bfcdc253a3627f1b36ea6f814e2",
-            strip_prefix = "c-ares-d3a507e920e7af18a5efb7f9f1d8044ed4750013",
+            sha256 = "35a5dea65375c6050695cbea5c670f13f215af13c06b9d3918b99ac7a8ea9fa7",
+            strip_prefix = "c-ares-bc91829cce983a35ec01f5dbc05465858a3df469",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/c-ares/c-ares/archive/d3a507e920e7af18a5efb7f9f1d8044ed4750013.tar.gz",
-                "https://github.com/c-ares/c-ares/archive/d3a507e920e7af18a5efb7f9f1d8044ed4750013.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/c-ares/c-ares/archive/bc91829cce983a35ec01f5dbc05465858a3df469.tar.gz",
+                "https://github.com/c-ares/c-ares/archive/bc91829cce983a35ec01f5dbc05465858a3df469.tar.gz",
             ],
         )
 
@@ -231,11 +228,22 @@ def grpc_deps():
                 "@com_github_grpc_grpc//third_party:envoy-api.patch",
             ],
             patch_args = ["-p1"],
-            sha256 = "40ba505a3c8e0d56f10ad5b95c05d54138228ff521cff22393276bb67188dfc3",
-            strip_prefix = "data-plane-api-005c18a923f166a793a1c227171398dab883cc5d",
+            sha256 = "6cd4f3ed0f12b4f18780f0a29e38f7f914a73c45d8b70960c7d5ba62b817239b",
+            strip_prefix = "data-plane-api-0a161d3b6cc400ed14fe35c3e5f95b77fa36376c",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/005c18a923f166a793a1c227171398dab883cc5d.tar.gz",
-                "https://github.com/envoyproxy/data-plane-api/archive/005c18a923f166a793a1c227171398dab883cc5d.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/0a161d3b6cc400ed14fe35c3e5f95b77fa36376c.tar.gz",
+                "https://github.com/envoyproxy/data-plane-api/archive/0a161d3b6cc400ed14fe35c3e5f95b77fa36376c.tar.gz",
+            ],
+        )
+
+    if "envoy_toolshed" not in native.existing_rules():
+        http_archive(
+            name = "envoy_toolshed",
+            integrity = "sha256-7iTKEcrYcNTqN/B6Y5JrGVsbGTZrczov+NkOxaZkrbo=",
+            strip_prefix = "toolshed-bazel-v0.5.18",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/toolshed/releases/download/bazel-v0.5.18/toolshed-bazel-v0.5.18.tar.gz",
+                "https://github.com/envoyproxy/toolshed/releases/download/bazel-v0.5.18/toolshed-bazel-v0.5.18.tar.gz",
             ],
         )
 
@@ -406,11 +414,11 @@ def grpc_deps():
                 "@protobuf": "@com_google_protobuf",
                 "@re2": "@com_googlesource_code_re2",
             },
-            sha256 = "a0e3532b676fb55273dc717ea9c87feb2713e4e11a09bf2f273580fd394f52e8",
-            strip_prefix = "cel-c-024a0e44ed4aa1b2c7270604e0f2c3b612ac0fd9",
+            sha256 = "15f5079ede81208eac938fc0f5808bb30acd9d0937cd90528c65dc9710bc1a23",
+            strip_prefix = "cel-c-7c739eed27b702b45f664143540f76bd75d7bdd6",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cel-expr/cel-c/archive/024a0e44ed4aa1b2c7270604e0f2c3b612ac0fd9.tar.gz",
-                "https://github.com/cel-expr/cel-c/archive/024a0e44ed4aa1b2c7270604e0f2c3b612ac0fd9.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cel-expr/cel-c/archive/7c739eed27b702b45f664143540f76bd75d7bdd6.tar.gz",
+                "https://github.com/cel-expr/cel-c/archive/7c739eed27b702b45f664143540f76bd75d7bdd6.tar.gz",
             ],
         )
 
@@ -442,6 +450,7 @@ def grpc_deps():
             name = "autosharding",
             sha256 = "12b48c57daad78453fbe3c08f1c435f8a454ca01ea96abaa3d6f116805e43ee2",
             strip_prefix = "autosharding-3a21f69fe5516fe340af29ef68e327381473ecc7",
+            build_file = "@com_github_grpc_grpc//bazel:autosharding.BUILD",
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz",
                 "https://github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz",

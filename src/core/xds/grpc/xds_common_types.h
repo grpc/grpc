@@ -23,12 +23,16 @@
 #include <variant>
 #include <vector>
 
+#include "envoy/config/core/v3/base.upb.h"
 #include "re2/re2.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/matchers.h"
 #include "src/core/util/validation_errors.h"
+#include "upb/mem/arena.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 
@@ -97,6 +101,23 @@ absl::Status ApplyXdsHeaderMutationsRemoval(absl::string_view remove_header,
 absl::Status ApplyXdsHeaderMutationsAddition(
     const XdsHeaderValueOption& set_header, const HeaderMutationRules* rules,
     grpc_metadata_batch& md);
+
+// Adds the entries of batch to header_map, as envoy.config.core.v3.HeaderValue
+// messages allocated on arena.
+//
+// A header is skipped if its key matches any of disallowed_headers, or if
+// allowed_headers is non-empty and its key matches none of them.
+//
+// Per gRFC A102, the raw_value field is set (never the value field), and the
+// values of binary ("-bin") headers are base64-encoded.
+//
+// The header map may reference memory owned by batch, so batch must outlive
+// any use of header_map (e.g., its serialization).
+void PopulateHeaderMap(const grpc_metadata_batch& batch,
+                       absl::Span<const StringMatcher> allowed_headers,
+                       absl::Span<const StringMatcher> disallowed_headers,
+                       upb_Arena* arena,
+                       envoy_config_core_v3_HeaderMap* header_map);
 
 }  // namespace grpc_core
 

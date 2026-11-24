@@ -37,6 +37,7 @@ grpc_cc_test(
         "//:endpoint_addresses",
         "//:gpr_platform",
         "//:grpc_client_channel",
+        "//:grpc_public_hdrs",
         "//src/core:channel_args",
         "//src/core:subchannel_pool_interface",
         "//test/core/test_util:grpc_test_util",

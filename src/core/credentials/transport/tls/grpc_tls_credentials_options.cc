@@ -21,6 +21,7 @@
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/support/port_platform.h>
 
+#include <cstring>
 #include <memory>
 
 #include "src/core/lib/debug/trace.h"
@@ -169,6 +170,37 @@ void grpc_tls_credentials_options_set_key_exchange_groups(
     grpc_tls_credentials_options* options,
     const grpc_tls_key_exchange_group* groups, size_t num_groups) {
   GRPC_CHECK_NE(options, nullptr);
-  options->set_key_exchange_groups(
-      std::vector<grpc_tls_key_exchange_group>(groups, groups + num_groups));
+  if (num_groups > 0) {
+    GRPC_CHECK_NE(groups, nullptr);
+    options->set_key_exchange_groups(
+        std::vector<grpc_tls_key_exchange_group>(groups, groups + num_groups));
+  } else {
+    options->set_key_exchange_groups({});
+  }
+}
+
+void grpc_tls_credentials_options_set_signature_algorithms(
+    grpc_tls_credentials_options* options,
+    const grpc_tls_signature_algorithm* algorithms, size_t num_algorithms) {
+  GRPC_CHECK_NE(options, nullptr);
+  if (num_algorithms > 0) {
+    GRPC_CHECK_NE(algorithms, nullptr);
+    options->set_signature_algorithms(std::vector<grpc_tls_signature_algorithm>(
+        algorithms, algorithms + num_algorithms));
+  } else {
+    options->set_signature_algorithms({});
+  }
+}
+
+void grpc_tls_credentials_options_set_exported_keying_material_options(
+    grpc_tls_credentials_options* options, const char* label, size_t length) {
+  GRPC_CHECK_NE(options, nullptr);
+  // The label is the input used to derive the exported keying material, and the
+  // length is the size of the derived exported keying material. Both must be
+  // valid.
+  GRPC_CHECK_NE(label, nullptr);
+  GRPC_CHECK_GT(strlen(label), 0u);
+  GRPC_CHECK_GT(length, 0u);
+  options->set_exported_keying_material_label(label);
+  options->set_exported_keying_material_length(length);
 }
