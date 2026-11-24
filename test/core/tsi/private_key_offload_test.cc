@@ -497,7 +497,7 @@ TEST_P(PrivateKeyOffloadTest, OffloadOnServerSucceedsWithMlDsa44) {
       std::move(creds_config));
   fixture->Run(/*expect_success=*/true, /*expect_success_on_client=*/true,
                event_engine_.get());
-  EXPECT_EQ(signer->last_signature_algorithm(),
+  EXPECT_EQ(signer->observed_signature_algorithm(),
             PrivateKeySigner::SignatureAlgorithm::kMlDsa44);
 }
 
@@ -526,7 +526,7 @@ TEST_P(PrivateKeyOffloadTest, OffloadOnServerSucceedsWithMlDsa65) {
       std::move(creds_config));
   fixture->Run(/*expect_success=*/true, /*expect_success_on_client=*/true,
                event_engine_.get());
-  EXPECT_EQ(signer->last_signature_algorithm(),
+  EXPECT_EQ(signer->observed_signature_algorithm(),
             PrivateKeySigner::SignatureAlgorithm::kMlDsa65);
 }
 
@@ -555,7 +555,7 @@ TEST_P(PrivateKeyOffloadTest, OffloadOnServerSucceedsWithMlDsa87) {
       std::move(creds_config));
   fixture->Run(/*expect_success=*/true, /*expect_success_on_client=*/true,
                event_engine_.get());
-  EXPECT_EQ(signer->last_signature_algorithm(),
+  EXPECT_EQ(signer->observed_signature_algorithm(),
             PrivateKeySigner::SignatureAlgorithm::kMlDsa87);
 }
 
@@ -585,7 +585,7 @@ TEST_P(PrivateKeyOffloadTest, OffloadOnServerAsyncSucceedsWithMlDsa87) {
       std::move(creds_config));
   fixture->Run(/*expect_success=*/true, /*expect_success_on_client=*/true,
                event_engine_.get());
-  EXPECT_EQ(signer->last_signature_algorithm(),
+  EXPECT_EQ(signer->observed_signature_algorithm(),
             PrivateKeySigner::SignatureAlgorithm::kMlDsa87);
 }
 
@@ -614,7 +614,7 @@ TEST_P(PrivateKeyOffloadTest, OffloadOnClientSucceedsWithMlDsa87) {
       std::move(creds_config));
   fixture->Run(/*expect_success=*/true, /*expect_success_on_client=*/true,
                event_engine_.get());
-  EXPECT_EQ(signer->last_signature_algorithm(),
+  EXPECT_EQ(signer->observed_signature_algorithm(),
             PrivateKeySigner::SignatureAlgorithm::kMlDsa87);
 }
 

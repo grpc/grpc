@@ -142,7 +142,7 @@ std::variant<absl::StatusOr<std::string>,
 SyncTestPrivateKeySigner::Sign(absl::string_view data_to_sign,
                                SignatureAlgorithm signature_algorithm,
                                OnSignComplete /*on_sign_complete*/) {
-  last_signature_algorithm_ = signature_algorithm;
+  observed_signature_algorithm_ = signature_algorithm;
   if (mode_ == Mode::kError) {
     return absl::InternalError("signer error");
   }
@@ -169,7 +169,7 @@ std::variant<absl::StatusOr<std::string>,
 AsyncTestPrivateKeySigner::Sign(absl::string_view data_to_sign,
                                 SignatureAlgorithm signature_algorithm,
                                 OnSignComplete on_sign_complete) {
-  last_signature_algorithm_ = signature_algorithm;
+  observed_signature_algorithm_ = signature_algorithm;
   if (mode_ != Mode::kCancellation) {
     event_engine_->RunAfter(
         Duration::Seconds(2),

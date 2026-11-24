@@ -52,14 +52,14 @@ class SyncTestPrivateKeySigner final : public PrivateKeySigner {
 
   void Cancel(std::shared_ptr<AsyncSigningHandle> /*handle*/) override;
 
-  std::optional<SignatureAlgorithm> last_signature_algorithm() const {
-    return last_signature_algorithm_;
+  std::optional<SignatureAlgorithm> observed_signature_algorithm() const {
+    return observed_signature_algorithm_;
   }
 
  private:
   bssl::UniquePtr<EVP_PKEY> pkey_;
   Mode mode_;
-  std::optional<SignatureAlgorithm> last_signature_algorithm_;
+  std::optional<SignatureAlgorithm> observed_signature_algorithm_;
 };
 
 class AsyncTestPrivateKeySigner final
@@ -82,8 +82,8 @@ class AsyncTestPrivateKeySigner final
 
   bool WasCancelled();
 
-  std::optional<SignatureAlgorithm> last_signature_algorithm() const {
-    return last_signature_algorithm_;
+  std::optional<SignatureAlgorithm> observed_signature_algorithm() const {
+    return observed_signature_algorithm_;
   }
 
  private:
@@ -92,7 +92,7 @@ class AsyncTestPrivateKeySigner final
   bssl::UniquePtr<EVP_PKEY> pkey_;
   Mode mode_;
   std::atomic<bool> was_cancelled_{false};
-  std::optional<SignatureAlgorithm> last_signature_algorithm_;
+  std::optional<SignatureAlgorithm> observed_signature_algorithm_;
 };
 
 }  // namespace testing
