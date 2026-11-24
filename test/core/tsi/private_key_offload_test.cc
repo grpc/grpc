@@ -16,12 +16,14 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpc/private_key_signer.h>
 
 #include <atomic>
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -43,37 +45,59 @@ namespace testing {
 
 namespace {
 constexpr absl::string_view kTestCredsRelativePath = "src/core/tsi/test_creds/";
+constexpr absl::string_view kMlDsaCredsRelativePath =
+    "test/core/tsi/test_creds/mldsa/";
 
 enum class OffloadParty {
   kClient,
   kServer,
 };
 
+struct OffloadCredsConfig {
+  std::string ca_cert_path;
+  std::string server_key_path;
+  std::string server_cert_path;
+  std::string client_key_path;
+  std::string client_cert_path;
+  std::vector<grpc_tls_signature_algorithm> signature_algorithms;
+};
+
 class SslOffloadTsiTestFixture {
  public:
   SslOffloadTsiTestFixture(OffloadParty offload_party,
                            std::shared_ptr<PrivateKeySigner> signer,
-                           tsi_tls_version tls_version, std::string sni = "")
+                           tsi_tls_version tls_version, std::string sni = "",
+                           OffloadCredsConfig creds_config = {})
       : offload_party_(offload_party),
         signer_(std::move(signer)),
         tls_version_(tls_version),
-        sni_(std::move(sni)) {
+        sni_(std::move(sni)),
+        signature_algorithms_(std::move(creds_config.signature_algorithms)) {
     tsi_test_fixture_init(&base_);
     base_.test_unused_bytes = true;
     base_.vtable = &kVtable;
-    ca_cert_ = GetFileContents(absl::StrCat(kTestCredsRelativePath, "ca.pem"));
-    server0_key_ =
-        GetFileContents(absl::StrCat(kTestCredsRelativePath, "server0.key"));
-    server0_cert_ =
-        GetFileContents(absl::StrCat(kTestCredsRelativePath, "server0.pem"));
-    server1_key_ =
-        GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.key"));
-    server1_cert_ =
-        GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.pem"));
-    client_key_ =
-        GetFileContents(absl::StrCat(kTestCredsRelativePath, "client.key"));
-    client_cert_ =
-        GetFileContents(absl::StrCat(kTestCredsRelativePath, "client.pem"));
+    if (creds_config.ca_cert_path.empty()) {
+      ca_cert_ =
+          GetFileContents(absl::StrCat(kTestCredsRelativePath, "ca.pem"));
+      server0_key_ =
+          GetFileContents(absl::StrCat(kTestCredsRelativePath, "server0.key"));
+      server0_cert_ =
+          GetFileContents(absl::StrCat(kTestCredsRelativePath, "server0.pem"));
+      server1_key_ =
+          GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.key"));
+      server1_cert_ =
+          GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.pem"));
+      client_key_ =
+          GetFileContents(absl::StrCat(kTestCredsRelativePath, "client.key"));
+      client_cert_ =
+          GetFileContents(absl::StrCat(kTestCredsRelativePath, "client.pem"));
+    } else {
+      ca_cert_ = GetFileContents(creds_config.ca_cert_path);
+      server0_key_ = GetFileContents(creds_config.server_key_path);
+      server0_cert_ = GetFileContents(creds_config.server_cert_path);
+      client_key_ = GetFileContents(creds_config.client_key_path);
+      client_cert_ = GetFileContents(creds_config.client_cert_path);
+    }
     if (signer_ == nullptr) {
       if (offload_party_ == OffloadParty::kClient) {
         signer_ = std::make_shared<SyncTestPrivateKeySigner>(client_key_);
@@ -84,13 +108,17 @@ class SslOffloadTsiTestFixture {
     if (offload_party_ == OffloadParty::kServer) {
       // Use the given signer for the default server certificate.
       server_pem_key_cert_pairs_.emplace_back(signer_, server0_cert_);
-      server_pem_key_cert_pairs_.emplace_back(
-          std::make_shared<SyncTestPrivateKeySigner>(server1_key_),
-          server1_cert_);
+      if (!server1_cert_.empty()) {
+        server_pem_key_cert_pairs_.emplace_back(
+            std::make_shared<SyncTestPrivateKeySigner>(server1_key_),
+            server1_cert_);
+      }
       client_pem_key_cert_pair_ = PemKeyCertPair(client_key_, client_cert_);
     } else {
       server_pem_key_cert_pairs_.emplace_back(server0_key_, server0_cert_);
-      server_pem_key_cert_pairs_.emplace_back(server1_key_, server1_cert_);
+      if (!server1_cert_.empty()) {
+        server_pem_key_cert_pairs_.emplace_back(server1_key_, server1_cert_);
+      }
       client_pem_key_cert_pair_ = PemKeyCertPair(signer_, client_cert_);
     }
   }
@@ -132,6 +160,9 @@ class SslOffloadTsiTestFixture {
     client_options.min_tls_version = tls_version_;
     client_options.max_tls_version = tls_version_;
     client_options.pem_key_cert_pair = &client_pem_key_cert_pair_;
+    if (!signature_algorithms_.empty()) {
+      client_options.signature_algorithms = signature_algorithms_;
+    }
     ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                   &client_options, &client_handshaker_factory_),
               TSI_OK);
@@ -145,6 +176,9 @@ class SslOffloadTsiTestFixture {
     server_options.min_tls_version = tls_version_;
     server_options.max_tls_version = tls_version_;
     server_options.key_cert_pairs_or_selector = server_pem_key_cert_pairs_;
+    if (!signature_algorithms_.empty()) {
+      server_options.signature_algorithms = signature_algorithms_;
+    }
     ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
                   &server_options, &server_handshaker_factory_),
               TSI_OK);
@@ -212,6 +246,7 @@ class SslOffloadTsiTestFixture {
   std::shared_ptr<PrivateKeySigner> signer_;
   tsi_tls_version tls_version_;
   std::string sni_;
+  std::vector<grpc_tls_signature_algorithm> signature_algorithms_;
   bool expect_success_ = false;
   bool expect_success_on_client_ = false;
 };
@@ -435,6 +470,152 @@ TEST_P(PrivateKeyOffloadTest, OffloadFailsWithSignCancelledOnClient) {
   fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false,
                event_engine_.get());
   EXPECT_TRUE(signer->WasCancelled());
+}
+
+// Verifies that server-side signing offload succeeds with ML-DSA-44.
+TEST_P(PrivateKeyOffloadTest, OffloadOnServerSucceedsWithMlDsa44) {
+  if (GetParam() == tsi_tls_version::TSI_TLS1_2) {
+    GTEST_SKIP() << "ML-DSA requires TLS 1.3.";
+  }
+  std::string server_key = GetFileContents(
+      absl::StrCat(kMlDsaCredsRelativePath, "server_mldsa44.key"));
+  auto signer = std::make_shared<SyncTestPrivateKeySigner>(server_key);
+  OffloadCredsConfig creds_config;
+  creds_config.ca_cert_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "ca_mldsa44.pem");
+  creds_config.server_key_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "server_mldsa44.key");
+  creds_config.server_cert_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "server_mldsa44.pem");
+  creds_config.client_key_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "client_mldsa44.key");
+  creds_config.client_cert_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "client_mldsa44.pem");
+  creds_config.signature_algorithms = {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44};
+  auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
+      OffloadParty::kServer, signer, GetParam(), /*sni=*/"",
+      std::move(creds_config));
+  fixture->Run(/*expect_success=*/true, /*expect_success_on_client=*/true,
+               event_engine_.get());
+  EXPECT_EQ(signer->last_signature_algorithm(),
+            PrivateKeySigner::SignatureAlgorithm::kMlDsa44);
+}
+
+// Verifies that server-side signing offload succeeds with ML-DSA-65.
+TEST_P(PrivateKeyOffloadTest, OffloadOnServerSucceedsWithMlDsa65) {
+  if (GetParam() == tsi_tls_version::TSI_TLS1_2) {
+    GTEST_SKIP() << "ML-DSA requires TLS 1.3.";
+  }
+  std::string server_key = GetFileContents(
+      absl::StrCat(kMlDsaCredsRelativePath, "server_mldsa65.key"));
+  auto signer = std::make_shared<SyncTestPrivateKeySigner>(server_key);
+  OffloadCredsConfig creds_config;
+  creds_config.ca_cert_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "ca_mldsa65.pem");
+  creds_config.server_key_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "server_mldsa65.key");
+  creds_config.server_cert_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "server_mldsa65.pem");
+  creds_config.client_key_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "client_mldsa65.key");
+  creds_config.client_cert_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "client_mldsa65.pem");
+  creds_config.signature_algorithms = {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65};
+  auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
+      OffloadParty::kServer, signer, GetParam(), /*sni=*/"",
+      std::move(creds_config));
+  fixture->Run(/*expect_success=*/true, /*expect_success_on_client=*/true,
+               event_engine_.get());
+  EXPECT_EQ(signer->last_signature_algorithm(),
+            PrivateKeySigner::SignatureAlgorithm::kMlDsa65);
+}
+
+// Verifies that server-side signing offload succeeds with ML-DSA-87.
+TEST_P(PrivateKeyOffloadTest, OffloadOnServerSucceedsWithMlDsa87) {
+  if (GetParam() == tsi_tls_version::TSI_TLS1_2) {
+    GTEST_SKIP() << "ML-DSA requires TLS 1.3.";
+  }
+  std::string server_key = GetFileContents(
+      absl::StrCat(kMlDsaCredsRelativePath, "server_mldsa87.key"));
+  auto signer = std::make_shared<SyncTestPrivateKeySigner>(server_key);
+  OffloadCredsConfig creds_config;
+  creds_config.ca_cert_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "ca_mldsa87.pem");
+  creds_config.server_key_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "server_mldsa87.key");
+  creds_config.server_cert_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "server_mldsa87.pem");
+  creds_config.client_key_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "client_mldsa87.key");
+  creds_config.client_cert_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "client_mldsa87.pem");
+  creds_config.signature_algorithms = {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87};
+  auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
+      OffloadParty::kServer, signer, GetParam(), /*sni=*/"",
+      std::move(creds_config));
+  fixture->Run(/*expect_success=*/true, /*expect_success_on_client=*/true,
+               event_engine_.get());
+  EXPECT_EQ(signer->last_signature_algorithm(),
+            PrivateKeySigner::SignatureAlgorithm::kMlDsa87);
+}
+
+// Verifies that async server-side signing offload succeeds with ML-DSA-87.
+TEST_P(PrivateKeyOffloadTest, OffloadOnServerAsyncSucceedsWithMlDsa87) {
+  if (GetParam() == tsi_tls_version::TSI_TLS1_2) {
+    GTEST_SKIP() << "ML-DSA requires TLS 1.3.";
+  }
+  std::string server_key = GetFileContents(
+      absl::StrCat(kMlDsaCredsRelativePath, "server_mldsa87.key"));
+  auto signer =
+      std::make_shared<AsyncTestPrivateKeySigner>(server_key, event_engine_);
+  OffloadCredsConfig creds_config;
+  creds_config.ca_cert_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "ca_mldsa87.pem");
+  creds_config.server_key_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "server_mldsa87.key");
+  creds_config.server_cert_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "server_mldsa87.pem");
+  creds_config.client_key_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "client_mldsa87.key");
+  creds_config.client_cert_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "client_mldsa87.pem");
+  creds_config.signature_algorithms = {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87};
+  auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
+      OffloadParty::kServer, signer, GetParam(), /*sni=*/"",
+      std::move(creds_config));
+  fixture->Run(/*expect_success=*/true, /*expect_success_on_client=*/true,
+               event_engine_.get());
+  EXPECT_EQ(signer->last_signature_algorithm(),
+            PrivateKeySigner::SignatureAlgorithm::kMlDsa87);
+}
+
+// Verifies that client-side signing offload succeeds with ML-DSA-87.
+TEST_P(PrivateKeyOffloadTest, OffloadOnClientSucceedsWithMlDsa87) {
+  if (GetParam() == tsi_tls_version::TSI_TLS1_2) {
+    GTEST_SKIP() << "ML-DSA requires TLS 1.3.";
+  }
+  std::string client_key = GetFileContents(
+      absl::StrCat(kMlDsaCredsRelativePath, "client_mldsa87.key"));
+  auto signer = std::make_shared<SyncTestPrivateKeySigner>(client_key);
+  OffloadCredsConfig creds_config;
+  creds_config.ca_cert_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "ca_mldsa87.pem");
+  creds_config.server_key_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "server_mldsa87.key");
+  creds_config.server_cert_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "server_mldsa87.pem");
+  creds_config.client_key_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "client_mldsa87.key");
+  creds_config.client_cert_path =
+      absl::StrCat(kMlDsaCredsRelativePath, "client_mldsa87.pem");
+  creds_config.signature_algorithms = {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87};
+  auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
+      OffloadParty::kClient, signer, GetParam(), /*sni=*/"",
+      std::move(creds_config));
+  fixture->Run(/*expect_success=*/true, /*expect_success_on_client=*/true,
+               event_engine_.get());
+  EXPECT_EQ(signer->last_signature_algorithm(),
+            PrivateKeySigner::SignatureAlgorithm::kMlDsa87);
 }
 
 std::string TestNameSuffix(

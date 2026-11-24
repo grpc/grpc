@@ -57,7 +57,10 @@ cdef extern from "grpc/private_key_signer.h" namespace "grpc_core":
         kEcdsaSecp521r1Sha512,
         kRsaPssRsaeSha256,
         kRsaPssRsaeSha384,
-        kRsaPssRsaeSha512
+        kRsaPssRsaeSha512,
+        kMlDsa44,
+        kMlDsa65,
+        kMlDsa87
 
 cdef extern from "grpc/private_key_signer.h":
     cdef Status grpc_tls_identity_pairs_add_pair_with_signer(
@@ -76,6 +79,9 @@ cpdef enum PrivateKeySignatureAlgorithm:
     RSA_PSS_RSAE_SHA256 = <int>CSignatureAlgorithm.kRsaPssRsaeSha256
     RSA_PSS_RSAE_SHA384 = <int>CSignatureAlgorithm.kRsaPssRsaeSha384
     RSA_PSS_RSAE_SHA512 = <int>CSignatureAlgorithm.kRsaPssRsaeSha512
+    ML_DSA_44 = <int>CSignatureAlgorithm.kMlDsa44
+    ML_DSA_65 = <int>CSignatureAlgorithm.kMlDsa65
+    ML_DSA_87 = <int>CSignatureAlgorithm.kMlDsa87
 
 
 
