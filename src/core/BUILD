@@ -7514,6 +7514,26 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_cel_parser",
+    srcs = [
+        "xds/grpc/xds_cel_parser.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_cel_parser.h",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:xds_client_grpc"],
+    deps = [
+        "protobuf_wrappers_upb",
+        "upb_utils",
+        "validation_errors",
+        "xds_cel",
+        "xds_type_upb",
+        "//:cel_expr_checked_upb",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_cel",
     srcs = [
         "xds/grpc/xds_cel.cc",

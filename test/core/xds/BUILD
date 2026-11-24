@@ -676,6 +676,32 @@ grpc_cc_library(
 )
 
 grpc_cc_test(
+    name = "xds_cel_parser_test",
+    srcs = ["xds_cel_parser_test.cc"],
+    external_deps = [
+        "absl/strings",
+        "cel_c_runtime",
+        "cel_c_string_view_absl",
+        "cel_c_value",
+        "gtest",
+    ],
+    tags = ["xds_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":cel_expr_builder",
+        "//:cel_expr_checked_upb",
+        "//src/core:protobuf_wrappers_upb",
+        "//src/core:upb_utils",
+        "//src/core:validation_errors",
+        "//src/core:xds_cel",
+        "//src/core:xds_cel_parser",
+        "//src/core:xds_type_upb",
+        "@com_google_protobuf//upb/mem",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_cel_test",
     srcs = ["xds_cel_test.cc"],
     external_deps = [
