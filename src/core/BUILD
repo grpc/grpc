@@ -13284,16 +13284,7 @@ grpc_upb_proto_reflection_library(
     deps = ["@grpc_proto//:rls_config_proto"],
 )
 
-WELL_KNOWN_PROTO_TARGETS = [
-    "any",
-    "duration",
-    "empty",
-    "struct",
-    "timestamp",
-    "wrappers",
-]
-
-grpc_add_well_known_proto_upb_targets(targets = WELL_KNOWN_PROTO_TARGETS)
+grpc_add_well_known_proto_upb_targets()
 
 grpc_cc_library(
     name = "session_endpoint",
