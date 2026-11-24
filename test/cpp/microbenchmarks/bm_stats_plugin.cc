@@ -159,11 +159,11 @@ BENCHMARK(BM_AddCounterWithLabelsWithOTelPlugin);
 
 void BM_IncrementHistogramWithOTelPlugin(benchmark::State& state) {
   const auto& stats_plugin_group = SharedOTelStatsPluginGroup();
-  auto storage = BenchmarkDomain::GetStorage(
-      stats_plugin_group->GetCollectionScope(),
-      "testing very very very long value one",
-      "testing very very very long value two",
-      "testing very very very long value three");
+  auto storage =
+      BenchmarkDomain::GetStorage(stats_plugin_group->GetCollectionScope(),
+                                  "testing very very very long value one",
+                                  "testing very very very long value two",
+                                  "testing very very very long value three");
   auto* recorder = stats_plugin_group->GetInstrumentRecorder();
   for (auto _ : state) {
     storage->Increment(BenchmarkDomain::kHistogram, 100, recorder);
