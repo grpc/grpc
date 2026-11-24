@@ -144,9 +144,8 @@ class CelParserTest : public ::testing::Test {
 
 TEST_F(CelParserTest, CelExpression) {
   ValidationErrors errors;
-  auto program =
-      ParseCelExpression(MakeCelExpression(RequestEquals("bar")),
-                         CelProgram::ResultType::kBool, &errors);
+  auto program = ParseCelExpression(MakeCelExpression(RequestEquals("bar")),
+                                    CelProgram::ResultType::kBool, &errors);
   EXPECT_TRUE(errors.ok()) << ErrorMessage(errors);
   EXPECT_TRUE(program.has_value());
 }
