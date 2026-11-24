@@ -56,6 +56,15 @@ class CelExprBuilder final {
   void SetStringConst(cel_expr_Expr* expr, absl::string_view value);
   void SetIdent(cel_expr_Expr* expr, absl::string_view name);
 
+  // Makes expr `operand.field` (or `has(operand.field)` if test_only),
+  // returning the operand expr.
+  cel_expr_Expr* SetSelect(cel_expr_Expr* expr, absl::string_view field,
+                           bool test_only = false);
+
+  // Makes expr `request.<field>` (or `has(request.<field>)`).
+  void SetRequestField(cel_expr_Expr* expr, absl::string_view field,
+                       bool test_only = false);
+
   // Makes expr a global call to function, returning the arg exprs.
   std::vector<cel_expr_Expr*> SetCall(cel_expr_Expr* expr,
                                       absl::string_view function, int num_args);

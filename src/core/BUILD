@@ -7433,7 +7433,11 @@ grpc_cc_library(
     hdrs = [
         "xds/grpc/xds_matcher_context.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/container:flat_hash_set",
+        "absl/functional:function_ref",
+        "absl/strings",
+    ],
     tags = ["nofixdeps"],
     visibility = ["//bazel:xds_client_grpc"],
     deps = [
@@ -7555,6 +7559,32 @@ grpc_cc_library(
         "@com_google_protobuf//upb/message:copy",
         "@com_google_protobuf//upb/reflection",
         "@com_google_protobuf//upb/wire",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_cel_request_resolver",
+    srcs = [
+        "xds/grpc/xds_cel_request_resolver.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_cel_request_resolver.h",
+    ],
+    external_deps = [
+        "absl/functional:function_ref",
+        "absl/strings",
+        "cel_c_arena",
+        "cel_c_error",
+        "cel_c_error_code",
+        "cel_c_runtime",
+        "cel_c_status",
+        "cel_c_string_view_absl",
+        "cel_c_value",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:xds_client_grpc"],
+    deps = [
+        "xds_matcher_context",
     ],
 )
 

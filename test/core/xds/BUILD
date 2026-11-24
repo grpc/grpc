@@ -699,6 +699,34 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "xds_cel_request_resolver_test",
+    srcs = ["xds_cel_request_resolver_test.cc"],
+    external_deps = [
+        "absl/strings",
+        "cel_c_alloc",
+        "cel_c_arena",
+        "cel_c_runtime",
+        "cel_c_status",
+        "cel_c_string_view_absl",
+        "cel_c_value",
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":cel_expr_builder",
+        "//:cel_expr_checked_upb",
+        "//:cel_expr_syntax_upb",
+        "//src/core:metadata_batch",
+        "//src/core:slice",
+        "//src/core:xds_cel",
+        "//src/core:xds_cel_request_resolver",
+        "//src/core:xds_matcher_context",
+        "@com_google_protobuf//upb/mem",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_matcher_parse_test",
     srcs = ["xds_matcher_parse_test.cc"],
     external_deps = ["gtest"],

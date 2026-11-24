@@ -15,8 +15,13 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_MATCHER_CONTEXT_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_MATCHER_CONTEXT_H
 
+#include <optional>
+#include <string>
+
 #include "src/core/call/metadata_batch.h"
 #include "src/core/xds/grpc/xds_matcher.h"
+#include "absl/functional/function_ref.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -36,6 +41,10 @@ class RpcMatchContext : public XdsMatcher::MatchContext {
   // ":authority" both return GetAuthorityOrHost().
   std::optional<absl::string_view> GetHeaderValue(
       absl::string_view header_name) const;
+
+  // Calls fn once for each header name for which GetHeaderValue() returns
+  // a value.  Names are visited in no particular order.
+  void ForEachHeaderName(absl::FunctionRef<void(absl::string_view)> fn) const;
 
  private:
   grpc_metadata_batch* initial_metadata_;

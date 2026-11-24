@@ -86,6 +86,21 @@ void CelExprBuilder::SetIdent(cel_expr_Expr* expr, absl::string_view name) {
                                cel_StringView_FromAbsl(name));
 }
 
+cel_expr_Expr* CelExprBuilder::SetSelect(cel_expr_Expr* expr,
+                                         absl::string_view field,
+                                         bool test_only) {
+  cel_expr_Expr_Select* select =
+      cel_expr_Expr_mutable_select_expr(expr, arena_);
+  cel_expr_Expr_Select_set_field(select, cel_StringView_FromAbsl(field));
+  cel_expr_Expr_Select_set_test_only(select, test_only);
+  return NewExpr(cel_expr_Expr_Select_mutable_operand(select, arena_));
+}
+
+void CelExprBuilder::SetRequestField(cel_expr_Expr* expr,
+                                     absl::string_view field, bool test_only) {
+  SetIdent(SetSelect(expr, field, test_only), "request");
+}
+
 std::vector<cel_expr_Expr*> CelExprBuilder::SetCall(cel_expr_Expr* expr,
                                                     absl::string_view function,
                                                     int num_args) {
