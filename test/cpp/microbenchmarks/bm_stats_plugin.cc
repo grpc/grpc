@@ -93,21 +93,6 @@ void BM_AddCounterWithLabelsWithFakeStatsPlugin(benchmark::State& state) {
 BENCHMARK(BM_AddCounterWithLabelsWithFakeStatsPlugin);
 
 const std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>&
-SharedFakeStatsPluginGroup() {
-  static const auto* const group = new std::shared_ptr<
-      grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>([]() {
-    grpc_core::GlobalStatsPluginRegistryTestPeer::
-        ResetGlobalStatsPluginRegistry();
-    grpc_core::FakeStatsPluginBuilder().BuildAndRegister();
-    grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config;
-    return grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-        grpc_core::experimental::StatsPluginChannelScope("", "",
-                                                         endpoint_config));
-  }());
-  return *group;
-}
-
-const std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>&
 SharedOTelStatsPluginGroup() {
   static const auto* const group = new std::shared_ptr<
       grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>([]() {
@@ -127,17 +112,6 @@ SharedOTelStatsPluginGroup() {
   }());
   return *group;
 }
-
-void BM_IncrementHistogramWithFakeStatsPlugin(benchmark::State& state) {
-  const auto& stats_plugin_group = SharedFakeStatsPluginGroup();
-  auto storage = BenchmarkDomain::GetStorage(
-      stats_plugin_group->GetCollectionScope(), "v1", "v2", "v3");
-  auto* recorder = stats_plugin_group->GetInstrumentRecorder();
-  for (auto _ : state) {
-    storage->Increment(BenchmarkDomain::kHistogram, 100, recorder);
-  }
-}
-BENCHMARK(BM_IncrementHistogramWithFakeStatsPlugin)->ThreadRange(1, 64);
 
 void BM_AddCounterWithOTelPlugin(benchmark::State& state) {
   grpc_core::GlobalStatsPluginRegistryTestPeer::
@@ -186,7 +160,10 @@ BENCHMARK(BM_AddCounterWithLabelsWithOTelPlugin);
 void BM_IncrementHistogramWithOTelPlugin(benchmark::State& state) {
   const auto& stats_plugin_group = SharedOTelStatsPluginGroup();
   auto storage = BenchmarkDomain::GetStorage(
-      stats_plugin_group->GetCollectionScope(), "v1", "v2", "v3");
+      stats_plugin_group->GetCollectionScope(),
+      "testing very very very long value one",
+      "testing very very very long value two",
+      "testing very very very long value three");
   auto* recorder = stats_plugin_group->GetInstrumentRecorder();
   for (auto _ : state) {
     storage->Increment(BenchmarkDomain::kHistogram, 100, recorder);

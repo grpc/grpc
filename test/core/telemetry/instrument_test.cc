@@ -227,9 +227,6 @@ class FanOutDomain final : public InstrumentDomain<FanOutDomain> {
       RegisterUpDownCounter("fan_out_up_down", "Desc", "unit");
   static inline const auto kDoubleGauge =
       RegisterDoubleGauge("fan_out_double", "Desc", "unit");
-  static inline const auto kExponentialHistogram =
-      RegisterInt64Histogram<ExponentialInt64HistogramShape>(
-          "fan_out_histogram", "Desc", "unit", 1024, 20);
 };
 
 using InstrumentIndexDeathTest = InstrumentTest;
