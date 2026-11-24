@@ -3225,19 +3225,19 @@ add_library(grpc
   third_party/cel-c/cel-c/assert.cc
   third_party/cel-c/cel-c/ast.cc
   third_party/cel-c/cel-c/ast_proto.cc
-  third_party/cel-c/cel-c/ast_traverse.cc
-  third_party/cel-c/cel-c/constant.cc
-  third_party/cel-c/cel-c/constant_proto.cc
   third_party/cel-c/cel-c/cstring_view.cc
-  third_party/cel-c/cel-c/decl.cc
   third_party/cel-c/cel-c/duration.cc
   third_party/cel-c/cel-c/duration_proto.cc
   third_party/cel-c/cel-c/error.cc
   third_party/cel-c/cel-c/error_code.cc
   third_party/cel-c/cel-c/error_space.cc
   third_party/cel-c/cel-c/internal/any.cc
+  third_party/cel-c/cel-c/internal/ast_traverse.cc
+  third_party/cel-c/cel-c/internal/attribute.cc
   third_party/cel-c/cel-c/internal/bitset.cc
   third_party/cel-c/cel-c/internal/charconv.cc
+  third_party/cel-c/cel-c/internal/constant.cc
+  third_party/cel-c/cel-c/internal/constant_proto.cc
   third_party/cel-c/cel-c/internal/durationconv.cc
   third_party/cel-c/cel-c/internal/empty_list_value.cc
   third_party/cel-c/cel-c/internal/empty_map_value.cc
@@ -3245,7 +3245,6 @@ add_library(grpc
   third_party/cel-c/cel-c/internal/generic_deque.cc
   third_party/cel-c/cel-c/internal/generic_flat_hash.cc
   third_party/cel-c/cel-c/internal/generic_string.cc
-  third_party/cel-c/cel-c/internal/hash.cc
   third_party/cel-c/cel-c/internal/list_value.cc
   third_party/cel-c/cel-c/internal/malloc.cc
   third_party/cel-c/cel-c/internal/map_value.cc
@@ -3258,6 +3257,8 @@ add_library(grpc
   third_party/cel-c/cel-c/internal/parsed_map_field_value.cc
   third_party/cel-c/cel-c/internal/parsed_message_value.cc
   third_party/cel-c/cel-c/internal/parsed_repeated_field_value.cc
+  third_party/cel-c/cel-c/internal/ref.cc
+  third_party/cel-c/cel-c/internal/ref_proto.cc
   third_party/cel-c/cel-c/internal/regexp.cc
   third_party/cel-c/cel-c/internal/runtime/activation.cc
   third_party/cel-c/cel-c/internal/runtime/interpretable.cc
@@ -3269,8 +3270,6 @@ add_library(grpc
   third_party/cel-c/cel-c/internal/utf8.cc
   third_party/cel-c/cel-c/internal/value.cc
   third_party/cel-c/cel-c/operators.cc
-  third_party/cel-c/cel-c/ref.cc
-  third_party/cel-c/cel-c/ref_proto.cc
   third_party/cel-c/cel-c/status.cc
   third_party/cel-c/cel-c/status_absl.cc
   third_party/cel-c/cel-c/status_code.cc
@@ -3304,6 +3303,9 @@ if(WIN32 AND MSVC)
       "GRPC_DLL_IMPORTS"
     )
   endif()
+  target_compile_options(grpc PUBLIC
+    /Zc:preprocessor
+  )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -3341,7 +3343,6 @@ target_link_libraries(grpc
   absl::function_ref
   absl::hash
   absl::type_traits
-  absl::int128
   absl::random_bit_gen_ref
   absl::random_distributions
   absl::statusor
@@ -41884,19 +41885,19 @@ add_executable(xds_cel_matcher_test
   third_party/cel-c/cel-c/assert.cc
   third_party/cel-c/cel-c/ast.cc
   third_party/cel-c/cel-c/ast_proto.cc
-  third_party/cel-c/cel-c/ast_traverse.cc
-  third_party/cel-c/cel-c/constant.cc
-  third_party/cel-c/cel-c/constant_proto.cc
   third_party/cel-c/cel-c/cstring_view.cc
-  third_party/cel-c/cel-c/decl.cc
   third_party/cel-c/cel-c/duration.cc
   third_party/cel-c/cel-c/duration_proto.cc
   third_party/cel-c/cel-c/error.cc
   third_party/cel-c/cel-c/error_code.cc
   third_party/cel-c/cel-c/error_space.cc
   third_party/cel-c/cel-c/internal/any.cc
+  third_party/cel-c/cel-c/internal/ast_traverse.cc
+  third_party/cel-c/cel-c/internal/attribute.cc
   third_party/cel-c/cel-c/internal/bitset.cc
   third_party/cel-c/cel-c/internal/charconv.cc
+  third_party/cel-c/cel-c/internal/constant.cc
+  third_party/cel-c/cel-c/internal/constant_proto.cc
   third_party/cel-c/cel-c/internal/durationconv.cc
   third_party/cel-c/cel-c/internal/empty_list_value.cc
   third_party/cel-c/cel-c/internal/empty_map_value.cc
@@ -41904,7 +41905,6 @@ add_executable(xds_cel_matcher_test
   third_party/cel-c/cel-c/internal/generic_deque.cc
   third_party/cel-c/cel-c/internal/generic_flat_hash.cc
   third_party/cel-c/cel-c/internal/generic_string.cc
-  third_party/cel-c/cel-c/internal/hash.cc
   third_party/cel-c/cel-c/internal/list_value.cc
   third_party/cel-c/cel-c/internal/malloc.cc
   third_party/cel-c/cel-c/internal/map_value.cc
@@ -41917,6 +41917,8 @@ add_executable(xds_cel_matcher_test
   third_party/cel-c/cel-c/internal/parsed_map_field_value.cc
   third_party/cel-c/cel-c/internal/parsed_message_value.cc
   third_party/cel-c/cel-c/internal/parsed_repeated_field_value.cc
+  third_party/cel-c/cel-c/internal/ref.cc
+  third_party/cel-c/cel-c/internal/ref_proto.cc
   third_party/cel-c/cel-c/internal/regexp.cc
   third_party/cel-c/cel-c/internal/runtime/activation.cc
   third_party/cel-c/cel-c/internal/runtime/interpretable.cc
@@ -41928,8 +41930,6 @@ add_executable(xds_cel_matcher_test
   third_party/cel-c/cel-c/internal/utf8.cc
   third_party/cel-c/cel-c/internal/value.cc
   third_party/cel-c/cel-c/operators.cc
-  third_party/cel-c/cel-c/ref.cc
-  third_party/cel-c/cel-c/ref_proto.cc
   third_party/cel-c/cel-c/status.cc
   third_party/cel-c/cel-c/status_absl.cc
   third_party/cel-c/cel-c/status_code.cc
@@ -41949,6 +41949,9 @@ if(WIN32 AND MSVC)
       "GPR_DLL_IMPORTS"
     )
   endif()
+  target_compile_options(xds_cel_matcher_test PRIVATE
+    /Zc:preprocessor
+  )
 endif()
 target_compile_features(xds_cel_matcher_test PUBLIC cxx_std_17)
 target_include_directories(xds_cel_matcher_test
@@ -41985,7 +41988,6 @@ target_link_libraries(xds_cel_matcher_test
   absl::function_ref
   absl::hash
   absl::type_traits
-  absl::int128
   absl::statusor
   absl::string_view
   absl::span
@@ -42035,7 +42037,9 @@ add_executable(xds_cel_parser_test
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/struct.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
@@ -42108,19 +42112,19 @@ add_executable(xds_cel_parser_test
   third_party/cel-c/cel-c/assert.cc
   third_party/cel-c/cel-c/ast.cc
   third_party/cel-c/cel-c/ast_proto.cc
-  third_party/cel-c/cel-c/ast_traverse.cc
-  third_party/cel-c/cel-c/constant.cc
-  third_party/cel-c/cel-c/constant_proto.cc
   third_party/cel-c/cel-c/cstring_view.cc
-  third_party/cel-c/cel-c/decl.cc
   third_party/cel-c/cel-c/duration.cc
   third_party/cel-c/cel-c/duration_proto.cc
   third_party/cel-c/cel-c/error.cc
   third_party/cel-c/cel-c/error_code.cc
   third_party/cel-c/cel-c/error_space.cc
   third_party/cel-c/cel-c/internal/any.cc
+  third_party/cel-c/cel-c/internal/ast_traverse.cc
+  third_party/cel-c/cel-c/internal/attribute.cc
   third_party/cel-c/cel-c/internal/bitset.cc
   third_party/cel-c/cel-c/internal/charconv.cc
+  third_party/cel-c/cel-c/internal/constant.cc
+  third_party/cel-c/cel-c/internal/constant_proto.cc
   third_party/cel-c/cel-c/internal/durationconv.cc
   third_party/cel-c/cel-c/internal/empty_list_value.cc
   third_party/cel-c/cel-c/internal/empty_map_value.cc
@@ -42128,7 +42132,6 @@ add_executable(xds_cel_parser_test
   third_party/cel-c/cel-c/internal/generic_deque.cc
   third_party/cel-c/cel-c/internal/generic_flat_hash.cc
   third_party/cel-c/cel-c/internal/generic_string.cc
-  third_party/cel-c/cel-c/internal/hash.cc
   third_party/cel-c/cel-c/internal/list_value.cc
   third_party/cel-c/cel-c/internal/malloc.cc
   third_party/cel-c/cel-c/internal/map_value.cc
@@ -42141,6 +42144,8 @@ add_executable(xds_cel_parser_test
   third_party/cel-c/cel-c/internal/parsed_map_field_value.cc
   third_party/cel-c/cel-c/internal/parsed_message_value.cc
   third_party/cel-c/cel-c/internal/parsed_repeated_field_value.cc
+  third_party/cel-c/cel-c/internal/ref.cc
+  third_party/cel-c/cel-c/internal/ref_proto.cc
   third_party/cel-c/cel-c/internal/regexp.cc
   third_party/cel-c/cel-c/internal/runtime/activation.cc
   third_party/cel-c/cel-c/internal/runtime/interpretable.cc
@@ -42152,8 +42157,6 @@ add_executable(xds_cel_parser_test
   third_party/cel-c/cel-c/internal/utf8.cc
   third_party/cel-c/cel-c/internal/value.cc
   third_party/cel-c/cel-c/operators.cc
-  third_party/cel-c/cel-c/ref.cc
-  third_party/cel-c/cel-c/ref_proto.cc
   third_party/cel-c/cel-c/status.cc
   third_party/cel-c/cel-c/status_absl.cc
   third_party/cel-c/cel-c/status_code.cc
@@ -42173,6 +42176,9 @@ if(WIN32 AND MSVC)
       "GPR_DLL_IMPORTS"
     )
   endif()
+  target_compile_options(xds_cel_parser_test PRIVATE
+    /Zc:preprocessor
+  )
 endif()
 target_compile_features(xds_cel_parser_test PUBLIC cxx_std_17)
 target_include_directories(xds_cel_parser_test
@@ -42207,7 +42213,6 @@ target_link_libraries(xds_cel_parser_test
   absl::function_ref
   absl::hash
   absl::type_traits
-  absl::int128
   absl::statusor
   absl::string_view
   absl::span
@@ -42242,7 +42247,9 @@ add_executable(xds_cel_request_resolver_test
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/struct.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
@@ -42313,19 +42320,19 @@ add_executable(xds_cel_request_resolver_test
   third_party/cel-c/cel-c/assert.cc
   third_party/cel-c/cel-c/ast.cc
   third_party/cel-c/cel-c/ast_proto.cc
-  third_party/cel-c/cel-c/ast_traverse.cc
-  third_party/cel-c/cel-c/constant.cc
-  third_party/cel-c/cel-c/constant_proto.cc
   third_party/cel-c/cel-c/cstring_view.cc
-  third_party/cel-c/cel-c/decl.cc
   third_party/cel-c/cel-c/duration.cc
   third_party/cel-c/cel-c/duration_proto.cc
   third_party/cel-c/cel-c/error.cc
   third_party/cel-c/cel-c/error_code.cc
   third_party/cel-c/cel-c/error_space.cc
   third_party/cel-c/cel-c/internal/any.cc
+  third_party/cel-c/cel-c/internal/ast_traverse.cc
+  third_party/cel-c/cel-c/internal/attribute.cc
   third_party/cel-c/cel-c/internal/bitset.cc
   third_party/cel-c/cel-c/internal/charconv.cc
+  third_party/cel-c/cel-c/internal/constant.cc
+  third_party/cel-c/cel-c/internal/constant_proto.cc
   third_party/cel-c/cel-c/internal/durationconv.cc
   third_party/cel-c/cel-c/internal/empty_list_value.cc
   third_party/cel-c/cel-c/internal/empty_map_value.cc
@@ -42333,7 +42340,6 @@ add_executable(xds_cel_request_resolver_test
   third_party/cel-c/cel-c/internal/generic_deque.cc
   third_party/cel-c/cel-c/internal/generic_flat_hash.cc
   third_party/cel-c/cel-c/internal/generic_string.cc
-  third_party/cel-c/cel-c/internal/hash.cc
   third_party/cel-c/cel-c/internal/list_value.cc
   third_party/cel-c/cel-c/internal/malloc.cc
   third_party/cel-c/cel-c/internal/map_value.cc
@@ -42346,6 +42352,8 @@ add_executable(xds_cel_request_resolver_test
   third_party/cel-c/cel-c/internal/parsed_map_field_value.cc
   third_party/cel-c/cel-c/internal/parsed_message_value.cc
   third_party/cel-c/cel-c/internal/parsed_repeated_field_value.cc
+  third_party/cel-c/cel-c/internal/ref.cc
+  third_party/cel-c/cel-c/internal/ref_proto.cc
   third_party/cel-c/cel-c/internal/regexp.cc
   third_party/cel-c/cel-c/internal/runtime/activation.cc
   third_party/cel-c/cel-c/internal/runtime/interpretable.cc
@@ -42357,8 +42365,6 @@ add_executable(xds_cel_request_resolver_test
   third_party/cel-c/cel-c/internal/utf8.cc
   third_party/cel-c/cel-c/internal/value.cc
   third_party/cel-c/cel-c/operators.cc
-  third_party/cel-c/cel-c/ref.cc
-  third_party/cel-c/cel-c/ref_proto.cc
   third_party/cel-c/cel-c/status.cc
   third_party/cel-c/cel-c/status_absl.cc
   third_party/cel-c/cel-c/status_code.cc
@@ -42378,6 +42384,9 @@ if(WIN32 AND MSVC)
       "GPR_DLL_IMPORTS"
     )
   endif()
+  target_compile_options(xds_cel_request_resolver_test PRIVATE
+    /Zc:preprocessor
+  )
 endif()
 target_compile_features(xds_cel_request_resolver_test PUBLIC cxx_std_17)
 target_include_directories(xds_cel_request_resolver_test
@@ -42412,7 +42421,6 @@ target_link_libraries(xds_cel_request_resolver_test
   absl::function_ref
   absl::hash
   absl::type_traits
-  absl::int128
   absl::statusor
   absl::string_view
   absl::span
@@ -42425,12 +42433,71 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_cel_test
+  src/core/channelz/channel_trace.cc
+  src/core/channelz/channelz.cc
+  src/core/channelz/channelz_registry.cc
+  src/core/channelz/property_list.cc
+  src/core/channelz/text_encode.cc
   src/core/ext/upb-gen/cel/expr/checked.upb_minitable.c
   src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/struct.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
+  src/core/lib/address_utils/parse_address.cc
+  src/core/lib/address_utils/sockaddr_utils.cc
+  src/core/lib/channel/channel_args.cc
+  src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
+  src/core/lib/iomgr/closure.cc
+  src/core/lib/iomgr/combiner.cc
+  src/core/lib/iomgr/error.cc
+  src/core/lib/iomgr/exec_ctx.cc
+  src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
+  src/core/lib/iomgr/socket_utils_windows.cc
+  src/core/lib/slice/percent_encoding.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/surface/channel_stack_type.cc
+  src/core/lib/transport/connectivity_state.cc
+  src/core/lib/transport/status_conversion.cc
+  src/core/telemetry/histogram_view.cc
+  src/core/telemetry/stats.cc
+  src/core/telemetry/stats_data.cc
+  src/core/util/backoff.cc
+  src/core/util/glob.cc
+  src/core/util/grpc_check.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
+  src/core/util/json/json_reader.cc
+  src/core/util/json/json_writer.cc
+  src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
+  src/core/util/postmortem_emit.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/shared_bit_gen.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
+  src/core/util/uri.cc
+  src/core/util/work_serializer.cc
   src/core/xds/grpc/xds_cel.cc
   test/core/xds/cel_expr_builder.cc
   test/core/xds/xds_cel_test.cc
@@ -42439,19 +42506,19 @@ add_executable(xds_cel_test
   third_party/cel-c/cel-c/assert.cc
   third_party/cel-c/cel-c/ast.cc
   third_party/cel-c/cel-c/ast_proto.cc
-  third_party/cel-c/cel-c/ast_traverse.cc
-  third_party/cel-c/cel-c/constant.cc
-  third_party/cel-c/cel-c/constant_proto.cc
   third_party/cel-c/cel-c/cstring_view.cc
-  third_party/cel-c/cel-c/decl.cc
   third_party/cel-c/cel-c/duration.cc
   third_party/cel-c/cel-c/duration_proto.cc
   third_party/cel-c/cel-c/error.cc
   third_party/cel-c/cel-c/error_code.cc
   third_party/cel-c/cel-c/error_space.cc
   third_party/cel-c/cel-c/internal/any.cc
+  third_party/cel-c/cel-c/internal/ast_traverse.cc
+  third_party/cel-c/cel-c/internal/attribute.cc
   third_party/cel-c/cel-c/internal/bitset.cc
   third_party/cel-c/cel-c/internal/charconv.cc
+  third_party/cel-c/cel-c/internal/constant.cc
+  third_party/cel-c/cel-c/internal/constant_proto.cc
   third_party/cel-c/cel-c/internal/durationconv.cc
   third_party/cel-c/cel-c/internal/empty_list_value.cc
   third_party/cel-c/cel-c/internal/empty_map_value.cc
@@ -42459,7 +42526,6 @@ add_executable(xds_cel_test
   third_party/cel-c/cel-c/internal/generic_deque.cc
   third_party/cel-c/cel-c/internal/generic_flat_hash.cc
   third_party/cel-c/cel-c/internal/generic_string.cc
-  third_party/cel-c/cel-c/internal/hash.cc
   third_party/cel-c/cel-c/internal/list_value.cc
   third_party/cel-c/cel-c/internal/malloc.cc
   third_party/cel-c/cel-c/internal/map_value.cc
@@ -42472,6 +42538,8 @@ add_executable(xds_cel_test
   third_party/cel-c/cel-c/internal/parsed_map_field_value.cc
   third_party/cel-c/cel-c/internal/parsed_message_value.cc
   third_party/cel-c/cel-c/internal/parsed_repeated_field_value.cc
+  third_party/cel-c/cel-c/internal/ref.cc
+  third_party/cel-c/cel-c/internal/ref_proto.cc
   third_party/cel-c/cel-c/internal/regexp.cc
   third_party/cel-c/cel-c/internal/runtime/activation.cc
   third_party/cel-c/cel-c/internal/runtime/interpretable.cc
@@ -42483,8 +42551,6 @@ add_executable(xds_cel_test
   third_party/cel-c/cel-c/internal/utf8.cc
   third_party/cel-c/cel-c/internal/value.cc
   third_party/cel-c/cel-c/operators.cc
-  third_party/cel-c/cel-c/ref.cc
-  third_party/cel-c/cel-c/ref_proto.cc
   third_party/cel-c/cel-c/status.cc
   third_party/cel-c/cel-c/status_absl.cc
   third_party/cel-c/cel-c/status_code.cc
@@ -42497,6 +42563,17 @@ add_executable(xds_cel_test
   third_party/upb/upb/message/compare.c
   third_party/upb/upb/message/internal/compare_unknown.c
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_cel_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+  target_compile_options(xds_cel_test PRIVATE
+    /Zc:preprocessor
+  )
+endif()
 target_compile_features(xds_cel_test PUBLIC cxx_std_17)
 target_include_directories(xds_cel_test
   PRIVATE
@@ -42521,19 +42598,18 @@ target_include_directories(xds_cel_test
 target_link_libraries(xds_cel_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_reflection_lib
-  absl::config
-  absl::core_headers
+  upb_textformat_lib
+  absl::btree
+  absl::flat_hash_map
+  absl::inlined_vector
   absl::function_ref
-  absl::check
-  absl::bits
-  absl::int128
-  absl::status
+  absl::hash
+  absl::type_traits
   absl::statusor
-  absl::cord
-  absl::str_format
   absl::string_view
-  absl::time
+  absl::span
+  absl::utility
+  gpr
 )
 
 
@@ -59864,7 +59940,7 @@ generate_pkgconfig(
   "gRPC"
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
-  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_int128 absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr"
+  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr"
   "libcares openssl re2 zlib"
   "-lgrpc"
   "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_descriptor_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
@@ -59886,7 +59962,7 @@ generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
-  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_charset absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_int128 absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc"
+  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_charset absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc"
   "libcares openssl re2 zlib"
   "-lgrpc++"
   "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_descriptor_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
@@ -59909,7 +59985,7 @@ if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
     "gRPC++ OpenTelemetry Plugin"
     "OpenTelemetry Plugin for gRPC C++"
     "${gRPC_CPP_VERSION}"
-    "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_charset absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_int128 absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc grpc++ opentelemetry_api"
+    "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_charset absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc grpc++ opentelemetry_api"
     "libcares openssl re2 zlib"
     "-lgrpcpp_otel_plugin"
     "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_descriptor_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"

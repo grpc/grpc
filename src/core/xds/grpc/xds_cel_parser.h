@@ -17,7 +17,7 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_CEL_PARSER_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_CEL_PARSER_H
 
-#include <memory>
+#include <optional>
 
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_cel.h"
@@ -26,14 +26,14 @@
 namespace grpc_core {
 
 // Parses an xds.type.v3.CelExpression.  Only cel_expr_checked is
-// supported.  Returns null and adds to errors on failure.
-std::unique_ptr<CelProgram> ParseCelExpression(
+// supported.  Returns std::nullopt and adds to errors on failure.
+std::optional<CelProgram> ParseCelExpression(
     const xds_type_v3_CelExpression* cel_expression,
     CelProgram::ResultType result_type, ValidationErrors* errors);
 
-// Parses an xds.type.v3.CelExtractString.  Returns null and adds to errors
-// on failure.
-std::unique_ptr<CelStringExtractor> ParseCelExtractString(
+// Parses an xds.type.v3.CelExtractString.  Returns std::nullopt and adds to
+// errors on failure.
+std::optional<CelStringExtractor> ParseCelExtractString(
     const xds_type_v3_CelExtractString* cel_extract_string,
     ValidationErrors* errors);
 

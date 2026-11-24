@@ -104,13 +104,13 @@ TEST_F(CelParserTest, CelExpression) {
       ParseCelExpression(MakeCelExpression(builder_.HeaderEquals("foo", "bar")),
                          CelProgram::ResultType::kBool, &errors);
   EXPECT_TRUE(errors.ok()) << ErrorMessage(errors);
-  EXPECT_NE(program, nullptr);
+  EXPECT_TRUE(program.has_value());
 }
 
 TEST_F(CelParserTest, CelExpressionNotPresent) {
   ValidationErrors errors;
   EXPECT_EQ(ParseCelExpression(nullptr, CelProgram::ResultType::kBool, &errors),
-            nullptr);
+            std::nullopt);
   EXPECT_EQ(ErrorMessage(errors), ": [field: error:field not present]");
 }
 
@@ -121,7 +121,7 @@ TEST_F(CelParserTest, CelExpressionStringNotSupported) {
   ValidationErrors errors;
   EXPECT_EQ(ParseCelExpression(cel_expression, CelProgram::ResultType::kBool,
                                &errors),
-            nullptr);
+            std::nullopt);
   EXPECT_EQ(ErrorMessage(errors),
             ": [field:cel_expr_string error:not supported]");
 }
@@ -130,7 +130,7 @@ TEST_F(CelParserTest, CelExpressionCheckedNotPresent) {
   ValidationErrors errors;
   EXPECT_EQ(ParseCelExpression(xds_type_v3_CelExpression_new(arena_.ptr()),
                                CelProgram::ResultType::kBool, &errors),
-            nullptr);
+            std::nullopt);
   EXPECT_EQ(ErrorMessage(errors),
             ": [field:cel_expr_checked error:field not present]");
 }
@@ -140,7 +140,7 @@ TEST_F(CelParserTest, CelExpressionWrongResultType) {
   EXPECT_EQ(
       ParseCelExpression(MakeCelExpression(builder_.HeaderEquals("foo", "bar")),
                          CelProgram::ResultType::kString, &errors),
-      nullptr);
+      std::nullopt);
   EXPECT_THAT(ErrorMessage(errors),
               ::testing::StartsWith(": [field:cel_expr_checked error:"));
 }
@@ -154,7 +154,7 @@ TEST_F(CelParserTest, CelExtractString) {
   auto extractor = ParseCelExtractString(
       MakeCelExtractString(RequestField("path")), &errors);
   ASSERT_TRUE(errors.ok()) << ErrorMessage(errors);
-  ASSERT_NE(extractor, nullptr);
+  ASSERT_TRUE(extractor.has_value());
   grpc_metadata_batch metadata;
   metadata.Set(HttpPathMetadata(), Slice::FromStaticString("/foo/bar"));
   RpcMatchContext context(&metadata);
@@ -166,7 +166,7 @@ TEST_F(CelParserTest, CelExtractStringNoDefault) {
   auto extractor =
       ParseCelExtractString(MakeCelExtractString(Header("x-foo")), &errors);
   ASSERT_TRUE(errors.ok()) << ErrorMessage(errors);
-  ASSERT_NE(extractor, nullptr);
+  ASSERT_TRUE(extractor.has_value());
   grpc_metadata_batch metadata;
   RpcMatchContext context(&metadata);
   // A missing header makes the expression evaluate to an error.
@@ -180,7 +180,7 @@ TEST_F(CelParserTest, CelExtractStringDefault) {
   auto extractor = ParseCelExtractString(
       MakeCelExtractString(Header("x-foo"), "default"), &errors);
   ASSERT_TRUE(errors.ok()) << ErrorMessage(errors);
-  ASSERT_NE(extractor, nullptr);
+  ASSERT_TRUE(extractor.has_value());
   grpc_metadata_batch metadata;
   RpcMatchContext context(&metadata);
   EXPECT_EQ(extractor->Extract(CelRequestResolver(context)), "default");
@@ -196,7 +196,7 @@ TEST_F(CelParserTest, CelExtractStringEmptyDefault) {
   auto extractor =
       ParseCelExtractString(MakeCelExtractString(Header("x-foo"), ""), &errors);
   ASSERT_TRUE(errors.ok()) << ErrorMessage(errors);
-  ASSERT_NE(extractor, nullptr);
+  ASSERT_TRUE(extractor.has_value());
   grpc_metadata_batch metadata;
   RpcMatchContext context(&metadata);
   EXPECT_EQ(extractor->Extract(CelRequestResolver(context)), "");
@@ -204,7 +204,7 @@ TEST_F(CelParserTest, CelExtractStringEmptyDefault) {
 
 TEST_F(CelParserTest, CelExtractStringNotPresent) {
   ValidationErrors errors;
-  EXPECT_EQ(ParseCelExtractString(nullptr, &errors), nullptr);
+  EXPECT_EQ(ParseCelExtractString(nullptr, &errors), std::nullopt);
   EXPECT_EQ(ErrorMessage(errors), ": [field: error:field not present]");
 }
 
@@ -212,7 +212,7 @@ TEST_F(CelParserTest, CelExtractStringExprNotPresent) {
   ValidationErrors errors;
   EXPECT_EQ(ParseCelExtractString(
                 xds_type_v3_CelExtractString_new(arena_.ptr()), &errors),
-            nullptr);
+            std::nullopt);
   EXPECT_EQ(ErrorMessage(errors),
             ": [field:expr_extract error:field not present]");
 }
@@ -222,7 +222,7 @@ TEST_F(CelParserTest, CelExtractStringBoolResultType) {
   EXPECT_EQ(
       ParseCelExtractString(
           MakeCelExtractString(builder_.HeaderEquals("foo", "bar")), &errors),
-      nullptr);
+      std::nullopt);
   EXPECT_THAT(
       ErrorMessage(errors),
       ::testing::StartsWith(": [field:expr_extract.cel_expr_checked error:"));
@@ -240,7 +240,7 @@ TEST_F(CelParserTest, CelExtractStringDynResultType) {
   auto extractor =
       ParseCelExtractString(MakeCelExtractString(checked, "default"), &errors);
   ASSERT_TRUE(errors.ok()) << ErrorMessage(errors);
-  ASSERT_NE(extractor, nullptr);
+  ASSERT_TRUE(extractor.has_value());
   grpc_metadata_batch metadata;
   RpcMatchContext context(&metadata);
   // Missing key: evaluation error, so the default is used.
@@ -258,7 +258,7 @@ TEST_F(CelParserTest, CelExtractStringDynNonStringResultUsesDefault) {
   auto extractor =
       ParseCelExtractString(MakeCelExtractString(checked, "default"), &errors);
   ASSERT_TRUE(errors.ok()) << ErrorMessage(errors);
-  ASSERT_NE(extractor, nullptr);
+  ASSERT_TRUE(extractor.has_value());
   grpc_metadata_batch metadata;
   RpcMatchContext context(&metadata);
   EXPECT_EQ(extractor->Extract(CelRequestResolver(context)), "default");
@@ -271,7 +271,7 @@ TEST_F(CelParserTest, CelExpressionDynResultTypeRejectedForBool) {
   ValidationErrors errors;
   EXPECT_EQ(ParseCelExpression(MakeCelExpression(checked),
                                CelProgram::ResultType::kBool, &errors),
-            nullptr);
+            std::nullopt);
   EXPECT_THAT(ErrorMessage(errors),
               ::testing::HasSubstr("must evaluate to bool"));
 }
@@ -301,11 +301,11 @@ TEST_F(CelParserTest, CelStringExtractorEquals) {
   auto different_header = make("x-bar", "a");
   auto different_default = make("x-foo", "b");
   auto no_default = make("x-foo", std::nullopt);
-  ASSERT_NE(extractor, nullptr);
-  ASSERT_NE(extractor_copy, nullptr);
-  ASSERT_NE(different_header, nullptr);
-  ASSERT_NE(different_default, nullptr);
-  ASSERT_NE(no_default, nullptr);
+  ASSERT_TRUE(extractor.has_value());
+  ASSERT_TRUE(extractor_copy.has_value());
+  ASSERT_TRUE(different_header.has_value());
+  ASSERT_TRUE(different_default.has_value());
+  ASSERT_TRUE(no_default.has_value());
   EXPECT_EQ(*extractor, *extractor_copy);
   EXPECT_NE(*extractor, *different_header);
   EXPECT_NE(*extractor, *different_default);

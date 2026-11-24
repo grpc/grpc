@@ -21,6 +21,7 @@
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "src/core/xds/grpc/xds_matcher_context.h"
+#include "xds/type/matcher/v3/http_inputs.upb.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 

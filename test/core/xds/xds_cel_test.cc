@@ -16,27 +16,25 @@
 
 #include "src/core/xds/grpc/xds_cel.h"
 
-#include <cstdint>
 #include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "cel-c/activation.h"
+#include "cel-c/status.h"
 #include "cel-c/string_view_absl.h"
 #include "cel-c/value.h"
 #include "cel/expr/checked.upb.h"
 #include "cel/expr/syntax.upb.h"
 #include "test/core/xds/cel_expr_builder.h"
 #include "upb/mem/arena.hpp"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 
 namespace grpc_core {
 namespace testing {
@@ -44,8 +42,12 @@ namespace {
 
 using ResultType = CelProgram::ResultType;
 
+//
+// MapResolver
+//
+
 // Variable resolver backed by a map of names to values.
-class MapResolver : public cel_VariableResolver {
+class MapResolver final : public cel_VariableResolver {
  public:
   MapResolver() { vtable = &kVTable; }
 
@@ -62,12 +64,20 @@ class MapResolver : public cel_VariableResolver {
     bindings_[std::string(name)] = v;
   }
 
+  // Makes resolving name fail.
+  void SetError(absl::string_view name) { errors_.insert(std::string(name)); }
+
  private:
   static cel_Trilean Find(const cel_VariableResolver* resolver,
                           cel_StringView name, cel_Value* value,
-                          cel_Arena* /*arena*/, cel_Status* /*status*/) {
+                          cel_Arena* /*arena*/, cel_Status* status) {
     const auto* self = static_cast<const MapResolver*>(resolver);
-    auto it = self->bindings_.find(std::string(cel_StringView_ToAbsl(name)));
+    std::string key(cel_StringView_ToAbsl(name));
+    if (self->errors_.count(key) > 0) {
+      cel_InternalStatus(status, cel_StringView_FromAbsl("resolver error"));
+      return cel_Trilean_kError;
+    }
+    auto it = self->bindings_.find(key);
     if (it == self->bindings_.end()) return cel_Trilean_kFalse;
     *value = it->second;
     return cel_Trilean_kTrue;
@@ -77,7 +87,12 @@ class MapResolver : public cel_VariableResolver {
 
   std::map<std::string, cel_Value> bindings_;
   std::vector<std::unique_ptr<std::string>> strings_;
+  std::set<std::string> errors_;
 };
+
+//
+// CelProgramTest fixture
+//
 
 class CelProgramTest : public ::testing::Test {
  protected:
@@ -85,9 +100,9 @@ class CelProgramTest : public ::testing::Test {
   cel_expr_CheckedExpr* NewMatchesExpr(absl::string_view pattern) {
     cel_expr_Expr* root;
     auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
-    auto [target, arg] = builder_.SetReceiverCall(root, "matches");
-    builder_.SetIdent(target, "request");
-    builder_.SetStringConst(arg, pattern);
+    auto exprs = builder_.SetReceiverCall(root, "matches", 1);
+    builder_.SetIdent(exprs[0], "request");
+    builder_.SetStringConst(exprs[1], pattern);
     return checked;
   }
 
@@ -107,110 +122,52 @@ class CelProgramTest : public ::testing::Test {
     return checked;
   }
 
-  // Makes expr a receiver-style call target.function(args...), returning
-  // the target followed by the args.
-  std::vector<cel_expr_Expr*> SetReceiverCall(cel_expr_Expr* expr,
-                                              absl::string_view function,
-                                              int num_args) {
-    cel_expr_Expr_Call* call =
-        cel_expr_Expr_mutable_call_expr(expr, arena_.ptr());
-    cel_expr_Expr_Call_set_function(call, cel_StringView_FromAbsl(function));
-    std::vector<cel_expr_Expr*> exprs = {builder_.NewExpr(
-        cel_expr_Expr_Call_mutable_target(call, arena_.ptr()))};
-    for (int i = 0; i < num_args; ++i) {
-      exprs.push_back(
-          builder_.NewExpr(cel_expr_Expr_Call_add_args(call, arena_.ptr())));
-    }
-    return exprs;
+  // Builds the string expression `request`, typed dyn.
+  cel_expr_CheckedExpr* NewDynRequestExpr() {
+    cel_expr_Expr* root;
+    auto* checked = builder_.NewDynCheckedExpr(&root);
+    builder_.SetIdent(root, "request");
+    return checked;
   }
 
-  // Makes expr a list literal of string constants.
-  void SetStringList(cel_expr_Expr* expr,
-                     const std::vector<absl::string_view>& elements) {
-    cel_expr_Expr_CreateList* list =
-        cel_expr_Expr_mutable_list_expr(expr, arena_.ptr());
-    for (absl::string_view element : elements) {
-      builder_.SetStringConst(
-          builder_.NewExpr(
-              cel_expr_Expr_CreateList_add_elements(list, arena_.ptr())),
-          element);
-    }
-  }
-
-  struct MapEntry {
-    absl::string_view key;
-    absl::string_view value;
-  };
-
-  // Makes expr a map literal {key: value, ...} of string constants.
-  void SetStringMap(cel_expr_Expr* expr, const std::vector<MapEntry>& entries) {
-    cel_expr_Expr_CreateStruct* map =
-        cel_expr_Expr_mutable_struct_expr(expr, arena_.ptr());
-    for (const MapEntry& map_entry : entries) {
-      cel_expr_Expr_CreateStruct_Entry* entry =
-          cel_expr_Expr_CreateStruct_add_entries(map, arena_.ptr());
-      cel_expr_Expr_CreateStruct_Entry_set_id(entry, next_entry_id_++);
-      builder_.SetStringConst(
-          builder_.NewExpr(cel_expr_Expr_CreateStruct_Entry_mutable_map_key(
-              entry, arena_.ptr())),
-          map_entry.key);
-      builder_.SetStringConst(
-          builder_.NewExpr(cel_expr_Expr_CreateStruct_Entry_mutable_value(
-              entry, arena_.ptr())),
-          map_entry.value);
-    }
-  }
-
-  // Compiles and evaluates a bool expression built by build(root).
-  std::optional<bool> EvaluateBoolExpr(
-      absl::FunctionRef<void(cel_expr_Expr*)> build) {
+  // Builds `request in <container>`, returning the container expr.
+  cel_expr_CheckedExpr* NewInExpr(cel_expr_Expr** container) {
     cel_expr_Expr* root;
     auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
-    build(root);
-    auto program = Compile(checked, ResultType::kBool);
-    if (program == nullptr) return std::nullopt;
-    return program->EvaluateBool(resolver_);
+    auto args = builder_.SetCall(root, "@in", 2);
+    builder_.SetIdent(args[0], "request");
+    *container = args[1];
+    return checked;
   }
 
-  // Builds `<call> == expected`, where <call> is built by build_call().
-  std::optional<bool> EvaluateIntEquals(
-      absl::FunctionRef<void(cel_expr_Expr*)> build_call, int64_t expected) {
-    return EvaluateBoolExpr([&](cel_expr_Expr* root) {
-      auto args = builder_.SetCall(root, "_==_", 2);
-      build_call(args[0]);
-      builder_.SetIntConst(args[1], expected);
-    });
+  // Makes expr a map literal with a single entry.
+  void SetSingleEntryMap(cel_expr_Expr* expr, cel_expr_Expr** key,
+                         cel_expr_Expr** value) {
+    cel_expr_Expr_CreateStruct_Entry* entry =
+        cel_expr_Expr_CreateStruct_add_entries(
+            cel_expr_Expr_mutable_struct_expr(expr, arena_.ptr()),
+            arena_.ptr());
+    *key = builder_.NewExpr(
+        cel_expr_Expr_CreateStruct_Entry_mutable_map_key(entry, arena_.ptr()));
+    *value = builder_.NewExpr(
+        cel_expr_Expr_CreateStruct_Entry_mutable_value(entry, arena_.ptr()));
   }
 
-  // Makes expr `timestamp(value)`.
-  void SetTimestamp(cel_expr_Expr* expr, absl::string_view value) {
-    builder_.SetStringConst(builder_.SetCall(expr, "timestamp", 1)[0], value);
-  }
-
-  std::unique_ptr<CelProgram> Compile(const cel_expr_CheckedExpr* checked,
-                                      ResultType result_type) {
+  std::optional<CelProgram> Compile(const cel_expr_CheckedExpr* checked,
+                                    ResultType result_type) {
     auto program = CelProgram::Create(checked, result_type);
     EXPECT_TRUE(program.ok()) << program.status();
-    return program.ok() ? std::move(*program) : nullptr;
-  }
-
-  void ExpectInvalid(const cel_expr_CheckedExpr* checked,
-                     ResultType result_type, absl::string_view message) {
-    auto program = CelProgram::Create(checked, result_type);
-    EXPECT_EQ(program.status().code(), absl::StatusCode::kInvalidArgument)
-        << program.status();
-    EXPECT_THAT(program.status().message(), ::testing::HasSubstr(message));
+    if (!program.ok()) return std::nullopt;
+    return std::move(*program);
   }
 
   upb::Arena arena_;
   CelExprBuilder builder_{arena_.ptr()};
   MapResolver resolver_;
-  // Map entry ids, kept well clear of the expr ids assigned by builder_.
-  int64_t next_entry_id_ = 1000000;
 };
 
 //
-// Compilation and evaluation
+// Evaluation
 //
 
 TEST_F(CelProgramTest, BoolConstant) {
@@ -218,9 +175,16 @@ TEST_F(CelProgramTest, BoolConstant) {
   auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
   builder_.SetBoolConst(root, true);
   auto program = Compile(checked, ResultType::kBool);
-  ASSERT_NE(program, nullptr);
+  ASSERT_TRUE(program.has_value());
   EXPECT_EQ(program->EvaluateBool(resolver_), true);
-  // Wrong result type.
+}
+
+TEST_F(CelProgramTest, EvaluateStringOnBoolResultReturnsNullopt) {
+  cel_expr_Expr* root;
+  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
+  builder_.SetBoolConst(root, true);
+  auto program = Compile(checked, ResultType::kBool);
+  ASSERT_TRUE(program.has_value());
   EXPECT_EQ(program->EvaluateString(resolver_), std::nullopt);
 }
 
@@ -229,9 +193,16 @@ TEST_F(CelProgramTest, StringConstant) {
   auto* checked = builder_.NewCheckedExpr(&root, ResultType::kString);
   builder_.SetStringConst(root, "foo");
   auto program = Compile(checked, ResultType::kString);
-  ASSERT_NE(program, nullptr);
+  ASSERT_TRUE(program.has_value());
   EXPECT_EQ(program->EvaluateString(resolver_), "foo");
-  // Wrong result type.
+}
+
+TEST_F(CelProgramTest, EvaluateBoolOnStringResultReturnsNullopt) {
+  cel_expr_Expr* root;
+  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kString);
+  builder_.SetStringConst(root, "foo");
+  auto program = Compile(checked, ResultType::kString);
+  ASSERT_TRUE(program.has_value());
   EXPECT_EQ(program->EvaluateBool(resolver_), std::nullopt);
 }
 
@@ -240,66 +211,56 @@ TEST_F(CelProgramTest, IdentResolvedFromResolver) {
   auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
   builder_.SetIdent(root, "request");
   auto program = Compile(checked, ResultType::kBool);
-  ASSERT_NE(program, nullptr);
+  ASSERT_TRUE(program.has_value());
   resolver_.SetBool("request", true);
   EXPECT_EQ(program->EvaluateBool(resolver_), true);
   resolver_.SetBool("request", false);
   EXPECT_EQ(program->EvaluateBool(resolver_), false);
 }
 
+// The result is a CEL error value.
 TEST_F(CelProgramTest, UnresolvedIdentFailsEvaluation) {
   cel_expr_Expr* root;
   auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
   builder_.SetIdent(root, "request");
   auto program = Compile(checked, ResultType::kBool);
-  ASSERT_NE(program, nullptr);
+  ASSERT_TRUE(program.has_value());
   EXPECT_EQ(program->EvaluateBool(resolver_), std::nullopt);
 }
 
-TEST_F(CelProgramTest, StringEquality) {
+// Execution itself fails.
+TEST_F(CelProgramTest, ResolverErrorFailsEvaluation) {
   cel_expr_Expr* root;
   auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
-  auto args = builder_.SetCall(root, "_==_", 2);
-  builder_.SetIdent(args[0], "request");
-  builder_.SetStringConst(args[1], "bar");
+  builder_.SetIdent(root, "request");
   auto program = Compile(checked, ResultType::kBool);
-  ASSERT_NE(program, nullptr);
-  resolver_.SetString("request", "bar");
-  EXPECT_EQ(program->EvaluateBool(resolver_), true);
-  resolver_.SetString("request", "baz");
-  EXPECT_EQ(program->EvaluateBool(resolver_), false);
-}
-
-TEST_F(CelProgramTest, StartsWith) {
-  cel_expr_Expr* root;
-  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
-  auto [target, arg] = builder_.SetReceiverCall(root, "startsWith");
-  builder_.SetIdent(target, "request");
-  builder_.SetStringConst(arg, "ba");
-  auto program = Compile(checked, ResultType::kBool);
-  ASSERT_NE(program, nullptr);
-  resolver_.SetString("request", "bar");
-  EXPECT_EQ(program->EvaluateBool(resolver_), true);
-  resolver_.SetString("request", "foo");
-  EXPECT_EQ(program->EvaluateBool(resolver_), false);
-}
-
-TEST_F(CelProgramTest, Matches) {
-  auto program = Compile(NewMatchesExpr("^ba+r$"), ResultType::kBool);
-  ASSERT_NE(program, nullptr);
-  resolver_.SetString("request", "baaar");
-  EXPECT_EQ(program->EvaluateBool(resolver_), true);
-  resolver_.SetString("request", "foo");
-  EXPECT_EQ(program->EvaluateBool(resolver_), false);
+  ASSERT_TRUE(program.has_value());
+  resolver_.SetError("request");
+  EXPECT_EQ(program->EvaluateBool(resolver_), std::nullopt);
 }
 
 TEST_F(CelProgramTest, IntAddition) {
   auto program = Compile(NewAddExpr("add_int64"), ResultType::kBool);
-  ASSERT_NE(program, nullptr);
+  ASSERT_TRUE(program.has_value());
   EXPECT_EQ(program->EvaluateBool(resolver_), true);
 }
 
-TEST_F(CelProgramTest, Equality) {
+//
+// Equality and ToString
+//
+
+TEST_F(CelProgramTest, SameExpressionComparesEqual) {
+  cel_expr_Expr* root;
+  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kString);
+  builder_.SetStringConst(root, "foo");
+  auto program = Compile(checked, ResultType::kString);
+  auto program_copy = Compile(checked, ResultType::kString);
+  ASSERT_TRUE(program.has_value());
+  ASSERT_TRUE(program_copy.has_value());
+  EXPECT_EQ(*program, *program_copy);
+}
+
+TEST_F(CelProgramTest, DifferentExpressionsCompareNotEqual) {
   cel_expr_Expr* root1;
   auto* checked1 = builder_.NewCheckedExpr(&root1, ResultType::kString);
   builder_.SetStringConst(root1, "foo");
@@ -307,13 +268,33 @@ TEST_F(CelProgramTest, Equality) {
   auto* checked2 = builder_.NewCheckedExpr(&root2, ResultType::kString);
   builder_.SetStringConst(root2, "bar");
   auto program1 = Compile(checked1, ResultType::kString);
-  auto program1_copy = Compile(checked1, ResultType::kString);
   auto program2 = Compile(checked2, ResultType::kString);
-  ASSERT_NE(program1, nullptr);
-  ASSERT_NE(program1_copy, nullptr);
-  ASSERT_NE(program2, nullptr);
-  EXPECT_EQ(*program1, *program1_copy);
+  ASSERT_TRUE(program1.has_value());
+  ASSERT_TRUE(program2.has_value());
   EXPECT_NE(*program1, *program2);
+}
+
+TEST_F(CelProgramTest, ExpressionsDifferingOnlyInSourceInfoCompareEqual) {
+  cel_expr_Expr* root;
+  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kString);
+  builder_.SetStringConst(root, "foo");
+  auto program = Compile(checked, ResultType::kString);
+  cel_expr_SourceInfo_positions_set(
+      cel_expr_CheckedExpr_mutable_source_info(checked, arena_.ptr()),
+      cel_expr_Expr_id(root), /*val=*/5, arena_.ptr());
+  auto program_with_source_info = Compile(checked, ResultType::kString);
+  ASSERT_TRUE(program.has_value());
+  ASSERT_TRUE(program_with_source_info.has_value());
+  EXPECT_EQ(*program, *program_with_source_info);
+}
+
+TEST_F(CelProgramTest, ToString) {
+  cel_expr_Expr* root;
+  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
+  builder_.SetBoolConst(root, true);
+  auto program = Compile(checked, ResultType::kBool);
+  ASSERT_TRUE(program.has_value());
+  EXPECT_EQ(program->ToString(), "CelProgram{checked_expr_size=16}");
 }
 
 //
@@ -321,78 +302,182 @@ TEST_F(CelProgramTest, Equality) {
 //
 
 TEST_F(CelProgramTest, NullExpression) {
-  ExpectInvalid(nullptr, ResultType::kBool, "CEL expression not set");
+  EXPECT_EQ(CelProgram::Create(nullptr, ResultType::kBool).status(),
+            absl::InvalidArgumentError("CEL CheckedExpr not set"));
 }
 
 TEST_F(CelProgramTest, EmptyExpression) {
-  ExpectInvalid(cel_expr_CheckedExpr_new(arena_.ptr()), ResultType::kBool,
-                "CEL expression not set");
+  EXPECT_EQ(CelProgram::Create(cel_expr_CheckedExpr_new(arena_.ptr()),
+                               ResultType::kBool)
+                .status(),
+            absl::InvalidArgumentError("CEL CheckedExpr has no expr"));
 }
 
 TEST_F(CelProgramTest, MissingResultType) {
   cel_expr_Expr* root;
   auto* checked = builder_.NewCheckedExpr(&root);
   builder_.SetBoolConst(root, true);
-  ExpectInvalid(checked, ResultType::kBool, "no type for its result");
+  EXPECT_EQ(
+      CelProgram::Create(checked, ResultType::kBool).status(),
+      absl::InvalidArgumentError("CEL expression has no type for its result"));
 }
 
-TEST_F(CelProgramTest, WrongResultType) {
+TEST_F(CelProgramTest, StringResultRejectedForBool) {
   cel_expr_Expr* root;
   auto* checked = builder_.NewCheckedExpr(&root, ResultType::kString);
   builder_.SetStringConst(root, "foo");
-  ExpectInvalid(checked, ResultType::kBool, "must evaluate to bool");
-  cel_expr_Expr* root2;
-  auto* checked2 = builder_.NewCheckedExpr(&root2, ResultType::kBool);
-  builder_.SetBoolConst(root2, true);
-  ExpectInvalid(checked2, ResultType::kString, "must evaluate to string");
+  EXPECT_EQ(CelProgram::Create(checked, ResultType::kBool).status(),
+            absl::InvalidArgumentError("CEL expression must evaluate to bool"));
+}
+
+TEST_F(CelProgramTest, BoolResultRejectedForString) {
+  cel_expr_Expr* root;
+  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
+  builder_.SetBoolConst(root, true);
+  EXPECT_EQ(
+      CelProgram::Create(checked, ResultType::kString).status(),
+      absl::InvalidArgumentError("CEL expression must evaluate to string"));
 }
 
 TEST_F(CelProgramTest, UnsupportedVariable) {
   cel_expr_Expr* root;
   auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
+  builder_.SetIdent(root, "response");
+  EXPECT_EQ(
+      CelProgram::Create(checked, ResultType::kBool).status(),
+      absl::InvalidArgumentError("CEL variable \"response\" is not supported"));
+}
+
+// The following tests check that each kind of sub-expression is validated.
+
+TEST_F(CelProgramTest, UnsupportedVariableInSelectOperand) {
+  // response.foo
+  cel_expr_Expr* root;
+  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
+  cel_expr_Expr_Select* select =
+      cel_expr_Expr_mutable_select_expr(root, arena_.ptr());
+  cel_expr_Expr_Select_set_field(select, cel_StringView_FromAbsl("foo"));
+  builder_.SetIdent(builder_.NewExpr(cel_expr_Expr_Select_mutable_operand(
+                        select, arena_.ptr())),
+                    "response");
+  EXPECT_EQ(
+      CelProgram::Create(checked, ResultType::kBool).status(),
+      absl::InvalidArgumentError("CEL variable \"response\" is not supported"));
+}
+
+TEST_F(CelProgramTest, UnsupportedVariableInCallTarget) {
+  // response.startsWith('a')
+  cel_expr_Expr* root;
+  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
+  auto exprs = builder_.SetReceiverCall(root, "startsWith", 1);
+  builder_.SetIdent(exprs[0], "response");
+  builder_.SetStringConst(exprs[1], "a");
+  EXPECT_EQ(
+      CelProgram::Create(checked, ResultType::kBool).status(),
+      absl::InvalidArgumentError("CEL variable \"response\" is not supported"));
+}
+
+TEST_F(CelProgramTest, UnsupportedVariableInCallArg) {
+  // response == 'a'
+  cel_expr_Expr* root;
+  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
   auto args = builder_.SetCall(root, "_==_", 2);
   builder_.SetIdent(args[0], "response");
-  builder_.SetStringConst(args[1], "foo");
-  ExpectInvalid(checked, ResultType::kBool,
-                "CEL variable \"response\" is not supported");
+  builder_.SetStringConst(args[1], "a");
+  EXPECT_EQ(
+      CelProgram::Create(checked, ResultType::kBool).status(),
+      absl::InvalidArgumentError("CEL variable \"response\" is not supported"));
+}
+
+TEST_F(CelProgramTest, UnsupportedVariableInListElement) {
+  // request in [response]
+  cel_expr_Expr* list;
+  auto* checked = NewInExpr(&list);
+  builder_.SetIdent(
+      builder_.NewExpr(cel_expr_Expr_CreateList_add_elements(
+          cel_expr_Expr_mutable_list_expr(list, arena_.ptr()), arena_.ptr())),
+      "response");
+  EXPECT_EQ(
+      CelProgram::Create(checked, ResultType::kBool).status(),
+      absl::InvalidArgumentError("CEL variable \"response\" is not supported"));
+}
+
+TEST_F(CelProgramTest, UnsupportedVariableInMapKey) {
+  // request in {response: 'v'}
+  cel_expr_Expr* map;
+  auto* checked = NewInExpr(&map);
+  cel_expr_Expr* key;
+  cel_expr_Expr* value;
+  SetSingleEntryMap(map, &key, &value);
+  builder_.SetIdent(key, "response");
+  builder_.SetStringConst(value, "v");
+  EXPECT_EQ(
+      CelProgram::Create(checked, ResultType::kBool).status(),
+      absl::InvalidArgumentError("CEL variable \"response\" is not supported"));
+}
+
+TEST_F(CelProgramTest, UnsupportedVariableInMapValue) {
+  // request in {'k': response}
+  cel_expr_Expr* map;
+  auto* checked = NewInExpr(&map);
+  cel_expr_Expr* key;
+  cel_expr_Expr* value;
+  SetSingleEntryMap(map, &key, &value);
+  builder_.SetStringConst(key, "k");
+  builder_.SetIdent(value, "response");
+  EXPECT_EQ(
+      CelProgram::Create(checked, ResultType::kBool).status(),
+      absl::InvalidArgumentError("CEL variable \"response\" is not supported"));
 }
 
 TEST_F(CelProgramTest, Comprehension) {
   cel_expr_Expr* root;
   auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
   cel_expr_Expr_mutable_comprehension_expr(root, arena_.ptr());
-  ExpectInvalid(checked, ResultType::kBool, "comprehensions");
-}
-
-TEST_F(CelProgramTest, NestedComprehension) {
-  cel_expr_Expr* root;
-  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
-  auto args = builder_.SetCall(root, "_&&_", 2);
-  builder_.SetBoolConst(args[0], true);
-  cel_expr_Expr* list = cel_expr_Expr_CreateList_add_elements(
-      cel_expr_Expr_mutable_list_expr(args[1], arena_.ptr()), arena_.ptr());
-  cel_expr_Expr_mutable_comprehension_expr(builder_.NewExpr(list),
-                                           arena_.ptr());
-  ExpectInvalid(checked, ResultType::kBool, "comprehensions");
+  EXPECT_EQ(CelProgram::Create(checked, ResultType::kBool).status(),
+            absl::InvalidArgumentError("CEL comprehensions are not supported"));
 }
 
 TEST_F(CelProgramTest, StringConversion) {
   cel_expr_Expr* root;
   auto* checked = builder_.NewCheckedExpr(&root, ResultType::kString);
   builder_.SetIdent(builder_.SetCall(root, "string", 1)[0], "request");
-  ExpectInvalid(checked, ResultType::kString, "string() conversions");
+  EXPECT_EQ(
+      CelProgram::Create(checked, ResultType::kString).status(),
+      absl::InvalidArgumentError("CEL string() conversions are not supported"));
 }
 
 TEST_F(CelProgramTest, StringConcatenation) {
-  ExpectInvalid(NewAddExpr("add_string"), ResultType::kBool, "concatenation");
+  EXPECT_EQ(
+      CelProgram::Create(NewAddExpr("add_string"), ResultType::kBool).status(),
+      absl::InvalidArgumentError(
+          "CEL + overload \"add_string\" is not supported"));
+}
+
+TEST_F(CelProgramTest, BytesConcatenation) {
+  EXPECT_EQ(
+      CelProgram::Create(NewAddExpr("add_bytes"), ResultType::kBool).status(),
+      absl::InvalidArgumentError(
+          "CEL + overload \"add_bytes\" is not supported"));
 }
 
 TEST_F(CelProgramTest, ListConcatenation) {
-  ExpectInvalid(NewAddExpr("add_list"), ResultType::kBool, "concatenation");
+  EXPECT_EQ(
+      CelProgram::Create(NewAddExpr("add_list"), ResultType::kBool).status(),
+      absl::InvalidArgumentError(
+          "CEL + overload \"add_list\" is not supported"));
+}
+
+TEST_F(CelProgramTest, UnknownAddOverload) {
+  EXPECT_EQ(
+      CelProgram::Create(NewAddExpr("add_unknown"), ResultType::kBool).status(),
+      absl::InvalidArgumentError(
+          "CEL + overload \"add_unknown\" is not supported"));
 }
 
 TEST_F(CelProgramTest, AdditionWithoutOverload) {
-  ExpectInvalid(NewAddExpr(""), ResultType::kBool, "no overload for +");
+  EXPECT_EQ(CelProgram::Create(NewAddExpr(""), ResultType::kBool).status(),
+            absl::InvalidArgumentError("CEL expression has no overload for +"));
 }
 
 TEST_F(CelProgramTest, NonConstantRegex) {
@@ -402,17 +487,113 @@ TEST_F(CelProgramTest, NonConstantRegex) {
   auto args = builder_.SetCall(root, "matches", 2);
   builder_.SetIdent(args[0], "request");
   builder_.SetIdent(args[1], "request");
-  ExpectInvalid(checked, ResultType::kBool, "must be a constant string");
+  EXPECT_EQ(CelProgram::Create(checked, ResultType::kBool).status(),
+            absl::InvalidArgumentError(
+                "CEL matches() pattern must be a constant string"));
 }
 
 TEST_F(CelProgramTest, InvalidRegex) {
-  ExpectInvalid(NewMatchesExpr("(unclosed"), ResultType::kBool,
-                "pattern is invalid");
+  EXPECT_EQ(CelProgram::Create(NewMatchesExpr("(unclosed"), ResultType::kBool)
+                .status(),
+            absl::InvalidArgumentError(
+                "CEL matches() pattern is invalid: missing ): (unclosed"));
+}
+
+TEST_F(CelProgramTest, RegexAtProgramSizeLimit) {
+  EXPECT_TRUE(Compile(NewMatchesExpr("a{96}"), ResultType::kBool).has_value());
 }
 
 TEST_F(CelProgramTest, RegexTooLarge) {
-  ExpectInvalid(NewMatchesExpr("a{200}"), ResultType::kBool,
-                "exceeds the limit of 100");
+  EXPECT_EQ(
+      CelProgram::Create(NewMatchesExpr("a{97}"), ResultType::kBool).status(),
+      absl::InvalidArgumentError(
+          "CEL matches() pattern program size 101 exceeds the limit of "
+          "100"));
+}
+
+// matches() with no pattern isn't validated (so that there is no
+// out-of-bounds access), but fails to compile.
+TEST_F(CelProgramTest, MatchesWithoutPattern) {
+  cel_expr_Expr* root;
+  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
+  builder_.SetIdent(builder_.SetReceiverCall(root, "matches", 0)[0], "request");
+  EXPECT_EQ(CelProgram::Create(checked, ResultType::kBool).status(),
+            absl::InvalidArgumentError(
+                "failed to compile CEL expression: INVALID_ARGUMENT: cel: "
+                "function with name matches taking 1 args not found"));
+}
+
+TEST_F(CelProgramTest, ExpressionAtMaxDepth) {
+  // 31 nested `!` calls around `true` -> AST depth 32.
+  cel_expr_Expr* expr;
+  auto* checked = builder_.NewCheckedExpr(&expr, ResultType::kBool);
+  for (int i = 0; i < 31; ++i) expr = builder_.SetCall(expr, "!_", 1)[0];
+  builder_.SetBoolConst(expr, true);
+  auto program = Compile(checked, ResultType::kBool);
+  ASSERT_TRUE(program.has_value());
+  EXPECT_EQ(program->EvaluateBool(resolver_), false);
+}
+
+TEST_F(CelProgramTest, ExpressionExceedsMaxDepth) {
+  // 32 nested `!` calls around `true` -> AST depth 33.
+  cel_expr_Expr* expr;
+  auto* checked = builder_.NewCheckedExpr(&expr, ResultType::kBool);
+  for (int i = 0; i < 32; ++i) expr = builder_.SetCall(expr, "!_", 1)[0];
+  builder_.SetBoolConst(expr, true);
+  EXPECT_EQ(
+      CelProgram::Create(checked, ResultType::kBool).status(),
+      absl::InvalidArgumentError("CEL expression exceeds max depth of 32"));
+}
+
+TEST_F(CelProgramTest, InvalidExprIdFailsConversion) {
+  cel_expr_Expr* root;
+  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
+  auto args = builder_.SetCall(root, "_==_", 2);
+  builder_.SetIntConst(args[0], 1);
+  builder_.SetIntConst(args[1], 1);
+  cel_expr_Expr_set_id(args[1], -1);
+  EXPECT_EQ(CelProgram::Create(checked, ResultType::kBool).status(),
+            absl::InvalidArgumentError(
+                "failed to convert CEL expression: INVALID_ARGUMENT: cel: "
+                "expected google.api.expr.Expr.id to be greater than or equal "
+                "to 0: -1"));
+}
+
+TEST_F(CelProgramTest, UnknownFunctionFailsCompilation) {
+  cel_expr_Expr* root;
+  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
+  builder_.SetIdent(builder_.SetCall(root, "my_custom_func", 1)[0], "request");
+  EXPECT_EQ(CelProgram::Create(checked, ResultType::kBool).status(),
+            absl::InvalidArgumentError(
+                "failed to compile CEL expression: INVALID_ARGUMENT: cel: "
+                "function with name my_custom_func taking 1 args not found"));
+}
+
+// The following tests check that validation skips missing sub-expressions,
+// leaving them to be rejected by cel-c.
+
+TEST_F(CelProgramTest, SelectWithoutOperand) {
+  cel_expr_Expr* root;
+  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
+  cel_expr_Expr_Select_set_field(
+      cel_expr_Expr_mutable_select_expr(root, arena_.ptr()),
+      cel_StringView_FromAbsl("foo"));
+  EXPECT_EQ(CelProgram::Create(checked, ResultType::kBool).status(),
+            absl::InvalidArgumentError(
+                "failed to compile CEL expression: INVALID_ARGUMENT: cel: "
+                "select expr AST node is missing operand: id=1"));
+}
+
+TEST_F(CelProgramTest, MapEntryWithoutKeyOrValue) {
+  cel_expr_Expr* map;
+  auto* checked = NewInExpr(&map);
+  cel_expr_Expr_CreateStruct_add_entries(
+      cel_expr_Expr_mutable_struct_expr(map, arena_.ptr()), arena_.ptr());
+  EXPECT_EQ(CelProgram::Create(checked, ResultType::kBool).status(),
+            absl::InvalidArgumentError(
+                "failed to convert CEL expression: INVALID_ARGUMENT: cel: "
+                "expected google.api.expr.Expr.CreateStruct.Entry.key_kind to "
+                "be map_key: 0"));
 }
 
 //
@@ -420,223 +601,89 @@ TEST_F(CelProgramTest, RegexTooLarge) {
 //
 
 TEST_F(CelProgramTest, DynResultAcceptedForString) {
-  cel_expr_Expr* root;
-  auto* checked = builder_.NewDynCheckedExpr(&root);
-  builder_.SetIdent(root, "request");
-  auto program = Compile(checked, ResultType::kString);
-  ASSERT_NE(program, nullptr);
+  auto program = Compile(NewDynRequestExpr(), ResultType::kString);
+  ASSERT_TRUE(program.has_value());
   resolver_.SetString("request", "foo");
   EXPECT_EQ(program->EvaluateString(resolver_), "foo");
-  // A non-string value at runtime is not a result.
+}
+
+TEST_F(CelProgramTest, DynResultWithNonStringValueReturnsNullopt) {
+  auto program = Compile(NewDynRequestExpr(), ResultType::kString);
+  ASSERT_TRUE(program.has_value());
   resolver_.SetBool("request", true);
   EXPECT_EQ(program->EvaluateString(resolver_), std::nullopt);
-  // ...so CelStringExtractor falls back to its default.
-  CelStringExtractor extractor(std::move(program), "default");
-  EXPECT_EQ(extractor.Extract(resolver_), "default");
 }
 
 TEST_F(CelProgramTest, DynResultRejectedForBool) {
-  cel_expr_Expr* root;
-  auto* checked = builder_.NewDynCheckedExpr(&root);
-  builder_.SetIdent(root, "request");
-  ExpectInvalid(checked, ResultType::kBool, "must evaluate to bool");
+  EXPECT_EQ(CelProgram::Create(NewDynRequestExpr(), ResultType::kBool).status(),
+            absl::InvalidArgumentError("CEL expression must evaluate to bool"));
 }
 
 //
-// Functions
+// CelStringExtractor
 //
 
-TEST_F(CelProgramTest, UnknownFunction) {
-  cel_expr_Expr* root;
-  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
-  builder_.SetIdent(builder_.SetCall(root, "my_custom_func", 1)[0], "request");
-  ExpectInvalid(checked, ResultType::kBool, "failed to compile");
+TEST_F(CelProgramTest, StringExtractorReturnsResult) {
+  auto program = Compile(NewDynRequestExpr(), ResultType::kString);
+  ASSERT_TRUE(program.has_value());
+  CelStringExtractor extractor(std::move(*program), "default");
+  resolver_.SetString("request", "foo");
+  EXPECT_EQ(extractor.Extract(resolver_), "foo");
 }
 
-TEST_F(CelProgramTest, Ternary) {
-  cel_expr_Expr* root;
-  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kString);
-  auto args = builder_.SetCall(root, "_?_:_", 3);
-  builder_.SetIdent(args[0], "request");
-  builder_.SetStringConst(args[1], "yes");
-  builder_.SetStringConst(args[2], "no");
-  auto program = Compile(checked, ResultType::kString);
-  ASSERT_NE(program, nullptr);
+TEST_F(CelProgramTest, StringExtractorFallsBackToDefault) {
+  auto program = Compile(NewDynRequestExpr(), ResultType::kString);
+  ASSERT_TRUE(program.has_value());
+  CelStringExtractor extractor(std::move(*program), "default");
   resolver_.SetBool("request", true);
-  EXPECT_EQ(program->EvaluateString(resolver_), "yes");
-  resolver_.SetBool("request", false);
-  EXPECT_EQ(program->EvaluateString(resolver_), "no");
+  EXPECT_EQ(extractor.Extract(resolver_), "default");
 }
 
-TEST_F(CelProgramTest, SizeOfString) {
-  resolver_.SetString("request", "abc");
-  EXPECT_EQ(EvaluateIntEquals(
-                [&](cel_expr_Expr* call) {
-                  builder_.SetIdent(builder_.SetCall(call, "size", 1)[0],
-                                    "request");
-                },
-                3),
-            true);
+TEST_F(CelProgramTest, StringExtractorWithoutDefaultReturnsNullopt) {
+  auto program = Compile(NewDynRequestExpr(), ResultType::kString);
+  ASSERT_TRUE(program.has_value());
+  CelStringExtractor extractor(std::move(*program), std::nullopt);
+  resolver_.SetBool("request", true);
+  EXPECT_EQ(extractor.Extract(resolver_), std::nullopt);
 }
 
-TEST_F(CelProgramTest, SizeOfList) {
-  // Global style size(['a', 'b']).
-  EXPECT_EQ(EvaluateIntEquals(
-                [&](cel_expr_Expr* call) {
-                  SetStringList(builder_.SetCall(call, "size", 1)[0],
-                                {"a", "b"});
-                },
-                2),
-            true);
-  // Receiver style ['a', 'b', 'c'].size().
-  EXPECT_EQ(EvaluateIntEquals(
-                [&](cel_expr_Expr* call) {
-                  SetStringList(SetReceiverCall(call, "size", 0)[0],
-                                {"a", "b", "c"});
-                },
-                3),
-            true);
+TEST_F(CelProgramTest, StringExtractorsWithSameProgramAndDefaultAreEqual) {
+  const auto* checked = NewDynRequestExpr();
+  auto program1 = Compile(checked, ResultType::kString);
+  auto program2 = Compile(checked, ResultType::kString);
+  ASSERT_TRUE(program1.has_value());
+  ASSERT_TRUE(program2.has_value());
+  CelStringExtractor extractor1(std::move(*program1), "default");
+  CelStringExtractor extractor2(std::move(*program2), "default");
+  EXPECT_EQ(extractor1, extractor2);
 }
 
-TEST_F(CelProgramTest, SizeOfMap) {
-  EXPECT_EQ(EvaluateIntEquals(
-                [&](cel_expr_Expr* call) {
-                  SetStringMap(builder_.SetCall(call, "size", 1)[0],
-                               {{"k1", "v"}, {"k2", "v"}});
-                },
-                2),
-            true);
+TEST_F(CelProgramTest, StringExtractorsWithDifferentDefaultsAreNotEqual) {
+  const auto* checked = NewDynRequestExpr();
+  auto program1 = Compile(checked, ResultType::kString);
+  auto program2 = Compile(checked, ResultType::kString);
+  ASSERT_TRUE(program1.has_value());
+  ASSERT_TRUE(program2.has_value());
+  CelStringExtractor extractor1(std::move(*program1), "default");
+  CelStringExtractor extractor2(std::move(*program2), "other");
+  EXPECT_NE(extractor1, extractor2);
 }
 
-//
-// Timestamps and durations
-//
-
-TEST_F(CelProgramTest, TimestampComparison) {
-  EXPECT_EQ(EvaluateBoolExpr([&](cel_expr_Expr* root) {
-              auto args = builder_.SetCall(root, "_<_", 2);
-              SetTimestamp(args[0], "2025-01-01T00:00:00Z");
-              SetTimestamp(args[1], "2026-01-01T00:00:00Z");
-            }),
-            true);
+TEST_F(CelProgramTest, StringExtractorToStringWithDefault) {
+  auto program = Compile(NewDynRequestExpr(), ResultType::kString);
+  ASSERT_TRUE(program.has_value());
+  CelStringExtractor extractor(std::move(*program), "default");
+  EXPECT_EQ(extractor.ToString(),
+            "CelStringExtractor{CelProgram{checked_expr_size=23}, "
+            "default_value=default}");
 }
 
-TEST_F(CelProgramTest, InvalidTimestampFailsEvaluation) {
-  EXPECT_EQ(EvaluateBoolExpr([&](cel_expr_Expr* root) {
-              auto args = builder_.SetCall(root, "_<_", 2);
-              SetTimestamp(args[0], "not a timestamp");
-              SetTimestamp(args[1], "2026-01-01T00:00:00Z");
-            }),
-            std::nullopt);
-}
-
-TEST_F(CelProgramTest, TimestampGetters) {
-  auto getter = [&](absl::string_view function,
-                    std::optional<absl::string_view> zone) {
-    return [this, function, zone](cel_expr_Expr* call) {
-      auto exprs = SetReceiverCall(call, function, zone.has_value() ? 1 : 0);
-      SetTimestamp(exprs[0], "2025-12-01T10:20:30.456Z");
-      if (zone.has_value()) builder_.SetStringConst(exprs[1], *zone);
-    };
-  };
-  EXPECT_EQ(EvaluateIntEquals(getter("getHours", std::nullopt), 10), true);
-  EXPECT_EQ(EvaluateIntEquals(getter("getMinutes", std::nullopt), 20), true);
-  EXPECT_EQ(EvaluateIntEquals(getter("getSeconds", std::nullopt), 30), true);
-  EXPECT_EQ(EvaluateIntEquals(getter("getMilliseconds", std::nullopt), 456),
-            true);
-  // UTC offset form.
-  EXPECT_EQ(EvaluateIntEquals(getter("getHours", "+05:30"), 15), true);
-  EXPECT_EQ(EvaluateIntEquals(getter("getMinutes", "+05:30"), 50), true);
-  EXPECT_EQ(EvaluateIntEquals(getter("getHours", "-05:30"), 4), true);
-  // IANA time zone form.  "UTC" is always available.
-  EXPECT_EQ(EvaluateIntEquals(getter("getHours", "UTC"), 10), true);
-  // Other zones need a zoneinfo database, which some platforms (e.g.
-  // Windows) do not have.
-  absl::TimeZone kolkata;
-  if (absl::LoadTimeZone("Asia/Kolkata", &kolkata)) {
-    EXPECT_EQ(EvaluateIntEquals(getter("getHours", "Asia/Kolkata"), 15), true);
-  }
-  // A zone that is neither an IANA name nor an offset is an evaluation
-  // error.
-  EXPECT_EQ(EvaluateIntEquals(getter("getHours", "Not/AZone"), 10),
-            std::nullopt);
-}
-
-TEST_F(CelProgramTest, DurationGetters) {
-  auto getter = [&](absl::string_view function) {
-    return [this, function](cel_expr_Expr* call) {
-      builder_.SetStringConst(
-          builder_.SetCall(SetReceiverCall(call, function, 0)[0], "duration",
-                           1)[0],
-          "3h25m");
-    };
-  };
-  EXPECT_EQ(EvaluateIntEquals(getter("getHours"), 3), true);
-  // Duration getters return the total, not the component.
-  EXPECT_EQ(EvaluateIntEquals(getter("getMinutes"), 205), true);
-}
-
-// The date getters are not implemented by cel-c, so expressions using them
-// are rejected rather than failing at runtime.
-TEST_F(CelProgramTest, UnsupportedTimestampGetter) {
-  cel_expr_Expr* root;
-  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
-  auto eq_args = builder_.SetCall(root, "_==_", 2);
-  SetTimestamp(SetReceiverCall(eq_args[0], "getFullYear", 0)[0],
-               "2025-12-01T10:20:30Z");
-  builder_.SetIntConst(eq_args[1], 2025);
-  ExpectInvalid(checked, ResultType::kBool, "failed to compile");
-}
-
-//
-// List and map equality
-//
-
-TEST_F(CelProgramTest, ListEquality) {
-  auto list_op = [&](absl::string_view op, std::vector<absl::string_view> lhs,
-                     std::vector<absl::string_view> rhs) {
-    return EvaluateBoolExpr([&](cel_expr_Expr* root) {
-      auto args = builder_.SetCall(root, op, 2);
-      SetStringList(args[0], lhs);
-      SetStringList(args[1], rhs);
-    });
-  };
-  EXPECT_EQ(list_op("_==_", {"a", "x"}, {"a", "x"}), true);
-  EXPECT_EQ(list_op("_==_", {"a", "x"}, {"b", "x"}), false);
-  EXPECT_EQ(list_op("_==_", {"a", "x"}, {"a", "y"}), false);
-  EXPECT_EQ(list_op("_==_", {"a"}, {"a", "x"}), false);
-  EXPECT_EQ(list_op("_!=_", {"a", "x"}, {"b", "x"}), true);
-  EXPECT_EQ(list_op("_!=_", {"a", "x"}, {"a", "x"}), false);
-}
-
-TEST_F(CelProgramTest, MapEquality) {
-  auto map_op = [&](absl::string_view op, const std::vector<MapEntry>& lhs,
-                    const std::vector<MapEntry>& rhs) {
-    return EvaluateBoolExpr([&](cel_expr_Expr* root) {
-      auto args = builder_.SetCall(root, op, 2);
-      SetStringMap(args[0], lhs);
-      SetStringMap(args[1], rhs);
-    });
-  };
-  EXPECT_EQ(map_op("_==_", {{"k", "v"}}, {{"k", "v"}}), true);
-  EXPECT_EQ(map_op("_==_", {{"k", "v"}}, {{"k", "w"}}), false);
-  EXPECT_EQ(map_op("_!=_", {{"k", "v"}}, {{"k", "w"}}), true);
-  // Multiple entries: only the first, or only the last, value differs.
-  EXPECT_EQ(map_op("_==_", {{"a", "1"}, {"b", "2"}}, {{"a", "9"}, {"b", "2"}}),
-            false);
-  EXPECT_EQ(map_op("_==_", {{"a", "1"}, {"b", "2"}}, {{"a", "1"}, {"b", "9"}}),
-            false);
-  EXPECT_EQ(map_op("_!=_", {{"a", "1"}, {"b", "2"}}, {{"a", "9"}, {"b", "2"}}),
-            true);
-  // A key differs, or the sizes differ.
-  EXPECT_EQ(map_op("_==_", {{"a", "1"}, {"b", "2"}}, {{"a", "1"}, {"c", "2"}}),
-            false);
-  EXPECT_EQ(map_op("_==_", {{"a", "1"}}, {{"a", "1"}, {"b", "2"}}), false);
-  // Entry order does not matter.
-  EXPECT_EQ(map_op("_==_", {{"a", "1"}, {"b", "2"}}, {{"b", "2"}, {"a", "1"}}),
-            true);
-  EXPECT_EQ(map_op("_!=_", {{"a", "1"}, {"b", "2"}}, {{"b", "2"}, {"a", "1"}}),
-            false);
+TEST_F(CelProgramTest, StringExtractorToStringWithoutDefault) {
+  auto program = Compile(NewDynRequestExpr(), ResultType::kString);
+  ASSERT_TRUE(program.has_value());
+  CelStringExtractor extractor(std::move(*program), std::nullopt);
+  EXPECT_EQ(extractor.ToString(),
+            "CelStringExtractor{CelProgram{checked_expr_size=23}}");
 }
 
 }  // namespace

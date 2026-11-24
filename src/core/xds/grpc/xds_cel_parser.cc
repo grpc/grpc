@@ -16,7 +16,6 @@
 
 #include "src/core/xds/grpc/xds_cel_parser.h"
 
-#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -27,48 +26,48 @@
 
 namespace grpc_core {
 
-std::unique_ptr<CelProgram> ParseCelExpression(
+std::optional<CelProgram> ParseCelExpression(
     const xds_type_v3_CelExpression* cel_expression,
     CelProgram::ResultType result_type, ValidationErrors* errors) {
   if (cel_expression == nullptr) {
     errors->AddError("field not present");
-    return nullptr;
+    return std::nullopt;
   }
   if (xds_type_v3_CelExpression_cel_expr_string(cel_expression).size != 0) {
     ValidationErrors::ScopedField field(errors, ".cel_expr_string");
     errors->AddError("not supported");
-    return nullptr;
+    return std::nullopt;
   }
   ValidationErrors::ScopedField field(errors, ".cel_expr_checked");
   const cel_expr_CheckedExpr* checked_expr =
       xds_type_v3_CelExpression_cel_expr_checked(cel_expression);
   if (checked_expr == nullptr) {
     errors->AddError("field not present");
-    return nullptr;
+    return std::nullopt;
   }
   auto program = CelProgram::Create(checked_expr, result_type);
   if (!program.ok()) {
     errors->AddError(program.status().message());
-    return nullptr;
+    return std::nullopt;
   }
   return std::move(*program);
 }
 
-std::unique_ptr<CelStringExtractor> ParseCelExtractString(
+std::optional<CelStringExtractor> ParseCelExtractString(
     const xds_type_v3_CelExtractString* cel_extract_string,
     ValidationErrors* errors) {
   if (cel_extract_string == nullptr) {
     errors->AddError("field not present");
-    return nullptr;
+    return std::nullopt;
   }
-  std::unique_ptr<CelProgram> program;
+  std::optional<CelProgram> program;
   {
     ValidationErrors::ScopedField field(errors, ".expr_extract");
     program = ParseCelExpression(
         xds_type_v3_CelExtractString_expr_extract(cel_extract_string),
         CelProgram::ResultType::kString, errors);
   }
-  if (program == nullptr) return nullptr;
+  if (!program.has_value()) return std::nullopt;
   std::optional<std::string> default_value;
   if (const auto* default_value_proto =
           xds_type_v3_CelExtractString_default_value(cel_extract_string);
@@ -76,8 +75,7 @@ std::unique_ptr<CelStringExtractor> ParseCelExtractString(
     default_value = UpbStringToStdString(
         google_protobuf_StringValue_value(default_value_proto));
   }
-  return std::make_unique<CelStringExtractor>(std::move(program),
-                                              std::move(default_value));
+  return CelStringExtractor(std::move(*program), std::move(default_value));
 }
 
 }  // namespace grpc_core

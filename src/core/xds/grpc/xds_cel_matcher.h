@@ -17,7 +17,6 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_CEL_MATCHER_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_CEL_MATCHER_H
 
-#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -38,12 +37,11 @@ class CelInputMatcher
     : public XdsMatcherList::InputMatcher<CelRequestResolver> {
  public:
   // program must have been created with CelProgram::ResultType::kBool.
-  explicit CelInputMatcher(std::unique_ptr<CelProgram> program)
-      : program_(std::move(program)) {}
+  explicit CelInputMatcher(CelProgram program) : program_(std::move(program)) {}
 
   bool Match(const std::optional<CelRequestResolver>& input) const override {
     if (!input.has_value()) return false;
-    return program_->EvaluateBool(*input).value_or(false);
+    return program_.EvaluateBool(*input).value_or(false);
   }
   static UniqueTypeName Type() {
     return GRPC_UNIQUE_TYPE_NAME_HERE("CelInputMatcher");
@@ -52,14 +50,14 @@ class CelInputMatcher
   bool Equals(const XdsMatcherList::InputMatcher<CelRequestResolver>& other)
       const override {
     if (type() != other.type()) return false;
-    return *program_ == *DownCast<const CelInputMatcher&>(other).program_;
+    return program_ == DownCast<const CelInputMatcher&>(other).program_;
   }
   std::string ToString() const override {
-    return absl::StrCat("CelMatcher{", program_->ToString(), "}");
+    return absl::StrCat("CelMatcher{", program_.ToString(), "}");
   }
 
  private:
-  std::unique_ptr<CelProgram> program_;
+  CelProgram program_;
 };
 
 }  // namespace grpc_core

@@ -117,8 +117,8 @@ ParseCustomMatch(const XdsResourceType::DecodeContext& context,
   auto program =
       ParseCelExpression(xds_type_matcher_v3_CelMatcher_expr_match(cel_matcher),
                          CelProgram::ResultType::kBool, errors);
-  if (program == nullptr) return nullptr;
-  return std::make_unique<CelInputMatcher>(std::move(program));
+  if (!program.has_value()) return nullptr;
+  return std::make_unique<CelInputMatcher>(std::move(*program));
 }
 
 // Function to parse "xds_core_v3_TypedExtensionConfig"  to generate

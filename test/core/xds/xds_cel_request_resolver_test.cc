@@ -66,11 +66,12 @@ class CelRequestResolverTest : public ::testing::Test {
                      });
   }
 
-  std::unique_ptr<CelProgram> Compile(const cel_expr_CheckedExpr* checked,
-                                      ResultType result_type) {
+  std::optional<CelProgram> Compile(const cel_expr_CheckedExpr* checked,
+                                    ResultType result_type) {
     auto program = CelProgram::Create(checked, result_type);
     EXPECT_TRUE(program.ok()) << program.status();
-    return program.ok() ? std::move(*program) : nullptr;
+    if (!program.ok()) return std::nullopt;
+    return std::move(*program);
   }
 
   // Compiles `request.<field>` and evaluates it as a string.
@@ -79,7 +80,7 @@ class CelRequestResolverTest : public ::testing::Test {
     auto* checked = builder_.NewCheckedExpr(&root, ResultType::kString);
     builder_.SetRequestField(root, field);
     auto program = Compile(checked, ResultType::kString);
-    if (program == nullptr) return std::nullopt;
+    if (!program.has_value()) return std::nullopt;
     return program->EvaluateString(resolver_);
   }
 
@@ -89,7 +90,7 @@ class CelRequestResolverTest : public ::testing::Test {
     auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
     builder_.SetRequestField(root, field, /*test_only=*/true);
     auto program = Compile(checked, ResultType::kBool);
-    if (program == nullptr) return std::nullopt;
+    if (!program.has_value()) return std::nullopt;
     return program->EvaluateBool(resolver_);
   }
 
@@ -101,7 +102,7 @@ class CelRequestResolverTest : public ::testing::Test {
     builder_.SetRequestField(args[0], "headers");
     builder_.SetStringConst(args[1], key);
     auto program = Compile(checked, ResultType::kString);
-    if (program == nullptr) return std::nullopt;
+    if (!program.has_value()) return std::nullopt;
     return program->EvaluateString(resolver_);
   }
 
@@ -113,7 +114,7 @@ class CelRequestResolverTest : public ::testing::Test {
     builder_.SetStringConst(args[0], key);
     builder_.SetRequestField(args[1], "headers");
     auto program = Compile(checked, ResultType::kBool);
-    if (program == nullptr) return std::nullopt;
+    if (!program.has_value()) return std::nullopt;
     return program->EvaluateBool(resolver_);
   }
 
@@ -191,7 +192,7 @@ TEST_F(CelRequestResolverTest, MapEquality) {
       }
     }
     auto program = Compile(checked, ResultType::kBool);
-    ASSERT_NE(program, nullptr);
+    ASSERT_TRUE(program.has_value());
     EXPECT_EQ(program->EvaluateBool(resolver_), true) << field;
   }
 }
@@ -239,7 +240,7 @@ TEST_F(CelRequestResolverTest, Size) {
     }
     builder_.SetIntConst(eq_args[1], test_case.expected);
     auto program = Compile(checked, ResultType::kBool);
-    ASSERT_NE(program, nullptr);
+    ASSERT_TRUE(program.has_value());
     EXPECT_EQ(program->EvaluateBool(resolver_), true)
         << test_case.field << " receiver_style=" << test_case.receiver_style;
   }

@@ -25,7 +25,6 @@
 #include "cel-c/activation.h"
 #include "cel-c/program.h"
 #include "cel/expr/checked.upb.h"
-#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
 namespace grpc_core {
@@ -34,14 +33,21 @@ namespace grpc_core {
 //
 // Instances are immutable and may be evaluated concurrently from
 // multiple threads.
-class CelProgram {
+class CelProgram final {
  public:
   // The type that the expression must evaluate to.
   enum class ResultType { kBool, kString };
 
   // Validates and compiles a type-checked CEL expression.  Validation
-  // enforces the restrictions in gRFC A106; see ValidateCelExpr().
-  static absl::StatusOr<std::unique_ptr<CelProgram>> Create(
+  // enforces the restrictions in gRFC A106:
+  // - the result type is result_type (or dyn, for kString);
+  // - the only variable is `request`;
+  // - no comprehensions (e.g. exists(), all(), cel.bind());
+  // - no string() conversions and no string, bytes or list concatenation;
+  // - matches() patterns are constant, valid RE2 regexes with a program
+  //   size of at most 100;
+  // - the AST depth is at most 32.
+  static absl::StatusOr<CelProgram> Create(
       const cel_expr_CheckedExpr* checked_expr, ResultType result_type);
 
   // Evaluates the expression, resolving variables via resolver.
@@ -51,6 +57,8 @@ class CelProgram {
   std::optional<std::string> EvaluateString(
       const cel_VariableResolver& resolver) const;
 
+  // Compares the CheckedExprs that the programs were created from,
+  // ignoring source_info.
   bool operator==(const CelProgram& other) const {
     return serialized_expr_ == other.serialized_expr_;
   }
@@ -68,16 +76,17 @@ class CelProgram {
       : serialized_expr_(std::move(serialized_expr)),
         program_(std::move(program)) {}
 
-  // Deterministically serialized CheckedExpr, used for equality.
+  // Deterministically serialized CheckedExpr without source_info, used for
+  // equality.
   std::string serialized_expr_;
   ProgramPtr program_;
 };
 
 // Extracts a string from a request using a CEL expression
 // (xds.type.v3.CelExtractString in gRFC A106).
-class CelStringExtractor {
+class CelStringExtractor final {
  public:
-  CelStringExtractor(std::unique_ptr<CelProgram> program,
+  CelStringExtractor(CelProgram program,
                      std::optional<std::string> default_value)
       : program_(std::move(program)),
         default_value_(std::move(default_value)) {}
@@ -86,14 +95,13 @@ class CelStringExtractor {
   // or does not produce a string, returns the default value, if any.
   std::optional<std::string> Extract(
       const cel_VariableResolver& resolver) const {
-    auto result = program_->EvaluateString(resolver);
+    auto result = program_.EvaluateString(resolver);
     if (result.has_value()) return result;
     return default_value_;
   }
 
   bool operator==(const CelStringExtractor& other) const {
-    return *program_ == *other.program_ &&
-           default_value_ == other.default_value_;
+    return program_ == other.program_ && default_value_ == other.default_value_;
   }
   bool operator!=(const CelStringExtractor& other) const {
     return !(*this == other);
@@ -102,19 +110,9 @@ class CelStringExtractor {
   std::string ToString() const;
 
  private:
-  std::unique_ptr<CelProgram> program_;
+  CelProgram program_;
   std::optional<std::string> default_value_;
 };
-
-// Checks that a type-checked CEL expression conforms to gRFC A106:
-// - its result type is result_type (or dyn, for kString);
-// - the only variable is `request`;
-// - no comprehensions (e.g. exists(), all(), cel.bind());
-// - no string() conversions and no string or list concatenation;
-// - matches() patterns are constant, valid RE2 regexes with a program size
-//   of at most 100.
-absl::Status ValidateCelExpr(const cel_expr_CheckedExpr* checked_expr,
-                             CelProgram::ResultType result_type);
 
 }  // namespace grpc_core
 
