@@ -13,6 +13,7 @@
 # limitations under the License.
 """Utility functions for generating protobuf code."""
 
+load("@com_google_protobuf//:protobuf_version.bzl", "PROTOC_VERSION")
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load(":grpc_util.bzl", "strip_extension")
 
@@ -33,6 +34,12 @@ _WELL_KNOWN_PROTOS_BASE = [
     "type_proto",
     "wrappers_proto",
 ]
+
+def upb_reflection_libs():
+    if int(PROTOC_VERSION.split(".")[0]) >= 37:
+        return ["@com_google_protobuf//upb/reflection", "@com_google_protobuf//upb/reflection:reflection_cc"]
+    else:
+        return ["@com_google_protobuf//upb/reflection"]
 
 def well_known_proto_libs():
     return ["@com_google_protobuf//:" + b for b in _WELL_KNOWN_PROTOS_BASE]
