@@ -155,49 +155,49 @@ constexpr char kPemCert[] =
 constexpr char kEncodedCert[] =
     "-----BEGIN%20CERTIFICATE-----%0Aabc%3D%0A-----END%20CERTIFICATE-----%0A";
 
-MATCHER_P4(HasClientMetrics, allowed, denied, failed, filter_disabled, "") {
+MATCHER_P(HasClientMetrics, expected, "") {
   return ::testing::ExplainMatchResult(::testing::NotNull(), arg,
                                        result_listener) &&
          ::testing::ExplainMatchResult(
-             Optional(::testing::Eq(allowed)),
+             Optional(::testing::Eq(expected.allowed)),
              arg->GetUInt64MetricValueByName(
                  "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
              result_listener) &&
          ::testing::ExplainMatchResult(
-             Optional(::testing::Eq(denied)),
+             Optional(::testing::Eq(expected.denied)),
              arg->GetUInt64MetricValueByName(
                  "grpc.client_ext_authz.denied_rpcs", {kServerUri}),
              result_listener) &&
          ::testing::ExplainMatchResult(
-             Optional(::testing::Eq(failed)),
+             Optional(::testing::Eq(expected.failed)),
              arg->GetUInt64MetricValueByName(
                  "grpc.client_ext_authz.failed_rpcs", {kServerUri}),
              result_listener) &&
          ::testing::ExplainMatchResult(
-             Optional(::testing::Eq(filter_disabled)),
+             Optional(::testing::Eq(expected.filter_disabled)),
              arg->GetUInt64MetricValueByName(
                  "grpc.client_ext_authz.filter_disabled_rpcs", {kServerUri}),
              result_listener);
 }
 
-MATCHER_P4(HasServerMetrics, allowed, denied, failed, filter_disabled, "") {
+MATCHER_P(HasServerMetrics, expected, "") {
   return ::testing::ExplainMatchResult(::testing::NotNull(), arg,
                                        result_listener) &&
          ::testing::ExplainMatchResult(
-             Optional(::testing::Eq(allowed)),
+             Optional(::testing::Eq(expected.allowed)),
              arg->GetUInt64MetricValueByName(
                  "grpc.server_ext_authz.allowed_rpcs"),
              result_listener) &&
-         ::testing::ExplainMatchResult(Optional(::testing::Eq(denied)),
+         ::testing::ExplainMatchResult(Optional(::testing::Eq(expected.denied)),
                                        arg->GetUInt64MetricValueByName(
                                            "grpc.server_ext_authz.denied_rpcs"),
                                        result_listener) &&
-         ::testing::ExplainMatchResult(Optional(::testing::Eq(failed)),
+         ::testing::ExplainMatchResult(Optional(::testing::Eq(expected.failed)),
                                        arg->GetUInt64MetricValueByName(
                                            "grpc.server_ext_authz.failed_rpcs"),
                                        result_listener) &&
          ::testing::ExplainMatchResult(
-             Optional(::testing::Eq(filter_disabled)),
+             Optional(::testing::Eq(expected.filter_disabled)),
              arg->GetUInt64MetricValueByName(
                  "grpc.server_ext_authz.filter_disabled_rpcs"),
              result_listener);
@@ -210,6 +210,13 @@ MATCHER_P4(HasServerMetrics, allowed, denied, failed, filter_disabled, "") {
 class ExtAuthzFilterTest : public FilterTest {
  protected:
   using FilterTest::FilterTest;
+
+  struct ExtAuthzMetrics {
+    uint64_t allowed = 0;
+    uint64_t denied = 0;
+    uint64_t failed = 0;
+    uint64_t filter_disabled = 0;
+  };
 
   // Builds an ExtAuthzFilter::Config directly, bypassing xDS parsing. Unset
   // fields keep the Config defaults. Unless WithoutChannel() is called, the
@@ -542,8 +549,9 @@ FILTER_TEST(ExtAuthzFilterTest, FilterDisabledAllows) {
                              ServerMetadataFromStatus(GRPC_STATUS_OK));
   EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
   EXPECT_THAT(stats_plugin,
-              HasClientMetrics(/*allowed=*/1, /*denied=*/0, /*failed=*/0,
-                               /*filter_disabled=*/1));
+              HasClientMetrics(ExtAuthzMetrics{/*allowed=*/1, /*denied=*/0,
+                                               /*failed=*/0,
+                                               /*filter_disabled=*/1}));
   WaitForAllPendingWork();
 }
 
@@ -560,8 +568,9 @@ FILTER_TEST(ExtAuthzFilterTest, FilterDisabledWithDenyAtDisableFails) {
   EXPECT_EQ(PullServerTrailingStatus(client),
             absl::UnavailableError(kDisabledErrorMessage));
   EXPECT_THAT(stats_plugin,
-              HasClientMetrics(/*allowed=*/0, /*denied=*/1, /*failed=*/0,
-                               /*filter_disabled=*/1));
+              HasClientMetrics(ExtAuthzMetrics{/*allowed=*/0, /*denied=*/1,
+                                               /*failed=*/0,
+                                               /*filter_disabled=*/1}));
   WaitForAllPendingWork();
 }
 
@@ -636,8 +645,9 @@ FILTER_TEST(ExtAuthzFilterTest, TransportFailureWithFailureModeDeny) {
   EXPECT_EQ(PullServerTrailingStatus(client),
             absl::UnavailableError(kTransportErrorMessage));
   EXPECT_THAT(stats_plugin,
-              HasClientMetrics(/*allowed=*/0, /*denied=*/1, /*failed=*/1,
-                               /*filter_disabled=*/0));
+              HasClientMetrics(ExtAuthzMetrics{/*allowed=*/0, /*denied=*/1,
+                                               /*failed=*/1,
+                                               /*filter_disabled=*/0}));
   WaitForAllPendingWork();
 }
 
@@ -663,8 +673,9 @@ FILTER_TEST(ExtAuthzFilterTest, TransportFailureWithFailureModeAllow) {
                              ServerMetadataFromStatus(GRPC_STATUS_OK));
   EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
   EXPECT_THAT(stats_plugin,
-              HasClientMetrics(/*allowed=*/1, /*denied=*/0, /*failed=*/1,
-                               /*filter_disabled=*/0));
+              HasClientMetrics(ExtAuthzMetrics{/*allowed=*/1, /*denied=*/0,
+                                               /*failed=*/1,
+                                               /*filter_disabled=*/0}));
   WaitForAllPendingWork();
 }
 
@@ -862,8 +873,9 @@ FILTER_TEST(ExtAuthzFilterTest, OkResponseAllows) {
                              ServerMetadataFromStatus(GRPC_STATUS_OK));
   EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
   EXPECT_THAT(stats_plugin,
-              HasClientMetrics(/*allowed=*/1, /*denied=*/0, /*failed=*/0,
-                               /*filter_disabled=*/0));
+              HasClientMetrics(ExtAuthzMetrics{/*allowed=*/1, /*denied=*/0,
+                                               /*failed=*/0,
+                                               /*filter_disabled=*/0}));
   WaitForAllPendingWork();
 }
 
@@ -1041,8 +1053,9 @@ FILTER_TEST(ExtAuthzFilterTest, DeniedResponseFails) {
           HasMetadataKeyValue(kCustomHeaderKey, kCustomHeaderValue),
           HasMetadataKeyValue(kCustomHeaderKey2, kCustomHeaderValue2)))));
   EXPECT_THAT(stats_plugin,
-              HasClientMetrics(/*allowed=*/0, /*denied=*/1, /*failed=*/0,
-                               /*filter_disabled=*/0));
+              HasClientMetrics(ExtAuthzMetrics{/*allowed=*/0, /*denied=*/1,
+                                               /*failed=*/0,
+                                               /*filter_disabled=*/0}));
   WaitForAllPendingWork();
 }
 
@@ -1096,8 +1109,9 @@ FILTER_TEST(ExtAuthzFilterTest,
   EXPECT_EQ(PullServerTrailingStatus(client),
             absl::UnavailableError(kForbiddenHeaderMutationErrorMessage));
   EXPECT_THAT(stats_plugin,
-              HasClientMetrics(/*allowed=*/0, /*denied=*/1, /*failed=*/1,
-                               /*filter_disabled=*/0));
+              HasClientMetrics(ExtAuthzMetrics{/*allowed=*/0, /*denied=*/1,
+                                               /*failed=*/1,
+                                               /*filter_disabled=*/0}));
   WaitForAllPendingWork();
 }
 
@@ -1130,8 +1144,9 @@ FILTER_TEST(ExtAuthzFilterTest,
                              ServerMetadataFromStatus(GRPC_STATUS_OK));
   EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
   EXPECT_THAT(stats_plugin,
-              HasClientMetrics(/*allowed=*/1, /*denied=*/0, /*failed=*/1,
-                               /*filter_disabled=*/0));
+              HasClientMetrics(ExtAuthzMetrics{/*allowed=*/1, /*denied=*/0,
+                                               /*failed=*/1,
+                                               /*filter_disabled=*/0}));
   WaitForAllPendingWork();
 }
 
@@ -1271,8 +1286,9 @@ FILTER_TEST(ExtAuthzFilterTest,
   EXPECT_EQ(PullServerTrailingStatus(client),
             absl::UnavailableError(kForbiddenHeaderMutationErrorMessage));
   EXPECT_THAT(stats_plugin,
-              HasClientMetrics(/*allowed=*/0, /*denied=*/1, /*failed=*/1,
-                               /*filter_disabled=*/0));
+              HasClientMetrics(ExtAuthzMetrics{/*allowed=*/0, /*denied=*/1,
+                                               /*failed=*/1,
+                                               /*filter_disabled=*/0}));
   WaitForAllPendingWork();
 }
 
@@ -1308,8 +1324,9 @@ FILTER_TEST(ExtAuthzFilterTest,
               IsOkAndHolds(Pointee(AllOf(HasMetadataResult(absl::OkStatus()),
                                          LacksMetadataKey(kCustomHeaderKey)))));
   EXPECT_THAT(stats_plugin,
-              HasClientMetrics(/*allowed=*/1, /*denied=*/0, /*failed=*/1,
-                               /*filter_disabled=*/0));
+              HasClientMetrics(ExtAuthzMetrics{/*allowed=*/1, /*denied=*/0,
+                                               /*failed=*/1,
+                                               /*filter_disabled=*/0}));
   WaitForAllPendingWork();
 }
 
@@ -1511,8 +1528,9 @@ FILTER_TEST(ExtAuthzFilterTest, ServerSideMetrics) {
   EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
   // The server metrics have no labels. Only allowed_rpcs was incremented.
   EXPECT_THAT(stats_plugin,
-              HasServerMetrics(/*allowed=*/1, /*denied=*/0, /*failed=*/0,
-                               /*filter_disabled=*/0));
+              HasServerMetrics(ExtAuthzMetrics{/*allowed=*/1, /*denied=*/0,
+                                               /*failed=*/0,
+                                               /*filter_disabled=*/0}));
   EXPECT_EQ(stats_plugin->GetUInt64MetricValueByName(
                 "grpc.client_ext_authz.allowed_rpcs", {kServerUri}),
             std::nullopt);
