@@ -451,6 +451,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     const char* crl_directory,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
     const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
+    const std::vector<grpc_tls_signature_algorithm>& signature_algorithms,
     std::string exported_keying_material_label,
     size_t exported_keying_material_length,
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
@@ -494,6 +495,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   options.crl_directory = crl_directory;
   options.crl_provider = std::move(crl_provider);
   options.key_exchange_groups = key_exchange_groups;
+  options.signature_algorithms = signature_algorithms;
   options.exported_keying_material_label =
       std::move(exported_keying_material_label);
   options.exported_keying_material_length = exported_keying_material_length;
@@ -518,6 +520,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     const char* crl_directory, bool send_client_ca_list,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
     const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
+    const std::vector<grpc_tls_signature_algorithm>& signature_algorithms,
     std::string exported_keying_material_label,
     size_t exported_keying_material_length,
     tsi_ssl_server_handshaker_factory** handshaker_factory) {
@@ -539,6 +542,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   options.send_client_ca_list = send_client_ca_list;
   options.root_cert_info = std::move(root_cert_info);
   options.key_exchange_groups = key_exchange_groups;
+  options.signature_algorithms = signature_algorithms;
   options.exported_keying_material_label =
       std::move(exported_keying_material_label);
   options.exported_keying_material_length = exported_keying_material_length;

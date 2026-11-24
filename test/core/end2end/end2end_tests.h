@@ -787,7 +787,7 @@ inline bool IsPh2Test() {
          IsPh2ClientServerEnabled();
 }
 
-// TODO(akshitpatel) : [PH2][P3] : Remove once all the PH2 E2E tests are fixed.
+// TODO(akshitpatel) : [PH2][P4] : Remove once all the PH2 E2E tests are fixed.
 inline void EnableLoggingForPH2Tests() {
   if (IsPh2Test()) {
     grpc_tracer_set_enabled("http2_ph2_transport", true);
@@ -796,7 +796,7 @@ inline void EnableLoggingForPH2Tests() {
   }
 }
 
-// TODO(akshitpatel) : [PH2][P3] : Remove once all the PH2 E2E tests are fixed.
+// TODO(akshitpatel) : [PH2][P4] : Remove once all the PH2 E2E tests are fixed.
 inline void DisableLoggingForPH2Tests() {
   if (IsPh2Test()) {
     absl::SetGlobalVLogLevel(-1);

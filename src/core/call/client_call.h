@@ -42,6 +42,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_utils.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -64,7 +65,8 @@ class ClientCall final
              std::optional<Slice> authority, bool registered_method,
              Timestamp deadline, grpc_compression_options compression_options,
              RefCountedPtr<Arena> arena,
-             RefCountedPtr<UnstartedCallDestination> destination);
+             RefCountedPtr<UnstartedCallDestination> destination,
+             GlobalStatsPluginRegistry::StatsPluginGroup* stats_plugin_group);
 
   void CancelWithError(grpc_error_handle error) override;
   bool is_trailers_only() const override { return is_trailers_only_; }
@@ -193,13 +195,13 @@ class ClientCall final
   std::atomic<bool> saw_trailing_metadata_{false};
 };
 
-grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
-                          grpc_completion_queue* cq, Slice path,
-                          std::optional<Slice> authority,
-                          bool registered_method, Timestamp deadline,
-                          grpc_compression_options compression_options,
-                          RefCountedPtr<Arena> arena,
-                          RefCountedPtr<UnstartedCallDestination> destination);
+grpc_call* MakeClientCall(
+    grpc_call* parent_call, uint32_t propagation_mask,
+    grpc_completion_queue* cq, Slice path, std::optional<Slice> authority,
+    bool registered_method, Timestamp deadline,
+    grpc_compression_options compression_options, RefCountedPtr<Arena> arena,
+    RefCountedPtr<UnstartedCallDestination> destination,
+    GlobalStatsPluginRegistry::StatsPluginGroup* stats_plugin_group);
 
 }  // namespace grpc_core
 

@@ -33,8 +33,10 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/loop.h"
@@ -555,6 +557,7 @@ class StreamDataQueueTest : public SimpleQueueTest,
       const uint32_t max_tokens, const uint32_t max_frame_length,
       const uint32_t flow_control_tokens_consumed, bool expected_writable_state,
       const uint32_t stream_fc_tokens = std::numeric_limits<uint32_t>::max(),
+      const bool expected_is_next_frame_data = false,
       DebugLocation whence = {}) {
     LOG(INFO) << "Dequeuing from " << whence.file() << ":" << whence.line();
     http2::FrameSender frame_sender = GetWriteCycle().GetFrameSender();
@@ -567,6 +570,7 @@ class StreamDataQueueTest : public SimpleQueueTest,
     EXPECT_EQ(dequeue_result.flow_control_tokens_consumed,
               flow_control_tokens_consumed);
     EXPECT_EQ(dequeue_result.is_writable, expected_writable_state);
+    EXPECT_EQ(dequeue_result.is_next_frame_data, expected_is_next_frame_data);
     EXPECT_EQ(GetWriteCycle().GetUrgentFrameCount() +
                   GetWriteCycle().GetRegularFrameCount(),
               expected_frames.size());
@@ -594,6 +598,7 @@ class StreamDataQueueTest : public SimpleQueueTest,
       const bool can_send_reset_stream = true,
       const uint32_t flow_control_tokens_consumed = 0u,
       const uint32_t stream_fc_tokens = std::numeric_limits<uint32_t>::max(),
+      const bool expected_is_next_frame_data = false,
       DebugLocation whence = {}) {
     LOG(INFO) << "Dequeuing message from " << whence.file() << ":"
               << whence.line();
@@ -608,6 +613,7 @@ class StreamDataQueueTest : public SimpleQueueTest,
     EXPECT_EQ(frames.flow_control_tokens_consumed,
               flow_control_tokens_consumed);
     EXPECT_EQ(frames.is_writable, expected_writable_state);
+    EXPECT_EQ(frames.is_next_frame_data, expected_is_next_frame_data);
     EXPECT_EQ(GetWriteCycle().GetUrgentFrameCount() +
                   GetWriteCycle().GetRegularFrameCount(),
               expected_frames_length.size());
@@ -629,11 +635,13 @@ class StreamDataQueueTest : public SimpleQueueTest,
   void MaybeFlushWriteBuffer() {
     if (GetWriteCycle().CanSerializeRegularFrames()) {
       bool unused;
-      SliceBuffer discard = GetWriteCycle().SerializeRegularFrames({unused});
+      SliceBuffer discard = GetWriteCycle().SerializeRegularFrames(
+          {unused, http2_transport_stats_});
     }
   }
 
   http2::TransportWriteContext transport_write_context_;
+  http2::Http2TransportStats http2_transport_stats_{ChannelArgs()};
 };
 
 }  // namespace
@@ -874,16 +882,18 @@ TEST_P(StreamDataQueueTest, ClientDequeueFramesTest) {
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(50)), 0),
       /*expected_writeable_state=*/true,
       /*expected_priority=*/WritableStreamPriority::kDefault);
-  DequeueMessageAndCheckSuccess(stream_data_queue,
-                                /*expected_frames_length=*/{10, 10, 10, 10, 10},
-                                encoder,
-                                /*expected_flags=*/
-                                DequeueFlags::kMessageDequeued,
-                                /*expected_writable_state=*/true,
-                                /*max_tokens=*/50,
-                                /*max_frame_length=*/10,
-                                /*can_send_reset_stream=*/true,
-                                /*flow_control_tokens_consumed=*/50u);
+  DequeueMessageAndCheckSuccess(
+      stream_data_queue,
+      /*expected_frames_length=*/{10, 10, 10, 10, 10}, encoder,
+      /*expected_flags=*/
+      DequeueFlags::kMessageDequeued,
+      /*expected_writable_state=*/true,
+      /*max_tokens=*/50,
+      /*max_frame_length=*/10,
+      /*can_send_reset_stream=*/true,
+      /*flow_control_tokens_consumed=*/50u,
+      /*stream_fc_tokens=*/std::numeric_limits<uint32_t>::max(),
+      /*expected_is_next_frame_data=*/true);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{5}, encoder,
                                 /*expected_flags=*/
@@ -900,24 +910,30 @@ TEST_P(StreamDataQueueTest, ClientDequeueFramesTest) {
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(50)), 0),
       /*expected_writeable_state=*/true,
       /*expected_priority=*/WritableStreamPriority::kDefault);
-  DequeueMessageAndCheckSuccess(stream_data_queue,
-                                /*expected_frames_length=*/{15, 10}, encoder,
-                                /*expected_flags=*/
-                                DequeueFlags::kMessageDequeued,
-                                /*expected_writable_state=*/true,
-                                /*max_tokens=*/25,
-                                /*max_frame_length=*/15,
-                                /*can_send_reset_stream=*/true,
-                                /*flow_control_tokens_consumed=*/25u);
-  DequeueMessageAndCheckSuccess(stream_data_queue,
-                                /*expected_frames_length=*/{15, 10}, encoder,
-                                /*expected_flags=*/
-                                DequeueFlags::kMessageDequeued,
-                                /*expected_writable_state=*/true,
-                                /*max_tokens=*/25,
-                                /*max_frame_length=*/15,
-                                /*can_send_reset_stream=*/true,
-                                /*flow_control_tokens_consumed=*/25u);
+  DequeueMessageAndCheckSuccess(
+      stream_data_queue,
+      /*expected_frames_length=*/{15, 10}, encoder,
+      /*expected_flags=*/
+      DequeueFlags::kMessageDequeued,
+      /*expected_writable_state=*/true,
+      /*max_tokens=*/25,
+      /*max_frame_length=*/15,
+      /*can_send_reset_stream=*/true,
+      /*flow_control_tokens_consumed=*/25u,
+      /*stream_fc_tokens=*/std::numeric_limits<uint32_t>::max(),
+      /*expected_is_next_frame_data=*/true);
+  DequeueMessageAndCheckSuccess(
+      stream_data_queue,
+      /*expected_frames_length=*/{15, 10}, encoder,
+      /*expected_flags=*/
+      DequeueFlags::kMessageDequeued,
+      /*expected_writable_state=*/true,
+      /*max_tokens=*/25,
+      /*max_frame_length=*/15,
+      /*can_send_reset_stream=*/true,
+      /*flow_control_tokens_consumed=*/25u,
+      /*stream_fc_tokens=*/std::numeric_limits<uint32_t>::max(),
+      /*expected_is_next_frame_data=*/true);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{5}, encoder,
                                 /*expected_flags=*/
@@ -975,7 +991,9 @@ TEST_P(StreamDataQueueTest, ClientEnqueueDequeueFlowTest) {
       /*expected_flags=*/
       DequeueFlags::kInitialMetadataDequeued,
       /*max_tokens=*/0u, max_frame_length,
-      /*flow_control_tokens_consumed=*/0u, /*expected_writable_state=*/true);
+      /*flow_control_tokens_consumed=*/0u, /*expected_writable_state=*/true,
+      /*stream_fc_tokens=*/std::numeric_limits<uint32_t>::max(),
+      /*expected_is_next_frame_data=*/true);
 
   // Dequeue Message and Half Close
   DequeueAndCheckSuccess(
@@ -1189,14 +1207,17 @@ TEST_P(StreamDataQueueTest, ClientEnqueueBigMessageResetStreamTest) {
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(10)), 0),
       /*expected_writeable_state=*/true,
       /*expected_priority=*/WritableStreamPriority::kDefault);
-  DequeueMessageAndCheckSuccess(stream_data_queue,
-                                /*expected_frames_length=*/{6}, encoder,
-                                /*expected_flags=*/
-                                DequeueFlags::kMessageDequeued,
-                                /*expected_writable_state=*/true,
-                                /*max_tokens=*/6, max_frame_length,
-                                /*can_send_reset_stream=*/true,
-                                /*flow_control_tokens_consumed=*/6u);
+  DequeueMessageAndCheckSuccess(
+      stream_data_queue,
+      /*expected_frames_length=*/{6}, encoder,
+      /*expected_flags=*/
+      DequeueFlags::kMessageDequeued,
+      /*expected_writable_state=*/true,
+      /*max_tokens=*/6, max_frame_length,
+      /*can_send_reset_stream=*/true,
+      /*flow_control_tokens_consumed=*/6u,
+      /*stream_fc_tokens=*/std::numeric_limits<uint32_t>::max(),
+      /*expected_is_next_frame_data=*/true);
   EnqueueResetStreamAndCheckSuccess(
       stream_data_queue,
       /*expected_writeable_state=*/false,
@@ -1253,16 +1274,17 @@ TEST_P(StreamDataQueueTest, ClientWritableStateTest) {
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(message_size)), 0),
       /*expected_writeable_state=*/true,
       /*expected_priority=*/WritableStreamPriority::kDefault);
-  DequeueMessageAndCheckSuccess(
-      stream_data_queue,
-      /*expected_frames_length=*/{dequeue_size_1}, encoder,
-      /*expected_flags=*/
-      DequeueFlags::kMessageDequeued,
-      /*expected_writable_state=*/true,
-      /*max_tokens=*/dequeue_size_1, max_frame_length,
-      /*can_send_reset_stream=*/true,
-      /*flow_control_tokens_consumed=*/dequeue_size_1,
-      /*stream_fc_tokens=*/available_stream_fc_tokens);
+  DequeueMessageAndCheckSuccess(stream_data_queue,
+                                /*expected_frames_length=*/{dequeue_size_1},
+                                encoder,
+                                /*expected_flags=*/
+                                DequeueFlags::kMessageDequeued,
+                                /*expected_writable_state=*/true,
+                                /*max_tokens=*/dequeue_size_1, max_frame_length,
+                                /*can_send_reset_stream=*/true,
+                                /*flow_control_tokens_consumed=*/dequeue_size_1,
+                                /*stream_fc_tokens=*/available_stream_fc_tokens,
+                                /*expected_is_next_frame_data=*/true);
   available_stream_fc_tokens -= dequeue_size_1;
   DequeueMessageAndCheckSuccess(
       stream_data_queue,
@@ -1288,16 +1310,17 @@ TEST_P(StreamDataQueueTest, ClientWritableStateTest) {
       /*expected_writeable_state=*/true,
       /*expected_priority=*/WritableStreamPriority::kDefault);
   available_stream_fc_tokens = 6u;
-  DequeueMessageAndCheckSuccess(
-      stream_data_queue,
-      /*expected_frames_length=*/{dequeue_size_1}, encoder,
-      /*expected_flags=*/
-      DequeueFlags::kMessageDequeued,
-      /*expected_writable_state=*/false,
-      /*max_tokens=*/dequeue_size_1, max_frame_length,
-      /*can_send_reset_stream=*/true,
-      /*flow_control_tokens_consumed=*/dequeue_size_1,
-      /*stream_fc_tokens=*/available_stream_fc_tokens);
+  DequeueMessageAndCheckSuccess(stream_data_queue,
+                                /*expected_frames_length=*/{dequeue_size_1},
+                                encoder,
+                                /*expected_flags=*/
+                                DequeueFlags::kMessageDequeued,
+                                /*expected_writable_state=*/false,
+                                /*max_tokens=*/dequeue_size_1, max_frame_length,
+                                /*can_send_reset_stream=*/true,
+                                /*flow_control_tokens_consumed=*/dequeue_size_1,
+                                /*stream_fc_tokens=*/available_stream_fc_tokens,
+                                /*expected_is_next_frame_data=*/true);
   available_stream_fc_tokens -= dequeue_size_1;
   stream_data_queue->ReceivedFlowControlWindowUpdate(
       /*stream_fc_tokens=*/10u);
@@ -1319,16 +1342,16 @@ TEST_P(StreamDataQueueTest, ClientWritableStateTest) {
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(10)), 0),
       /*expected_writeable_state=*/true,
       /*expected_priority=*/WritableStreamPriority::kDefault);
-  DequeueMessageAndCheckSuccess(
-      stream_data_queue,
-      /*expected_frames_length=*/{1}, encoder,
-      /*expected_flags=*/
-      DequeueFlags::kMessageDequeued,
-      /*expected_writable_state=*/false,
-      /*max_tokens=*/1, max_frame_length,
-      /*can_send_reset_stream=*/true,
-      /*flow_control_tokens_consumed=*/1u,
-      /*stream_fc_tokens=*/available_stream_fc_tokens);
+  DequeueMessageAndCheckSuccess(stream_data_queue,
+                                /*expected_frames_length=*/{1}, encoder,
+                                /*expected_flags=*/
+                                DequeueFlags::kMessageDequeued,
+                                /*expected_writable_state=*/false,
+                                /*max_tokens=*/1, max_frame_length,
+                                /*can_send_reset_stream=*/true,
+                                /*flow_control_tokens_consumed=*/1u,
+                                /*stream_fc_tokens=*/available_stream_fc_tokens,
+                                /*expected_is_next_frame_data=*/true);
   available_stream_fc_tokens -= 1;
 
   stream_data_queue->ReceivedFlowControlWindowUpdate(
@@ -1547,7 +1570,9 @@ TEST_P(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
       /*expected_flags=*/
       DequeueFlags::kInitialMetadataDequeued,
       /*max_tokens=*/0u, max_frame_length, /*flow_control_tokens_consumed=*/0u,
-      /*expected_writable_state=*/true);
+      /*expected_writable_state=*/true,
+      /*stream_fc_tokens=*/std::numeric_limits<uint32_t>::max(),
+      /*expected_is_next_frame_data=*/true);
 
   // Dequeue Message and Trailing Metadata
   DequeueAndCheckSuccess(
