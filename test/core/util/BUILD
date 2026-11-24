@@ -317,6 +317,15 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "atomic_utils_test",
+    srcs = ["atomic_utils_test.cc"],
+    external_deps = ["gtest"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = ["//src/core:atomic_utils"],
+)
+
+grpc_cc_test(
     name = "thd_test",
     srcs = ["thd_test.cc"],
     external_deps = ["gtest"],
