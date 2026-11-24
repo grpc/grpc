@@ -5733,16 +5733,7 @@ grpc_upb_proto_reflection_library(
     deps = ["@autosharding//:autosharding_proto"],
 )
 
-WELL_KNOWN_PROTO_TARGETS = [
-    "any",
-    "duration",
-    "empty",
-    "struct",
-    "timestamp",
-    "wrappers",
-]
-
-grpc_add_well_known_proto_upb_targets(targets = WELL_KNOWN_PROTO_TARGETS)
+grpc_add_well_known_proto_upb_targets()
 
 grpc_generate_one_off_targets()
 

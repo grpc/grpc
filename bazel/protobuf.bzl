@@ -35,6 +35,22 @@ _WELL_KNOWN_PROTOS_BASE = [
     "wrappers_proto",
 ]
 
+_WELL_KNOWN_PROTOS_UPB_BASE = [
+    "any",
+    "duration",
+    "empty",
+    "struct",
+    "timestamp",
+    "wrappers",
+]
+
+def well_known_proto_upb_targets():
+    if int(PROTOC_VERSION.split(".")[0]) >= 37:
+        return ["json_enumvalue_options"] + _WELL_KNOWN_PROTOS_UPB_BASE
+    else:
+        return _WELL_KNOWN_PROTOS_UPB_BASE
+
+
 def upb_reflection_libs():
     if int(PROTOC_VERSION.split(".")[0]) >= 37:
         return ["@com_google_protobuf//upb/reflection", "@com_google_protobuf//upb/reflection:reflection_cc"]
