@@ -58,6 +58,7 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
+using ::testing::ElementsAre;
 using TaskHandle = grpc_event_engine::experimental::EventEngine::TaskHandle;
 
 constexpr absl::string_view kTestCredsRelativePath = "src/core/tsi/test_creds/";
@@ -316,7 +317,7 @@ class HandshakeHintsCertificateSelector : public SyncTestCertificateSelector {
 
  private:
   tsi_tls_version tls_version_;
-  bool request_client_cert_;
+  bool request_client_cert_ = false;
   std::vector<uint16_t> observed_verify_algorithms_;
 };
 
@@ -691,9 +692,9 @@ TEST_P(CertSelectionOffloadTest, HandshakeHintsSucceeds) {
       server_cert, server_key, GetParam(), /*request_client_cert=*/false);
   fixture->SetCertSelector(selector);
   fixture->Run(/*expect_success=*/true, event_engine_.get());
-  EXPECT_THAT(selector->observed_verify_algorithms(),
-              ::testing::ElementsAre(
-                  SSL_SIGN_ECDSA_SECP256R1_SHA256, SSL_SIGN_RSA_PSS_RSAE_SHA256,
+  EXPECT_THAT(
+      selector->observed_verify_algorithms(),
+      ElementsAre(SSL_SIGN_ECDSA_SECP256R1_SHA256, SSL_SIGN_RSA_PSS_RSAE_SHA256,
                   SSL_SIGN_RSA_PKCS1_SHA256, SSL_SIGN_ECDSA_SECP384R1_SHA384,
                   SSL_SIGN_RSA_PSS_RSAE_SHA384, SSL_SIGN_RSA_PKCS1_SHA384,
                   SSL_SIGN_RSA_PSS_RSAE_SHA512, SSL_SIGN_RSA_PKCS1_SHA512,
@@ -719,9 +720,8 @@ TEST_P(CertSelectionOffloadTest, HandshakeHintsForwardsCustomVerifyAlgorithms) {
   fixture->SetCertSelector(selector);
   fixture->Run(/*expect_success=*/true, event_engine_.get());
   EXPECT_THAT(selector->observed_verify_algorithms(),
-              ::testing::ElementsAre(SSL_SIGN_ML_DSA_87,
-                                     SSL_SIGN_ECDSA_SECP256R1_SHA256,
-                                     SSL_SIGN_RSA_PSS_RSAE_SHA256));
+              ElementsAre(SSL_SIGN_ML_DSA_87, SSL_SIGN_ECDSA_SECP256R1_SHA256,
+                          SSL_SIGN_RSA_PSS_RSAE_SHA256));
 }
 
 TEST_P(CertSelectionOffloadTest, HandshakeHintsMtlsWithMlDsaSucceeds) {
@@ -755,9 +755,8 @@ TEST_P(CertSelectionOffloadTest, HandshakeHintsMtlsWithMlDsaSucceeds) {
   fixture->SetCertSelector(selector);
   fixture->Run(/*expect_success=*/true, event_engine_.get());
   EXPECT_THAT(selector->observed_verify_algorithms(),
-              ::testing::ElementsAre(SSL_SIGN_ML_DSA_87,
-                                     SSL_SIGN_ECDSA_SECP256R1_SHA256,
-                                     SSL_SIGN_RSA_PSS_RSAE_SHA256));
+              ElementsAre(SSL_SIGN_ML_DSA_87, SSL_SIGN_ECDSA_SECP256R1_SHA256,
+                          SSL_SIGN_RSA_PSS_RSAE_SHA256));
 }
 
 std::string TestNameSuffix(
