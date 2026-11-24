@@ -113,14 +113,22 @@ UPB_INLINE envoy_config_overload_v3_ResourceMonitor* envoy_config_overload_v3_Re
 UPB_INLINE char* envoy_config_overload_v3_ResourceMonitor_serialize(const envoy_config_overload_v3_ResourceMonitor* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ResourceMonitor_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ResourceMonitor_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_ResourceMonitor_serialize_ex(const envoy_config_overload_v3_ResourceMonitor* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ResourceMonitor_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ResourceMonitor_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -215,14 +223,22 @@ UPB_INLINE envoy_config_overload_v3_ThresholdTrigger* envoy_config_overload_v3_T
 UPB_INLINE char* envoy_config_overload_v3_ThresholdTrigger_serialize(const envoy_config_overload_v3_ThresholdTrigger* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ThresholdTrigger_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ThresholdTrigger_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_ThresholdTrigger_serialize_ex(const envoy_config_overload_v3_ThresholdTrigger* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ThresholdTrigger_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ThresholdTrigger_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_overload_v3_ThresholdTrigger_clear_value(envoy_config_overload_v3_ThresholdTrigger* msg) {
@@ -271,14 +287,22 @@ UPB_INLINE envoy_config_overload_v3_ScaledTrigger* envoy_config_overload_v3_Scal
 UPB_INLINE char* envoy_config_overload_v3_ScaledTrigger_serialize(const envoy_config_overload_v3_ScaledTrigger* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ScaledTrigger_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ScaledTrigger_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_ScaledTrigger_serialize_ex(const envoy_config_overload_v3_ScaledTrigger* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ScaledTrigger_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ScaledTrigger_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_overload_v3_ScaledTrigger_clear_scaling_threshold(envoy_config_overload_v3_ScaledTrigger* msg) {
@@ -343,14 +367,22 @@ UPB_INLINE envoy_config_overload_v3_Trigger* envoy_config_overload_v3_Trigger_pa
 UPB_INLINE char* envoy_config_overload_v3_Trigger_serialize(const envoy_config_overload_v3_Trigger* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__Trigger_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__Trigger_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_Trigger_serialize_ex(const envoy_config_overload_v3_Trigger* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__Trigger_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__Trigger_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -477,14 +509,22 @@ UPB_INLINE envoy_config_overload_v3_ScaleTimersOverloadActionConfig* envoy_confi
 UPB_INLINE char* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_serialize(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ScaleTimersOverloadActionConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ScaleTimersOverloadActionConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_serialize_ex(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ScaleTimersOverloadActionConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ScaleTimersOverloadActionConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_overload_v3_ScaleTimersOverloadActionConfig_clear_timer_scale_factors(envoy_config_overload_v3_ScaleTimersOverloadActionConfig* msg) {
@@ -597,14 +637,22 @@ UPB_INLINE envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* 
 UPB_INLINE char* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_serialize(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ScaleTimersOverloadActionConfig__ScaleTimer_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ScaleTimersOverloadActionConfig__ScaleTimer_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_serialize_ex(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ScaleTimersOverloadActionConfig__ScaleTimer_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ScaleTimersOverloadActionConfig__ScaleTimer_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -731,14 +779,22 @@ UPB_INLINE envoy_config_overload_v3_ShrinkHeapConfig* envoy_config_overload_v3_S
 UPB_INLINE char* envoy_config_overload_v3_ShrinkHeapConfig_serialize(const envoy_config_overload_v3_ShrinkHeapConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ShrinkHeapConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ShrinkHeapConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_ShrinkHeapConfig_serialize_ex(const envoy_config_overload_v3_ShrinkHeapConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ShrinkHeapConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__ShrinkHeapConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_overload_v3_ShrinkHeapConfig_clear_timer_interval(envoy_config_overload_v3_ShrinkHeapConfig* msg) {
@@ -833,14 +889,22 @@ UPB_INLINE envoy_config_overload_v3_OverloadAction* envoy_config_overload_v3_Ove
 UPB_INLINE char* envoy_config_overload_v3_OverloadAction_serialize(const envoy_config_overload_v3_OverloadAction* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__OverloadAction_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__OverloadAction_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_OverloadAction_serialize_ex(const envoy_config_overload_v3_OverloadAction* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__OverloadAction_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__OverloadAction_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_overload_v3_OverloadAction_clear_name(envoy_config_overload_v3_OverloadAction* msg) {
@@ -1000,14 +1064,22 @@ UPB_INLINE envoy_config_overload_v3_LoadShedPoint* envoy_config_overload_v3_Load
 UPB_INLINE char* envoy_config_overload_v3_LoadShedPoint_serialize(const envoy_config_overload_v3_LoadShedPoint* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__LoadShedPoint_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__LoadShedPoint_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_LoadShedPoint_serialize_ex(const envoy_config_overload_v3_LoadShedPoint* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__LoadShedPoint_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__LoadShedPoint_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_overload_v3_LoadShedPoint_clear_name(envoy_config_overload_v3_LoadShedPoint* msg) {
@@ -1136,14 +1208,22 @@ UPB_INLINE envoy_config_overload_v3_BufferFactoryConfig* envoy_config_overload_v
 UPB_INLINE char* envoy_config_overload_v3_BufferFactoryConfig_serialize(const envoy_config_overload_v3_BufferFactoryConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__BufferFactoryConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__BufferFactoryConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_BufferFactoryConfig_serialize_ex(const envoy_config_overload_v3_BufferFactoryConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__BufferFactoryConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__BufferFactoryConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_overload_v3_BufferFactoryConfig_clear_minimum_account_to_track_power_of_two(envoy_config_overload_v3_BufferFactoryConfig* msg) {
@@ -1192,14 +1272,22 @@ UPB_INLINE envoy_config_overload_v3_OverloadManager* envoy_config_overload_v3_Ov
 UPB_INLINE char* envoy_config_overload_v3_OverloadManager_serialize(const envoy_config_overload_v3_OverloadManager* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__OverloadManager_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__OverloadManager_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_OverloadManager_serialize_ex(const envoy_config_overload_v3_OverloadManager* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__OverloadManager_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__overload__v3__OverloadManager_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_overload_v3_OverloadManager_clear_refresh_interval(envoy_config_overload_v3_OverloadManager* msg) {

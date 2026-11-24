@@ -59,31 +59,31 @@ const upb_MiniTable envoy__config__trace__v3__OpenTelemetryConfig_msg_init = {
   "envoy.config.trace.v3.OpenTelemetryConfig",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x002000000012000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x001000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x002800000113001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x003000003f140022, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x003800000215002a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0040000003160032, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x004800000417003a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0050000005180042, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x005800000619004a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00600000071a0052, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x006800003f00005a, &upb_DecodeFast_Varint32_Packed_Tag1Byte},
     {0x007000003f000062, &upb_DecodeFast_Varint32_Packed_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_config_trace_v3_opentelemetry_proto_upb_file_layout[1] = {
   &envoy__config__trace__v3__OpenTelemetryConfig_msg_init,
 };
 
 const upb_MiniTableFile envoy_config_trace_v3_opentelemetry_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_config_trace_v3_opentelemetry_proto_upb_file_layout,
   NULL,
   NULL,
   1,

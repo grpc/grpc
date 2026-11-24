@@ -31,6 +31,7 @@
 #include "upb/mini_table/internal/sub.h"
 #include "upb/mini_table/message.h"
 #include "upb/mini_table/sub.h"
+#include "upb/port/overflow.h"
 
 // Our awkward dance for including fasttable only when it is enabled.
 #include "upb/port/def.inc"
@@ -454,7 +455,9 @@ static void upb_MtDecoder_AllocateSubs(upb_MtDecoder* d,
     size_t u32_ofs = ofs / kUpb_SubmsgOffsetBytes;
     UPB_ASSERT((ofs % 4) == 0);
     UPB_ASSERT((i * sizeof(upb_MiniTableField) + ofs) % ptr_size == 0);
-    if (u32_ofs > UINT16_MAX) {
+    // u32_ofs must be strictly less than UINT16_MAX: UINT16_MAX is reserved as
+    // kUpb_NoSub, the sentinel meaning "this field has no submessage".
+    if (u32_ofs >= UINT16_MAX) {
       upb_MdDecoder_ErrorJmp(&d->base, "Submessage offset overflow");
     }
     f->UPB_PRIVATE(submsg_ofs) = u32_ofs;
@@ -481,6 +484,10 @@ static const char* upb_MtDecoder_Parse(upb_MtDecoder* d, const char* ptr,
         return --ptr;
       }
       upb_MiniTableField* field = fields;
+      if (*field_count == UINT16_MAX) {
+        upb_MdDecoder_ErrorJmp(
+            &d->base, "Fields in message exceed the limit of %u", UINT16_MAX);
+      }
       *field_count += 1;
       fields = (char*)fields + field_size;
       uint32_t number = ++last_field_number;
@@ -512,6 +519,12 @@ static const char* upb_MtDecoder_Parse(upb_MtDecoder* d, const char* ptr,
       ptr = upb_MdDecoder_DecodeBase92Varint(&d->base, ptr, ch,
                                              kUpb_EncodedValue_MinSkip,
                                              kUpb_EncodedValue_MaxSkip, &skip);
+      if (skip == 0) {
+        upb_MdDecoder_ErrorJmp(&d->base, "Invalid skip value: 0");
+      }
+      if (skip > UINT32_MAX - last_field_number) {
+        upb_MdDecoder_ErrorJmp(&d->base, "Field number overflow");
+      }
       last_field_number += skip;
       last_field_number--;  // Next field seen will increment.
     } else {
@@ -532,7 +545,9 @@ static void upb_MtDecoder_ParseMessage(upb_MtDecoder* d, const char* data,
       sizeof(upb_MiniTableField) + sizeof(upb_MiniTableSubInternal);
   // Buffer length is an upper bound on the number of fields. We will return
   // what we don't use.
-  if ((SIZE_MAX - 4) / bytes_per_field < len) {
+  size_t initial_bytes;
+  if (upb_MulOverflow(bytes_per_field, len, &initial_bytes) ||
+      upb_AddOverflow(initial_bytes, (size_t)4, &initial_bytes)) {
     upb_MdDecoder_ErrorJmp(&d->base, "MiniDescriptor is too large");
   }
   // Max size used per field is a upb_MiniTableField and a
@@ -543,7 +558,6 @@ static void upb_MtDecoder_ParseMessage(upb_MtDecoder* d, const char* data,
                             UPB_ALIGN_OF(upb_MiniTableField) <=
                         4,
                     "alignment difference is too large");
-  const size_t initial_bytes = bytes_per_field * len + 4;
   d->fields = upb_Arena_Malloc(d->arena, initial_bytes);
   upb_MdDecoder_CheckOutOfMemory(&d->base, d->fields);
 
@@ -635,6 +649,9 @@ static void upb_MtDecoder_AssignHasbits(upb_MtDecoder* d) {
     upb_MiniTableField* field =
         (upb_MiniTableField*)&d->table.UPB_PRIVATE(fields)[i];
     if (field->UPB_PRIVATE(offset) == kHasbitPresence) {
+      if (last_hasbit >= INT16_MAX) {
+        upb_MdDecoder_ErrorJmp(&d->base, "Too many fields with presence");
+      }
       field->presence = ++last_hasbit;
     }
   }
@@ -664,6 +681,12 @@ static void upb_MtDecoder_AssignOffsets(upb_MtDecoder* d) {
   for (upb_OneOfLayoutItem* item = d->oneofs.data; item < oneof_end; item++) {
     upb_MiniTableField* f = &d->fields[item->field_index];
     uint16_t case_offset = upb_MtDecoder_Place(d, kUpb_OneOf_CaseFieldRep);
+    // The case offset is stored negated in the int16_t presence field, so it
+    // must fit in the positive int16_t range or it would alias a hasbit index.
+    if (case_offset > INT16_MAX) {
+      upb_MdDecoder_ErrorJmp(&d->base,
+                             "Message size exceeded maximum size for oneofs");
+    }
     uint16_t data_offset = upb_MtDecoder_Place(d, item->rep);
     while (true) {
       f->presence = ~case_offset;
@@ -805,11 +828,15 @@ done:
 
 #if UPB_FASTTABLE
   upb_DecodeFast_TableEntry fasttable[32];
-  int fasttable_size = upb_DecodeFast_BuildTable(&decoder->table, fasttable);
-  mt_size += fasttable_size * sizeof(fasttable[0]);
+  int fasttable_size = 0;
+  if (decoder->platform == kUpb_MiniTablePlatform_64Bit) {
+    fasttable_size = upb_DecodeFast_BuildTable(&decoder->table, fasttable);
+    mt_size += fasttable_size * sizeof(fasttable[0]);
+  }
 #endif
 
   upb_MiniTable* ret = upb_Arena_Malloc(decoder->arena, mt_size);
+  upb_MdDecoder_CheckOutOfMemory(&decoder->base, ret);
   memcpy(ret, &decoder->table, sizeof(*ret));
 
 #if UPB_FASTTABLE
@@ -821,6 +848,14 @@ done:
   }
 #endif
   UPB_PRIVATE(upb_MiniTable_CheckInvariants)(ret);
+
+#ifndef NDEBUG
+  for (int i = 1; i < upb_MiniTable_FieldCount(ret); i++) {
+    const upb_MiniTableField* f1 = upb_MiniTable_GetFieldByIndex(ret, i - 1);
+    const upb_MiniTableField* f2 = upb_MiniTable_GetFieldByIndex(ret, i);
+    UPB_ASSERT(upb_MiniTableField_Number(f2) > upb_MiniTableField_Number(f1));
+  }
+#endif
   return ret;
 }
 
@@ -884,6 +919,18 @@ static const char* upb_MtDecoder_DoBuildMiniTableExtension(
   if (!ret || count != 1) return NULL;
 
   upb_MiniTableField* f = &ext->UPB_PRIVATE(field);
+  uint32_t fieldnum = upb_MiniTableField_Number(f);
+
+  const uint32_t kMaxFieldNumber = (1 << 29) - 1;
+  if (fieldnum == 0 ||
+      (fieldnum > kMaxFieldNumber && !upb_MiniTable_IsMessageSet(extendee))) {
+    upb_MdDecoder_ErrorJmp(&decoder->base, "Invalid extension field number");
+  }
+
+  if (upb_MiniTable_FindFieldByNumber(extendee, fieldnum) != NULL) {
+    upb_MdDecoder_ErrorJmp(&decoder->base,
+                           "Extension overlaps with a known field");
+  }
 
   f->UPB_PRIVATE(mode) |= kUpb_LabelFlags_IsExtension;
   f->UPB_PRIVATE(offset) = 0;

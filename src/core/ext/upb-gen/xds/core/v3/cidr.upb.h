@@ -57,14 +57,22 @@ UPB_INLINE xds_core_v3_CidrRange* xds_core_v3_CidrRange_parse_ex(
 UPB_INLINE char* xds_core_v3_CidrRange_serialize(const xds_core_v3_CidrRange* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__core__v3__CidrRange_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__core__v3__CidrRange_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_core_v3_CidrRange_serialize_ex(const xds_core_v3_CidrRange* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__core__v3__CidrRange_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__core__v3__CidrRange_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_core_v3_CidrRange_clear_address_prefix(xds_core_v3_CidrRange* msg) {

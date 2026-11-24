@@ -30,17 +30,17 @@ const upb_MiniTable envoy__extensions__load_0balancing_0policies__pick_0first__v
   "envoy.extensions.load_balancing_policies.pick_first.v3.PickFirst",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_extensions_load_balancing_policies_pick_first_v3_pick_first_proto_upb_file_layout[1] = {
   &envoy__extensions__load_0balancing_0policies__pick_0first__v3__PickFirst_msg_init,
 };
 
 const upb_MiniTableFile envoy_extensions_load_balancing_policies_pick_first_v3_pick_first_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_extensions_load_balancing_policies_pick_first_v3_pick_first_proto_upb_file_layout,
   NULL,
   NULL,
   1,

@@ -66,14 +66,22 @@ UPB_INLINE envoy_extensions_common_matching_v3_ExtensionWithMatcher* envoy_exten
 UPB_INLINE char* envoy_extensions_common_matching_v3_ExtensionWithMatcher_serialize(const envoy_extensions_common_matching_v3_ExtensionWithMatcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__common__matching__v3__ExtensionWithMatcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__common__matching__v3__ExtensionWithMatcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_common_matching_v3_ExtensionWithMatcher_serialize_ex(const envoy_extensions_common_matching_v3_ExtensionWithMatcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__common__matching__v3__ExtensionWithMatcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__common__matching__v3__ExtensionWithMatcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_common_matching_v3_ExtensionWithMatcher_clear_matcher(envoy_extensions_common_matching_v3_ExtensionWithMatcher* msg) {
@@ -199,14 +207,22 @@ UPB_INLINE envoy_extensions_common_matching_v3_ExtensionWithMatcherPerRoute* env
 UPB_INLINE char* envoy_extensions_common_matching_v3_ExtensionWithMatcherPerRoute_serialize(const envoy_extensions_common_matching_v3_ExtensionWithMatcherPerRoute* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__common__matching__v3__ExtensionWithMatcherPerRoute_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__common__matching__v3__ExtensionWithMatcherPerRoute_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_common_matching_v3_ExtensionWithMatcherPerRoute_serialize_ex(const envoy_extensions_common_matching_v3_ExtensionWithMatcherPerRoute* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__common__matching__v3__ExtensionWithMatcherPerRoute_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__common__matching__v3__ExtensionWithMatcherPerRoute_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_common_matching_v3_ExtensionWithMatcherPerRoute_clear_xds_matcher(envoy_extensions_common_matching_v3_ExtensionWithMatcherPerRoute* msg) {

@@ -147,14 +147,22 @@ UPB_INLINE envoy_data_accesslog_v3_TCPAccessLogEntry* envoy_data_accesslog_v3_TC
 UPB_INLINE char* envoy_data_accesslog_v3_TCPAccessLogEntry_serialize(const envoy_data_accesslog_v3_TCPAccessLogEntry* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__TCPAccessLogEntry_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__TCPAccessLogEntry_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_data_accesslog_v3_TCPAccessLogEntry_serialize_ex(const envoy_data_accesslog_v3_TCPAccessLogEntry* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__TCPAccessLogEntry_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__TCPAccessLogEntry_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_data_accesslog_v3_TCPAccessLogEntry_clear_common_properties(envoy_data_accesslog_v3_TCPAccessLogEntry* msg) {
@@ -249,14 +257,22 @@ UPB_INLINE envoy_data_accesslog_v3_HTTPAccessLogEntry* envoy_data_accesslog_v3_H
 UPB_INLINE char* envoy_data_accesslog_v3_HTTPAccessLogEntry_serialize(const envoy_data_accesslog_v3_HTTPAccessLogEntry* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__HTTPAccessLogEntry_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__HTTPAccessLogEntry_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_data_accesslog_v3_HTTPAccessLogEntry_serialize_ex(const envoy_data_accesslog_v3_HTTPAccessLogEntry* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__HTTPAccessLogEntry_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__HTTPAccessLogEntry_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_data_accesslog_v3_HTTPAccessLogEntry_clear_common_properties(envoy_data_accesslog_v3_HTTPAccessLogEntry* msg) {
@@ -398,14 +414,22 @@ UPB_INLINE envoy_data_accesslog_v3_ConnectionProperties* envoy_data_accesslog_v3
 UPB_INLINE char* envoy_data_accesslog_v3_ConnectionProperties_serialize(const envoy_data_accesslog_v3_ConnectionProperties* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__ConnectionProperties_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__ConnectionProperties_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_data_accesslog_v3_ConnectionProperties_serialize_ex(const envoy_data_accesslog_v3_ConnectionProperties* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__ConnectionProperties_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__ConnectionProperties_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_data_accesslog_v3_ConnectionProperties_clear_received_bytes(envoy_data_accesslog_v3_ConnectionProperties* msg) {
@@ -470,14 +494,22 @@ UPB_INLINE envoy_data_accesslog_v3_AccessLogCommon* envoy_data_accesslog_v3_Acce
 UPB_INLINE char* envoy_data_accesslog_v3_AccessLogCommon_serialize(const envoy_data_accesslog_v3_AccessLogCommon* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__AccessLogCommon_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__AccessLogCommon_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_data_accesslog_v3_AccessLogCommon_serialize_ex(const envoy_data_accesslog_v3_AccessLogCommon* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__AccessLogCommon_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__AccessLogCommon_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_data_accesslog_v3_AccessLogCommon_clear_sample_rate(envoy_data_accesslog_v3_AccessLogCommon* msg) {
@@ -1301,6 +1333,7 @@ UPB_INLINE bool envoy_data_accesslog_v3_AccessLogCommon_filter_state_objects_set
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, sizeof(val), a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, sizeof(val), a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
@@ -1327,6 +1360,7 @@ UPB_INLINE bool envoy_data_accesslog_v3_AccessLogCommon_custom_tags_set(envoy_da
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__data__accesslog__v3__AccessLogCommon__CustomTagsEntry_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, 0, a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, 0, a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
@@ -1421,14 +1455,22 @@ UPB_INLINE envoy_data_accesslog_v3_ResponseFlags* envoy_data_accesslog_v3_Respon
 UPB_INLINE char* envoy_data_accesslog_v3_ResponseFlags_serialize(const envoy_data_accesslog_v3_ResponseFlags* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__ResponseFlags_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__ResponseFlags_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_data_accesslog_v3_ResponseFlags_serialize_ex(const envoy_data_accesslog_v3_ResponseFlags* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__ResponseFlags_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__ResponseFlags_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_data_accesslog_v3_ResponseFlags_clear_failed_local_healthcheck(envoy_data_accesslog_v3_ResponseFlags* msg) {
@@ -1924,14 +1966,22 @@ UPB_INLINE envoy_data_accesslog_v3_ResponseFlags_Unauthorized* envoy_data_access
 UPB_INLINE char* envoy_data_accesslog_v3_ResponseFlags_Unauthorized_serialize(const envoy_data_accesslog_v3_ResponseFlags_Unauthorized* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__ResponseFlags__Unauthorized_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__ResponseFlags__Unauthorized_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_data_accesslog_v3_ResponseFlags_Unauthorized_serialize_ex(const envoy_data_accesslog_v3_ResponseFlags_Unauthorized* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__ResponseFlags__Unauthorized_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__ResponseFlags__Unauthorized_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_data_accesslog_v3_ResponseFlags_Unauthorized_clear_reason(envoy_data_accesslog_v3_ResponseFlags_Unauthorized* msg) {
@@ -1980,14 +2030,22 @@ UPB_INLINE envoy_data_accesslog_v3_TLSProperties* envoy_data_accesslog_v3_TLSPro
 UPB_INLINE char* envoy_data_accesslog_v3_TLSProperties_serialize(const envoy_data_accesslog_v3_TLSProperties* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__TLSProperties_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__TLSProperties_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_data_accesslog_v3_TLSProperties_serialize_ex(const envoy_data_accesslog_v3_TLSProperties* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__TLSProperties_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__TLSProperties_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_data_accesslog_v3_TLSProperties_clear_tls_version(envoy_data_accesslog_v3_TLSProperties* msg) {
@@ -2177,14 +2235,22 @@ UPB_INLINE envoy_data_accesslog_v3_TLSProperties_CertificateProperties* envoy_da
 UPB_INLINE char* envoy_data_accesslog_v3_TLSProperties_CertificateProperties_serialize(const envoy_data_accesslog_v3_TLSProperties_CertificateProperties* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__TLSProperties__CertificateProperties_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__TLSProperties__CertificateProperties_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_data_accesslog_v3_TLSProperties_CertificateProperties_serialize_ex(const envoy_data_accesslog_v3_TLSProperties_CertificateProperties* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__TLSProperties__CertificateProperties_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__TLSProperties__CertificateProperties_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_data_accesslog_v3_TLSProperties_CertificateProperties_clear_subject_alt_name(envoy_data_accesslog_v3_TLSProperties_CertificateProperties* msg) {
@@ -2329,14 +2395,22 @@ UPB_INLINE envoy_data_accesslog_v3_TLSProperties_CertificateProperties_SubjectAl
 UPB_INLINE char* envoy_data_accesslog_v3_TLSProperties_CertificateProperties_SubjectAltName_serialize(const envoy_data_accesslog_v3_TLSProperties_CertificateProperties_SubjectAltName* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__TLSProperties__CertificateProperties__SubjectAltName_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__TLSProperties__CertificateProperties__SubjectAltName_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_data_accesslog_v3_TLSProperties_CertificateProperties_SubjectAltName_serialize_ex(const envoy_data_accesslog_v3_TLSProperties_CertificateProperties_SubjectAltName* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__TLSProperties__CertificateProperties__SubjectAltName_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__TLSProperties__CertificateProperties__SubjectAltName_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -2425,14 +2499,22 @@ UPB_INLINE envoy_data_accesslog_v3_HTTPRequestProperties* envoy_data_accesslog_v
 UPB_INLINE char* envoy_data_accesslog_v3_HTTPRequestProperties_serialize(const envoy_data_accesslog_v3_HTTPRequestProperties* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__HTTPRequestProperties_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__HTTPRequestProperties_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_data_accesslog_v3_HTTPRequestProperties_serialize_ex(const envoy_data_accesslog_v3_HTTPRequestProperties* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__HTTPRequestProperties_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__HTTPRequestProperties_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_data_accesslog_v3_HTTPRequestProperties_clear_request_method(envoy_data_accesslog_v3_HTTPRequestProperties* msg) {
@@ -2732,6 +2814,7 @@ UPB_INLINE bool envoy_data_accesslog_v3_HTTPRequestProperties_request_headers_se
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__data__accesslog__v3__HTTPRequestProperties__RequestHeadersEntry_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, 0, a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, 0, a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
@@ -2780,14 +2863,22 @@ UPB_INLINE envoy_data_accesslog_v3_HTTPResponseProperties* envoy_data_accesslog_
 UPB_INLINE char* envoy_data_accesslog_v3_HTTPResponseProperties_serialize(const envoy_data_accesslog_v3_HTTPResponseProperties* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__HTTPResponseProperties_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__HTTPResponseProperties_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_data_accesslog_v3_HTTPResponseProperties_serialize_ex(const envoy_data_accesslog_v3_HTTPResponseProperties* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__HTTPResponseProperties_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__data__accesslog__v3__HTTPResponseProperties_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_data_accesslog_v3_HTTPResponseProperties_clear_response_code(envoy_data_accesslog_v3_HTTPResponseProperties* msg) {
@@ -3006,6 +3097,7 @@ UPB_INLINE bool envoy_data_accesslog_v3_HTTPResponseProperties_response_headers_
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__data__accesslog__v3__HTTPResponseProperties__ResponseHeadersEntry_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, 0, a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, 0, a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
@@ -3031,6 +3123,7 @@ UPB_INLINE bool envoy_data_accesslog_v3_HTTPResponseProperties_response_trailers
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__data__accesslog__v3__HTTPResponseProperties__ResponseTrailersEntry_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, 0, a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, 0, a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }

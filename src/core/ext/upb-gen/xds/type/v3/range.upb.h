@@ -61,14 +61,22 @@ UPB_INLINE xds_type_v3_Int64Range* xds_type_v3_Int64Range_parse_ex(
 UPB_INLINE char* xds_type_v3_Int64Range_serialize(const xds_type_v3_Int64Range* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__v3__Int64Range_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__v3__Int64Range_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_v3_Int64Range_serialize_ex(const xds_type_v3_Int64Range* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__v3__Int64Range_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__v3__Int64Range_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_type_v3_Int64Range_clear_start(xds_type_v3_Int64Range* msg) {
@@ -133,14 +141,22 @@ UPB_INLINE xds_type_v3_Int32Range* xds_type_v3_Int32Range_parse_ex(
 UPB_INLINE char* xds_type_v3_Int32Range_serialize(const xds_type_v3_Int32Range* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__v3__Int32Range_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__v3__Int32Range_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_v3_Int32Range_serialize_ex(const xds_type_v3_Int32Range* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__v3__Int32Range_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__v3__Int32Range_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_type_v3_Int32Range_clear_start(xds_type_v3_Int32Range* msg) {
@@ -205,14 +221,22 @@ UPB_INLINE xds_type_v3_DoubleRange* xds_type_v3_DoubleRange_parse_ex(
 UPB_INLINE char* xds_type_v3_DoubleRange_serialize(const xds_type_v3_DoubleRange* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__v3__DoubleRange_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__v3__DoubleRange_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_v3_DoubleRange_serialize_ex(const xds_type_v3_DoubleRange* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__v3__DoubleRange_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__v3__DoubleRange_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_type_v3_DoubleRange_clear_start(xds_type_v3_DoubleRange* msg) {

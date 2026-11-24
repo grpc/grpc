@@ -67,14 +67,22 @@ UPB_INLINE envoy_config_metrics_v3_MetricsServiceConfig* envoy_config_metrics_v3
 UPB_INLINE char* envoy_config_metrics_v3_MetricsServiceConfig_serialize(const envoy_config_metrics_v3_MetricsServiceConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__MetricsServiceConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__MetricsServiceConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_metrics_v3_MetricsServiceConfig_serialize_ex(const envoy_config_metrics_v3_MetricsServiceConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__MetricsServiceConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__MetricsServiceConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_metrics_v3_MetricsServiceConfig_clear_grpc_service(envoy_config_metrics_v3_MetricsServiceConfig* msg) {

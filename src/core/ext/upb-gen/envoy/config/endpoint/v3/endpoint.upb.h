@@ -72,14 +72,22 @@ UPB_INLINE envoy_config_endpoint_v3_ClusterLoadAssignment* envoy_config_endpoint
 UPB_INLINE char* envoy_config_endpoint_v3_ClusterLoadAssignment_serialize(const envoy_config_endpoint_v3_ClusterLoadAssignment* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_ClusterLoadAssignment_serialize_ex(const envoy_config_endpoint_v3_ClusterLoadAssignment* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_endpoint_v3_ClusterLoadAssignment_clear_cluster_name(envoy_config_endpoint_v3_ClusterLoadAssignment* msg) {
@@ -282,6 +290,7 @@ UPB_INLINE bool envoy_config_endpoint_v3_ClusterLoadAssignment_named_endpoints_s
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__endpoint__v3__Endpoint_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, sizeof(val), a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, sizeof(val), a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
@@ -323,14 +332,22 @@ UPB_INLINE envoy_config_endpoint_v3_ClusterLoadAssignment_Policy* envoy_config_e
 UPB_INLINE char* envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_serialize(const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_serialize_ex(const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_clear_drop_overloads(envoy_config_endpoint_v3_ClusterLoadAssignment_Policy* msg) {
@@ -521,14 +538,22 @@ UPB_INLINE envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload* e
 UPB_INLINE char* envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_serialize(const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__DropOverload_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__DropOverload_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_serialize_ex(const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__DropOverload_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__DropOverload_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_clear_category(envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload* msg) {

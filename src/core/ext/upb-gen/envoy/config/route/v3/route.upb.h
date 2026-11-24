@@ -75,14 +75,22 @@ UPB_INLINE envoy_config_route_v3_RouteConfiguration* envoy_config_route_v3_Route
 UPB_INLINE char* envoy_config_route_v3_RouteConfiguration_serialize(const envoy_config_route_v3_RouteConfiguration* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__RouteConfiguration_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__RouteConfiguration_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_route_v3_RouteConfiguration_serialize_ex(const envoy_config_route_v3_RouteConfiguration* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__RouteConfiguration_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__RouteConfiguration_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_route_v3_RouteConfiguration_clear_name(envoy_config_route_v3_RouteConfiguration* msg) {
@@ -998,6 +1006,7 @@ UPB_INLINE bool envoy_config_route_v3_RouteConfiguration_typed_per_filter_config
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, sizeof(val), a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, sizeof(val), a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
@@ -1096,14 +1105,22 @@ UPB_INLINE envoy_config_route_v3_Vhds* envoy_config_route_v3_Vhds_parse_ex(
 UPB_INLINE char* envoy_config_route_v3_Vhds_serialize(const envoy_config_route_v3_Vhds* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__Vhds_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__Vhds_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_route_v3_Vhds_serialize_ex(const envoy_config_route_v3_Vhds* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__Vhds_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__Vhds_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_route_v3_Vhds_clear_config_source(envoy_config_route_v3_Vhds* msg) {

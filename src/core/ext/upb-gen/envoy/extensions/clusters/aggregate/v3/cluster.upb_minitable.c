@@ -33,7 +33,7 @@ const upb_MiniTable envoy__extensions__clusters__aggregate__v3__ClusterConfig_ms
   "envoy.extensions.clusters.aggregate.v3.ClusterConfig",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Repeated_Tag1Byte},
   })
 };
@@ -58,20 +58,20 @@ const upb_MiniTable envoy__extensions__clusters__aggregate__v3__AggregateCluster
   "envoy.extensions.clusters.aggregate.v3.AggregateClusterResource",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x002000000003000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x001000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_envoy_extensions_clusters_aggregate_v3_cluster_proto_upb_file_layout[2] = {
   &envoy__extensions__clusters__aggregate__v3__ClusterConfig_msg_init,
   &envoy__extensions__clusters__aggregate__v3__AggregateClusterResource_msg_init,
 };
 
 const upb_MiniTableFile envoy_extensions_clusters_aggregate_v3_cluster_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_extensions_clusters_aggregate_v3_cluster_proto_upb_file_layout,
   NULL,
   NULL,
   2,

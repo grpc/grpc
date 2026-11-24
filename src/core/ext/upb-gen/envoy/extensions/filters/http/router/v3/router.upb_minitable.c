@@ -49,19 +49,27 @@ static const envoy__extensions__filters__http__router__v3__Router_msg_init_Field
 
 const upb_MiniTable envoy__extensions__filters__http__router__v3__Router_msg_init = {
   &envoy_extensions_filters_http_router_v3_Router__fields.fields[0],
-  UPB_SIZE(40, 64), 10, kUpb_ExtMode_NonExtendable, 10, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(40, 64), 10, kUpb_ExtMode_NonExtendable, 10, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.router.v3.Router",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x00100000000f000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x000900003f000010, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001800003f10001a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
     {0x000a00003f000020, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x002000003f00002a, &upb_DecodeFast_String_Repeated_Tag1Byte},
     {0x000b00003f000030, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x000c00003f000038, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
+    {0x002800003f110042, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x003000000112004a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0038000002130052, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -80,23 +88,25 @@ static const envoy__extensions__filters__http__router__v3__Router__UpstreamAcces
 
 const upb_MiniTable envoy__extensions__filters__http__router__v3__Router__UpstreamAccessLogOptions_msg_init = {
   &envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions__fields.fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.router.v3.Router.UpstreamAccessLogOptions",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000900003f000008, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
+    {0x0010000000030012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_envoy_extensions_filters_http_router_v3_router_proto_upb_file_layout[2] = {
   &envoy__extensions__filters__http__router__v3__Router_msg_init,
   &envoy__extensions__filters__http__router__v3__Router__UpstreamAccessLogOptions_msg_init,
 };
 
 const upb_MiniTableFile envoy_extensions_filters_http_router_v3_router_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_extensions_filters_http_router_v3_router_proto_upb_file_layout,
   NULL,
   NULL,
   2,

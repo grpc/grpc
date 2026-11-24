@@ -85,14 +85,22 @@ UPB_INLINE grpc_channelz_v2_PropertyList* grpc_channelz_v2_PropertyList_parse_ex
 UPB_INLINE char* grpc_channelz_v2_PropertyList_serialize(const grpc_channelz_v2_PropertyList* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyList_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyList_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_channelz_v2_PropertyList_serialize_ex(const grpc_channelz_v2_PropertyList* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyList_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyList_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_channelz_v2_PropertyList_clear_properties(grpc_channelz_v2_PropertyList* msg) {
@@ -205,14 +213,22 @@ UPB_INLINE grpc_channelz_v2_PropertyList_Element* grpc_channelz_v2_PropertyList_
 UPB_INLINE char* grpc_channelz_v2_PropertyList_Element_serialize(const grpc_channelz_v2_PropertyList_Element* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyList__Element_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyList__Element_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_channelz_v2_PropertyList_Element_serialize_ex(const grpc_channelz_v2_PropertyList_Element* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyList__Element_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyList__Element_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_channelz_v2_PropertyList_Element_clear_key(grpc_channelz_v2_PropertyList_Element* msg) {
@@ -292,14 +308,22 @@ UPB_INLINE grpc_channelz_v2_PropertyGrid* grpc_channelz_v2_PropertyGrid_parse_ex
 UPB_INLINE char* grpc_channelz_v2_PropertyGrid_serialize(const grpc_channelz_v2_PropertyGrid* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyGrid_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyGrid_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_channelz_v2_PropertyGrid_serialize_ex(const grpc_channelz_v2_PropertyGrid* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyGrid_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyGrid_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_channelz_v2_PropertyGrid_clear_columns(grpc_channelz_v2_PropertyGrid* msg) {
@@ -483,14 +507,22 @@ UPB_INLINE grpc_channelz_v2_PropertyGrid_Row* grpc_channelz_v2_PropertyGrid_Row_
 UPB_INLINE char* grpc_channelz_v2_PropertyGrid_Row_serialize(const grpc_channelz_v2_PropertyGrid_Row* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyGrid__Row_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyGrid__Row_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_channelz_v2_PropertyGrid_Row_serialize_ex(const grpc_channelz_v2_PropertyGrid_Row* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyGrid__Row_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyGrid__Row_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_channelz_v2_PropertyGrid_Row_clear_label(grpc_channelz_v2_PropertyGrid_Row* msg) {
@@ -619,14 +651,22 @@ UPB_INLINE grpc_channelz_v2_PropertyTable* grpc_channelz_v2_PropertyTable_parse_
 UPB_INLINE char* grpc_channelz_v2_PropertyTable_serialize(const grpc_channelz_v2_PropertyTable* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyTable_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyTable_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_channelz_v2_PropertyTable_serialize_ex(const grpc_channelz_v2_PropertyTable* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyTable_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyTable_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_channelz_v2_PropertyTable_clear_columns(grpc_channelz_v2_PropertyTable* msg) {
@@ -810,14 +850,22 @@ UPB_INLINE grpc_channelz_v2_PropertyTable_Row* grpc_channelz_v2_PropertyTable_Ro
 UPB_INLINE char* grpc_channelz_v2_PropertyTable_Row_serialize(const grpc_channelz_v2_PropertyTable_Row* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyTable__Row_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyTable__Row_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_channelz_v2_PropertyTable_Row_serialize_ex(const grpc_channelz_v2_PropertyTable_Row* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyTable__Row_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyTable__Row_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_channelz_v2_PropertyTable_Row_clear_value(grpc_channelz_v2_PropertyTable_Row* msg) {
@@ -930,14 +978,22 @@ UPB_INLINE grpc_channelz_v2_PropertyValue* grpc_channelz_v2_PropertyValue_parse_
 UPB_INLINE char* grpc_channelz_v2_PropertyValue_serialize(const grpc_channelz_v2_PropertyValue* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyValue_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyValue_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_channelz_v2_PropertyValue_serialize_ex(const grpc_channelz_v2_PropertyValue* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyValue_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyValue_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {

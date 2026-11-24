@@ -15,7 +15,7 @@ extern _upb_DefPool_Init xds_annotations_v3_status_proto_upbdefinit;
 extern _upb_DefPool_Init google_protobuf_wrappers_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[356] = {
+static const char descriptor_xds_core_v3_cidr_proto_upbdefinit[356] = {
     '\n', '\026', 'x', 'd', 's', '/', 'c', 'o', 'r', 'e', '/', 'v',
     '3', '/', 'c', 'i', 'd', 'r', '.', 'p', 'r', 'o', 't', 'o',
     '\022', '\013', 'x', 'd', 's', '.', 'c', 'o', 'r', 'e', '.', 'v',
@@ -48,7 +48,7 @@ static const char descriptor[356] = {
     'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[4] = {
+static _upb_DefPool_Init* deps_xds_core_v3_cidr_proto_upbdefinit[4] = {
     &xds_annotations_v3_status_proto_upbdefinit,
     &google_protobuf_wrappers_proto_upbdefinit,
     &validate_validate_proto_upbdefinit,
@@ -56,8 +56,9 @@ static _upb_DefPool_Init *deps[4] = {
 };
 
 _upb_DefPool_Init xds_core_v3_cidr_proto_upbdefinit = {
-    deps,
+    deps_xds_core_v3_cidr_proto_upbdefinit,
     &xds_core_v3_cidr_proto_upb_file_layout,
     "xds/core/v3/cidr.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_xds_core_v3_cidr_proto_upbdefinit,
+                        sizeof(descriptor_xds_core_v3_cidr_proto_upbdefinit)),
 };

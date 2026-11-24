@@ -78,14 +78,22 @@ UPB_INLINE envoy_admin_v3_Clusters* envoy_admin_v3_Clusters_parse_ex(
 UPB_INLINE char* envoy_admin_v3_Clusters_serialize(const envoy_admin_v3_Clusters* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__Clusters_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__Clusters_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_Clusters_serialize_ex(const envoy_admin_v3_Clusters* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__Clusters_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__Clusters_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_admin_v3_Clusters_clear_cluster_statuses(envoy_admin_v3_Clusters* msg) {
@@ -198,14 +206,22 @@ UPB_INLINE envoy_admin_v3_ClusterStatus* envoy_admin_v3_ClusterStatus_parse_ex(
 UPB_INLINE char* envoy_admin_v3_ClusterStatus_serialize(const envoy_admin_v3_ClusterStatus* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__ClusterStatus_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__ClusterStatus_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_ClusterStatus_serialize_ex(const envoy_admin_v3_ClusterStatus* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__ClusterStatus_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__ClusterStatus_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_admin_v3_ClusterStatus_clear_name(envoy_admin_v3_ClusterStatus* msg) {
@@ -475,14 +491,22 @@ UPB_INLINE envoy_admin_v3_HostStatus* envoy_admin_v3_HostStatus_parse_ex(
 UPB_INLINE char* envoy_admin_v3_HostStatus_serialize(const envoy_admin_v3_HostStatus* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__HostStatus_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__HostStatus_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_HostStatus_serialize_ex(const envoy_admin_v3_HostStatus* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__HostStatus_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__HostStatus_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_admin_v3_HostStatus_clear_address(envoy_admin_v3_HostStatus* msg) {
@@ -798,14 +822,22 @@ UPB_INLINE envoy_admin_v3_HostHealthStatus* envoy_admin_v3_HostHealthStatus_pars
 UPB_INLINE char* envoy_admin_v3_HostHealthStatus_serialize(const envoy_admin_v3_HostHealthStatus* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__HostHealthStatus_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__HostHealthStatus_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_HostHealthStatus_serialize_ex(const envoy_admin_v3_HostHealthStatus* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__HostHealthStatus_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__HostHealthStatus_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_admin_v3_HostHealthStatus_clear_failed_active_health_check(envoy_admin_v3_HostHealthStatus* msg) {

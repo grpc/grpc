@@ -61,14 +61,22 @@ UPB_INLINE xds_type_matcher_v3_ServerNameMatcher* xds_type_matcher_v3_ServerName
 UPB_INLINE char* xds_type_matcher_v3_ServerNameMatcher_serialize(const xds_type_matcher_v3_ServerNameMatcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__ServerNameMatcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__ServerNameMatcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_ServerNameMatcher_serialize_ex(const xds_type_matcher_v3_ServerNameMatcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__ServerNameMatcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__ServerNameMatcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_type_matcher_v3_ServerNameMatcher_clear_domain_matchers(xds_type_matcher_v3_ServerNameMatcher* msg) {
@@ -181,14 +189,22 @@ UPB_INLINE xds_type_matcher_v3_ServerNameMatcher_DomainMatcher* xds_type_matcher
 UPB_INLINE char* xds_type_matcher_v3_ServerNameMatcher_DomainMatcher_serialize(const xds_type_matcher_v3_ServerNameMatcher_DomainMatcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__ServerNameMatcher__DomainMatcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__ServerNameMatcher__DomainMatcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_ServerNameMatcher_DomainMatcher_serialize_ex(const xds_type_matcher_v3_ServerNameMatcher_DomainMatcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__ServerNameMatcher__DomainMatcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__ServerNameMatcher__DomainMatcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_type_matcher_v3_ServerNameMatcher_DomainMatcher_clear_domains(xds_type_matcher_v3_ServerNameMatcher_DomainMatcher* msg) {

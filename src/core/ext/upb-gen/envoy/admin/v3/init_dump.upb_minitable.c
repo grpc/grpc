@@ -29,10 +29,14 @@ static const envoy__admin__v3__UnreadyTargetsDumps_msg_init_Fields envoy_admin_v
 
 const upb_MiniTable envoy__admin__v3__UnreadyTargetsDumps_msg_init = {
   &envoy_admin_v3_UnreadyTargetsDumps__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.admin.v3.UnreadyTargetsDumps",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -51,20 +55,20 @@ const upb_MiniTable envoy__admin__v3__UnreadyTargetsDumps__UnreadyTargetsDump_ms
   "envoy.admin.v3.UnreadyTargetsDumps.UnreadyTargetsDump",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x001800003f000012, &upb_DecodeFast_String_Repeated_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_envoy_admin_v3_init_dump_proto_upb_file_layout[2] = {
   &envoy__admin__v3__UnreadyTargetsDumps_msg_init,
   &envoy__admin__v3__UnreadyTargetsDumps__UnreadyTargetsDump_msg_init,
 };
 
 const upb_MiniTableFile envoy_admin_v3_init_dump_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_admin_v3_init_dump_proto_upb_file_layout,
   NULL,
   NULL,
   2,

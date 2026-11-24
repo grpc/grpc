@@ -29,7 +29,8 @@ extern "C" {
 
 // Initialize a table. If memory allocation failed, false is returned and
 // the table is uninitialized.
-bool upb_strtable_init(upb_strtable* table, size_t expected_size, upb_Arena* a);
+UPB_NODISCARD bool upb_strtable_init(upb_strtable* table, size_t expected_size,
+                                     upb_Arena* a);
 
 // Returns the number of values in the table.
 UPB_INLINE size_t upb_strtable_count(const upb_strtable* t) {
@@ -44,8 +45,21 @@ void upb_strtable_clear(upb_strtable* t);
 //
 // If a table resize was required but memory allocation failed, false is
 // returned and the table is unchanged. */
-bool upb_strtable_insert(upb_strtable* t, const char* key, size_t len,
-                         upb_value val, upb_Arena* a);
+UPB_NODISCARD bool upb_strtable_insert(upb_strtable* t, const char* key,
+                                       size_t len, upb_value val, upb_Arena* a);
+
+// Inserts or updates the given key with the given value. Sets *replaced to
+// true if an existing entry was updated, or false if a new entry was inserted.
+// Returns false if memory allocation failed.
+UPB_NODISCARD bool upb_strtable_insert_or_replace(upb_strtable* t,
+                                                  const char* key, size_t len,
+                                                  upb_value val, bool* replaced,
+                                                  upb_Arena* a);
+
+// Copies the table and its keys without rehashing. Performing a shallow copy of
+// entries; the caller is responsible for cloning non-primitive values.
+bool upb_strtable_copy(upb_strtable* dest, const upb_strtable* src,
+                       upb_Arena* a);
 
 // Looks up key in this table, returning "true" if the key was found.
 // If v is non-NULL, copies the value for this key into *v.
@@ -69,7 +83,8 @@ UPB_INLINE bool upb_strtable_remove(upb_strtable* t, const char* key,
 }
 
 // Exposed for testing only.
-bool upb_strtable_resize(upb_strtable* t, size_t size_lg2, upb_Arena* a);
+UPB_NODISCARD bool upb_strtable_resize(upb_strtable* t, size_t size_lg2,
+                                       upb_Arena* a);
 
 /* Iteration over strtable:
  *

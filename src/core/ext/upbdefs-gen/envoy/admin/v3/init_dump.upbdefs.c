@@ -13,7 +13,7 @@
 
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 
-static const char descriptor[416] = {
+static const char descriptor_envoy_admin_v3_init_dump_proto_upbdefinit[416] = {
     '\n', '\036', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'd', 'm', 'i',
     'n', '/', 'v', '3', '/', 'i', 'n', 'i', 't', '_', 'd', 'u',
     'm', 'p', '.', 'p', 'r', 'o', 't', 'o', '\022', '\016', 'e', 'n',
@@ -51,14 +51,15 @@ static const char descriptor[416] = {
     'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[2] = {
+static _upb_DefPool_Init* deps_envoy_admin_v3_init_dump_proto_upbdefinit[2] = {
     &udpa_annotations_status_proto_upbdefinit,
     NULL,
 };
 
 _upb_DefPool_Init envoy_admin_v3_init_dump_proto_upbdefinit = {
-    deps,
+    deps_envoy_admin_v3_init_dump_proto_upbdefinit,
     &envoy_admin_v3_init_dump_proto_upb_file_layout,
     "envoy/admin/v3/init_dump.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_admin_v3_init_dump_proto_upbdefinit,
+                        sizeof(descriptor_envoy_admin_v3_init_dump_proto_upbdefinit)),
 };

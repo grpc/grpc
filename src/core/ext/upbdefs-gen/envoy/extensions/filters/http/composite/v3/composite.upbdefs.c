@@ -19,7 +19,7 @@ extern _upb_DefPool_Init udpa_annotations_migrate_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[1675] = {
+static const char descriptor_envoy_extensions_filters_http_composite_v3_composite_proto_upbdefinit[1675] = {
     '\n', ':', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e',
     'n', 's', 'i', 'o', 'n', 's', '/', 'f', 'i', 'l', 't', 'e',
     'r', 's', '/', 'h', 't', 't', 'p', '/', 'c', 'o', 'm', 'p',
@@ -162,7 +162,7 @@ static const char descriptor[1675] = {
     '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[8] = {
+static _upb_DefPool_Init* deps_envoy_extensions_filters_http_composite_v3_composite_proto_upbdefinit[8] = {
     &envoy_config_core_v3_base_proto_upbdefinit,
     &envoy_config_core_v3_config_source_proto_upbdefinit,
     &envoy_config_core_v3_extension_proto_upbdefinit,
@@ -174,8 +174,9 @@ static _upb_DefPool_Init *deps[8] = {
 };
 
 _upb_DefPool_Init envoy_extensions_filters_http_composite_v3_composite_proto_upbdefinit = {
-    deps,
+    deps_envoy_extensions_filters_http_composite_v3_composite_proto_upbdefinit,
     &envoy_extensions_filters_http_composite_v3_composite_proto_upb_file_layout,
     "envoy/extensions/filters/http/composite/v3/composite.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_extensions_filters_http_composite_v3_composite_proto_upbdefinit,
+                        sizeof(descriptor_envoy_extensions_filters_http_composite_v3_composite_proto_upbdefinit)),
 };

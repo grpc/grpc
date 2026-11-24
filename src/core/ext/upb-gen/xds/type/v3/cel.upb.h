@@ -69,14 +69,22 @@ UPB_INLINE xds_type_v3_CelExpression* xds_type_v3_CelExpression_parse_ex(
 UPB_INLINE char* xds_type_v3_CelExpression_serialize(const xds_type_v3_CelExpression* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__v3__CelExpression_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__v3__CelExpression_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_v3_CelExpression_serialize_ex(const xds_type_v3_CelExpression* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__v3__CelExpression_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__v3__CelExpression_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -265,14 +273,22 @@ UPB_INLINE xds_type_v3_CelExtractString* xds_type_v3_CelExtractString_parse_ex(
 UPB_INLINE char* xds_type_v3_CelExtractString_serialize(const xds_type_v3_CelExtractString* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__v3__CelExtractString_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__v3__CelExtractString_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_v3_CelExtractString_serialize_ex(const xds_type_v3_CelExtractString* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__v3__CelExtractString_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__v3__CelExtractString_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_type_v3_CelExtractString_clear_expr_extract(xds_type_v3_CelExtractString* msg) {

@@ -59,14 +59,22 @@ UPB_INLINE envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding
 UPB_INLINE char* envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding_serialize(const envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__load_0balancing_0policies__autosharding__v3__Autosharding_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__load_0balancing_0policies__autosharding__v3__Autosharding_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding_serialize_ex(const envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__load_0balancing_0policies__autosharding__v3__Autosharding_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__load_0balancing_0policies__autosharding__v3__Autosharding_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding_clear_grpc_service(envoy_extensions_load_balancing_policies_autosharding_v3_Autosharding* msg) {

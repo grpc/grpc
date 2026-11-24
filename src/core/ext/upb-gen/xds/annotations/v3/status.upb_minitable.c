@@ -30,7 +30,7 @@ const upb_MiniTable xds__annotations__v3__FileStatusAnnotation_msg_init = {
   "xds.annotations.v3.FileStatusAnnotation",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
   })
 };
@@ -50,7 +50,7 @@ const upb_MiniTable xds__annotations__v3__MessageStatusAnnotation_msg_init = {
   "xds.annotations.v3.MessageStatusAnnotation",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
   })
 };
@@ -70,7 +70,7 @@ const upb_MiniTable xds__annotations__v3__FieldStatusAnnotation_msg_init = {
   "xds.annotations.v3.FieldStatusAnnotation",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
   })
 };
@@ -91,10 +91,10 @@ const upb_MiniTable xds__annotations__v3__StatusAnnotation_msg_init = {
   "xds.annotations.v3.StatusAnnotation",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x000c00003f000010, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -122,7 +122,7 @@ const upb_MiniTableExtension* xds_annotations_v3_message_status_ext = &xds_annot
 };
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension* xds_annotations_v3_field_status_ext = &xds_annotations_v3_field_status_ext_obj;
-  static const upb_MiniTable *messages_layout[4] = {
+  static const upb_MiniTable *messages_layout_xds_annotations_v3_status_proto_upb_file_layout[4] = {
   &xds__annotations__v3__FileStatusAnnotation_msg_init,
   &xds__annotations__v3__MessageStatusAnnotation_msg_init,
   &xds__annotations__v3__FieldStatusAnnotation_msg_init,
@@ -130,14 +130,14 @@ const upb_MiniTableExtension* xds_annotations_v3_field_status_ext = &xds_annotat
 };
 
 
-static const upb_MiniTableExtension *extensions_layout[3] = {
+static const upb_MiniTableExtension *extensions_layout_xds_annotations_v3_status_proto_upb_file_layout[3] = {
   &xds_annotations_v3_file_status_ext_obj,
   &xds_annotations_v3_message_status_ext_obj,
   &xds_annotations_v3_field_status_ext_obj,
 };
 
 UPB_LINKARR_DECLARE(upb_AllExts, const upb_MiniTableExtension*);
-UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, xds_annotations_v3_status_proto_ext_constructor) {
+UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, xds_annotations_v3_status_proto_ext_constructor, {
   static bool finished = false;
   if (finished) return;
   finished = true;
@@ -149,11 +149,11 @@ UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, xds_annotations_v3_status_pro
   UPB_ASSERT(entry.next == NULL);
   entry.next = UPB_PRIVATE(upb_generated_extension_list);
   UPB_PRIVATE(upb_generated_extension_list) = &entry;
-}
+})
 const upb_MiniTableFile xds_annotations_v3_status_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_xds_annotations_v3_status_proto_upb_file_layout,
   NULL,
-  extensions_layout,
+  extensions_layout_xds_annotations_v3_status_proto_upb_file_layout,
   4,
   0,
   3,

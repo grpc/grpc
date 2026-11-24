@@ -68,14 +68,22 @@ UPB_INLINE envoy_type_v3_RateLimitStrategy* envoy_type_v3_RateLimitStrategy_pars
 UPB_INLINE char* envoy_type_v3_RateLimitStrategy_serialize(const envoy_type_v3_RateLimitStrategy* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__RateLimitStrategy_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__RateLimitStrategy_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_v3_RateLimitStrategy_serialize_ex(const envoy_type_v3_RateLimitStrategy* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__RateLimitStrategy_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__RateLimitStrategy_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -207,14 +215,22 @@ UPB_INLINE envoy_type_v3_RateLimitStrategy_RequestsPerTimeUnit* envoy_type_v3_Ra
 UPB_INLINE char* envoy_type_v3_RateLimitStrategy_RequestsPerTimeUnit_serialize(const envoy_type_v3_RateLimitStrategy_RequestsPerTimeUnit* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__RateLimitStrategy__RequestsPerTimeUnit_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__RateLimitStrategy__RequestsPerTimeUnit_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_v3_RateLimitStrategy_RequestsPerTimeUnit_serialize_ex(const envoy_type_v3_RateLimitStrategy_RequestsPerTimeUnit* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__RateLimitStrategy__RequestsPerTimeUnit_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__RateLimitStrategy__RequestsPerTimeUnit_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_type_v3_RateLimitStrategy_RequestsPerTimeUnit_clear_requests_per_time_unit(envoy_type_v3_RateLimitStrategy_RequestsPerTimeUnit* msg) {

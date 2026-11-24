@@ -54,14 +54,22 @@ UPB_INLINE envoy_config_core_v3_CelExpressionConfig* envoy_config_core_v3_CelExp
 UPB_INLINE char* envoy_config_core_v3_CelExpressionConfig_serialize(const envoy_config_core_v3_CelExpressionConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__CelExpressionConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__CelExpressionConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_CelExpressionConfig_serialize_ex(const envoy_config_core_v3_CelExpressionConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__CelExpressionConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__CelExpressionConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_core_v3_CelExpressionConfig_clear_enable_string_conversion(envoy_config_core_v3_CelExpressionConfig* msg) {

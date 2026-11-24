@@ -36,23 +36,23 @@ const upb_MiniTable envoy__admin__v3__Memory_msg_init = {
   "envoy.admin.v3.Memory",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
     {0x001000003f000010, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
     {0x001800003f000018, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
     {0x002000003f000020, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
     {0x002800003f000028, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
     {0x003000003f000030, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_admin_v3_memory_proto_upb_file_layout[1] = {
   &envoy__admin__v3__Memory_msg_init,
 };
 
 const upb_MiniTableFile envoy_admin_v3_memory_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_admin_v3_memory_proto_upb_file_layout,
   NULL,
   NULL,
   1,

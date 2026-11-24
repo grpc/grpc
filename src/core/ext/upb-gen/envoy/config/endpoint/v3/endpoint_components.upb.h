@@ -97,14 +97,22 @@ UPB_INLINE envoy_config_endpoint_v3_Endpoint* envoy_config_endpoint_v3_Endpoint_
 UPB_INLINE char* envoy_config_endpoint_v3_Endpoint_serialize(const envoy_config_endpoint_v3_Endpoint* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__Endpoint_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__Endpoint_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_Endpoint_serialize_ex(const envoy_config_endpoint_v3_Endpoint* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__Endpoint_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__Endpoint_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_endpoint_v3_Endpoint_clear_address(envoy_config_endpoint_v3_Endpoint* msg) {
@@ -311,14 +319,22 @@ UPB_INLINE envoy_config_endpoint_v3_Endpoint_HealthCheckConfig* envoy_config_end
 UPB_INLINE char* envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_serialize(const envoy_config_endpoint_v3_Endpoint_HealthCheckConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__Endpoint__HealthCheckConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__Endpoint__HealthCheckConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_serialize_ex(const envoy_config_endpoint_v3_Endpoint_HealthCheckConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__Endpoint__HealthCheckConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__Endpoint__HealthCheckConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_clear_port_value(envoy_config_endpoint_v3_Endpoint_HealthCheckConfig* msg) {
@@ -430,14 +446,22 @@ UPB_INLINE envoy_config_endpoint_v3_Endpoint_AdditionalAddress* envoy_config_end
 UPB_INLINE char* envoy_config_endpoint_v3_Endpoint_AdditionalAddress_serialize(const envoy_config_endpoint_v3_Endpoint_AdditionalAddress* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__Endpoint__AdditionalAddress_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__Endpoint__AdditionalAddress_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_Endpoint_AdditionalAddress_serialize_ex(const envoy_config_endpoint_v3_Endpoint_AdditionalAddress* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__Endpoint__AdditionalAddress_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__Endpoint__AdditionalAddress_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_endpoint_v3_Endpoint_AdditionalAddress_clear_address(envoy_config_endpoint_v3_Endpoint_AdditionalAddress* msg) {
@@ -501,14 +525,22 @@ UPB_INLINE envoy_config_endpoint_v3_LbEndpoint* envoy_config_endpoint_v3_LbEndpo
 UPB_INLINE char* envoy_config_endpoint_v3_LbEndpoint_serialize(const envoy_config_endpoint_v3_LbEndpoint* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LbEndpoint_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LbEndpoint_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_LbEndpoint_serialize_ex(const envoy_config_endpoint_v3_LbEndpoint* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LbEndpoint_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LbEndpoint_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -686,14 +718,22 @@ UPB_INLINE envoy_config_endpoint_v3_LbEndpointCollection* envoy_config_endpoint_
 UPB_INLINE char* envoy_config_endpoint_v3_LbEndpointCollection_serialize(const envoy_config_endpoint_v3_LbEndpointCollection* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LbEndpointCollection_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LbEndpointCollection_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_LbEndpointCollection_serialize_ex(const envoy_config_endpoint_v3_LbEndpointCollection* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LbEndpointCollection_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LbEndpointCollection_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_endpoint_v3_LbEndpointCollection_clear_entries(envoy_config_endpoint_v3_LbEndpointCollection* msg) {
@@ -806,14 +846,22 @@ UPB_INLINE envoy_config_endpoint_v3_LedsClusterLocalityConfig* envoy_config_endp
 UPB_INLINE char* envoy_config_endpoint_v3_LedsClusterLocalityConfig_serialize(const envoy_config_endpoint_v3_LedsClusterLocalityConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LedsClusterLocalityConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LedsClusterLocalityConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_LedsClusterLocalityConfig_serialize_ex(const envoy_config_endpoint_v3_LedsClusterLocalityConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LedsClusterLocalityConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LedsClusterLocalityConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_endpoint_v3_LedsClusterLocalityConfig_clear_leds_config(envoy_config_endpoint_v3_LedsClusterLocalityConfig* msg) {
@@ -893,14 +941,22 @@ UPB_INLINE envoy_config_endpoint_v3_LocalityLbEndpoints* envoy_config_endpoint_v
 UPB_INLINE char* envoy_config_endpoint_v3_LocalityLbEndpoints_serialize(const envoy_config_endpoint_v3_LocalityLbEndpoints* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LocalityLbEndpoints_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LocalityLbEndpoints_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_LocalityLbEndpoints_serialize_ex(const envoy_config_endpoint_v3_LocalityLbEndpoints* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LocalityLbEndpoints_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LocalityLbEndpoints_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -1231,14 +1287,22 @@ UPB_INLINE envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList* envoy_co
 UPB_INLINE char* envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList_serialize(const envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LocalityLbEndpoints__LbEndpointList_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LocalityLbEndpoints__LbEndpointList_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList_serialize_ex(const envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LocalityLbEndpoints__LbEndpointList_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LocalityLbEndpoints__LbEndpointList_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList_clear_lb_endpoints(envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList* msg) {

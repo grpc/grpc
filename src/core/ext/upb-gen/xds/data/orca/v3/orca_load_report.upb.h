@@ -54,14 +54,22 @@ UPB_INLINE xds_data_orca_v3_OrcaLoadReport* xds_data_orca_v3_OrcaLoadReport_pars
 UPB_INLINE char* xds_data_orca_v3_OrcaLoadReport_serialize(const xds_data_orca_v3_OrcaLoadReport* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__data__orca__v3__OrcaLoadReport_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__data__orca__v3__OrcaLoadReport_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_data_orca_v3_OrcaLoadReport_serialize_ex(const xds_data_orca_v3_OrcaLoadReport* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__data__orca__v3__OrcaLoadReport_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__data__orca__v3__OrcaLoadReport_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_clear_cpu_utilization(xds_data_orca_v3_OrcaLoadReport* msg) {
@@ -316,6 +324,7 @@ UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_request_cost_set(xds_data_orca_v
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__RequestCostEntry_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, sizeof(val), a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, sizeof(val), a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
@@ -341,6 +350,7 @@ UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_utilization_set(xds_data_orca_v3
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__UtilizationEntry_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, sizeof(val), a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, sizeof(val), a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
@@ -374,6 +384,7 @@ UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_named_metrics_set(xds_data_orca_
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__NamedMetricsEntry_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, sizeof(val), a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, sizeof(val), a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }

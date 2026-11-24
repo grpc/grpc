@@ -65,14 +65,22 @@ UPB_INLINE grpc_channelz_v2_Data* grpc_channelz_v2_Data_parse_ex(
 UPB_INLINE char* grpc_channelz_v2_Data_serialize(const grpc_channelz_v2_Data* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__Data_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__Data_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_channelz_v2_Data_serialize_ex(const grpc_channelz_v2_Data* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__Data_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__Data_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_channelz_v2_Data_clear_name(grpc_channelz_v2_Data* msg) {
@@ -152,14 +160,22 @@ UPB_INLINE grpc_channelz_v2_Entity* grpc_channelz_v2_Entity_parse_ex(
 UPB_INLINE char* grpc_channelz_v2_Entity_serialize(const grpc_channelz_v2_Entity* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__Entity_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__Entity_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_channelz_v2_Entity_serialize_ex(const grpc_channelz_v2_Entity* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__Entity_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__Entity_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_channelz_v2_Entity_clear_id(grpc_channelz_v2_Entity* msg) {
@@ -487,14 +503,22 @@ UPB_INLINE grpc_channelz_v2_TraceEvent* grpc_channelz_v2_TraceEvent_parse_ex(
 UPB_INLINE char* grpc_channelz_v2_TraceEvent_serialize(const grpc_channelz_v2_TraceEvent* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__TraceEvent_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__TraceEvent_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_channelz_v2_TraceEvent_serialize_ex(const grpc_channelz_v2_TraceEvent* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__TraceEvent_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__TraceEvent_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_channelz_v2_TraceEvent_clear_description(grpc_channelz_v2_TraceEvent* msg) {

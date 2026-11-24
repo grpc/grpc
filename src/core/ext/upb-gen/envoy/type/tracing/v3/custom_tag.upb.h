@@ -83,14 +83,22 @@ UPB_INLINE envoy_type_tracing_v3_CustomTag* envoy_type_tracing_v3_CustomTag_pars
 UPB_INLINE char* envoy_type_tracing_v3_CustomTag_serialize(const envoy_type_tracing_v3_CustomTag* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_tracing_v3_CustomTag_serialize_ex(const envoy_type_tracing_v3_CustomTag* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -318,14 +326,22 @@ UPB_INLINE envoy_type_tracing_v3_CustomTag_Literal* envoy_type_tracing_v3_Custom
 UPB_INLINE char* envoy_type_tracing_v3_CustomTag_Literal_serialize(const envoy_type_tracing_v3_CustomTag_Literal* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag__Literal_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag__Literal_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_tracing_v3_CustomTag_Literal_serialize_ex(const envoy_type_tracing_v3_CustomTag_Literal* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag__Literal_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag__Literal_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_Literal_clear_value(envoy_type_tracing_v3_CustomTag_Literal* msg) {
@@ -374,14 +390,22 @@ UPB_INLINE envoy_type_tracing_v3_CustomTag_Environment* envoy_type_tracing_v3_Cu
 UPB_INLINE char* envoy_type_tracing_v3_CustomTag_Environment_serialize(const envoy_type_tracing_v3_CustomTag_Environment* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag__Environment_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag__Environment_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_tracing_v3_CustomTag_Environment_serialize_ex(const envoy_type_tracing_v3_CustomTag_Environment* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag__Environment_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag__Environment_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_Environment_clear_name(envoy_type_tracing_v3_CustomTag_Environment* msg) {
@@ -446,14 +470,22 @@ UPB_INLINE envoy_type_tracing_v3_CustomTag_Header* envoy_type_tracing_v3_CustomT
 UPB_INLINE char* envoy_type_tracing_v3_CustomTag_Header_serialize(const envoy_type_tracing_v3_CustomTag_Header* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag__Header_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag__Header_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_tracing_v3_CustomTag_Header_serialize_ex(const envoy_type_tracing_v3_CustomTag_Header* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag__Header_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag__Header_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_Header_clear_name(envoy_type_tracing_v3_CustomTag_Header* msg) {
@@ -518,14 +550,22 @@ UPB_INLINE envoy_type_tracing_v3_CustomTag_Metadata* envoy_type_tracing_v3_Custo
 UPB_INLINE char* envoy_type_tracing_v3_CustomTag_Metadata_serialize(const envoy_type_tracing_v3_CustomTag_Metadata* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag__Metadata_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag__Metadata_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_tracing_v3_CustomTag_Metadata_serialize_ex(const envoy_type_tracing_v3_CustomTag_Metadata* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag__Metadata_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag__Metadata_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_Metadata_clear_kind(envoy_type_tracing_v3_CustomTag_Metadata* msg) {

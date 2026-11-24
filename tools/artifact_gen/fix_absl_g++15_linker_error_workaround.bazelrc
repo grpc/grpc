@@ -10,3 +10,6 @@
 # - https://github.com/llvm/llvm-project/issues/156667
 common --copt=-Wa,--gsframe=no
 common --host_copt=-Wa,--gsframe=no
+
+build --cxxopt=-fsized-deallocation
+build --host_cxxopt=-fsized-deallocation

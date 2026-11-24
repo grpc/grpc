@@ -19,7 +19,7 @@ extern _upb_DefPool_Init google_protobuf_wrappers_proto_upbdefinit;
 extern _upb_DefPool_Init xds_annotations_v3_status_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[863] = {
+static const char descriptor_xds_type_v3_cel_proto_upbdefinit[863] = {
     '\n', '\025', 'x', 'd', 's', '/', 't', 'y', 'p', 'e', '/', 'v',
     '3', '/', 'c', 'e', 'l', '.', 'p', 'r', 'o', 't', 'o', '\022',
     '\013', 'x', 'd', 's', '.', 't', 'y', 'p', 'e', '.', 'v', '3',
@@ -94,7 +94,7 @@ static const char descriptor[863] = {
     '\002', '\010', '\001', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[8] = {
+static _upb_DefPool_Init* deps_xds_type_v3_cel_proto_upbdefinit[8] = {
     &google_api_expr_v1alpha1_checked_proto_upbdefinit,
     &google_api_expr_v1alpha1_syntax_proto_upbdefinit,
     &cel_expr_checked_proto_upbdefinit,
@@ -106,8 +106,9 @@ static _upb_DefPool_Init *deps[8] = {
 };
 
 _upb_DefPool_Init xds_type_v3_cel_proto_upbdefinit = {
-    deps,
+    deps_xds_type_v3_cel_proto_upbdefinit,
     &xds_type_v3_cel_proto_upb_file_layout,
     "xds/type/v3/cel.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_xds_type_v3_cel_proto_upbdefinit,
+                        sizeof(descriptor_xds_type_v3_cel_proto_upbdefinit)),
 };

@@ -13,7 +13,7 @@
 
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[348] = {
+static const char descriptor_xds_type_matcher_v3_regex_proto_upbdefinit[348] = {
     '\n', '\037', 'x', 'd', 's', '/', 't', 'y', 'p', 'e', '/', 'm',
     'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', '/', 'r', 'e',
     'g', 'e', 'x', '.', 'p', 'r', 'o', 't', 'o', '\022', '\023', 'x',
@@ -45,14 +45,15 @@ static const char descriptor[348] = {
     'r', '/', 'v', '3', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[2] = {
+static _upb_DefPool_Init* deps_xds_type_matcher_v3_regex_proto_upbdefinit[2] = {
     &validate_validate_proto_upbdefinit,
     NULL,
 };
 
 _upb_DefPool_Init xds_type_matcher_v3_regex_proto_upbdefinit = {
-    deps,
+    deps_xds_type_matcher_v3_regex_proto_upbdefinit,
     &xds_type_matcher_v3_regex_proto_upb_file_layout,
     "xds/type/matcher/v3/regex.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_xds_type_matcher_v3_regex_proto_upbdefinit,
+                        sizeof(descriptor_xds_type_matcher_v3_regex_proto_upbdefinit)),
 };

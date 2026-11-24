@@ -61,14 +61,22 @@ UPB_INLINE envoy_type_http_v3_Cookie* envoy_type_http_v3_Cookie_parse_ex(
 UPB_INLINE char* envoy_type_http_v3_Cookie_serialize(const envoy_type_http_v3_Cookie* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__Cookie_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__Cookie_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_http_v3_Cookie_serialize_ex(const envoy_type_http_v3_Cookie* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__Cookie_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__Cookie_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_type_http_v3_Cookie_clear_name(envoy_type_http_v3_Cookie* msg) {
@@ -244,14 +252,22 @@ UPB_INLINE envoy_type_http_v3_CookieAttribute* envoy_type_http_v3_CookieAttribut
 UPB_INLINE char* envoy_type_http_v3_CookieAttribute_serialize(const envoy_type_http_v3_CookieAttribute* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__CookieAttribute_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__CookieAttribute_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_http_v3_CookieAttribute_serialize_ex(const envoy_type_http_v3_CookieAttribute* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__CookieAttribute_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__CookieAttribute_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_type_http_v3_CookieAttribute_clear_name(envoy_type_http_v3_CookieAttribute* msg) {

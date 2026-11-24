@@ -53,14 +53,22 @@ UPB_INLINE xds_type_matcher_v3_HttpAttributesCelMatchInput* xds_type_matcher_v3_
 UPB_INLINE char* xds_type_matcher_v3_HttpAttributesCelMatchInput_serialize(const xds_type_matcher_v3_HttpAttributesCelMatchInput* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__HttpAttributesCelMatchInput_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__HttpAttributesCelMatchInput_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_HttpAttributesCelMatchInput_serialize_ex(const xds_type_matcher_v3_HttpAttributesCelMatchInput* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__HttpAttributesCelMatchInput_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__HttpAttributesCelMatchInput_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 

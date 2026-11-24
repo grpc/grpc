@@ -90,14 +90,22 @@ UPB_INLINE xds_type_matcher_v3_Matcher* xds_type_matcher_v3_Matcher_parse_ex(
 UPB_INLINE char* xds_type_matcher_v3_Matcher_serialize(const xds_type_matcher_v3_Matcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_Matcher_serialize_ex(const xds_type_matcher_v3_Matcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -239,14 +247,22 @@ UPB_INLINE xds_type_matcher_v3_Matcher_OnMatch* xds_type_matcher_v3_Matcher_OnMa
 UPB_INLINE char* xds_type_matcher_v3_Matcher_OnMatch_serialize(const xds_type_matcher_v3_Matcher_OnMatch* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__OnMatch_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__OnMatch_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_Matcher_OnMatch_serialize_ex(const xds_type_matcher_v3_Matcher_OnMatch* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__OnMatch_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__OnMatch_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -373,14 +389,22 @@ UPB_INLINE xds_type_matcher_v3_Matcher_MatcherList* xds_type_matcher_v3_Matcher_
 UPB_INLINE char* xds_type_matcher_v3_Matcher_MatcherList_serialize(const xds_type_matcher_v3_Matcher_MatcherList* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_Matcher_MatcherList_serialize_ex(const xds_type_matcher_v3_Matcher_MatcherList* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_type_matcher_v3_Matcher_MatcherList_clear_matchers(xds_type_matcher_v3_Matcher_MatcherList* msg) {
@@ -493,14 +517,22 @@ UPB_INLINE xds_type_matcher_v3_Matcher_MatcherList_Predicate* xds_type_matcher_v
 UPB_INLINE char* xds_type_matcher_v3_Matcher_MatcherList_Predicate_serialize(const xds_type_matcher_v3_Matcher_MatcherList_Predicate* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList__Predicate_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList__Predicate_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_Matcher_MatcherList_Predicate_serialize_ex(const xds_type_matcher_v3_Matcher_MatcherList_Predicate* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList__Predicate_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList__Predicate_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -675,14 +707,22 @@ UPB_INLINE xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate* xd
 UPB_INLINE char* xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_serialize(const xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList__Predicate__SinglePredicate_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList__Predicate__SinglePredicate_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_serialize_ex(const xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList__Predicate__SinglePredicate_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList__Predicate__SinglePredicate_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -824,14 +864,22 @@ UPB_INLINE xds_type_matcher_v3_Matcher_MatcherList_Predicate_PredicateList* xds_
 UPB_INLINE char* xds_type_matcher_v3_Matcher_MatcherList_Predicate_PredicateList_serialize(const xds_type_matcher_v3_Matcher_MatcherList_Predicate_PredicateList* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList__Predicate__PredicateList_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList__Predicate__PredicateList_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_Matcher_MatcherList_Predicate_PredicateList_serialize_ex(const xds_type_matcher_v3_Matcher_MatcherList_Predicate_PredicateList* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList__Predicate__PredicateList_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList__Predicate__PredicateList_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_type_matcher_v3_Matcher_MatcherList_Predicate_PredicateList_clear_predicate(xds_type_matcher_v3_Matcher_MatcherList_Predicate_PredicateList* msg) {
@@ -944,14 +992,22 @@ UPB_INLINE xds_type_matcher_v3_Matcher_MatcherList_FieldMatcher* xds_type_matche
 UPB_INLINE char* xds_type_matcher_v3_Matcher_MatcherList_FieldMatcher_serialize(const xds_type_matcher_v3_Matcher_MatcherList_FieldMatcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList__FieldMatcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList__FieldMatcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_Matcher_MatcherList_FieldMatcher_serialize_ex(const xds_type_matcher_v3_Matcher_MatcherList_FieldMatcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList__FieldMatcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherList__FieldMatcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_type_matcher_v3_Matcher_MatcherList_FieldMatcher_clear_predicate(xds_type_matcher_v3_Matcher_MatcherList_FieldMatcher* msg) {
@@ -1046,14 +1102,22 @@ UPB_INLINE xds_type_matcher_v3_Matcher_MatcherTree* xds_type_matcher_v3_Matcher_
 UPB_INLINE char* xds_type_matcher_v3_Matcher_MatcherTree_serialize(const xds_type_matcher_v3_Matcher_MatcherTree* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherTree_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherTree_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_Matcher_MatcherTree_serialize_ex(const xds_type_matcher_v3_Matcher_MatcherTree* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherTree_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherTree_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -1227,14 +1291,22 @@ UPB_INLINE xds_type_matcher_v3_Matcher_MatcherTree_MatchMap* xds_type_matcher_v3
 UPB_INLINE char* xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_serialize(const xds_type_matcher_v3_Matcher_MatcherTree_MatchMap* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherTree__MatchMap_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherTree__MatchMap_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_serialize_ex(const xds_type_matcher_v3_Matcher_MatcherTree_MatchMap* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherTree__MatchMap_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Matcher__MatcherTree__MatchMap_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_clear_map(xds_type_matcher_v3_Matcher_MatcherTree_MatchMap* msg) {
@@ -1310,6 +1382,7 @@ UPB_INLINE bool xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_map_set(xds_typ
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__type__matcher__v3__Matcher__OnMatch_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, sizeof(val), a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, sizeof(val), a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }

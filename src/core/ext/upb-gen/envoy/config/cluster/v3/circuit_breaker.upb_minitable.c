@@ -37,10 +37,16 @@ static const envoy__config__cluster__v3__CircuitBreakers_msg_init_Fields envoy_c
 
 const upb_MiniTable envoy__config__cluster__v3__CircuitBreakers_msg_init = {
   &envoy_config_cluster_v3_CircuitBreakers__fields.fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.cluster.v3.CircuitBreakers",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f03000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x001000003f040012, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -69,19 +75,27 @@ static const envoy__config__cluster__v3__CircuitBreakers__Thresholds_msg_init_Fi
 
 const upb_MiniTable envoy__config__cluster__v3__CircuitBreakers__Thresholds_msg_init = {
   &envoy_config_cluster_v3_CircuitBreakers_Thresholds__fields.fields[0],
-  UPB_SIZE(40, 64), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(40, 64), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.cluster.v3.CircuitBreakers.Thresholds",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000c00003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00100000000c0012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00180000010d001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00200000020e0022, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00280000030f002a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x000900003f000030, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x003000000410003a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0038000005110042, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -103,20 +117,26 @@ static const envoy__config__cluster__v3__CircuitBreakers__Thresholds__RetryBudge
 
 const upb_MiniTable envoy__config__cluster__v3__CircuitBreakers__Thresholds__RetryBudget_msg_init = {
   &envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget__fields.fields[0],
-  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.cluster.v3.CircuitBreakers.Thresholds.RetryBudget",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000005000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0018000001060012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x002000000207001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+  })
 };
 
-static const upb_MiniTable *messages_layout[3] = {
+static const upb_MiniTable *messages_layout_envoy_config_cluster_v3_circuit_breaker_proto_upb_file_layout[3] = {
   &envoy__config__cluster__v3__CircuitBreakers_msg_init,
   &envoy__config__cluster__v3__CircuitBreakers__Thresholds_msg_init,
   &envoy__config__cluster__v3__CircuitBreakers__Thresholds__RetryBudget_msg_init,
 };
 
 const upb_MiniTableFile envoy_config_cluster_v3_circuit_breaker_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_config_cluster_v3_circuit_breaker_proto_upb_file_layout,
   NULL,
   NULL,
   3,

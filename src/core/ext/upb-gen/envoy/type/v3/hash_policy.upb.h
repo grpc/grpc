@@ -64,14 +64,22 @@ UPB_INLINE envoy_type_v3_HashPolicy* envoy_type_v3_HashPolicy_parse_ex(
 UPB_INLINE char* envoy_type_v3_HashPolicy_serialize(const envoy_type_v3_HashPolicy* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__HashPolicy_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__HashPolicy_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_v3_HashPolicy_serialize_ex(const envoy_type_v3_HashPolicy* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__HashPolicy_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__HashPolicy_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -182,14 +190,22 @@ UPB_INLINE envoy_type_v3_HashPolicy_SourceIp* envoy_type_v3_HashPolicy_SourceIp_
 UPB_INLINE char* envoy_type_v3_HashPolicy_SourceIp_serialize(const envoy_type_v3_HashPolicy_SourceIp* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__HashPolicy__SourceIp_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__HashPolicy__SourceIp_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_v3_HashPolicy_SourceIp_serialize_ex(const envoy_type_v3_HashPolicy_SourceIp* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__HashPolicy__SourceIp_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__HashPolicy__SourceIp_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 
@@ -222,14 +238,22 @@ UPB_INLINE envoy_type_v3_HashPolicy_FilterState* envoy_type_v3_HashPolicy_Filter
 UPB_INLINE char* envoy_type_v3_HashPolicy_FilterState_serialize(const envoy_type_v3_HashPolicy_FilterState* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__HashPolicy__FilterState_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__HashPolicy__FilterState_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_v3_HashPolicy_FilterState_serialize_ex(const envoy_type_v3_HashPolicy_FilterState* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__HashPolicy__FilterState_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__HashPolicy__FilterState_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_type_v3_HashPolicy_FilterState_clear_key(envoy_type_v3_HashPolicy_FilterState* msg) {

@@ -37,10 +37,28 @@ static const envoy__config__listener__v3__UdpListenerConfig_msg_init_Fields envo
 
 const upb_MiniTable envoy__config__listener__v3__UdpListenerConfig_msg_init = {
   &envoy_config_listener_v3_UdpListenerConfig__fields.fields[0],
-  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.listener.v3.UdpListenerConfig",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000005002a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001800000106003a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0020000002070042, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 const upb_MiniTable envoy__config__listener__v3__ActiveRawUdpListenerConfig_msg_init = {
@@ -51,13 +69,13 @@ const upb_MiniTable envoy__config__listener__v3__ActiveRawUdpListenerConfig_msg_
 #endif
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_envoy_config_listener_v3_udp_listener_config_proto_upb_file_layout[2] = {
   &envoy__config__listener__v3__UdpListenerConfig_msg_init,
   &envoy__config__listener__v3__ActiveRawUdpListenerConfig_msg_init,
 };
 
 const upb_MiniTableFile envoy_config_listener_v3_udp_listener_config_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_config_listener_v3_udp_listener_config_proto_upb_file_layout,
   NULL,
   NULL,
   2,

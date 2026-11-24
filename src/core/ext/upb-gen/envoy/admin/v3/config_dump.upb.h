@@ -79,14 +79,22 @@ UPB_INLINE envoy_admin_v3_ConfigDump* envoy_admin_v3_ConfigDump_parse_ex(
 UPB_INLINE char* envoy_admin_v3_ConfigDump_serialize(const envoy_admin_v3_ConfigDump* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__ConfigDump_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__ConfigDump_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_ConfigDump_serialize_ex(const envoy_admin_v3_ConfigDump* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__ConfigDump_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__ConfigDump_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_admin_v3_ConfigDump_clear_configs(envoy_admin_v3_ConfigDump* msg) {
@@ -199,14 +207,22 @@ UPB_INLINE envoy_admin_v3_BootstrapConfigDump* envoy_admin_v3_BootstrapConfigDum
 UPB_INLINE char* envoy_admin_v3_BootstrapConfigDump_serialize(const envoy_admin_v3_BootstrapConfigDump* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__BootstrapConfigDump_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__BootstrapConfigDump_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_BootstrapConfigDump_serialize_ex(const envoy_admin_v3_BootstrapConfigDump* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__BootstrapConfigDump_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__BootstrapConfigDump_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_admin_v3_BootstrapConfigDump_clear_bootstrap(envoy_admin_v3_BootstrapConfigDump* msg) {
@@ -301,14 +317,22 @@ UPB_INLINE envoy_admin_v3_SecretsConfigDump* envoy_admin_v3_SecretsConfigDump_pa
 UPB_INLINE char* envoy_admin_v3_SecretsConfigDump_serialize(const envoy_admin_v3_SecretsConfigDump* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__SecretsConfigDump_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__SecretsConfigDump_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_SecretsConfigDump_serialize_ex(const envoy_admin_v3_SecretsConfigDump* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__SecretsConfigDump_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__SecretsConfigDump_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_admin_v3_SecretsConfigDump_clear_static_secrets(envoy_admin_v3_SecretsConfigDump* msg) {
@@ -581,14 +605,22 @@ UPB_INLINE envoy_admin_v3_SecretsConfigDump_DynamicSecret* envoy_admin_v3_Secret
 UPB_INLINE char* envoy_admin_v3_SecretsConfigDump_DynamicSecret_serialize(const envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__SecretsConfigDump__DynamicSecret_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__SecretsConfigDump__DynamicSecret_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_SecretsConfigDump_DynamicSecret_serialize_ex(const envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__SecretsConfigDump__DynamicSecret_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__SecretsConfigDump__DynamicSecret_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_admin_v3_SecretsConfigDump_DynamicSecret_clear_name(envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg) {
@@ -762,14 +794,22 @@ UPB_INLINE envoy_admin_v3_SecretsConfigDump_StaticSecret* envoy_admin_v3_Secrets
 UPB_INLINE char* envoy_admin_v3_SecretsConfigDump_StaticSecret_serialize(const envoy_admin_v3_SecretsConfigDump_StaticSecret* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__SecretsConfigDump__StaticSecret_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__SecretsConfigDump__StaticSecret_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_SecretsConfigDump_StaticSecret_serialize_ex(const envoy_admin_v3_SecretsConfigDump_StaticSecret* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__SecretsConfigDump__StaticSecret_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__SecretsConfigDump__StaticSecret_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_admin_v3_SecretsConfigDump_StaticSecret_clear_name(envoy_admin_v3_SecretsConfigDump_StaticSecret* msg) {

@@ -30,22 +30,24 @@ static const xds__type__v3__TypedStruct_msg_init_Fields xds_type_v3_TypedStruct_
 
 const upb_MiniTable xds__type__v3__TypedStruct_msg_init = {
   &xds_type_v3_TypedStruct__fields.fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.v3.TypedStruct",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x0020000000030012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_xds_type_v3_typed_struct_proto_upb_file_layout[1] = {
   &xds__type__v3__TypedStruct_msg_init,
 };
 
 const upb_MiniTableFile xds_type_v3_typed_struct_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_xds_type_v3_typed_struct_proto_upb_file_layout,
   NULL,
   NULL,
   1,

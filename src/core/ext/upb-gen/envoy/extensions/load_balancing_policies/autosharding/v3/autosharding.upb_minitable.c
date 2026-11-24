@@ -42,23 +42,23 @@ const upb_MiniTable envoy__extensions__load_0balancing_0policies__autosharding__
   "envoy.extensions.load_balancing_policies.autosharding.v3.Autosharding",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x003000000008000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x001000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x002000003f00001a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x000900003f000020, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x003800000109002a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_extensions_load_balancing_policies_autosharding_v3_autosharding_proto_upb_file_layout[1] = {
   &envoy__extensions__load_0balancing_0policies__autosharding__v3__Autosharding_msg_init,
 };
 
 const upb_MiniTableFile envoy_extensions_load_balancing_policies_autosharding_v3_autosharding_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_extensions_load_balancing_policies_autosharding_v3_autosharding_proto_upb_file_layout,
   NULL,
   NULL,
   1,

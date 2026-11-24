@@ -11,7 +11,7 @@
 #include "google/protobuf/any.upbdefs.h"
 #include "google/protobuf/any.upb_minitable.h"
 
-static const char descriptor[228] = {
+static const char descriptor_google_protobuf_any_proto_upbdefinit[228] = {
     '\n', '\031', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o',
     't', 'o', 'b', 'u', 'f', '/', 'a', 'n', 'y', '.', 'p', 'r',
     'o', 't', 'o', '\022', '\017', 'g', 'o', 'o', 'g', 'l', 'e', '.',
@@ -33,13 +33,14 @@ static const char descriptor[228] = {
     'y', 'p', 'e', 's', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[1] = {
+static _upb_DefPool_Init* deps_google_protobuf_any_proto_upbdefinit[1] = {
     NULL,
 };
 
 _upb_DefPool_Init google_protobuf_any_proto_upbdefinit = {
-    deps,
+    deps_google_protobuf_any_proto_upbdefinit,
     &google_protobuf_any_proto_upb_file_layout,
     "google/protobuf/any.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_google_protobuf_any_proto_upbdefinit,
+                        sizeof(descriptor_google_protobuf_any_proto_upbdefinit)),
 };

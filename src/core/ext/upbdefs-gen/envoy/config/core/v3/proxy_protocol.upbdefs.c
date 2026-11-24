@@ -15,7 +15,7 @@ extern _upb_DefPool_Init envoy_config_core_v3_substitution_format_string_proto_u
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[1065] = {
+static const char descriptor_envoy_config_core_v3_proxy_protocol_proto_upbdefinit[1065] = {
     '\n', ')', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f',
     'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'p',
     'r', 'o', 'x', 'y', '_', 'p', 'r', 'o', 't', 'o', 'c', 'o',
@@ -107,7 +107,7 @@ static const char descriptor[1065] = {
     '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[4] = {
+static _upb_DefPool_Init* deps_envoy_config_core_v3_proxy_protocol_proto_upbdefinit[4] = {
     &envoy_config_core_v3_substitution_format_string_proto_upbdefinit,
     &udpa_annotations_status_proto_upbdefinit,
     &validate_validate_proto_upbdefinit,
@@ -115,8 +115,9 @@ static _upb_DefPool_Init *deps[4] = {
 };
 
 _upb_DefPool_Init envoy_config_core_v3_proxy_protocol_proto_upbdefinit = {
-    deps,
+    deps_envoy_config_core_v3_proxy_protocol_proto_upbdefinit,
     &envoy_config_core_v3_proxy_protocol_proto_upb_file_layout,
     "envoy/config/core/v3/proxy_protocol.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_config_core_v3_proxy_protocol_proto_upbdefinit,
+                        sizeof(descriptor_envoy_config_core_v3_proxy_protocol_proto_upbdefinit)),
 };

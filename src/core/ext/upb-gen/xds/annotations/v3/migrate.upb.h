@@ -67,14 +67,22 @@ UPB_INLINE xds_annotations_v3_MigrateAnnotation* xds_annotations_v3_MigrateAnnot
 UPB_INLINE char* xds_annotations_v3_MigrateAnnotation_serialize(const xds_annotations_v3_MigrateAnnotation* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__MigrateAnnotation_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__MigrateAnnotation_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_annotations_v3_MigrateAnnotation_serialize_ex(const xds_annotations_v3_MigrateAnnotation* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__MigrateAnnotation_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__MigrateAnnotation_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_annotations_v3_MigrateAnnotation_clear_rename(xds_annotations_v3_MigrateAnnotation* msg) {
@@ -123,14 +131,22 @@ UPB_INLINE xds_annotations_v3_FieldMigrateAnnotation* xds_annotations_v3_FieldMi
 UPB_INLINE char* xds_annotations_v3_FieldMigrateAnnotation_serialize(const xds_annotations_v3_FieldMigrateAnnotation* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FieldMigrateAnnotation_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FieldMigrateAnnotation_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_annotations_v3_FieldMigrateAnnotation_serialize_ex(const xds_annotations_v3_FieldMigrateAnnotation* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FieldMigrateAnnotation_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FieldMigrateAnnotation_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_annotations_v3_FieldMigrateAnnotation_clear_rename(xds_annotations_v3_FieldMigrateAnnotation* msg) {
@@ -195,14 +211,22 @@ UPB_INLINE xds_annotations_v3_FileMigrateAnnotation* xds_annotations_v3_FileMigr
 UPB_INLINE char* xds_annotations_v3_FileMigrateAnnotation_serialize(const xds_annotations_v3_FileMigrateAnnotation* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FileMigrateAnnotation_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FileMigrateAnnotation_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_annotations_v3_FileMigrateAnnotation_serialize_ex(const xds_annotations_v3_FileMigrateAnnotation* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FileMigrateAnnotation_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FileMigrateAnnotation_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_annotations_v3_FileMigrateAnnotation_clear_move_to_package(xds_annotations_v3_FileMigrateAnnotation* msg) {

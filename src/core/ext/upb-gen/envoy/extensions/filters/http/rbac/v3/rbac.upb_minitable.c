@@ -47,12 +47,12 @@ const upb_MiniTable envoy__extensions__filters__http__rbac__v3__RBAC_msg_init = 
   "envoy.extensions.filters.http.rbac.v3.RBAC",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x00300000000b000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00380000010c0012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x001000003f00001a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00400000020d0022, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00480000030e002a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x002000003f000032, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x000900003f000038, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
   })
@@ -72,19 +72,25 @@ static const envoy__extensions__filters__http__rbac__v3__RBACPerRoute_msg_init_F
 
 const upb_MiniTable envoy__extensions__filters__http__rbac__v3__RBACPerRoute_msg_init = {
   &envoy_extensions_filters_http_rbac_v3_RBACPerRoute__fields.fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.rbac.v3.RBACPerRoute",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0010000000020012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_envoy_extensions_filters_http_rbac_v3_rbac_proto_upb_file_layout[2] = {
   &envoy__extensions__filters__http__rbac__v3__RBAC_msg_init,
   &envoy__extensions__filters__http__rbac__v3__RBACPerRoute_msg_init,
 };
 
 const upb_MiniTableFile envoy_extensions_filters_http_rbac_v3_rbac_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_extensions_filters_http_rbac_v3_rbac_proto_upb_file_layout,
   NULL,
   NULL,
   2,

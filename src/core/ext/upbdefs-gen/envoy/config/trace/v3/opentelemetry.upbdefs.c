@@ -19,7 +19,7 @@ extern _upb_DefPool_Init udpa_annotations_migrate_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[1656] = {
+static const char descriptor_envoy_config_trace_v3_opentelemetry_proto_upbdefinit[1656] = {
     '\n', ')', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f',
     'i', 'g', '/', 't', 'r', 'a', 'c', 'e', '/', 'v', '3', '/',
     'o', 'p', 'e', 'n', 't', 'e', 'l', 'e', 'm', 'e', 't', 'r',
@@ -160,7 +160,7 @@ static const char descriptor[1656] = {
     '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[8] = {
+static _upb_DefPool_Init* deps_envoy_config_trace_v3_opentelemetry_proto_upbdefinit[8] = {
     &envoy_config_core_v3_extension_proto_upbdefinit,
     &envoy_config_core_v3_grpc_service_proto_upbdefinit,
     &envoy_config_core_v3_http_service_proto_upbdefinit,
@@ -172,8 +172,9 @@ static _upb_DefPool_Init *deps[8] = {
 };
 
 _upb_DefPool_Init envoy_config_trace_v3_opentelemetry_proto_upbdefinit = {
-    deps,
+    deps_envoy_config_trace_v3_opentelemetry_proto_upbdefinit,
     &envoy_config_trace_v3_opentelemetry_proto_upb_file_layout,
     "envoy/config/trace/v3/opentelemetry.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_config_trace_v3_opentelemetry_proto_upbdefinit,
+                        sizeof(descriptor_envoy_config_trace_v3_opentelemetry_proto_upbdefinit)),
 };

@@ -33,10 +33,10 @@ const upb_MiniTable envoy__config__core__v3__DnsResolverOptions_msg_init = {
   "envoy.config.core.v3.DnsResolverOptions",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x000900003f000010, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -56,19 +56,25 @@ static const envoy__config__core__v3__DnsResolutionConfig_msg_init_Fields envoy_
 
 const upb_MiniTable envoy__config__core__v3__DnsResolutionConfig_msg_init = {
   &envoy_config_core_v3_DnsResolutionConfig__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.DnsResolutionConfig",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000003f03000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0018000000040012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_envoy_config_core_v3_resolver_proto_upb_file_layout[2] = {
   &envoy__config__core__v3__DnsResolverOptions_msg_init,
   &envoy__config__core__v3__DnsResolutionConfig_msg_init,
 };
 
 const upb_MiniTableFile envoy_config_core_v3_resolver_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_config_core_v3_resolver_proto_upb_file_layout,
   NULL,
   NULL,
   2,

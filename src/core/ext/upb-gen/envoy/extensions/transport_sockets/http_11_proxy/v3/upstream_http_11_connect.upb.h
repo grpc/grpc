@@ -58,14 +58,22 @@ UPB_INLINE envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstre
 UPB_INLINE char* envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_serialize(const envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_serialize_ex(const envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_clear_transport_socket(envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport* msg) {

@@ -33,18 +33,24 @@ static const envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11P
 
 const upb_MiniTable envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init = {
   &envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.transport_sockets.http_11_proxy.v3.Http11ProxyUpstreamTransport",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000003000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0018000001040012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_extensions_transport_sockets_http_11_proxy_v3_upstream_http_11_connect_proto_upb_file_layout[1] = {
   &envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init,
 };
 
 const upb_MiniTableFile envoy_extensions_transport_sockets_http_11_proxy_v3_upstream_http_11_connect_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_extensions_transport_sockets_http_11_proxy_v3_upstream_http_11_connect_proto_upb_file_layout,
   NULL,
   NULL,
   1,

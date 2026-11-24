@@ -13,7 +13,7 @@
 
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 
-static const char descriptor[306] = {
+static const char descriptor_envoy_type_v3_ratelimit_unit_proto_upbdefinit[306] = {
     '\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e',
     '/', 'v', '3', '/', 'r', 'a', 't', 'e', 'l', 'i', 'm', 'i',
     't', '_', 'u', 'n', 'i', 't', '.', 'p', 'r', 'o', 't', 'o',
@@ -42,14 +42,15 @@ static const char descriptor[306] = {
     'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[2] = {
+static _upb_DefPool_Init* deps_envoy_type_v3_ratelimit_unit_proto_upbdefinit[2] = {
     &udpa_annotations_status_proto_upbdefinit,
     NULL,
 };
 
 _upb_DefPool_Init envoy_type_v3_ratelimit_unit_proto_upbdefinit = {
-    deps,
+    deps_envoy_type_v3_ratelimit_unit_proto_upbdefinit,
     &envoy_type_v3_ratelimit_unit_proto_upb_file_layout,
     "envoy/type/v3/ratelimit_unit.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_type_v3_ratelimit_unit_proto_upbdefinit,
+                        sizeof(descriptor_envoy_type_v3_ratelimit_unit_proto_upbdefinit)),
 };

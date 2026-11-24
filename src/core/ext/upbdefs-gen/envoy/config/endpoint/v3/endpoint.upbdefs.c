@@ -19,7 +19,7 @@ extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[1578] = {
+static const char descriptor_envoy_config_endpoint_v3_endpoint_proto_upbdefinit[1578] = {
     '\n', '\'', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f',
     'i', 'g', '/', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', '/',
     'v', '3', '/', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', '.',
@@ -154,7 +154,7 @@ static const char descriptor[1578] = {
     'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[8] = {
+static _upb_DefPool_Init* deps_envoy_config_endpoint_v3_endpoint_proto_upbdefinit[8] = {
     &envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit,
     &envoy_type_v3_percent_proto_upbdefinit,
     &google_protobuf_duration_proto_upbdefinit,
@@ -166,8 +166,9 @@ static _upb_DefPool_Init *deps[8] = {
 };
 
 _upb_DefPool_Init envoy_config_endpoint_v3_endpoint_proto_upbdefinit = {
-    deps,
+    deps_envoy_config_endpoint_v3_endpoint_proto_upbdefinit,
     &envoy_config_endpoint_v3_endpoint_proto_upb_file_layout,
     "envoy/config/endpoint/v3/endpoint.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_config_endpoint_v3_endpoint_proto_upbdefinit,
+                        sizeof(descriptor_envoy_config_endpoint_v3_endpoint_proto_upbdefinit)),
 };

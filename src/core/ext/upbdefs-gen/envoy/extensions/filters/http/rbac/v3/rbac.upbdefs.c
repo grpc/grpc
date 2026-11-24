@@ -17,7 +17,7 @@ extern _upb_DefPool_Init udpa_annotations_migrate_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 
-static const char descriptor[1124] = {
+static const char descriptor_envoy_extensions_filters_http_rbac_v3_rbac_proto_upbdefinit[1124] = {
     '\n', '0', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e',
     'n', 's', 'i', 'o', 'n', 's', '/', 'f', 'i', 'l', 't', 'e',
     'r', 's', '/', 'h', 't', 't', 'p', '/', 'r', 'b', 'a', 'c',
@@ -114,7 +114,7 @@ static const char descriptor[1124] = {
     'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[6] = {
+static _upb_DefPool_Init* deps_envoy_extensions_filters_http_rbac_v3_rbac_proto_upbdefinit[6] = {
     &envoy_config_rbac_v3_rbac_proto_upbdefinit,
     &xds_type_matcher_v3_matcher_proto_upbdefinit,
     &udpa_annotations_migrate_proto_upbdefinit,
@@ -124,8 +124,9 @@ static _upb_DefPool_Init *deps[6] = {
 };
 
 _upb_DefPool_Init envoy_extensions_filters_http_rbac_v3_rbac_proto_upbdefinit = {
-    deps,
+    deps_envoy_extensions_filters_http_rbac_v3_rbac_proto_upbdefinit,
     &envoy_extensions_filters_http_rbac_v3_rbac_proto_upb_file_layout,
     "envoy/extensions/filters/http/rbac/v3/rbac.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_extensions_filters_http_rbac_v3_rbac_proto_upbdefinit,
+                        sizeof(descriptor_envoy_extensions_filters_http_rbac_v3_rbac_proto_upbdefinit)),
 };

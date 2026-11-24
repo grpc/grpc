@@ -67,14 +67,22 @@ UPB_INLINE envoy_config_route_v3_ScopedRouteConfiguration* envoy_config_route_v3
 UPB_INLINE char* envoy_config_route_v3_ScopedRouteConfiguration_serialize(const envoy_config_route_v3_ScopedRouteConfiguration* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__ScopedRouteConfiguration_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__ScopedRouteConfiguration_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_route_v3_ScopedRouteConfiguration_serialize_ex(const envoy_config_route_v3_ScopedRouteConfiguration* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__ScopedRouteConfiguration_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__ScopedRouteConfiguration_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_route_v3_ScopedRouteConfiguration_clear_name(envoy_config_route_v3_ScopedRouteConfiguration* msg) {
@@ -217,14 +225,22 @@ UPB_INLINE envoy_config_route_v3_ScopedRouteConfiguration_Key* envoy_config_rout
 UPB_INLINE char* envoy_config_route_v3_ScopedRouteConfiguration_Key_serialize(const envoy_config_route_v3_ScopedRouteConfiguration_Key* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__ScopedRouteConfiguration__Key_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__ScopedRouteConfiguration__Key_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_route_v3_ScopedRouteConfiguration_Key_serialize_ex(const envoy_config_route_v3_ScopedRouteConfiguration_Key* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__ScopedRouteConfiguration__Key_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__ScopedRouteConfiguration__Key_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_route_v3_ScopedRouteConfiguration_Key_clear_fragments(envoy_config_route_v3_ScopedRouteConfiguration_Key* msg) {
@@ -337,14 +353,22 @@ UPB_INLINE envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment* envoy_co
 UPB_INLINE char* envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment_serialize(const envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__ScopedRouteConfiguration__Key__Fragment_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__ScopedRouteConfiguration__Key__Fragment_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment_serialize_ex(const envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__ScopedRouteConfiguration__Key__Fragment_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__ScopedRouteConfiguration__Key__Fragment_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {

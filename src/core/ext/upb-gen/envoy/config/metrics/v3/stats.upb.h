@@ -95,14 +95,22 @@ UPB_INLINE envoy_config_metrics_v3_StatsSink* envoy_config_metrics_v3_StatsSink_
 UPB_INLINE char* envoy_config_metrics_v3_StatsSink_serialize(const envoy_config_metrics_v3_StatsSink* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__StatsSink_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__StatsSink_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_metrics_v3_StatsSink_serialize_ex(const envoy_config_metrics_v3_StatsSink* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__StatsSink_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__StatsSink_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -197,14 +205,22 @@ UPB_INLINE envoy_config_metrics_v3_StatsConfig* envoy_config_metrics_v3_StatsCon
 UPB_INLINE char* envoy_config_metrics_v3_StatsConfig_serialize(const envoy_config_metrics_v3_StatsConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__StatsConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__StatsConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_metrics_v3_StatsConfig_serialize_ex(const envoy_config_metrics_v3_StatsConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__StatsConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__StatsConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_metrics_v3_StatsConfig_clear_stats_tags(envoy_config_metrics_v3_StatsConfig* msg) {
@@ -490,14 +506,22 @@ UPB_INLINE envoy_config_metrics_v3_StatsMatcher* envoy_config_metrics_v3_StatsMa
 UPB_INLINE char* envoy_config_metrics_v3_StatsMatcher_serialize(const envoy_config_metrics_v3_StatsMatcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__StatsMatcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__StatsMatcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_metrics_v3_StatsMatcher_serialize_ex(const envoy_config_metrics_v3_StatsMatcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__StatsMatcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__StatsMatcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -629,14 +653,22 @@ UPB_INLINE envoy_config_metrics_v3_TagSpecifier* envoy_config_metrics_v3_TagSpec
 UPB_INLINE char* envoy_config_metrics_v3_TagSpecifier_serialize(const envoy_config_metrics_v3_TagSpecifier* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__TagSpecifier_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__TagSpecifier_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_metrics_v3_TagSpecifier_serialize_ex(const envoy_config_metrics_v3_TagSpecifier* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__TagSpecifier_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__TagSpecifier_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -741,14 +773,22 @@ UPB_INLINE envoy_config_metrics_v3_HistogramBucketSettings* envoy_config_metrics
 UPB_INLINE char* envoy_config_metrics_v3_HistogramBucketSettings_serialize(const envoy_config_metrics_v3_HistogramBucketSettings* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__HistogramBucketSettings_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__HistogramBucketSettings_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_metrics_v3_HistogramBucketSettings_serialize_ex(const envoy_config_metrics_v3_HistogramBucketSettings* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__HistogramBucketSettings_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__HistogramBucketSettings_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_metrics_v3_HistogramBucketSettings_clear_match(envoy_config_metrics_v3_HistogramBucketSettings* msg) {
@@ -914,14 +954,22 @@ UPB_INLINE envoy_config_metrics_v3_StatsdSink* envoy_config_metrics_v3_StatsdSin
 UPB_INLINE char* envoy_config_metrics_v3_StatsdSink_serialize(const envoy_config_metrics_v3_StatsdSink* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__StatsdSink_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__StatsdSink_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_metrics_v3_StatsdSink_serialize_ex(const envoy_config_metrics_v3_StatsdSink* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__StatsdSink_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__StatsdSink_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -1053,14 +1101,22 @@ UPB_INLINE envoy_config_metrics_v3_DogStatsdSink* envoy_config_metrics_v3_DogSta
 UPB_INLINE char* envoy_config_metrics_v3_DogStatsdSink_serialize(const envoy_config_metrics_v3_DogStatsdSink* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__DogStatsdSink_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__DogStatsdSink_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_metrics_v3_DogStatsdSink_serialize_ex(const envoy_config_metrics_v3_DogStatsdSink* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__DogStatsdSink_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__DogStatsdSink_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -1202,14 +1258,22 @@ UPB_INLINE envoy_config_metrics_v3_HystrixSink* envoy_config_metrics_v3_HystrixS
 UPB_INLINE char* envoy_config_metrics_v3_HystrixSink_serialize(const envoy_config_metrics_v3_HystrixSink* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__HystrixSink_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__HystrixSink_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_metrics_v3_HystrixSink_serialize_ex(const envoy_config_metrics_v3_HystrixSink* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__HystrixSink_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__metrics__v3__HystrixSink_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_metrics_v3_HystrixSink_clear_num_buckets(envoy_config_metrics_v3_HystrixSink* msg) {

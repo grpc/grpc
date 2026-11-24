@@ -17,7 +17,7 @@ extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 
-static const char descriptor[1037] = {
+static const char descriptor_envoy_service_load_stats_v3_lrs_proto_upbdefinit[1037] = {
     '\n', '%', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v',
     'i', 'c', 'e', '/', 'l', 'o', 'a', 'd', '_', 's', 't', 'a',
     't', 's', '/', 'v', '3', '/', 'l', 'r', 's', '.', 'p', 'r',
@@ -107,7 +107,7 @@ static const char descriptor[1037] = {
     'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[6] = {
+static _upb_DefPool_Init* deps_envoy_service_load_stats_v3_lrs_proto_upbdefinit[6] = {
     &envoy_config_core_v3_base_proto_upbdefinit,
     &envoy_config_endpoint_v3_load_report_proto_upbdefinit,
     &google_protobuf_duration_proto_upbdefinit,
@@ -117,8 +117,9 @@ static _upb_DefPool_Init *deps[6] = {
 };
 
 _upb_DefPool_Init envoy_service_load_stats_v3_lrs_proto_upbdefinit = {
-    deps,
+    deps_envoy_service_load_stats_v3_lrs_proto_upbdefinit,
     &envoy_service_load_stats_v3_lrs_proto_upb_file_layout,
     "envoy/service/load_stats/v3/lrs.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_service_load_stats_v3_lrs_proto_upbdefinit,
+                        sizeof(descriptor_envoy_service_load_stats_v3_lrs_proto_upbdefinit)),
 };

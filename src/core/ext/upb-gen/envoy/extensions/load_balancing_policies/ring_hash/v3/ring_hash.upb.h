@@ -68,14 +68,22 @@ UPB_INLINE envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* envoy
 UPB_INLINE char* envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_serialize(const envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__load_0balancing_0policies__ring_0hash__v3__RingHash_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__load_0balancing_0policies__ring_0hash__v3__RingHash_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_serialize_ex(const envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__load_0balancing_0policies__ring_0hash__v3__RingHash_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__load_0balancing_0policies__ring_0hash__v3__RingHash_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_clear_hash_function(envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg) {

@@ -30,10 +30,10 @@ const upb_MiniTable xds__type__v3__Int64Range_msg_init = {
   "xds.type.v3.Int64Range",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
     {0x001000003f000010, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -53,10 +53,10 @@ const upb_MiniTable xds__type__v3__Int32Range_msg_init = {
   "xds.type.v3.Int32Range",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x000c00003f000010, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -76,21 +76,21 @@ const upb_MiniTable xds__type__v3__DoubleRange_msg_init = {
   "xds.type.v3.DoubleRange",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000009, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
     {0x001000003f000011, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[3] = {
+static const upb_MiniTable *messages_layout_xds_type_v3_range_proto_upb_file_layout[3] = {
   &xds__type__v3__Int64Range_msg_init,
   &xds__type__v3__Int32Range_msg_init,
   &xds__type__v3__DoubleRange_msg_init,
 };
 
 const upb_MiniTableFile xds_type_v3_range_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_xds_type_v3_range_proto_upb_file_layout,
   NULL,
   NULL,
   3,

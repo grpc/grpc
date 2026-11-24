@@ -21,7 +21,7 @@ extern _upb_DefPool_Init envoy_annotations_deprecation_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 
-static const char descriptor[2871] = {
+static const char descriptor_envoy_service_status_v3_csds_proto_upbdefinit[2871] = {
     '\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v',
     'i', 'c', 'e', '/', 's', 't', 'a', 't', 'u', 's', '/', 'v',
     '3', '/', 'c', 's', 'd', 's', '.', 'p', 'r', 'o', 't', 'o',
@@ -264,7 +264,7 @@ static const char descriptor[2871] = {
     't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[10] = {
+static _upb_DefPool_Init* deps_envoy_service_status_v3_csds_proto_upbdefinit[10] = {
     &envoy_admin_v3_config_dump_shared_proto_upbdefinit,
     &envoy_config_core_v3_base_proto_upbdefinit,
     &envoy_type_matcher_v3_node_proto_upbdefinit,
@@ -278,8 +278,9 @@ static _upb_DefPool_Init *deps[10] = {
 };
 
 _upb_DefPool_Init envoy_service_status_v3_csds_proto_upbdefinit = {
-    deps,
+    deps_envoy_service_status_v3_csds_proto_upbdefinit,
     &envoy_service_status_v3_csds_proto_upb_file_layout,
     "envoy/service/status/v3/csds.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_service_status_v3_csds_proto_upbdefinit,
+                        sizeof(descriptor_envoy_service_status_v3_csds_proto_upbdefinit)),
 };

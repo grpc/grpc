@@ -16,7 +16,7 @@ extern _upb_DefPool_Init xds_core_v3_cidr_proto_upbdefinit;
 extern _upb_DefPool_Init xds_type_matcher_v3_matcher_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[552] = {
+static const char descriptor_xds_type_matcher_v3_ip_proto_upbdefinit[552] = {
     '\n', '\034', 'x', 'd', 's', '/', 't', 'y', 'p', 'e', '/', 'm',
     'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', '/', 'i', 'p',
     '.', 'p', 'r', 'o', 't', 'o', '\022', '\023', 'x', 'd', 's', '.',
@@ -65,7 +65,7 @@ static const char descriptor[552] = {
     '\006', '\002', '\010', '\001', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[5] = {
+static _upb_DefPool_Init* deps_xds_type_matcher_v3_ip_proto_upbdefinit[5] = {
     &xds_annotations_v3_status_proto_upbdefinit,
     &xds_core_v3_cidr_proto_upbdefinit,
     &xds_type_matcher_v3_matcher_proto_upbdefinit,
@@ -74,8 +74,9 @@ static _upb_DefPool_Init *deps[5] = {
 };
 
 _upb_DefPool_Init xds_type_matcher_v3_ip_proto_upbdefinit = {
-    deps,
+    deps_xds_type_matcher_v3_ip_proto_upbdefinit,
     &xds_type_matcher_v3_ip_proto_upb_file_layout,
     "xds/type/matcher/v3/ip.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_xds_type_matcher_v3_ip_proto_upbdefinit,
+                        sizeof(descriptor_xds_type_matcher_v3_ip_proto_upbdefinit)),
 };

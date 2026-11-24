@@ -54,14 +54,22 @@ UPB_INLINE envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst* env
 UPB_INLINE char* envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst_serialize(const envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__load_0balancing_0policies__pick_0first__v3__PickFirst_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__load_0balancing_0policies__pick_0first__v3__PickFirst_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst_serialize_ex(const envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__load_0balancing_0policies__pick_0first__v3__PickFirst_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__load_0balancing_0policies__pick_0first__v3__PickFirst_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst_clear_shuffle_address_list(envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst* msg) {

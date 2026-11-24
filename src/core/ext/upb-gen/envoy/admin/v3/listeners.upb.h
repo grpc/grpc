@@ -61,14 +61,22 @@ UPB_INLINE envoy_admin_v3_Listeners* envoy_admin_v3_Listeners_parse_ex(
 UPB_INLINE char* envoy_admin_v3_Listeners_serialize(const envoy_admin_v3_Listeners* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__Listeners_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__Listeners_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_Listeners_serialize_ex(const envoy_admin_v3_Listeners* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__Listeners_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__Listeners_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_admin_v3_Listeners_clear_listener_statuses(envoy_admin_v3_Listeners* msg) {
@@ -181,14 +189,22 @@ UPB_INLINE envoy_admin_v3_ListenerStatus* envoy_admin_v3_ListenerStatus_parse_ex
 UPB_INLINE char* envoy_admin_v3_ListenerStatus_serialize(const envoy_admin_v3_ListenerStatus* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__ListenerStatus_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__ListenerStatus_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_ListenerStatus_serialize_ex(const envoy_admin_v3_ListenerStatus* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__ListenerStatus_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__ListenerStatus_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_admin_v3_ListenerStatus_clear_name(envoy_admin_v3_ListenerStatus* msg) {

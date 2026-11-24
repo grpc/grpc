@@ -56,14 +56,22 @@ UPB_INLINE udpa_annotations_FieldSecurityAnnotation* udpa_annotations_FieldSecur
 UPB_INLINE char* udpa_annotations_FieldSecurityAnnotation_serialize(const udpa_annotations_FieldSecurityAnnotation* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &udpa__annotations__FieldSecurityAnnotation_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &udpa__annotations__FieldSecurityAnnotation_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* udpa_annotations_FieldSecurityAnnotation_serialize_ex(const udpa_annotations_FieldSecurityAnnotation* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &udpa__annotations__FieldSecurityAnnotation_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &udpa__annotations__FieldSecurityAnnotation_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void udpa_annotations_FieldSecurityAnnotation_clear_configure_for_untrusted_downstream(udpa_annotations_FieldSecurityAnnotation* msg) {
