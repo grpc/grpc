@@ -1118,9 +1118,9 @@ TEST_F(MetricsQueryTest, SumsChildStorageHistogramsWithSameObservedLabels) {
   auto storage_a = LowContentionDomain::GetStorage(channel_a, "example.com");
   auto storage_b = LowContentionDomain::GetStorage(channel_b, "example.com");
   ASSERT_NE(storage_a.get(), storage_b.get());
-  storage_a->Increment(LowContentionDomain::kExponentialHistogram, 0);
-  storage_b->Increment(LowContentionDomain::kExponentialHistogram, 0);
-  storage_b->Increment(LowContentionDomain::kExponentialHistogram, 0);
+  storage_a->Increment(LowContentionDomain::kExponentialHistogram, 0, nullptr);
+  storage_b->Increment(LowContentionDomain::kExponentialHistogram, 0, nullptr);
+  storage_b->Increment(LowContentionDomain::kExponentialHistogram, 0, nullptr);
   const std::vector<std::string> label_keys = {"grpc.target"};
   const std::vector<std::string> label = {"example.com"};
   std::vector<uint64_t> counts;
