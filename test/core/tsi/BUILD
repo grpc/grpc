@@ -383,6 +383,9 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:ca.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
+        "//test/core/tsi/test_creds/mldsa:ca_mldsa87.pem",
+        "//test/core/tsi/test_creds/mldsa:client_mldsa87.key",
+        "//test/core/tsi/test_creds/mldsa:client_mldsa87.pem",
     ],
     external_deps = [
         "absl/log:log",

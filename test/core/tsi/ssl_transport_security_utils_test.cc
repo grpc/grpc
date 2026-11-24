@@ -16,6 +16,7 @@
 
 #include "src/core/tsi/ssl_transport_security_utils.h"
 
+#include <grpc/grpc_security_constants.h>
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
 #include <openssl/evp.h>
@@ -23,6 +24,7 @@
 #include <openssl/x509.h>
 
 #include <array>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -1325,6 +1327,73 @@ TEST(DefaultRepoRoots, RootsAreValid) {
   fclose(file);
   EXPECT_GT(count, 0);
 }
+
+#if defined(OPENSSL_IS_BORINGSSL)
+TEST(ConvertSignatureAlgorithmNameToBoringSslIdTest, ValidCases) {
+  struct EnumTestCase {
+    grpc_tls_signature_algorithm algorithm;
+    uint16_t expected_id;
+  };
+  constexpr EnumTestCase kEnumCases[] = {
+      {GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA256,
+       SSL_SIGN_RSA_PKCS1_SHA256},
+      {GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA384,
+       SSL_SIGN_RSA_PKCS1_SHA384},
+      {GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA512,
+       SSL_SIGN_RSA_PKCS1_SHA512},
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256,
+       SSL_SIGN_ECDSA_SECP256R1_SHA256},
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP384R1_SHA384,
+       SSL_SIGN_ECDSA_SECP384R1_SHA384},
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP521R1_SHA512,
+       SSL_SIGN_ECDSA_SECP521R1_SHA512},
+      {GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA256,
+       SSL_SIGN_RSA_PSS_RSAE_SHA256},
+      {GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA384,
+       SSL_SIGN_RSA_PSS_RSAE_SHA384},
+      {GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA512,
+       SSL_SIGN_RSA_PSS_RSAE_SHA512},
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44, SSL_SIGN_ML_DSA_44},
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65, SSL_SIGN_ML_DSA_65},
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87, SSL_SIGN_ML_DSA_87},
+  };
+  for (const EnumTestCase& tc : kEnumCases) {
+    absl::StatusOr<absl::string_view> name =
+        tsi::ConvertSignatureAlgorithmToString(tc.algorithm);
+    ASSERT_EQ(name.status(), absl::OkStatus());
+    absl::StatusOr<uint16_t> id =
+        tsi::ConvertSignatureAlgorithmNameToBoringSslId(*name);
+    ASSERT_EQ(id.status(), absl::OkStatus());
+    EXPECT_EQ(*id, tc.expected_id);
+    const char* bssl_name =
+        SSL_get_signature_algorithm_name(*id, /*include_curve=*/1);
+    ASSERT_NE(bssl_name, nullptr);
+    EXPECT_EQ(*name, bssl_name);
+  }
+
+  // rsa_pkcs1_sha1 is included in the default signature algorithm list even
+  // though it is not exposed in the public grpc_tls_signature_algorithm enum.
+  absl::StatusOr<uint16_t> sha1_id =
+      tsi::ConvertSignatureAlgorithmNameToBoringSslId("rsa_pkcs1_sha1");
+  ASSERT_EQ(sha1_id.status(), absl::OkStatus());
+  EXPECT_EQ(*sha1_id, SSL_SIGN_RSA_PKCS1_SHA1);
+  EXPECT_STREQ(SSL_get_signature_algorithm_name(*sha1_id, /*include_curve=*/1),
+               "rsa_pkcs1_sha1");
+}
+
+TEST(ConvertSignatureAlgorithmNameToBoringSslIdTest, InvalidCases) {
+  EXPECT_EQ(tsi::ConvertSignatureAlgorithmNameToBoringSslId("").status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(tsi::ConvertSignatureAlgorithmNameToBoringSslId("unknown_algorithm")
+                .status()
+                .code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(tsi::ConvertSignatureAlgorithmNameToBoringSslId("RSA_PKCS1_SHA256")
+                .status()
+                .code(),
+            absl::StatusCode::kInvalidArgument);
+}
+#endif  // defined(OPENSSL_IS_BORINGSSL)
 
 }  // namespace testing
 }  // namespace grpc_core
