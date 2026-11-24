@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.86.0-dev'
+  version = '1.87.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -871,6 +871,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h',
                       'src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.h',
+                      'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb.h',
+                      'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb_minitable.c',
+                      'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h',
                       'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb_minitable.h',
@@ -1009,6 +1012,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb.h',
                       'src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c',
                       'src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.h',
+                      'src/core/ext/upb-gen/google/api/field_behavior.upb.h',
+                      'src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.c',
+                      'src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.h',
                       'src/core/ext/upb-gen/google/api/http.upb.h',
                       'src/core/ext/upb-gen/google/api/http.upb_minitable.c',
                       'src/core/ext/upb-gen/google/api/http.upb_minitable.h',
@@ -1063,6 +1069,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb.h',
                       'src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.c',
                       'src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.h',
+                      'src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb.h',
+                      'src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.c',
+                      'src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h',
@@ -1977,6 +1986,10 @@ Pod::Spec.new do |s|
                       'src/core/load_balancing/address_filtering.h',
                       'src/core/load_balancing/autosharding/autosharding.cc',
                       'src/core/load_balancing/autosharding/autosharding.h',
+                      'src/core/load_balancing/autosharding/autosharding_assignment.cc',
+                      'src/core/load_balancing/autosharding/autosharding_assignment.h',
+                      'src/core/load_balancing/autosharding/autosharding_client.cc',
+                      'src/core/load_balancing/autosharding/autosharding_client.h',
                       'src/core/load_balancing/backend_metric_data.h',
                       'src/core/load_balancing/backend_metric_parser.cc',
                       'src/core/load_balancing/backend_metric_parser.h',
@@ -3057,6 +3070,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h',
                               'src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.h',
+                              'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb.h',
+                              'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h',
                               'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/common/v3/common.upb.h',
@@ -3149,6 +3164,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.h',
                               'src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb.h',
                               'src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.h',
+                              'src/core/ext/upb-gen/google/api/field_behavior.upb.h',
+                              'src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.h',
                               'src/core/ext/upb-gen/google/api/http.upb.h',
                               'src/core/ext/upb-gen/google/api/http.upb_minitable.h',
                               'src/core/ext/upb-gen/google/api/httpbody.upb.h',
@@ -3185,6 +3202,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.h',
                               'src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb.h',
                               'src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.h',
+                              'src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb.h',
+                              'src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h',
@@ -3682,6 +3701,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/transport_fwd.h',
                               'src/core/load_balancing/address_filtering.h',
                               'src/core/load_balancing/autosharding/autosharding.h',
+                              'src/core/load_balancing/autosharding/autosharding_assignment.h',
+                              'src/core/load_balancing/autosharding/autosharding_client.h',
                               'src/core/load_balancing/backend_metric_data.h',
                               'src/core/load_balancing/backend_metric_parser.h',
                               'src/core/load_balancing/child_policy_handler.h',

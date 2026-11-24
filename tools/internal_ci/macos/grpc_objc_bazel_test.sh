@@ -125,6 +125,7 @@ python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path objc_b
 # The below configuration runs all the tests with --test_env=GRPC_VERBOSITY=debug, which makes
 # the test logs much more useful.
 objc_bazel_tests/bazel_wrapper \
+  --output_base=.bazel_rbe \
   --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
   test \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
@@ -162,6 +163,7 @@ EVENT_ENGINE_TEST_TARGETS=(
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path objc_event_engine_bazel_tests
 
 objc_event_engine_bazel_tests/bazel_wrapper \
+  --output_base=.bazel_rbe \
   --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
   test \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \

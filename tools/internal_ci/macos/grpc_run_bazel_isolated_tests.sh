@@ -30,7 +30,7 @@ source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 # Re-enable the test (change "bazel build" to "bazel test") once it's passing reliably.
 # run cfstream_test separately because it messes with the network
 # The "local" execution strategy is required because the test runs sudo and that doesn't work in a sandboxed environment (the default on mac)
-tools/bazel build $RUN_TESTS_FLAGS --genrule_strategy=local --test_output=all --copt="-DGRPC_CFSTREAM=1" //test/cpp/end2end:cfstream_test
+tools/bazel --output_base=.bazel_rbe build $RUN_TESTS_FLAGS --genrule_strategy=local --test_output=all --copt="-DGRPC_CFSTREAM=1" //test/cpp/end2end:cfstream_test
 
 # Missing the /var/db/ntp-kod file may breaks the ntp synchronization.
 # Create the file and change the ownership to root before NTP sync.
@@ -47,7 +47,7 @@ sudo sntp -sS pool.ntp.org
 # Re-enable the test (change "bazel build" to "bazel test") once it's passing reliably.
 # run time_jump_test separately because it changes system time
 # The "local" execution strategy is required because the test runs sudo and that doesn't work in a sandboxed environment (the default on mac)
-tools/bazel build $RUN_TESTS_FLAGS --genrule_strategy=local --test_output=all //test/cpp/common:time_jump_test
+tools/bazel --output_base=.bazel_rbe build $RUN_TESTS_FLAGS --genrule_strategy=local --test_output=all //test/cpp/common:time_jump_test
 
 # kill port_server.py to prevent the build from freezing
 ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9

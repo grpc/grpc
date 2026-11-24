@@ -32,7 +32,7 @@ from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nBenvoy/extensions/stat_sinks/open_telemetry/v3/open_telemetry.proto\x12-envoy.extensions.stat_sinks.open_telemetry.v3\x1a$envoy/config/core/v3/extension.proto\x1a\'envoy/config/core/v3/grpc_service.proto\x1a\'envoy/config/core/v3/http_service.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a*opentelemetry/proto/common/v1/common.proto\x1a!xds/type/matcher/v3/matcher.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xa4\x05\n\nSinkConfig\x12\x43\n\x0cgrpc_service\x18\x01 \x01(\x0b\x32!.envoy.config.core.v3.GrpcServiceB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01H\x00\x12\x39\n\x0chttp_service\x18\t \x01(\x0b\x32!.envoy.config.core.v3.HttpServiceH\x00\x12\x46\n\x12resource_detectors\x18\x07 \x03(\x0b\x32*.envoy.config.core.v3.TypedExtensionConfig\x12!\n\x19report_counters_as_deltas\x18\x02 \x01(\x08\x12#\n\x1breport_histograms_as_deltas\x18\x03 \x01(\x08\x12;\n\x17\x65mit_tags_as_attributes\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.BoolValue\x12:\n\x16use_tag_extracted_name\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.BoolValue\x12\x0e\n\x06prefix\x18\x06 \x01(\t\x12?\n\x19\x63ustom_metric_conversions\x18\x08 \x01(\x0b\x32\x1c.xds.type.matcher.v3.Matcher\x12#\n\x1bmax_data_points_per_request\x18\n \x01(\r\x1an\n\x10\x43onversionAction\x12\x13\n\x0bmetric_name\x18\x02 \x01(\t\x12\x45\n\x14static_metric_labels\x18\x03 \x03(\x0b\x32\'.opentelemetry.proto.common.v1.KeyValue\x1a\x0c\n\nDropActionB\x19\n\x12protocol_specifier\x12\x03\xf8\x42\x01\x42\xc2\x01\n;io.envoyproxy.envoy.extensions.stat_sinks.open_telemetry.v3B\x12OpenTelemetryProtoP\x01Zegithub.com/envoyproxy/go-control-plane/envoy/extensions/stat_sinks/open_telemetry/v3;open_telemetryv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nBenvoy/extensions/stat_sinks/open_telemetry/v3/open_telemetry.proto\x12-envoy.extensions.stat_sinks.open_telemetry.v3\x1a$envoy/config/core/v3/extension.proto\x1a\'envoy/config/core/v3/grpc_service.proto\x1a\'envoy/config/core/v3/http_service.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a*opentelemetry/proto/common/v1/common.proto\x1a!xds/type/matcher/v3/matcher.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xd4\x08\n\nSinkConfig\x12\x43\n\x0cgrpc_service\x18\x01 \x01(\x0b\x32!.envoy.config.core.v3.GrpcServiceB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01H\x00\x12\x39\n\x0chttp_service\x18\t \x01(\x0b\x32!.envoy.config.core.v3.HttpServiceH\x00\x12\x46\n\x12resource_detectors\x18\x07 \x03(\x0b\x32*.envoy.config.core.v3.TypedExtensionConfig\x12!\n\x19report_counters_as_deltas\x18\x02 \x01(\x08\x12#\n\x1breport_histograms_as_deltas\x18\x03 \x01(\x08\x12;\n\x17\x65mit_tags_as_attributes\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.BoolValue\x12:\n\x16use_tag_extracted_name\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.BoolValue\x12\x0e\n\x06prefix\x18\x06 \x01(\t\x12?\n\x19\x63ustom_metric_conversions\x18\x08 \x01(\x0b\x32\x1c.xds.type.matcher.v3.Matcher\x12#\n\x1bmax_data_points_per_request\x18\n \x01(\r\x1a\xd9\x01\n\x10\x43onversionAction\x12\x13\n\x0bmetric_name\x18\x02 \x01(\t\x12\x45\n\x14static_metric_labels\x18\x03 \x03(\x0b\x32\'.opentelemetry.proto.common.v1.KeyValue\x12i\n\x13resource_conversion\x18\x04 \x01(\x0b\x32L.envoy.extensions.stat_sinks.open_telemetry.v3.SinkConfig.ResourceConversion\x1a\xc1\x02\n\x12ResourceConversion\x12K\n\x1astatic_resource_attributes\x18\x01 \x03(\x0b\x32\'.opentelemetry.proto.common.v1.KeyValue\x12\x88\x01\n\x1btags_to_resource_attributes\x18\x02 \x03(\x0b\x32\x63.envoy.extensions.stat_sinks.open_telemetry.v3.SinkConfig.ResourceConversion.TagToResourceAttribute\x1aS\n\x16TagToResourceAttribute\x12\x19\n\x08tag_name\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x1e\n\x16resource_attribute_key\x18\x02 \x01(\t\x1a\x0c\n\nDropActionB\x19\n\x12protocol_specifier\x12\x03\xf8\x42\x01\x42\xc2\x01\n;io.envoyproxy.envoy.extensions.stat_sinks.open_telemetry.v3B\x12OpenTelemetryProtoP\x01Zegithub.com/envoyproxy/go-control-plane/envoy/extensions/stat_sinks/open_telemetry/v3;open_telemetryv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -40,14 +40,20 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'envoy.extensions.stat_sinks
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n;io.envoyproxy.envoy.extensions.stat_sinks.open_telemetry.v3B\022OpenTelemetryProtoP\001Zegithub.com/envoyproxy/go-control-plane/envoy/extensions/stat_sinks/open_telemetry/v3;open_telemetryv3\272\200\310\321\006\002\020\002'
+  _globals['_SINKCONFIG_RESOURCECONVERSION_TAGTORESOURCEATTRIBUTE'].fields_by_name['tag_name']._loaded_options = None
+  _globals['_SINKCONFIG_RESOURCECONVERSION_TAGTORESOURCEATTRIBUTE'].fields_by_name['tag_name']._serialized_options = b'\372B\004r\002\020\001'
   _globals['_SINKCONFIG'].oneofs_by_name['protocol_specifier']._loaded_options = None
   _globals['_SINKCONFIG'].oneofs_by_name['protocol_specifier']._serialized_options = b'\370B\001'
   _globals['_SINKCONFIG'].fields_by_name['grpc_service']._loaded_options = None
   _globals['_SINKCONFIG'].fields_by_name['grpc_service']._serialized_options = b'\372B\005\212\001\002\020\001'
   _globals['_SINKCONFIG']._serialized_start=405
-  _globals['_SINKCONFIG']._serialized_end=1081
-  _globals['_SINKCONFIG_CONVERSIONACTION']._serialized_start=930
-  _globals['_SINKCONFIG_CONVERSIONACTION']._serialized_end=1040
-  _globals['_SINKCONFIG_DROPACTION']._serialized_start=1042
-  _globals['_SINKCONFIG_DROPACTION']._serialized_end=1054
+  _globals['_SINKCONFIG']._serialized_end=1513
+  _globals['_SINKCONFIG_CONVERSIONACTION']._serialized_start=931
+  _globals['_SINKCONFIG_CONVERSIONACTION']._serialized_end=1148
+  _globals['_SINKCONFIG_RESOURCECONVERSION']._serialized_start=1151
+  _globals['_SINKCONFIG_RESOURCECONVERSION']._serialized_end=1472
+  _globals['_SINKCONFIG_RESOURCECONVERSION_TAGTORESOURCEATTRIBUTE']._serialized_start=1389
+  _globals['_SINKCONFIG_RESOURCECONVERSION_TAGTORESOURCEATTRIBUTE']._serialized_end=1472
+  _globals['_SINKCONFIG_DROPACTION']._serialized_start=1474
+  _globals['_SINKCONFIG_DROPACTION']._serialized_end=1486
 # @@protoc_insertion_point(module_scope)

@@ -872,7 +872,7 @@ grpc_call* ClientChannel::CreateCall(
     Slice path, std::optional<Slice> authority, Timestamp deadline,
     bool /*registered_method*/,
     std::optional<absl::FunctionRef<void(Arena*)>> arena_init_function) {
-  auto arena = call_arena_allocator()->MakeArena();
+  RefCountedPtr<Arena> arena = call_arena_allocator()->MakeArena();
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine());
   if (arena_init_function.has_value()) {
@@ -880,7 +880,8 @@ grpc_call* ClientChannel::CreateCall(
   }
   return MakeClientCall(parent_call, propagation_mask, cq, std::move(path),
                         std::move(authority), false, deadline,
-                        compression_options(), std::move(arena), Ref());
+                        compression_options(), std::move(arena), Ref(),
+                        stats_plugin_group_.get());
 }
 
 namespace {

@@ -19,6 +19,7 @@
 #include <google/protobuf/struct.pb.h>
 #include <google/protobuf/wrappers.pb.h>
 #include <grpc/grpc.h>
+#include <grpc/status.h>
 
 #include <memory>
 #include <optional>
@@ -1769,6 +1770,64 @@ TEST_F(ParseHeaderTest, RawHeaderValueValidationForNonBinaryHeader) {
       "validation failed: [field:raw_value error:Illegal header value]");
 }
 
+TEST_F(ParseHeaderTest, HeaderValueAtMaxLength) {
+  HeaderValueProto proto;
+  proto.set_key("foo");
+  proto.set_value(std::string(32768, 'a'));
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto header = ParseXdsHeader(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
+  EXPECT_EQ(header.first, "foo");
+  EXPECT_EQ(header.second, std::string(32768, 'a'));
+}
+
+TEST_F(ParseHeaderTest, HeaderValueTooLong) {
+  HeaderValueProto proto;
+  proto.set_key("foo");
+  proto.set_value(std::string(32769, 'a'));
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  ParseXdsHeader(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:value error:longer than 32768 bytes]");
+}
+
+TEST_F(ParseHeaderTest, RawHeaderValueAtMaxLength) {
+  HeaderValueProto proto;
+  proto.set_key("foo");
+  proto.set_raw_value(std::string(32768, 'a'));
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto header = ParseXdsHeader(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
+  EXPECT_EQ(header.first, "foo");
+  EXPECT_EQ(header.second, std::string(32768, 'a'));
+}
+
+TEST_F(ParseHeaderTest, RawHeaderValueTooLong) {
+  HeaderValueProto proto;
+  proto.set_key("foo");
+  proto.set_raw_value(std::string(32769, 'a'));
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  ParseXdsHeader(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:raw_value error:longer than 32768 bytes]");
+}
+
 TEST_F(ParseHeaderTest, NoHeaderValueSet) {
   HeaderValueProto proto;
   proto.set_key("foo");
@@ -2326,6 +2385,119 @@ TEST(ApplyHeaderMutationsAdditionTest,
   EXPECT_TRUE(status.ok()) << status;
   std::string val;
   EXPECT_EQ(metadata.GetStringValue("x-target-1", &val), "new");
+}
+
+//
+// PopulateHeaderMap
+//
+
+// A decoded envoy.config.core.v3.HeaderValue. Tests match it with
+// ::testing::FieldsAre(key, value, raw_value); since PopulateHeaderMap() sets
+// only raw_value (per gRFC A102), the expected value is always "".
+struct Header {
+  std::string key;
+  std::string value;
+  std::string raw_value;
+};
+
+class PopulateHeaderMapTest : public ::testing::Test {
+ protected:
+  void Append(absl::string_view key, absl::string_view value) {
+    batch_.Append(key, Slice::FromCopiedString(value),
+                  [](absl::string_view, const Slice&) {});
+  }
+
+  std::vector<Header> Populate(
+      const std::vector<StringMatcher>& allowed = {},
+      const std::vector<StringMatcher>& disallowed = {}) {
+    auto* header_map = envoy_config_core_v3_HeaderMap_new(arena_.ptr());
+    PopulateHeaderMap(batch_, allowed, disallowed, arena_.ptr(), header_map);
+    size_t size;
+    const envoy_config_core_v3_HeaderValue* const* headers =
+        envoy_config_core_v3_HeaderMap_headers(header_map, &size);
+    std::vector<Header> result;
+    for (size_t i = 0; i < size; ++i) {
+      result.push_back(
+          Header{UpbStringToStdString(
+                     envoy_config_core_v3_HeaderValue_key(headers[i])),
+                 UpbStringToStdString(
+                     envoy_config_core_v3_HeaderValue_value(headers[i])),
+                 UpbStringToStdString(
+                     envoy_config_core_v3_HeaderValue_raw_value(headers[i]))});
+    }
+    return result;
+  }
+
+  static StringMatcher Exact(absl::string_view key) {
+    return StringMatcher::Create(StringMatcher::Type::kExact, key).value();
+  }
+
+  upb::Arena arena_;
+  grpc_metadata_batch batch_;
+};
+
+TEST_F(PopulateHeaderMapTest, EmptyBatch) {
+  EXPECT_THAT(Populate(), ::testing::IsEmpty());
+}
+
+TEST_F(PopulateHeaderMapTest, NoMatchersForwardsAllHeadersAsRawValue) {
+  Append("key1", "val1");
+  Append("key2", "val2");
+  batch_.Set(TeMetadata(), TeMetadata::kTrailers);
+  batch_.Set(GrpcStatusMetadata(), GRPC_STATUS_UNAVAILABLE);
+  EXPECT_THAT(Populate(), ::testing::UnorderedElementsAre(
+                              ::testing::FieldsAre("key1", "", "val1"),
+                              ::testing::FieldsAre("key2", "", "val2"),
+                              ::testing::FieldsAre("te", "", "trailers"),
+                              ::testing::FieldsAre("grpc-status", "", "14")));
+}
+
+TEST_F(PopulateHeaderMapTest, OnlyAllowedSet) {
+  Append("key1", "val1");
+  Append("key2", "val2");
+  Append("key3", "val3");
+  EXPECT_THAT(Populate({Exact("key1"), Exact("key3")}),
+              ::testing::UnorderedElementsAre(
+                  ::testing::FieldsAre("key1", "", "val1"),
+                  ::testing::FieldsAre("key3", "", "val3")));
+}
+
+TEST_F(PopulateHeaderMapTest, OnlyDisallowedSet) {
+  Append("key1", "val1");
+  Append("key2", "val2");
+  Append("key3", "val3");
+  EXPECT_THAT(Populate({}, {Exact("key2")}),
+              ::testing::UnorderedElementsAre(
+                  ::testing::FieldsAre("key1", "", "val1"),
+                  ::testing::FieldsAre("key3", "", "val3")));
+}
+
+TEST_F(PopulateHeaderMapTest, DisallowedTakesPrecedenceOverAllowed) {
+  Append("key1", "val1");
+  Append("key2", "val2");
+  Append("key3", "val3");
+  EXPECT_THAT(Populate({Exact("key1"), Exact("key3")}, {Exact("key3")}),
+              ::testing::UnorderedElementsAre(
+                  ::testing::FieldsAre("key1", "", "val1")));
+}
+
+TEST_F(PopulateHeaderMapTest, MatchersApplyToTraitHeaders) {
+  Append("key1", "val1");
+  batch_.Set(TeMetadata(), TeMetadata::kTrailers);
+  EXPECT_THAT(Populate({}, {Exact("te")}),
+              ::testing::UnorderedElementsAre(
+                  ::testing::FieldsAre("key1", "", "val1")));
+}
+
+TEST_F(PopulateHeaderMapTest, BinaryHeaderValuesAreBase64Encoded) {
+  Append("key1", "val1");
+  Append("key2-bin", std::string("\x00\x01\xfe\xff", 4));
+  batch_.Set(GrpcTraceBinMetadata(), Slice::FromCopiedString("trace"));
+  EXPECT_THAT(Populate(),
+              ::testing::UnorderedElementsAre(
+                  ::testing::FieldsAre("key1", "", "val1"),
+                  ::testing::FieldsAre("key2-bin", "", "AAH+/w=="),
+                  ::testing::FieldsAre("grpc-trace-bin", "", "dHJhY2U=")));
 }
 
 }  // namespace

@@ -35,6 +35,7 @@
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -48,7 +49,7 @@
 
 namespace grpc_core {
 
-class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
+class RegionalAccessBoundaryFetcherTestBase : public ::testing::Test {
  protected:
   using RegionalAccessBoundary =
       RegionalAccessBoundaryFetcher::RegionalAccessBoundary;
@@ -135,7 +136,20 @@ class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
       fuzzing_event_engine_;
 };
 
+class RegionalAccessBoundaryFetcherTest
+    : public RegionalAccessBoundaryFetcherTestBase {
+ protected:
+  testing::ScopedExperimentalEnvVar env_{
+      "GRPC_EXPERIMENTAL_REGIONAL_ACCESS_BOUNDARY_LOOKUP"};
+};
+
 namespace {
+
+// This uses RegionalAccessBoundaryFetcherTestBase instead of
+// RegionalAccessBoundaryFetcherTest, so the experimental env var is not set.
+TEST_F(RegionalAccessBoundaryFetcherTestBase, DisabledByDefault) {
+  EXPECT_EQ(fetcher_, nullptr);
+}
 
 grpc_closure* g_stalled_on_done = nullptr;
 grpc_http_response* g_stalled_response = nullptr;
@@ -626,7 +640,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CacheSoftExpirationTriggersRefresh) {
   EXPECT_EQ(cached_encoded_locations(), "us-west1");
 }
 
-class EmailFetcherTest : public ::testing::Test {
+class EmailFetcherTestBase : public ::testing::Test {
  protected:
   void SetUp() override {
     fuzzing_event_engine_ =
@@ -635,7 +649,7 @@ class EmailFetcherTest : public ::testing::Test {
             fuzzing_event_engine::Actions());
     grpc_timer_manager_set_start_threaded(false);
     grpc_init();
-    email_fetcher_ = MakeRefCounted<EmailFetcher>(fuzzing_event_engine_);
+    email_fetcher_ = EmailFetcher::Create(fuzzing_event_engine_);
     arena_ = SimpleArenaAllocator()->MakeArena();
     metadata_ = arena_->MakePooled<ClientMetadata>();
     HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -659,6 +673,16 @@ class EmailFetcherTest : public ::testing::Test {
   ClientMetadataHandle metadata_;
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
       fuzzing_event_engine_;
+};
+
+TEST_F(EmailFetcherTestBase, DisabledByDefault) {
+  EXPECT_EQ(email_fetcher_, nullptr);
+}
+
+class EmailFetcherTest : public EmailFetcherTestBase {
+ protected:
+  testing::ScopedExperimentalEnvVar env_{
+      "GRPC_EXPERIMENTAL_REGIONAL_ACCESS_BOUNDARY_LOOKUP"};
 };
 
 int httpcli_get_email_success(const grpc_http_request* /*request*/,

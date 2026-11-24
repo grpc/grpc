@@ -554,6 +554,8 @@ libs:
   - src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb_minitable.h
   - src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h
   - src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb.h
+  - src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb_minitable.h
   - src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h
   - src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb_minitable.h
   - src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/common/v3/common.upb.h
@@ -646,6 +648,8 @@ libs:
   - src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.h
   - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb.h
   - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.h
+  - src/core/ext/upb-gen/google/api/field_behavior.upb.h
+  - src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.h
   - src/core/ext/upb-gen/google/api/http.upb.h
   - src/core/ext/upb-gen/google/api/http.upb_minitable.h
   - src/core/ext/upb-gen/google/api/httpbody.upb.h
@@ -680,6 +684,8 @@ libs:
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.h
+  - src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb.h
+  - src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
@@ -1176,6 +1182,8 @@ libs:
   - src/core/lib/transport/transport_fwd.h
   - src/core/load_balancing/address_filtering.h
   - src/core/load_balancing/autosharding/autosharding.h
+  - src/core/load_balancing/autosharding/autosharding_assignment.h
+  - src/core/load_balancing/autosharding/autosharding_client.h
   - src/core/load_balancing/backend_metric_data.h
   - src/core/load_balancing/backend_metric_parser.h
   - src/core/load_balancing/child_policy_handler.h
@@ -1664,6 +1672,7 @@ libs:
   - src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/common/v3/common.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb_minitable.c
@@ -1710,6 +1719,7 @@ libs:
   - src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
   - src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.c
   - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
+  - src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.c
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
@@ -1727,6 +1737,7 @@ libs:
   - src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
   - src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.c
+  - src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
@@ -2143,6 +2154,8 @@ libs:
   - src/core/lib/transport/transport_op_string.cc
   - src/core/load_balancing/address_filtering.cc
   - src/core/load_balancing/autosharding/autosharding.cc
+  - src/core/load_balancing/autosharding/autosharding_assignment.cc
+  - src/core/load_balancing/autosharding/autosharding_client.cc
   - src/core/load_balancing/backend_metric_parser.cc
   - src/core/load_balancing/child_policy_handler.cc
   - src/core/load_balancing/endpoint_list.cc
@@ -2647,6 +2660,8 @@ libs:
   - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/transport/inproc/inproc_transport.h
   - src/core/ext/transport/inproc/legacy_inproc_transport.h
+  - src/core/ext/upb-gen/google/api/field_behavior.upb.h
+  - src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.h
   - src/core/ext/upb-gen/google/api/http.upb.h
   - src/core/ext/upb-gen/google/api/http.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
@@ -2675,6 +2690,8 @@ libs:
   - src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.h
+  - src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb.h
+  - src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
@@ -2943,6 +2960,8 @@ libs:
   - src/core/lib/transport/transport_fwd.h
   - src/core/load_balancing/address_filtering.h
   - src/core/load_balancing/autosharding/autosharding.h
+  - src/core/load_balancing/autosharding/autosharding_assignment.h
+  - src/core/load_balancing/autosharding/autosharding_client.h
   - src/core/load_balancing/backend_metric_data.h
   - src/core/load_balancing/backend_metric_parser.h
   - src/core/load_balancing/child_policy_handler.h
@@ -3207,6 +3226,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
   - src/core/ext/transport/inproc/legacy_inproc_transport.cc
+  - src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.c
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
@@ -3221,6 +3241,7 @@ libs:
   - src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c
   - src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
+  - src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
@@ -3438,6 +3459,8 @@ libs:
   - src/core/lib/transport/transport_op_string.cc
   - src/core/load_balancing/address_filtering.cc
   - src/core/load_balancing/autosharding/autosharding.cc
+  - src/core/load_balancing/autosharding/autosharding_assignment.cc
+  - src/core/load_balancing/autosharding/autosharding_client.cc
   - src/core/load_balancing/backend_metric_parser.cc
   - src/core/load_balancing/child_policy_handler.cc
   - src/core/load_balancing/endpoint_list.cc
@@ -6497,17 +6520,96 @@ targets:
   - grpc++
   - grpc_authorization_provider
   - grpc_test_util
-- name: autosharding_config_test
+- name: autosharding_assignment_test
   gtest: true
   build: test
   language: c++
   headers: []
   src:
-  - test/core/load_balancing/autosharding_config_test.cc
+  - third_party/autosharding/proto/autosharding/v1/autosharding.proto
+  - third_party/googleapis/google/api/field_behavior.proto
+  - src/cpp/client/global_callback_hook.cc
+  - src/cpp/util/status.cc
+  - test/core/load_balancing/autosharding/autosharding_assignment_test.cc
+  deps:
+  - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/log:absl_check
+  - absl/log:absl_log
+  - absl/strings:charset
+  - absl/strings:internal
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
+- name: autosharding_client_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/xds/xds_transport_fake.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - third_party/autosharding/proto/autosharding/v1/autosharding.proto
+  - third_party/googleapis/google/api/field_behavior.proto
+  - src/cpp/client/global_callback_hook.cc
+  - src/cpp/util/status.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/load_balancing/autosharding/autosharding_client_test.cc
+  - test/core/xds/xds_transport_fake.cc
+  deps:
+  - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/log:absl_check
+  - absl/log:absl_log
+  - absl/strings:charset
+  - absl/strings:internal
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
+- name: autosharding_config_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/test_util/scoped_env_var.h
+  src:
+  - test/core/load_balancing/autosharding/autosharding_config_test.cc
   deps:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: autosharding_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/test_util/scoped_env_var.h
+  - test/cpp/end2end/autosharding_test_server.h
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/autosharding/proto/autosharding/v1/autosharding.proto
+  - third_party/googleapis/google/api/field_behavior.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - test/cpp/end2end/autosharding_end2end_test.cc
+  - test/cpp/end2end/autosharding_test_server.cc
+  - test/cpp/end2end/test_service_impl.cc
+  deps:
+  - gtest
+  - grpc++_test_util
 - name: autosharding_test
   gtest: true
   build: test
@@ -6516,13 +6618,27 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/load_balancing/lb_policy_test_lib.h
+  - test/core/test_util/scoped_env_var.h
+  - test/core/xds/xds_transport_fake.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - third_party/autosharding/proto/autosharding/v1/autosharding.proto
+  - third_party/googleapis/google/api/field_behavior.proto
+  - src/cpp/client/global_callback_hook.cc
+  - src/cpp/util/status.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/load_balancing/autosharding_test.cc
+  - test/core/load_balancing/autosharding/autosharding_test.cc
+  - test/core/xds/xds_transport_fake.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/log:absl_check
+  - absl/log:absl_log
+  - absl/strings:charset
+  - absl/strings:internal
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -6970,6 +7086,7 @@ targets:
   headers:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
@@ -15861,6 +15978,7 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/promise/poll_matcher.h
+  - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/postmortem.h
   - test/core/transport/chttp2/http2_common_test_inputs.h
   - test/core/transport/chttp2/http2_frame_test_helper.h
@@ -15870,6 +15988,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/test_util/fake_stats_plugin.cc
   - test/core/transport/chttp2/http2_server_transport_test.cc
   - test/core/transport/util/mock_promise_endpoint.cc
   deps:
@@ -15941,6 +16060,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/promise/poll_matcher.h
   - test/core/test_util/postmortem.h
+  - test/core/transport/chttp2/http2_common_test_inputs.h
   - test/core/transport/chttp2/http2_frame_test_helper.h
   - test/core/transport/util/mock_promise_endpoint.h
   - test/core/transport/util/transport_test.h
@@ -22818,6 +22938,7 @@ targets:
   headers:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/scoped_env_var.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/credentials/call/regional_access_boundary_fetcher_test.cc
@@ -23117,7 +23238,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -25985,6 +26107,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/tls_test_private_key_signer.h
   src:
@@ -28140,6 +28263,168 @@ targets:
   - protoc
   - grpc_test_util
   uses_polling: false
+- name: xds_autosharding_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/test_util/scoped_env_var.h
+  - test/cpp/end2end/autosharding_test_server.h
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/xds_end2end_test_lib.h
+  - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/end2end/xds/xds_utils.h
+  - test/cpp/util/tls_test_utils.h
+  - third_party/protoc-gen-validate/validate/validate.h
+  src:
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/autosharding/proto/autosharding/v1/autosharding.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
+  - third_party/envoy-api/envoy/annotations/deprecation.proto
+  - third_party/envoy-api/envoy/annotations/resource.proto
+  - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/circuit_breaker.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
+  - third_party/envoy-api/envoy/config/core/v3/address.proto
+  - third_party/envoy-api/envoy/config/core/v3/backoff.proto
+  - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
+  - third_party/envoy-api/envoy/config/core/v3/config_source.proto
+  - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
+  - third_party/envoy-api/envoy/config/core/v3/extension.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_method_list.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_service.proto
+  - third_party/envoy-api/envoy/config/core/v3/health_check.proto
+  - third_party/envoy-api/envoy/config/core/v3/http_service.proto
+  - third_party/envoy-api/envoy/config/core/v3/http_uri.proto
+  - third_party/envoy-api/envoy/config/core/v3/protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
+  - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
+  - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/endpoint.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/endpoint_components.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/load_report.proto
+  - third_party/envoy-api/envoy/config/listener/v3/api_listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/listener_components.proto
+  - third_party/envoy-api/envoy/config/listener/v3/quic_config.proto
+  - third_party/envoy-api/envoy/config/listener/v3/udp_listener_config.proto
+  - third_party/envoy-api/envoy/config/metrics/v3/metrics_service.proto
+  - third_party/envoy-api/envoy/config/metrics/v3/stats.proto
+  - third_party/envoy-api/envoy/config/rbac/v3/rbac.proto
+  - third_party/envoy-api/envoy/config/route/v3/route.proto
+  - third_party/envoy-api/envoy/config/route/v3/route_components.proto
+  - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
+  - third_party/envoy-api/envoy/config/trace/v3/datadog.proto
+  - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
+  - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
+  - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
+  - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
+  - third_party/envoy-api/envoy/config/trace/v3/service.proto
+  - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
+  - third_party/envoy-api/envoy/config/trace/v3/trace.proto
+  - third_party/envoy-api/envoy/config/trace/v3/xray.proto
+  - third_party/envoy-api/envoy/config/trace/v3/zipkin.proto
+  - third_party/envoy-api/envoy/data/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
+  - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.proto
+  - third_party/envoy-api/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.proto
+  - third_party/envoy-api/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
+  - third_party/envoy-api/envoy/type/http/v3/cookie.proto
+  - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/node.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/number.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/path.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/regex.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/status_code_input.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/string.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/struct.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/value.proto
+  - third_party/envoy-api/envoy/type/metadata/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/tracing/v3/custom_tag.proto
+  - third_party/envoy-api/envoy/type/v3/hash_policy.proto
+  - third_party/envoy-api/envoy/type/v3/http.proto
+  - third_party/envoy-api/envoy/type/v3/http_status.proto
+  - third_party/envoy-api/envoy/type/v3/percent.proto
+  - third_party/envoy-api/envoy/type/v3/range.proto
+  - third_party/envoy-api/envoy/type/v3/ratelimit_strategy.proto
+  - third_party/envoy-api/envoy/type/v3/ratelimit_unit.proto
+  - third_party/envoy-api/envoy/type/v3/scope.proto
+  - third_party/envoy-api/envoy/type/v3/semantic_version.proto
+  - third_party/envoy-api/envoy/type/v3/token_bucket.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/checked.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/syntax.proto
+  - third_party/googleapis/google/api/field_behavior.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/api/httpbody.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/udpa/annotations/migrate.proto
+  - third_party/xds/udpa/annotations/security.proto
+  - third_party/xds/udpa/annotations/sensitive.proto
+  - third_party/xds/udpa/annotations/status.proto
+  - third_party/xds/udpa/annotations/versioning.proto
+  - third_party/xds/xds/annotations/v3/migrate.proto
+  - third_party/xds/xds/annotations/v3/security.proto
+  - third_party/xds/xds/annotations/v3/sensitive.proto
+  - third_party/xds/xds/annotations/v3/status.proto
+  - third_party/xds/xds/annotations/v3/versioning.proto
+  - third_party/xds/xds/core/v3/authority.proto
+  - third_party/xds/xds/core/v3/cidr.proto
+  - third_party/xds/xds/core/v3/collection_entry.proto
+  - third_party/xds/xds/core/v3/context_params.proto
+  - third_party/xds/xds/core/v3/extension.proto
+  - third_party/xds/xds/core/v3/resource.proto
+  - third_party/xds/xds/core/v3/resource_locator.proto
+  - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - third_party/xds/xds/type/matcher/v3/cel.proto
+  - third_party/xds/xds/type/matcher/v3/domain.proto
+  - third_party/xds/xds/type/matcher/v3/http_inputs.proto
+  - third_party/xds/xds/type/matcher/v3/ip.proto
+  - third_party/xds/xds/type/matcher/v3/matcher.proto
+  - third_party/xds/xds/type/matcher/v3/range.proto
+  - third_party/xds/xds/type/matcher/v3/regex.proto
+  - third_party/xds/xds/type/matcher/v3/string.proto
+  - third_party/xds/xds/type/v3/cel.proto
+  - third_party/xds/xds/type/v3/range.proto
+  - third_party/xds/xds/type/v3/typed_struct.proto
+  - test/cpp/end2end/autosharding_test_server.cc
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds/xds_autosharding_end2end_test.cc
+  - test/cpp/end2end/xds/xds_end2end_test_lib.cc
+  - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/end2end/xds/xds_utils.cc
+  - test/cpp/util/tls_test_utils.cc
+  deps:
+  - gtest
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: xds_bootstrap_test
   gtest: true
   build: test
@@ -28562,6 +28847,8 @@ targets:
   - third_party/envoy-api/envoy/extensions/clusters/aggregate/v3/cluster.proto
   - third_party/envoy-api/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.proto
+  - third_party/envoy-api/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/common/v3/common.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/round_robin/v3/round_robin.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.proto
@@ -30970,6 +31257,8 @@ targets:
   - third_party/envoy-api/envoy/config/route/v3/route.proto
   - third_party/envoy-api/envoy/config/route/v3/route_components.proto
   - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
+  - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.proto
+  - third_party/envoy-api/envoy/extensions/load_balancing_policies/autosharding/v3/autosharding.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/common/v3/common.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.proto
@@ -33118,8 +33407,10 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/fake_stats_plugin.h
   src:
+  - test/core/test_util/fake_stats_plugin.cc
   - test/core/xds/xds_transport_grpc_test.cc
   deps:
   - gtest
@@ -33318,12 +33609,12 @@ external_proto_libraries:
   urls:
   - https://github.com/google/cel-spec/archive/refs/tags/v0.25.1.tar.gz
 - destination: third_party/envoy-api
-  hash: 40ba505a3c8e0d56f10ad5b95c05d54138228ff521cff22393276bb67188dfc3
+  hash: 6cd4f3ed0f12b4f18780f0a29e38f7f914a73c45d8b70960c7d5ba62b817239b
   proto_prefix: third_party/envoy-api/
   strip_path_prefix: ''
-  strip_prefix: data-plane-api-005c18a923f166a793a1c227171398dab883cc5d
+  strip_prefix: data-plane-api-0a161d3b6cc400ed14fe35c3e5f95b77fa36376c
   urls:
-  - https://github.com/envoyproxy/data-plane-api/archive/005c18a923f166a793a1c227171398dab883cc5d.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/0a161d3b6cc400ed14fe35c3e5f95b77fa36376c.tar.gz
 - destination: third_party/googleapis
   hash: 07a6f700cee5ca796f5230876ed8454bf1d8cc409b3b3e634505bc4f32a9f72b
   proto_prefix: third_party/googleapis/
@@ -33339,12 +33630,12 @@ external_proto_libraries:
   urls:
   - https://github.com/grpc/grpc-proto/archive/dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f.tar.gz
 - destination: third_party/protoc-gen-validate
-  hash: e4718352754df1393b8792b631338aa8562f390e8160783e365454bc11d96328
+  hash: 9e47ef41ec0e269a173a94b6766cc4be4e1a1098fcda040b2f0441c51bfb6ae2
   proto_prefix: third_party/protoc-gen-validate/
   strip_path_prefix: ''
-  strip_prefix: protoc-gen-validate-1.2.1
+  strip_prefix: protoc-gen-validate-1.3.3
   urls:
-  - https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.tar.gz
+  - https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.3.3.tar.gz
 - destination: third_party/xds
   hash: 49535f3c3370004309da50194c09bbfc528d4702424dd46e7d56a278a3dfc15d
   proto_prefix: third_party/xds/

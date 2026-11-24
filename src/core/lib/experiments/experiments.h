@@ -88,8 +88,6 @@ inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_HEADER_DATA_FRAME
 inline bool IsHeaderDataFrameEnabled() { return true; }
-inline bool IsInternalFixEnabled() { return false; }
-inline bool IsInternalFix1Enabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLameChannelV3Enabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
@@ -173,8 +171,6 @@ inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_HEADER_DATA_FRAME
 inline bool IsHeaderDataFrameEnabled() { return true; }
-inline bool IsInternalFixEnabled() { return false; }
-inline bool IsInternalFix1Enabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLameChannelV3Enabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
@@ -258,8 +254,6 @@ inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_HEADER_DATA_FRAME
 inline bool IsHeaderDataFrameEnabled() { return true; }
-inline bool IsInternalFixEnabled() { return false; }
-inline bool IsInternalFix1Enabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLameChannelV3Enabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
@@ -331,8 +325,6 @@ enum ExperimentIds {
   kExperimentIdFuseFilters,
   kExperimentIdH2MaxDeallocatingStreamsHeadroom,
   kExperimentIdHeaderDataFrame,
-  kExperimentIdInternalFix,
-  kExperimentIdInternalFix1,
   kExperimentIdKeepAlivePingTimerBatch,
   kExperimentIdLameChannelV3,
   kExperimentIdLocalConnectorSecure,
@@ -447,14 +439,6 @@ inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_HEADER_DATA_FRAME
 inline bool IsHeaderDataFrameEnabled() {
   return IsExperimentEnabled<kExperimentIdHeaderDataFrame>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_INTERNAL_FIX
-inline bool IsInternalFixEnabled() {
-  return IsExperimentEnabled<kExperimentIdInternalFix>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_INTERNAL_FIX1
-inline bool IsInternalFix1Enabled() {
-  return IsExperimentEnabled<kExperimentIdInternalFix1>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEP_ALIVE_PING_TIMER_BATCH
 inline bool IsKeepAlivePingTimerBatchEnabled() {

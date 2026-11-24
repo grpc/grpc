@@ -82,5 +82,6 @@
 - 1.82 'g' stands for ['glacier'](https://github.com/grpc/grpc/tree/v1.82.x)
 - 1.83 'g' stands for ['garden'](https://github.com/grpc/grpc/tree/v1.83.x)
 - 1.84 'g' stands for ['gimbal'](https://github.com/grpc/grpc/tree/v1.84.x)
-- 1.85 'g' stands for ['gimbal'](https://github.com/grpc/grpc/tree/v1.85.x)
-- 1.86 'g' stands for ['googol'](https://github.com/grpc/grpc/tree/master)
+- 1.85 'g' stands for ['googol'](https://github.com/grpc/grpc/tree/v1.85.x)
+- 1.86 'g' stands for ['gannet'](https://github.com/grpc/grpc/tree/v1.86.x)
+- 1.87 'g' stands for ['garfield'](https://github.com/grpc/grpc/tree/master)
