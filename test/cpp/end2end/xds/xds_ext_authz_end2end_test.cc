@@ -296,11 +296,7 @@ class XdsExtAuthzTest : public XdsEnd2endTest {
                                    const RouteConfiguration& route_config,
                                    bool use_tls = false) {
     SetExtAuthzListener(ext_authz_config, route_config, use_tls);
-    InitClient(
-        MakeExtAuthzBootstrapBuilder(), /*lb_expected_authority=*/"",
-        /*xds_resource_does_not_exist_timeout_ms=*/0,
-        /*balancer_authority_override=*/"", /*args=*/nullptr,
-        GetParam().filter_on_server() ? InsecureChannelCredentials() : nullptr);
+    InitClient(MakeExtAuthzBootstrapBuilder());
     StartBackend(0);
     if (GetParam().filter_on_server()) {
       EXPECT_THAT(backends_[0]->GetNextStatus(),
@@ -433,7 +429,7 @@ class XdsExtAuthzTest : public XdsEnd2endTest {
     // See SetExtAuthzListenerAndStart().
     CreateBackends(1, /*xds_enabled=*/GetParam().filter_on_server(),
                    GetParam().filter_on_server()
-                       ? XdsServerCredentials(InsecureServerCredentials())
+                       ? XdsServerCredentials(CreateFakeServerCredentials())
                        : nullptr);
     EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
     balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
