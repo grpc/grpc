@@ -25,6 +25,7 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
+#include <cstdint>
 #include <string>
 
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
@@ -204,6 +205,17 @@ absl::StatusOr<std::string> X509Principal(X509* cert);
 // Map grpc_tls_key_exchange_group to string.
 absl::StatusOr<absl::string_view> ConvertKeyExchangeGroupToString(
     grpc_tls_key_exchange_group group);
+
+// Map grpc_tls_signature_algorithm to string.
+absl::StatusOr<absl::string_view> ConvertSignatureAlgorithmToString(
+    grpc_tls_signature_algorithm algorithm);
+
+#if defined(OPENSSL_IS_BORINGSSL)
+// Maps a TLS signature algorithm name (e.g., "ecdsa_secp256r1_sha256",
+// "mldsa87") to a BoringSSL SSL_SIGN_* signature algorithm ID.
+absl::StatusOr<uint16_t> ConvertSignatureAlgorithmNameToBoringSslId(
+    absl::string_view algorithm_name);
+#endif  // defined(OPENSSL_IS_BORINGSSL)
 }  // namespace tsi
 
 #endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H

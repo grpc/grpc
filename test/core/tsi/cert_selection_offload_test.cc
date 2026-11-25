@@ -16,6 +16,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpc/private_key_signer.h>
 #include <openssl/bio.h>
 #include <openssl/pem.h>
@@ -42,6 +43,7 @@
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/core/tsi/transport_security_test_lib.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -59,6 +61,7 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
+using ::testing::ElementsAre;
 using TaskHandle = grpc_event_engine::experimental::EventEngine::TaskHandle;
 
 constexpr absl::string_view kTestCredsRelativePath = "src/core/tsi/test_creds/";
@@ -178,16 +181,22 @@ class HandshakeHintsCertificateSelector : public SyncTestCertificateSelector {
       absl::string_view pem_cert_chain,
       std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
           pem_private_key,
-      tsi_tls_version tls_version,
+      tsi_tls_version tls_version, bool request_client_cert,
       std::weak_ptr<PrivateKeySigner>* signer_weak = nullptr)
       : SyncTestCertificateSelector(pem_cert_chain, std::move(pem_private_key)),
         tls_version_(tls_version),
+        request_client_cert_(request_client_cert),
         signer_weak_(signer_weak) {}
+
+  const std::vector<uint16_t>& observed_verify_algorithms() const {
+    return observed_verify_algorithms_;
+  }
 
   std::variant<absl::StatusOr<SelectCertificateResult>,
                std::shared_ptr<AsyncCertificateSelectionHandle>>
   SelectCertificate(const SelectCertificateInfo& info,
                     OnSelectCertificateComplete on_complete) override {
+    observed_verify_algorithms_ = info.handshake_hints_info.verify_algorithms;
     auto select_cert_result = SyncTestCertificateSelector::SelectCertificate(
         info, std::move(on_complete));
     GRPC_RETURN_IF_ERROR(MatchMutable(
@@ -210,6 +219,20 @@ class HandshakeHintsCertificateSelector : public SyncTestCertificateSelector {
             bssl::UniquePtr<SSL> ssl(SSL_new(ctx.get()));
             CHECK(ssl != nullptr);
             SSL_set_accept_state(ssl.get());
+            if (request_client_cert_) {
+              SSL_set_verify(ssl.get(),
+                             SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+                             nullptr);
+            }
+            if (!info.handshake_hints_info.verify_algorithms.empty()) {
+              if (!SSL_set_verify_algorithm_prefs(
+                      ssl.get(),
+                      info.handshake_hints_info.verify_algorithms.data(),
+                      info.handshake_hints_info.verify_algorithms.size())) {
+                return absl::InternalError(
+                    "failed to set verify algorithm prefs");
+              }
+            }
             std::vector<CRYPTO_BUFFER*> cert_chain;
             cert_chain.reserve(result->certificate_chain.size());
             for (auto& cert : result->certificate_chain) {
@@ -303,6 +326,8 @@ class HandshakeHintsCertificateSelector : public SyncTestCertificateSelector {
 
  private:
   tsi_tls_version tls_version_;
+  bool request_client_cert_ = false;
+  std::vector<uint16_t> observed_verify_algorithms_;
   std::weak_ptr<PrivateKeySigner>* signer_weak_ = nullptr;
 };
 
@@ -315,13 +340,23 @@ class SslCertSelectorTsiTestFixture {
     bool expect_cert_selection_success = true;
     bool expect_private_key_signing_success = true;
     tsi_tls_version tls_version;
+    tsi_client_certificate_request_type client_certificate_request =
+        TSI_DONT_REQUEST_CLIENT_CERTIFICATE;
+    std::string server_root_ca_path;
+    std::string client_cert_path;
+    std::string client_key_path;
+    std::vector<grpc_tls_signature_algorithm> server_signature_algorithms;
+    std::vector<grpc_tls_signature_algorithm> client_signature_algorithms;
   };
 
   SslCertSelectorTsiTestFixture(
       const FixtureOptions& options,
       const std::shared_ptr<
           grpc_event_engine::experimental::FuzzingEventEngine>& event_engine)
-      : tls_version_(options.tls_version) {
+      : tls_version_(options.tls_version),
+        client_certificate_request_(options.client_certificate_request),
+        server_signature_algorithms_(options.server_signature_algorithms),
+        client_signature_algorithms_(options.client_signature_algorithms) {
     tsi_test_fixture_init(&base_);
     base_.test_unused_bytes = true;
     base_.vtable = &kVtable;
@@ -330,6 +365,14 @@ class SslCertSelectorTsiTestFixture {
         GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.key"));
     server_cert_ =
         GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.pem"));
+    if (!options.server_root_ca_path.empty()) {
+      server_root_ca_ = GetFileContents(options.server_root_ca_path);
+    }
+    if (!options.client_cert_path.empty() && !options.client_key_path.empty()) {
+      client_key_cert_pair_ =
+          PemKeyCertPair(GetFileContents(options.client_key_path),
+                         GetFileContents(options.client_cert_path));
+    }
     std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
         private_key;
     if (options.use_signer) {
@@ -405,6 +448,10 @@ class SslCertSelectorTsiTestFixture {
     tsi_ssl_client_handshaker_options client_options;
     client_options.root_cert_info =
         std::make_shared<tsi::RootCertInfo>(ca_cert_);
+    if (client_key_cert_pair_.has_value()) {
+      client_options.pem_key_cert_pair = &*client_key_cert_pair_;
+    }
+    client_options.signature_algorithms = client_signature_algorithms_;
     client_options.min_tls_version = tls_version_;
     client_options.max_tls_version = tls_version_;
     ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
@@ -413,8 +460,12 @@ class SslCertSelectorTsiTestFixture {
 
     // Create server handshaker factory.
     tsi_ssl_server_handshaker_options server_options;
-    server_options.client_certificate_request =
-        TSI_DONT_REQUEST_CLIENT_CERTIFICATE;
+    server_options.client_certificate_request = client_certificate_request_;
+    if (!server_root_ca_.empty()) {
+      server_options.root_cert_info =
+          std::make_shared<tsi::RootCertInfo>(server_root_ca_);
+    }
+    server_options.signature_algorithms = server_signature_algorithms_;
     server_options.min_tls_version = tls_version_;
     server_options.max_tls_version = tls_version_;
     ASSERT_NE(cert_selector_, nullptr);
@@ -471,8 +522,13 @@ class SslCertSelectorTsiTestFixture {
   std::string ca_cert_;
   std::string server_key_;
   std::string server_cert_;
+  std::string server_root_ca_;
+  std::optional<PemKeyCertPair> client_key_cert_pair_;
   std::shared_ptr<CertificateSelector> cert_selector_;
   tsi_tls_version tls_version_;
+  tsi_client_certificate_request_type client_certificate_request_;
+  std::vector<grpc_tls_signature_algorithm> server_signature_algorithms_;
+  std::vector<grpc_tls_signature_algorithm> client_signature_algorithms_;
   bool expect_success_ = false;
 };
 
@@ -642,9 +698,75 @@ TEST_P(CertSelectionOffloadTest, HandshakeHintsSucceeds) {
       GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.key"));
   std::string server_cert =
       GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.pem"));
-  fixture->SetCertSelector(std::make_shared<HandshakeHintsCertificateSelector>(
-      server_cert, server_key, GetParam()));
+  auto selector = std::make_shared<HandshakeHintsCertificateSelector>(
+      server_cert, server_key, GetParam(), /*request_client_cert=*/false);
+  fixture->SetCertSelector(selector);
   fixture->Run(/*expect_success=*/true, event_engine_.get());
+  EXPECT_THAT(
+      selector->observed_verify_algorithms(),
+      ElementsAre(SSL_SIGN_ECDSA_SECP256R1_SHA256, SSL_SIGN_RSA_PSS_RSAE_SHA256,
+                  SSL_SIGN_RSA_PKCS1_SHA256, SSL_SIGN_ECDSA_SECP384R1_SHA384,
+                  SSL_SIGN_RSA_PSS_RSAE_SHA384, SSL_SIGN_RSA_PKCS1_SHA384,
+                  SSL_SIGN_RSA_PSS_RSAE_SHA512, SSL_SIGN_RSA_PKCS1_SHA512,
+                  SSL_SIGN_RSA_PKCS1_SHA1));
+}
+
+TEST_P(CertSelectionOffloadTest, HandshakeHintsForwardsCustomVerifyAlgorithms) {
+  SslCertSelectorTsiTestFixture::FixtureOptions options;
+  options.tls_version = GetParam();
+  options.server_signature_algorithms = {
+      GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87,
+      GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256,
+      GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA256,
+  };
+  auto fixture =
+      std::make_shared<SslCertSelectorTsiTestFixture>(options, event_engine_);
+  std::string server_key =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.key"));
+  std::string server_cert =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.pem"));
+  auto selector = std::make_shared<HandshakeHintsCertificateSelector>(
+      server_cert, server_key, GetParam(), /*request_client_cert=*/false);
+  fixture->SetCertSelector(selector);
+  fixture->Run(/*expect_success=*/true, event_engine_.get());
+  EXPECT_THAT(selector->observed_verify_algorithms(),
+              ElementsAre(SSL_SIGN_ML_DSA_87, SSL_SIGN_ECDSA_SECP256R1_SHA256,
+                          SSL_SIGN_RSA_PSS_RSAE_SHA256));
+}
+
+TEST_P(CertSelectionOffloadTest, HandshakeHintsMtlsWithMlDsaSucceeds) {
+  if (GetParam() == tsi_tls_version::TSI_TLS1_2) {
+    GTEST_SKIP() << "ML-DSA requires TLS 1.3.";
+  }
+  constexpr absl::string_view kMlDsaCredsPath =
+      "test/core/tsi/test_creds/mldsa/";
+  SslCertSelectorTsiTestFixture::FixtureOptions options;
+  options.tls_version = GetParam();
+  options.client_certificate_request =
+      TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
+  options.server_root_ca_path = absl::StrCat(kMlDsaCredsPath, "ca_mldsa87.pem");
+  options.client_cert_path =
+      absl::StrCat(kMlDsaCredsPath, "client_mldsa87.pem");
+  options.client_key_path = absl::StrCat(kMlDsaCredsPath, "client_mldsa87.key");
+  options.server_signature_algorithms = {
+      GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87,
+      GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256,
+      GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA256,
+  };
+  options.client_signature_algorithms = options.server_signature_algorithms;
+  auto fixture =
+      std::make_shared<SslCertSelectorTsiTestFixture>(options, event_engine_);
+  std::string server_key =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.key"));
+  std::string server_cert =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.pem"));
+  auto selector = std::make_shared<HandshakeHintsCertificateSelector>(
+      server_cert, server_key, GetParam(), /*request_client_cert=*/true);
+  fixture->SetCertSelector(selector);
+  fixture->Run(/*expect_success=*/true, event_engine_.get());
+  EXPECT_THAT(selector->observed_verify_algorithms(),
+              ElementsAre(SSL_SIGN_ML_DSA_87, SSL_SIGN_ECDSA_SECP256R1_SHA256,
+                          SSL_SIGN_RSA_PSS_RSAE_SHA256));
 }
 
 class TrackingPrivateKeySigner final : public PrivateKeySigner {
@@ -959,7 +1081,8 @@ TEST_P(CertSelectionOffloadTest,
       GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.pem"));
   std::weak_ptr<PrivateKeySigner> signer_weak;
   auto selector = std::make_shared<HandshakeHintsCertificateSelector>(
-      server_cert, server_key, GetParam(), &signer_weak);
+      server_cert, server_key, GetParam(), /*request_client_cert=*/false,
+      &signer_weak);
   SteppedCertSelectorSession session(GetParam(), std::move(selector),
                                      event_engine_.get());
 

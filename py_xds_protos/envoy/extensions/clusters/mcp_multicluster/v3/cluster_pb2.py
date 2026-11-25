@@ -22,13 +22,14 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
+from envoy.type.matcher.v3 import string_pb2 as envoy_dot_type_dot_matcher_dot_v3_dot_string__pb2
 from google.protobuf import duration_pb2 as google_dot_protobuf_dot_duration__pb2
 from xds.annotations.v3 import status_pb2 as xds_dot_annotations_dot_v3_dot_status__pb2
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n;envoy/extensions/clusters/mcp_multicluster/v3/cluster.proto\x12-envoy.extensions.clusters.mcp_multicluster.v3\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xed\x02\n\rClusterConfig\x12\x62\n\x07servers\x18\x01 \x03(\x0b\x32G.envoy.extensions.clusters.mcp_multicluster.v3.ClusterConfig.McpBackendB\x08\xfa\x42\x05\x92\x01\x02\x08\x01\x1a~\n\nMcpCluster\x12\x18\n\x07\x63luster\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x0c\n\x04path\x18\x02 \x01(\t\x12*\n\x07timeout\x18\x03 \x01(\x0b\x32\x19.google.protobuf.Duration\x12\x1c\n\x14host_rewrite_literal\x18\x04 \x01(\t\x1ax\n\nMcpBackend\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\\\n\x0bmcp_cluster\x18\x02 \x01(\x0b\x32G.envoy.extensions.clusters.mcp_multicluster.v3.ClusterConfig.McpClusterB\xc6\x01\n;io.envoyproxy.envoy.extensions.clusters.mcp_multicluster.v3B\x0c\x43lusterProtoP\x01Zggithub.com/envoyproxy/go-control-plane/envoy/extensions/clusters/mcp_multicluster/v3;mcp_multiclusterv3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n;envoy/extensions/clusters/mcp_multicluster/v3/cluster.proto\x12-envoy.extensions.clusters.mcp_multicluster.v3\x1a\"envoy/type/matcher/v3/string.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\x8b\x05\n\rClusterConfig\x12\x62\n\x07servers\x18\x01 \x03(\x0b\x32G.envoy.extensions.clusters.mcp_multicluster.v3.ClusterConfig.McpBackendB\x08\xfa\x42\x05\x92\x01\x02\x08\x01\x1a~\n\nMcpCluster\x12\x18\n\x07\x63luster\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x0c\n\x04path\x18\x02 \x01(\t\x12*\n\x07timeout\x18\x03 \x01(\x0b\x32\x19.google.protobuf.Duration\x12\x1c\n\x14host_rewrite_literal\x18\x04 \x01(\t\x1a\xb0\x01\n\x10HeaderForwarding\x12\x13\n\x0b\x66orward_all\x18\x01 \x01(\x08\x12\x41\n\x0f\x61llowed_headers\x18\x02 \x01(\x0b\x32(.envoy.type.matcher.v3.ListStringMatcher\x12\x44\n\x12\x64isallowed_headers\x18\x03 \x01(\x0b\x32(.envoy.type.matcher.v3.ListStringMatcher\x1a\xe2\x01\n\nMcpBackend\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\\\n\x0bmcp_cluster\x18\x02 \x01(\x0b\x32G.envoy.extensions.clusters.mcp_multicluster.v3.ClusterConfig.McpCluster\x12h\n\x11header_forwarding\x18\x03 \x01(\x0b\x32M.envoy.extensions.clusters.mcp_multicluster.v3.ClusterConfig.HeaderForwardingB\xc6\x01\n;io.envoyproxy.envoy.extensions.clusters.mcp_multicluster.v3B\x0c\x43lusterProtoP\x01Zggithub.com/envoyproxy/go-control-plane/envoy/extensions/clusters/mcp_multicluster/v3;mcp_multiclusterv3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -40,10 +41,12 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_CLUSTERCONFIG_MCPCLUSTER'].fields_by_name['cluster']._serialized_options = b'\372B\004r\002\020\001'
   _globals['_CLUSTERCONFIG'].fields_by_name['servers']._loaded_options = None
   _globals['_CLUSTERCONFIG'].fields_by_name['servers']._serialized_options = b'\372B\005\222\001\002\010\001'
-  _globals['_CLUSTERCONFIG']._serialized_start=232
-  _globals['_CLUSTERCONFIG']._serialized_end=597
-  _globals['_CLUSTERCONFIG_MCPCLUSTER']._serialized_start=349
-  _globals['_CLUSTERCONFIG_MCPCLUSTER']._serialized_end=475
-  _globals['_CLUSTERCONFIG_MCPBACKEND']._serialized_start=477
-  _globals['_CLUSTERCONFIG_MCPBACKEND']._serialized_end=597
+  _globals['_CLUSTERCONFIG']._serialized_start=268
+  _globals['_CLUSTERCONFIG']._serialized_end=919
+  _globals['_CLUSTERCONFIG_MCPCLUSTER']._serialized_start=385
+  _globals['_CLUSTERCONFIG_MCPCLUSTER']._serialized_end=511
+  _globals['_CLUSTERCONFIG_HEADERFORWARDING']._serialized_start=514
+  _globals['_CLUSTERCONFIG_HEADERFORWARDING']._serialized_end=690
+  _globals['_CLUSTERCONFIG_MCPBACKEND']._serialized_start=693
+  _globals['_CLUSTERCONFIG_MCPBACKEND']._serialized_end=919
 # @@protoc_insertion_point(module_scope)

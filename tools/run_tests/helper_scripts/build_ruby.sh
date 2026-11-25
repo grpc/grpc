@@ -54,7 +54,3 @@ pushd cmake/build
 cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=${CMAKE_CONFIG} -DCMAKE_CXX_STANDARD=17   -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ../..
 make protoc grpc_ruby_plugin -j2
 popd
-
-# unbreak subsequent make builds by restoring zconf.h (previously renamed by cmake build)
-# see https://github.com/madler/zlib/issues/133
-(cd third_party/zlib; git checkout zconf.h || cp zconf.h.included zconf.h)

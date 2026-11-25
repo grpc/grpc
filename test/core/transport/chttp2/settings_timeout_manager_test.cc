@@ -30,7 +30,9 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/poll.h"
@@ -88,13 +90,15 @@ class SettingsPromiseManagerTest : public ::testing::TestWithParam<bool> {
         /*is_client=*/GetParam(), /*on_receive_settings=*/nullptr);
   }
 
+  Http2TransportStats http2_transport_stats_{ChannelArgs()};
+
  private:
   void MaybeFlushWriteBuffer() {
     if (transport_write_context_.GetWriteCycle().CanSerializeRegularFrames()) {
       bool unused;
       SliceBuffer discard =
           transport_write_context_.GetWriteCycle().SerializeRegularFrames(
-              {unused});
+              {unused, http2_transport_stats_});
     }
   }
 
@@ -348,7 +352,8 @@ TEST_P(SettingsPromiseManagerTest, MaybeGetSettingsAndSettingsAckFramesIdle) {
         transport_flow_control, frame_sender);
     if (GetWriteCycle().CanSerializeRegularFrames()) {
       bool should_reset = false;
-      output_buf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+      output_buf.Append(GetWriteCycle().SerializeRegularFrames(
+          {should_reset, http2_transport_stats_}));
     }
   }
   EXPECT_TRUE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());
@@ -363,7 +368,8 @@ TEST_P(SettingsPromiseManagerTest, MaybeGetSettingsAndSettingsAckFramesIdle) {
         transport_flow_control, frame_sender);
     if (GetWriteCycle().CanSerializeRegularFrames()) {
       bool should_reset = false;
-      output_buf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+      output_buf.Append(GetWriteCycle().SerializeRegularFrames(
+          {should_reset, http2_transport_stats_}));
     }
   }
   EXPECT_FALSE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());
@@ -386,7 +392,8 @@ TEST_P(SettingsPromiseManagerTest,
         transport_flow_control, frame_sender);
     if (GetWriteCycle().CanSerializeRegularFrames()) {
       bool should_reset = false;
-      output_buf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+      output_buf.Append(GetWriteCycle().SerializeRegularFrames(
+          {should_reset, http2_transport_stats_}));
     }
   }
   EXPECT_TRUE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());
@@ -405,7 +412,8 @@ TEST_P(SettingsPromiseManagerTest,
         transport_flow_control, frame_sender);
     if (GetWriteCycle().CanSerializeRegularFrames()) {
       bool should_reset = false;
-      output_buf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+      output_buf.Append(GetWriteCycle().SerializeRegularFrames(
+          {should_reset, http2_transport_stats_}));
     }
   }
 
@@ -438,7 +446,8 @@ TEST_P(SettingsPromiseManagerTest,
         transport_flow_control, frame_sender);
     if (GetWriteCycle().CanSerializeRegularFrames()) {
       bool should_reset = false;
-      output_buf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+      output_buf.Append(GetWriteCycle().SerializeRegularFrames(
+          {should_reset, http2_transport_stats_}));
     }
   }
   EXPECT_TRUE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());
@@ -465,7 +474,8 @@ TEST_P(SettingsPromiseManagerTest,
         transport_flow_control, frame_sender);
     if (GetWriteCycle().CanSerializeRegularFrames()) {
       bool should_reset = false;
-      output_buf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+      output_buf.Append(GetWriteCycle().SerializeRegularFrames(
+          {should_reset, http2_transport_stats_}));
     }
   }
   EXPECT_FALSE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());
@@ -487,7 +497,8 @@ TEST_P(SettingsPromiseManagerTest,
         transport_flow_control, frame_sender);
     if (GetWriteCycle().CanSerializeRegularFrames()) {
       bool should_reset = false;
-      output_buf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+      output_buf.Append(GetWriteCycle().SerializeRegularFrames(
+          {should_reset, http2_transport_stats_}));
     }
   }
   EXPECT_TRUE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());
@@ -509,7 +520,8 @@ TEST_P(SettingsPromiseManagerTest,
         transport_flow_control, frame_sender);
     if (GetWriteCycle().CanSerializeRegularFrames()) {
       bool should_reset = false;
-      output_buf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+      output_buf.Append(GetWriteCycle().SerializeRegularFrames(
+          {should_reset, http2_transport_stats_}));
     }
   }
   EXPECT_FALSE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());
@@ -540,7 +552,8 @@ TEST_P(SettingsPromiseManagerTest,
         transport_flow_control, frame_sender);
     if (GetWriteCycle().CanSerializeRegularFrames()) {
       bool should_reset = false;
-      output_buf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+      output_buf.Append(GetWriteCycle().SerializeRegularFrames(
+          {should_reset, http2_transport_stats_}));
     }
   }
   EXPECT_TRUE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());

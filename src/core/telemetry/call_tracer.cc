@@ -298,6 +298,11 @@ class DelegatingClientCallTracer : public ClientCallTracerInterface {
         std::move(attempt_tracers));
   }
 
+  void RecordEnd(const absl::Status& status) override {
+    for (auto* tracer : tracers_) {
+      tracer->RecordEnd(status);
+    }
+  }
   void RecordAnnotation(absl::string_view annotation) override {
     for (auto* tracer : tracers_) {
       tracer->RecordAnnotation(annotation);

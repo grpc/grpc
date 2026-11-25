@@ -36,6 +36,7 @@ load("@com_google_protobuf//bazel:upb_proto_reflection_library.bzl", "upb_proto_
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_cc//cc:objc_library.bzl", "objc_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_python//python:defs.bzl", "py_binary")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
@@ -304,10 +305,10 @@ def ios_cc_test(
     test_runner = "ios_x86_64_sim_runner_" + name
     ios_test_runner(
         name = test_runner,
-        device_type = "iPhone X",
+        device_type = "iPhone 11",
     )
     if not any([t for t in tags if t.startswith("no_test_ios")]):
-        native.objc_library(
+        objc_library(
             name = test_lib_ios,
             srcs = kwargs.get("srcs"),
             deps = kwargs.get("deps"),
@@ -877,7 +878,7 @@ def grpc_objc_library(
         visibility: visibility, default to public
     """
 
-    native.objc_library(
+    objc_library(
         name = name,
         hdrs = hdrs,
         srcs = srcs,

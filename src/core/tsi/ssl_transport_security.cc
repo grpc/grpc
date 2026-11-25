@@ -24,6 +24,7 @@
 #include <limits.h>
 #include <string.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -95,6 +96,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 
@@ -107,6 +109,15 @@
 const size_t kMaxChainLength = 100;
 const char kDefaultBoringSSLKeyExchangeGroups[] =
     "X25519MLKEM768:X25519:P-256:P-384:P-521";
+// Matches the BoringSSL default verify signature algorithms list:
+// https://github.com/google/boringssl/blob/fbb876dcee91c83a78d930dc9fab79db0c12053e/ssl/extensions.cc#L286-L302
+// Uses standard TLS 1.3 IANA signature scheme names accepted by
+// SSL_CTX_set1_sigalgs_list in both BoringSSL and OpenSSL >= 1.1.1.
+[[maybe_unused]] const char kDefaultSignatureAlgorithms[] =
+    "ecdsa_secp256r1_sha256:rsa_pss_rsae_sha256:rsa_pkcs1_sha256:"
+    "ecdsa_secp384r1_sha384:rsa_pss_rsae_sha384:rsa_pkcs1_sha384:"
+    "rsa_pss_rsae_sha512:rsa_pkcs1_sha512:"
+    "rsa_pkcs1_sha1";
 [[maybe_unused]] const char kDefaultOpenSSL1_1_1KeyExchangeGroups[] =
     "X25519:P-256:P-384:P-521";
 [[maybe_unused]] const char kDefaultOpenSSL1_0_2KeyExchangeGroups[] =
@@ -196,6 +207,7 @@ struct tsi_ssl_server_handshaker_factory {
 #if defined(OPENSSL_IS_BORINGSSL)
   std::shared_ptr<grpc_core::CertificateSelector> certificate_selector;
 #endif  // defined(OPENSSL_IS_BORINGSSL)
+  std::vector<grpc_tls_signature_algorithm> signature_algorithms;
   std::string exported_keying_material_label;
   size_t exported_keying_material_length;
 };
@@ -593,6 +605,53 @@ tsi_result SetKeyExchangeGroups(
   }
   return TSI_OK;
 }
+
+// Populates the signature algorithms.
+// Prefers the signature algorithms (input argument) configured by the user,
+// otherwise uses our defaults.
+tsi_result SetSignatureAlgorithms(
+    [[maybe_unused]] SSL_CTX* context,
+    const std::vector<grpc_tls_signature_algorithm>& signature_algorithms) {
+  if (!signature_algorithms.empty()) {
+    std::vector<absl::string_view> algorithm_names;
+    algorithm_names.reserve(signature_algorithms.size());
+    for (const grpc_tls_signature_algorithm algorithm : signature_algorithms) {
+      absl::StatusOr<absl::string_view> algorithm_name =
+          tsi::ConvertSignatureAlgorithmToString(algorithm);
+      if (!algorithm_name.ok()) {
+        LOG(ERROR) << "Could not convert signature algorithm to string: "
+                   << algorithm;
+        return TSI_INVALID_ARGUMENT;
+      }
+      if (std::find(algorithm_names.begin(), algorithm_names.end(),
+                    *algorithm_name) != algorithm_names.end()) {
+        LOG(ERROR) << "Duplicate signature algorithm: " << *algorithm_name;
+        return TSI_INVALID_ARGUMENT;
+      }
+      algorithm_names.push_back(*algorithm_name);
+    }
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+    std::string sigalg_list_str = absl::StrJoin(algorithm_names, ":");
+    if (!SSL_CTX_set1_sigalgs_list(context, sigalg_list_str.c_str())) {
+      LOG(ERROR) << "Could not set signature algorithms: " << sigalg_list_str;
+      return TSI_INVALID_ARGUMENT;
+    }
+#else
+    LOG(ERROR) << "Setting TLS signature algorithms is not supported when "
+                  "building against OpenSSL versions < 1.1.1.";
+    return TSI_FAILED_PRECONDITION;
+#endif  // OPENSSL_VERSION_NUMBER >= 0x10101000
+  } else {
+// Use defaults
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+    if (!SSL_CTX_set1_sigalgs_list(context, kDefaultSignatureAlgorithms)) {
+      LOG(ERROR) << "Could not set default signature algorithms.";
+      return TSI_INTERNAL_ERROR;
+    }
+#endif
+  }
+  return TSI_OK;
+}
 }  // namespace
 
 static gpr_once g_init_openssl_once = GPR_ONCE_INIT;
@@ -717,8 +776,38 @@ const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
     nullptr,  // decrypt not implemented for this use case
     TlsPrivateKeyOffloadComplete};
 
+absl::StatusOr<std::vector<uint16_t>> GetVerifySignatureAlgorithmIds(
+    const std::vector<grpc_tls_signature_algorithm>& signature_algorithms) {
+  std::vector<absl::string_view> algorithm_names;
+  if (!signature_algorithms.empty()) {
+    algorithm_names.reserve(signature_algorithms.size());
+    for (const grpc_tls_signature_algorithm algorithm : signature_algorithms) {
+      absl::StatusOr<absl::string_view> algorithm_name =
+          tsi::ConvertSignatureAlgorithmToString(algorithm);
+      if (!algorithm_name.ok()) {
+        return algorithm_name.status();
+      }
+      algorithm_names.push_back(*algorithm_name);
+    }
+  } else {
+    algorithm_names = absl::StrSplit(kDefaultSignatureAlgorithms, ':');
+  }
+  std::vector<uint16_t> sigalgs;
+  sigalgs.reserve(algorithm_names.size());
+  for (absl::string_view algorithm_name : algorithm_names) {
+    absl::StatusOr<uint16_t> algorithm_id =
+        tsi::ConvertSignatureAlgorithmNameToBoringSslId(algorithm_name);
+    if (!algorithm_id.ok()) {
+      return algorithm_id.status();
+    }
+    sigalgs.push_back(*algorithm_id);
+  }
+  return sigalgs;
+}
+
 SelectCertificateInfo PrepareSelectCertificateInfo(
-    const SSL_CLIENT_HELLO* client_hello) {
+    const SSL_CLIENT_HELLO* client_hello,
+    const std::vector<grpc_tls_signature_algorithm>& signature_algorithms) {
   SelectCertificateInfo select_cert_info;
   const char* sni =
       SSL_get_servername(client_hello->ssl, TLSEXT_NAMETYPE_host_name);
@@ -742,6 +831,15 @@ SelectCertificateInfo PrepareSelectCertificateInfo(
   select_cert_info.handshake_hints_info.client_hello =
       std::string(reinterpret_cast<const char*>(client_hello->client_hello),
                   client_hello->client_hello_len);
+  absl::StatusOr<std::vector<uint16_t>> verify_algorithms =
+      GetVerifySignatureAlgorithmIds(signature_algorithms);
+  if (verify_algorithms.ok()) {
+    select_cert_info.handshake_hints_info.verify_algorithms =
+        *std::move(verify_algorithms);
+  } else {
+    LOG(ERROR) << "Failed to convert signature algorithms to BoringSSL IDs: "
+               << verify_algorithms.status();
+  }
   return select_cert_info;
 }
 
@@ -861,14 +959,21 @@ void OnSelectCertificateDone(
   }
 }
 
-grpc_core::CertificateSelector* GetCertificateSelector(
+tsi_ssl_server_handshaker_factory* GetServerHandshakerFactory(
     tsi_ssl_handshaker* handshaker) {
   if (handshaker->is_client) {
     return nullptr;
   }
   return reinterpret_cast<tsi_ssl_server_handshaker_factory*>(
-             handshaker->factory_ref)
-      ->certificate_selector.get();
+      handshaker->factory_ref);
+}
+
+grpc_core::CertificateSelector* GetCertificateSelector(
+    tsi_ssl_handshaker* handshaker) {
+  tsi_ssl_server_handshaker_factory* server_factory =
+      GetServerHandshakerFactory(handshaker);
+  return server_factory != nullptr ? server_factory->certificate_selector.get()
+                                   : nullptr;
 }
 
 // Invoked by BoringSSL to get the result of cert selection.
@@ -883,8 +988,11 @@ ssl_select_cert_result_t SelectCertificateCallback(
         "is nullptr; this should never happen.");
     return ssl_select_cert_error;
   }
+  tsi_ssl_server_handshaker_factory* server_factory =
+      GetServerHandshakerFactory(handshaker);
   grpc_core::CertificateSelector* cert_selector =
-      GetCertificateSelector(handshaker);
+      server_factory != nullptr ? server_factory->certificate_selector.get()
+                                : nullptr;
   if (cert_selector == nullptr) {
     handshaker->MaybeSetError(
         "SelectCertificateCallback failed because certificate selector "
@@ -907,7 +1015,8 @@ ssl_select_cert_result_t SelectCertificateCallback(
   std::variant<absl::StatusOr<SelectCertificateResult>,
                std::shared_ptr<AsyncCertificateSelectionHandle>>
       result = cert_selector->SelectCertificate(
-          PrepareSelectCertificateInfo(client_hello),
+          PrepareSelectCertificateInfo(client_hello,
+                                       server_factory->signature_algorithms),
           absl::bind_front(OnSelectCertificateDone, handshaker->Ref()));
   // The outer function guarantees the mutex lock, and we have to disable the
   // absl thread safety analysis because the use of MatchMutable.
@@ -1568,11 +1677,12 @@ static tsi_result ssl_ctx_load_verification_certs(SSL_CTX* context,
 }
 
 // Populates the SSL context with a private key and a cert chain, and sets the
-// cipher list and the ephemeral ECDH key.
+// cipher list, the ephemeral ECDH key, and the signature algorithms.
 static tsi_result populate_ssl_context(
     SSL_CTX* context, const grpc_core::PemKeyCertPair* key_cert_pair,
     const char* cipher_list,
-    const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups) {
+    const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
+    const std::vector<grpc_tls_signature_algorithm>& signature_algorithms) {
   tsi_result result = TSI_OK;
   if (key_cert_pair != nullptr) {
     if (!key_cert_pair->cert_chain().empty()) {
@@ -1617,6 +1727,10 @@ static tsi_result populate_ssl_context(
     return TSI_INVALID_ARGUMENT;
   }
   result = SetKeyExchangeGroups(context, key_exchange_groups);
+  if (result != TSI_OK) {
+    return result;
+  }
+  result = SetSignatureAlgorithms(context, signature_algorithms);
   if (result != TSI_OK) {
     return result;
   }
@@ -3508,9 +3622,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   }
 
   do {
-    result = populate_ssl_context(ssl_context, options->pem_key_cert_pair,
-                                  options->cipher_suites,
-                                  options->key_exchange_groups);
+    result = populate_ssl_context(
+        ssl_context, options->pem_key_cert_pair, options->cipher_suites,
+        options->key_exchange_groups, options->signature_algorithms);
     if (result != TSI_OK) break;
 
 #if defined(OPENSSL_IS_BORINGSSL)
@@ -3680,9 +3794,9 @@ tsi_result tsi_configure_server_ssl_context(
       ssl_context.ssl_ctx, options->min_tls_version, options->max_tls_version);
   if (result != TSI_OK) return result;
 
-  result = populate_ssl_context(ssl_context.ssl_ctx, pem_key_cert_pair,
-                                options->cipher_suites,
-                                options->key_exchange_groups);
+  result = populate_ssl_context(
+      ssl_context.ssl_ctx, pem_key_cert_pair, options->cipher_suites,
+      options->key_exchange_groups, options->signature_algorithms);
 #if defined(OPENSSL_IS_BORINGSSL)
   if (pem_key_cert_pair != nullptr) {
     grpc_core::Match(
@@ -3847,6 +3961,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
       options->exported_keying_material_label;
   impl->exported_keying_material_length =
       options->exported_keying_material_length;
+  impl->signature_algorithms = options->signature_algorithms;
 
   tsi_result result = grpc_core::Match(
       options->key_cert_pairs_or_selector,

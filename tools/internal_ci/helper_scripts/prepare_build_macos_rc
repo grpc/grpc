@@ -239,6 +239,12 @@ export PATH="$(ruby -e 'puts Gem.user_dir')/bin:$PATH"
   # Needed for ios-binary-size
   time retry_with_backoff pip install --user -r "${DIR}/requirements.macos.txt"
 
+  # Pre-download bazel into a shared cache directory with retries so parallel
+  # pod install jobs in cloned workspaces do not race or fail on transient DNS errors.
+  export OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR="/tmpfs/grpc-caches/bazel"
+  mkdir -p "${OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR}"
+  time retry_with_backoff tools/bazel version
+
   # Store intermediate build files of ObjC tests into /tmpfs
   # TODO(jtattermusch): this has likely been done to avoid running
   # out of disk space when running ios-binary-size tests, but
