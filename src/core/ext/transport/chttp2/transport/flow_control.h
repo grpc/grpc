@@ -307,6 +307,7 @@ class TransportFlowControl final {
     }
 
    private:
+    //here....
     friend class StreamFlowControl;
     void StreamSentData(int64_t size) { tfc_->remote_window_ -= size; }
 
@@ -390,6 +391,7 @@ class TransportFlowControl final {
     }
   };
 
+  // Here...
   Stats stats() const {
     Stats stats;
     stats.target_window = target_window();
@@ -530,6 +532,7 @@ class TransportFlowControl final {
   Waker bdp_waker_;
   BdpEstimator bdp_estimator_;
 
+  //has no lock.
   int64_t remote_window_ = kDefaultWindow;
   int64_t target_initial_window_size_ = kDefaultWindow;
   int64_t target_frame_size_ = kDefaultFrameSize;
