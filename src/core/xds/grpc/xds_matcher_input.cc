@@ -14,14 +14,11 @@
 
 #include "src/core/xds/grpc/xds_matcher_input.h"
 
-#include <variant>
-
 #include "envoy/type/matcher/v3/http_inputs.upb.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "src/core/xds/grpc/xds_matcher_context.h"
-#include "xds/type/matcher/v3/http_inputs.upb.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 
@@ -65,26 +62,6 @@ MetadataInputFactory::ParseAndCreateInput(
   return std::make_unique<MetadataInput>(header_name);
 }
 
-std::optional<CelRequestResolver> HttpAttributesCelMatchInput::GetValue(
-    const XdsMatcher::MatchContext& context) const {
-  CHECK_EQ(context.type(), RpcMatchContext::Type());
-  return CelRequestResolver(DownCast<const RpcMatchContext&>(context));
-}
-
-std::unique_ptr<XdsMatcher::InputValue<CelRequestResolver>>
-HttpAttributesCelMatchInputFactory::ParseAndCreateInput(
-    const XdsResourceType::DecodeContext& context,
-    absl::string_view serialized_value, ValidationErrors* errors) const {
-  // The message has no fields, but make sure it is well-formed.
-  if (xds_type_matcher_v3_HttpAttributesCelMatchInput_parse(
-          serialized_value.data(), serialized_value.size(), context.arena) ==
-      nullptr) {
-    errors->AddError("Failed to parse HttpAttributesCelMatchInput");
-    return nullptr;
-  }
-  return std::make_unique<HttpAttributesCelMatchInput>();
-}
-
 template <>
 XdsMatcherInputRegistry<absl::string_view>::XdsMatcherInputRegistry() {
   // Add factories
@@ -93,14 +70,8 @@ XdsMatcherInputRegistry<absl::string_view>::XdsMatcherInputRegistry() {
 }
 
 template <>
-XdsMatcherInputRegistry<CelRequestResolver>::XdsMatcherInputRegistry() {
-  factories_.emplace(HttpAttributesCelMatchInputFactory::Type(),
-                     std::make_unique<HttpAttributesCelMatchInputFactory>());
-}
-
-template <typename T>
-std::unique_ptr<XdsMatcher::InputValue<T>>
-XdsMatcherInputRegistry<T>::ParseAndCreateInput(
+std::unique_ptr<XdsMatcher::InputValue<absl::string_view>>
+XdsMatcherInputRegistry<absl::string_view>::ParseAndCreateInput(
     const XdsResourceType::DecodeContext& context, const XdsExtension& input,
     const UniqueTypeName& matcher_context, ValidationErrors* errors) const {
   const auto it = factories_.find(input.type);
@@ -122,8 +93,5 @@ XdsMatcherInputRegistry<T>::ParseAndCreateInput(
   }
   return it->second->ParseAndCreateInput(context, *serialized_value, errors);
 }
-
-template class XdsMatcherInputRegistry<absl::string_view>;
-template class XdsMatcherInputRegistry<CelRequestResolver>;
 
 }  // namespace grpc_core

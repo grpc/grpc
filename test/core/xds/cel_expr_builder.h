@@ -22,7 +22,7 @@
 
 #include "cel/expr/checked.upb.h"
 #include "cel/expr/syntax.upb.h"
-#include "src/core/xds/grpc/xds_cel.h"
+#include "src/core/xds/grpc/cel/xds_cel.h"
 #include "upb/mem/arena.h"
 #include "absl/strings/string_view.h"
 

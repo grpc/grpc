@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_CEL_REQUEST_RESOLVER_H
-#define GRPC_SRC_CORE_XDS_GRPC_XDS_CEL_REQUEST_RESOLVER_H
+#ifndef GRPC_SRC_CORE_XDS_GRPC_CEL_XDS_CEL_REQUEST_RESOLVER_H
+#define GRPC_SRC_CORE_XDS_GRPC_CEL_XDS_CEL_REQUEST_RESOLVER_H
 
 #include "cel-c/activation.h"
 #include "src/core/xds/grpc/xds_matcher_context.h"
@@ -44,4 +44,4 @@ class CelRequestResolver : public cel_VariableResolver {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_CEL_REQUEST_RESOLVER_H
+#endif  // GRPC_SRC_CORE_XDS_GRPC_CEL_XDS_CEL_REQUEST_RESOLVER_H

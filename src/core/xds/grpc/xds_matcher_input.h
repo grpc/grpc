@@ -15,21 +15,11 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_MATCHER_INPUT_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_MATCHER_INPUT_H
 
-#include <map>
-#include <memory>
-#include <optional>
-#include <string>
-
-#include "src/core/util/down_cast.h"
-#include "src/core/util/unique_type_name.h"
-#include "src/core/util/validation_errors.h"
-#include "src/core/xds/grpc/xds_cel_request_resolver.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "src/core/xds/grpc/xds_matcher_context.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -57,26 +47,10 @@ class XdsMatcherInputFactory<absl::string_view> {
   virtual ~XdsMatcherInputFactory() = default;
 };
 
-template <>
-class XdsMatcherInputFactory<CelRequestResolver> {
- public:
-  virtual absl::string_view type() const = 0;
-  virtual UniqueTypeName context_type() const = 0;
-  virtual std::unique_ptr<XdsMatcher::InputValue<CelRequestResolver>>
-  ParseAndCreateInput(const XdsResourceType::DecodeContext& context,
-                      absl::string_view serialized_value,
-                      ValidationErrors* errors) const = 0;
-  virtual ~XdsMatcherInputFactory() = default;
-};
-
-// Registry of input factories producing values of type T.  The
-// constructor, which registers the factories, is specialized for each
-// supported T.
 template <typename T = absl::string_view>
 class XdsMatcherInputRegistry {
  public:
   XdsMatcherInputRegistry();
-
   std::unique_ptr<XdsMatcher::InputValue<T>> ParseAndCreateInput(
       const XdsResourceType::DecodeContext& context, const XdsExtension& input,
       const UniqueTypeName& matcher_context, ValidationErrors* errors) const;
@@ -87,15 +61,6 @@ class XdsMatcherInputRegistry {
 
   FactoryMap factories_;
 };
-
-template <>
-XdsMatcherInputRegistry<absl::string_view>::XdsMatcherInputRegistry();
-template <>
-XdsMatcherInputRegistry<CelRequestResolver>::XdsMatcherInputRegistry();
-
-// Explicitly instantiated in xds_matcher_input.cc.
-extern template class XdsMatcherInputRegistry<absl::string_view>;
-extern template class XdsMatcherInputRegistry<CelRequestResolver>;
 
 class MetadataInput : public XdsMatcher::InputValue<absl::string_view> {
  public:
@@ -130,42 +95,6 @@ class MetadataInputFactory : public XdsMatcherInputFactory<absl::string_view> {
     return RpcMatchContext::Type();
   }
   std::unique_ptr<XdsMatcher::InputValue<absl::string_view>>
-  ParseAndCreateInput(const XdsResourceType::DecodeContext& context,
-                      absl::string_view serialized_value,
-                      ValidationErrors* errors) const override;
-};
-
-// Exposes the RPC's attributes to a CEL matcher via the `request` variable
-// (gRFC A106).
-class HttpAttributesCelMatchInput
-    : public XdsMatcher::InputValue<CelRequestResolver> {
- public:
-  std::optional<CelRequestResolver> GetValue(
-      const XdsMatcher::MatchContext& context) const override;
-  static UniqueTypeName Type() {
-    return GRPC_UNIQUE_TYPE_NAME_HERE("HttpAttributesCelMatchInput");
-  }
-  UniqueTypeName type() const override { return Type(); }
-  bool Equals(
-      const XdsMatcher::InputValue<CelRequestResolver>& other) const override {
-    return type() == other.type();
-  }
-  std::string ToString() const override {
-    return "HttpAttributesCelMatchInput";
-  }
-};
-
-class HttpAttributesCelMatchInputFactory
-    : public XdsMatcherInputFactory<CelRequestResolver> {
- public:
-  absl::string_view type() const override { return Type(); }
-  static absl::string_view Type() {
-    return "xds.type.matcher.v3.HttpAttributesCelMatchInput";
-  }
-  UniqueTypeName context_type() const override {
-    return RpcMatchContext::Type();
-  }
-  std::unique_ptr<XdsMatcher::InputValue<CelRequestResolver>>
   ParseAndCreateInput(const XdsResourceType::DecodeContext& context,
                       absl::string_view serialized_value,
                       ValidationErrors* errors) const override;

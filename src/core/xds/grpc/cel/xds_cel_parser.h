@@ -14,13 +14,13 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_CEL_PARSER_H
-#define GRPC_SRC_CORE_XDS_GRPC_XDS_CEL_PARSER_H
+#ifndef GRPC_SRC_CORE_XDS_GRPC_CEL_XDS_CEL_PARSER_H
+#define GRPC_SRC_CORE_XDS_GRPC_CEL_XDS_CEL_PARSER_H
 
 #include <optional>
 
 #include "src/core/util/validation_errors.h"
-#include "src/core/xds/grpc/xds_cel.h"
+#include "src/core/xds/grpc/cel/xds_cel.h"
 #include "xds/type/v3/cel.upb.h"
 
 namespace grpc_core {
@@ -39,4 +39,4 @@ std::optional<CelStringExtractor> ParseCelExtractString(
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_CEL_PARSER_H
+#endif  // GRPC_SRC_CORE_XDS_GRPC_CEL_XDS_CEL_PARSER_H

@@ -22,7 +22,7 @@
 #include "cel-c/string_view_absl.h"
 #include "cel/expr/checked.upb.h"
 #include "cel/expr/syntax.upb.h"
-#include "src/core/xds/grpc/xds_cel.h"
+#include "src/core/xds/grpc/cel/xds_cel.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {

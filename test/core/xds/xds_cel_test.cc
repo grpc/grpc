@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/xds/grpc/xds_cel.h"
+#include "src/core/xds/grpc/cel/xds_cel.h"
 
 #include <map>
 #include <memory>

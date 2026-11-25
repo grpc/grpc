@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/xds/grpc/xds_cel_parser.h"
+#include "src/core/xds/grpc/cel/xds_cel_parser.h"
 
 #include <memory>
 #include <optional>
@@ -27,8 +27,8 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
-#include "src/core/xds/grpc/xds_cel.h"
-#include "src/core/xds/grpc/xds_cel_request_resolver.h"
+#include "src/core/xds/grpc/cel/xds_cel.h"
+#include "src/core/xds/grpc/cel/xds_cel_request_resolver.h"
 #include "src/core/xds/grpc/xds_matcher_context.h"
 #include "test/core/xds/cel_expr_builder.h"
 #include "upb/mem/arena.hpp"

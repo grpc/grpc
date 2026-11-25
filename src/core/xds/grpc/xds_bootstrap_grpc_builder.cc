@@ -41,6 +41,7 @@
 #include "src/core/load_balancing/weighted_round_robin/weighted_round_robin.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/no_destruct.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
@@ -68,6 +69,7 @@ GrpcXdsBootstrapBuilder::Build(absl::string_view json_string) {
     (*bootstrap)->http_filter_registry_ = CreateXdsHttpFilterRegistry();
     (*bootstrap)->lb_policy_registry_ = CreateXdsLbPolicyRegistry();
     (*bootstrap)->audit_logger_registry_ = CreateXdsAuditLoggerRegistry();
+    (*bootstrap)->custom_match_registry_ = CreateXdsCustomMatchRegistry();
   }
   return bootstrap;
 }
@@ -493,6 +495,32 @@ class StdoutLoggerConfigFactory final
 XdsAuditLoggerRegistry GrpcXdsBootstrapBuilder::CreateXdsAuditLoggerRegistry() {
   XdsAuditLoggerRegistry registry;
   registry.RegisterFactory(std::make_unique<StdoutLoggerConfigFactory>());
+  return registry;
+}
+
+//
+// Custom match registry
+//
+
+namespace {
+
+NoDestruct<std::vector<absl::AnyInvocable<void(XdsCustomMatchRegistry&)>>>
+    g_custom_match_factory_inits ABSL_GUARDED_BY(*g_mu);
+
+}  // namespace
+
+void GrpcXdsBootstrapBuilder::RegisterXdsCustomMatchFactories(
+    absl::AnyInvocable<void(XdsCustomMatchRegistry&)> init) {
+  MutexLock lock(*g_mu);
+  g_custom_match_factory_inits->push_back(std::move(init));
+}
+
+XdsCustomMatchRegistry GrpcXdsBootstrapBuilder::CreateXdsCustomMatchRegistry() {
+  XdsCustomMatchRegistry registry;
+  MutexLock lock(*g_mu);
+  for (auto& init : *g_custom_match_factory_inits) {
+    init(registry);
+  }
   return registry;
 }
 

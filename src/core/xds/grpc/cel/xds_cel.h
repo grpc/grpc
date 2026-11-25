@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_CEL_H
-#define GRPC_SRC_CORE_XDS_GRPC_XDS_CEL_H
+#ifndef GRPC_SRC_CORE_XDS_GRPC_CEL_XDS_CEL_H
+#define GRPC_SRC_CORE_XDS_GRPC_CEL_XDS_CEL_H
 
 #include <memory>
 #include <optional>
@@ -116,4 +116,4 @@ class CelStringExtractor final {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_CEL_H
+#endif  // GRPC_SRC_CORE_XDS_GRPC_CEL_XDS_CEL_H

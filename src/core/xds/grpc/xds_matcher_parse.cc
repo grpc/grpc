@@ -17,22 +17,18 @@
 #include <memory>
 #include <optional>
 #include <utility>
-#include <variant>
 
 #include "src/core/util/down_cast.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/core/xds/grpc/xds_cel.h"
-#include "src/core/xds/grpc/xds_cel_matcher.h"
-#include "src/core/xds/grpc/xds_cel_parser.h"
-#include "src/core/xds/grpc/xds_cel_request_resolver.h"
+#include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/xds/grpc/xds_custom_match_registry.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "src/core/xds/grpc/xds_matcher_action.h"
 #include "src/core/xds/grpc/xds_matcher_input.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "xds/core/v3/extension.upb.h"
-#include "xds/type/matcher/v3/cel.upb.h"
 #include "xds/type/matcher/v3/matcher.upb.h"
 #include "xds/type/matcher/v3/regex.upb.h"
 #include "xds/type/matcher/v3/string.upb.h"
@@ -53,26 +49,19 @@ std::unique_ptr<XdsMatcher> ParseXdsMatcherRecursive(
     const UniqueTypeName& matcher_context, bool allow_keep_matching, int depth,
     ValidationErrors* errors);
 
-// Function to parse "xds_core_v3_TypedExtensionConfig" to generate
-// XdsMatcher::InputValue<T> using the given registry.
-template <typename T>
-std::unique_ptr<XdsMatcher::InputValue<T>> ParseInput(
+// Extracts the extension from an input "xds_core_v3_TypedExtensionConfig".
+// The returned extension's validation fields remain in scope until it is
+// destroyed.
+std::optional<XdsExtension> ExtractInputExtension(
     const XdsResourceType::DecodeContext& context,
-    const xds_core_v3_TypedExtensionConfig* input,
-    const XdsMatcherInputRegistry<T>& registry,
-    const UniqueTypeName& matcher_context, ValidationErrors* errors) {
+    const xds_core_v3_TypedExtensionConfig* input, ValidationErrors* errors) {
   if (input == nullptr) {
     errors->AddError("field not present");
-    return nullptr;
+    return std::nullopt;
   }
   const google_protobuf_Any* any =
       xds_core_v3_TypedExtensionConfig_typed_config(input);
-  auto extension = ExtractXdsExtension(context, any, errors);
-  if (!extension.has_value()) {
-    return nullptr;
-  }
-  return registry.ParseAndCreateInput(context, *extension, matcher_context,
-                                      errors);
+  return ExtractXdsExtension(context, any, errors);
 }
 
 // The parsing is for input which return absl::string_view
@@ -80,45 +69,28 @@ std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> ParseStringInput(
     const XdsResourceType::DecodeContext& context,
     const xds_core_v3_TypedExtensionConfig* input,
     const UniqueTypeName& matcher_context, ValidationErrors* errors) {
-  return ParseInput(
-      context, input,
+  auto extension = ExtractInputExtension(context, input, errors);
+  if (!extension.has_value()) return nullptr;
+  const auto& registry =
       DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
-          .matcher_string_input_registry(),
-      matcher_context, errors);
+          .matcher_string_input_registry();
+  return registry.ParseAndCreateInput(context, *extension, matcher_context,
+                                      errors);
 }
 
-// Parses SinglePredicate.custom_match.  CelMatcher is the only supported
-// type.
-std::unique_ptr<XdsMatcherList::InputMatcher<CelRequestResolver>>
-ParseCustomMatch(const XdsResourceType::DecodeContext& context,
-                 const xds_core_v3_TypedExtensionConfig* custom_match,
-                 ValidationErrors* errors) {
+// Parses SinglePredicate.custom_match using the custom_match registry.
+std::unique_ptr<XdsCustomMatchFactory::CustomMatch> ParseCustomMatch(
+    const XdsResourceType::DecodeContext& context,
+    const xds_core_v3_TypedExtensionConfig* custom_match,
+    ValidationErrors* errors) {
   auto extension = ExtractXdsExtension(
       context, xds_core_v3_TypedExtensionConfig_typed_config(custom_match),
       errors);
   if (!extension.has_value()) return nullptr;
-  if (extension->type != "xds.type.matcher.v3.CelMatcher") {
-    errors->AddError("unsupported custom_match type");
-    return nullptr;
-  }
-  const absl::string_view* serialized_value =
-      std::get_if<absl::string_view>(&extension->value);
-  if (serialized_value == nullptr) {
-    errors->AddError("could not parse CelMatcher");
-    return nullptr;
-  }
-  const auto* cel_matcher = xds_type_matcher_v3_CelMatcher_parse(
-      serialized_value->data(), serialized_value->size(), context.arena);
-  if (cel_matcher == nullptr) {
-    errors->AddError("could not parse CelMatcher");
-    return nullptr;
-  }
-  ValidationErrors::ScopedField field(errors, ".expr_match");
-  auto program =
-      ParseCelExpression(xds_type_matcher_v3_CelMatcher_expr_match(cel_matcher),
-                         CelProgram::ResultType::kBool, errors);
-  if (!program.has_value()) return nullptr;
-  return std::make_unique<CelInputMatcher>(std::move(*program));
+  const auto& registry =
+      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+          .custom_match_registry();
+  return registry.ParseCustomMatch(context, *extension, errors);
 }
 
 // Function to parse "xds_core_v3_TypedExtensionConfig"  to generate
@@ -267,23 +239,16 @@ std::unique_ptr<XdsMatcherList::Predicate> ParseSinglePredicate(
           xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_custom_match(
               single_predicate);
       custom_match_proto != nullptr) {
-    std::unique_ptr<XdsMatcherList::InputMatcher<CelRequestResolver>> matcher;
+    std::unique_ptr<XdsCustomMatchFactory::CustomMatch> custom_match;
     {
       ValidationErrors::ScopedField field(errors, ".custom_match");
-      matcher = ParseCustomMatch(context, custom_match_proto, errors);
+      custom_match = ParseCustomMatch(context, custom_match_proto, errors);
     }
-    std::unique_ptr<XdsMatcher::InputValue<CelRequestResolver>> input;
-    {
-      ValidationErrors::ScopedField field(errors, ".input");
-      input = ParseInput(
-          context, input_proto,
-          DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
-              .matcher_cel_input_registry(),
-          matcher_context, errors);
-    }
-    if (input == nullptr || matcher == nullptr) return nullptr;
-    return XdsMatcherList::CreateSinglePredicate(std::move(input),
-                                                 std::move(matcher));
+    ValidationErrors::ScopedField field(errors, ".input");
+    auto input = ExtractInputExtension(context, input_proto, errors);
+    if (!input.has_value() || custom_match == nullptr) return nullptr;
+    return custom_match->CreatePredicate(context, *input, matcher_context,
+                                         errors);
   }
   errors->AddError("one of value_match or custom_match must be set");
   return nullptr;

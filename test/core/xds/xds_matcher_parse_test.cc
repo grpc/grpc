@@ -25,10 +25,10 @@
 #include "src/core/util/down_cast.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
+#include "src/core/xds/grpc/cel/xds_cel.h"
+#include "src/core/xds/grpc/cel/xds_cel_matcher.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
-#include "src/core/xds/grpc/xds_cel.h"
-#include "src/core/xds/grpc/xds_cel_request_resolver.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "src/core/xds/grpc/xds_matcher_action.h"
@@ -1185,64 +1185,6 @@ TEST_F(MatcherTest, ExceedsMaxDepth) {
 }
 
 //
-// CEL input registry
-//
-
-class CelInputRegistryTest : public MatcherTest {
- protected:
-  const XdsMatcherInputRegistry<CelRequestResolver>& registry() {
-    return DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
-        .matcher_cel_input_registry();
-  }
-
-  std::unique_ptr<XdsMatcher::InputValue<CelRequestResolver>> ParseInput(
-      absl::string_view type, absl::string_view serialized_value,
-      ValidationErrors* errors) {
-    XdsExtension extension;
-    extension.type = type;
-    extension.value = serialized_value;
-    return registry().ParseAndCreateInput(decode_context_, extension,
-                                          RpcMatchContext::Type(), errors);
-  }
-};
-
-TEST_F(CelInputRegistryTest, HttpAttributesCelMatchInput) {
-  ValidationErrors errors;
-  auto input = ParseInput("xds.type.matcher.v3.HttpAttributesCelMatchInput", "",
-                          &errors);
-  ASSERT_TRUE(errors.ok())
-      << errors.status(absl::StatusCode::kInvalidArgument, "").message();
-  ASSERT_NE(input, nullptr);
-  EXPECT_EQ(input->ToString(), "HttpAttributesCelMatchInput");
-  EXPECT_TRUE(input->Equals(HttpAttributesCelMatchInput()));
-  grpc_metadata_batch metadata;
-  RpcMatchContext context(&metadata);
-  EXPECT_TRUE(input->GetValue(context).has_value());
-}
-
-TEST_F(CelInputRegistryTest, MalformedHttpAttributesCelMatchInput) {
-  ValidationErrors errors;
-  auto input = ParseInput("xds.type.matcher.v3.HttpAttributesCelMatchInput",
-                          "\xff", &errors);
-  EXPECT_EQ(input, nullptr);
-  EXPECT_THAT(
-      errors.status(absl::StatusCode::kInvalidArgument, "").message(),
-      ::testing::HasSubstr("Failed to parse HttpAttributesCelMatchInput"));
-}
-
-TEST_F(CelInputRegistryTest, StringInputNotSupported) {
-  ValidationErrors errors;
-  auto input = ParseInput("envoy.type.matcher.v3.HttpRequestHeaderMatchInput",
-                          "", &errors);
-  EXPECT_EQ(input, nullptr);
-  EXPECT_THAT(
-      errors.status(absl::StatusCode::kInvalidArgument, "").message(),
-      ::testing::HasSubstr("Unsupported Input type:envoy.type.matcher.v3."
-                           "HttpRequestHeaderMatchInput"));
-}
-
-
-//
 // HttpRequestHeaderMatchInput
 //
 
@@ -1553,6 +1495,38 @@ TEST_F(CelMatcherParseTest, StringInputWithCelMatcher) {
                            "HttpRequestHeaderMatchInput"));
 }
 
+TEST_F(CelMatcherParseTest, MalformedHttpAttributesCelMatchInput) {
+  Matcher matcher_proto =
+      MakeMatcher(MakeCelMatcher(builder_.HeaderEquals("foo", "bar")),
+                  HttpAttributesCelMatchInputProto());
+  auto* typed_config = matcher_proto.mutable_matcher_list()
+                           ->mutable_matchers(0)
+                           ->mutable_predicate()
+                           ->mutable_single_predicate()
+                           ->mutable_input()
+                           ->mutable_typed_config();
+  typed_config->set_value("\xff");
+  EXPECT_THAT(
+      ParseError(matcher_proto),
+      ::testing::HasSubstr(
+          "input.value[xds.type.matcher.v3.HttpAttributesCelMatchInput] "
+          "error:Failed to parse HttpAttributesCelMatchInput"));
+}
+
+TEST_F(CelMatcherParseTest, MissingInput) {
+  Matcher matcher_proto =
+      MakeMatcher(MakeCelMatcher(builder_.HeaderEquals("foo", "bar")),
+                  HttpAttributesCelMatchInputProto());
+  matcher_proto.mutable_matcher_list()
+      ->mutable_matchers(0)
+      ->mutable_predicate()
+      ->mutable_single_predicate()
+      ->clear_input();
+  EXPECT_THAT(
+      ParseError(matcher_proto),
+      ::testing::HasSubstr("single_predicate.input error:field not present"));
+}
+
 TEST_F(CelMatcherParseTest, CelInputWithValueMatch) {
   Matcher matcher_proto =
       MakeMatcher(MakeCelMatcher(builder_.HeaderEquals("foo", "bar")),
@@ -1590,6 +1564,7 @@ TEST_F(CelMatcherParseTest, NoValueMatchOrCustomMatch) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_core::RegisterXdsCelMatcher();
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();
