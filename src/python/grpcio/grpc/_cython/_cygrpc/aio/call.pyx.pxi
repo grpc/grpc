@@ -326,10 +326,12 @@ cdef class _AioCall(GrpcCallWrapper):
 
         return False
 
-    def set_internal_error(self, str error_str):
+    def set_internal_error(
+        self, str error_str='', str details='Internal error from Core'
+    ):
         self._set_status(AioRpcStatus(
             StatusCode.internal,
-            'Internal error from Core',
+            details,
             (),
             error_str,
         ))

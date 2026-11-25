@@ -240,6 +240,28 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
                 messages_pb2.SimpleRequest(), credentials=call_credentials
             )
 
+    async def test_request_serializer_raises(self):
+        def bad_serializer(_request):
+            raise MemoryError("serialization failed")
+
+        method = self._channel.unary_unary(
+            "/grpc.testing.TestService/UnaryCall",
+            request_serializer=bad_serializer,
+        )
+        call = method(messages_pb2.SimpleRequest())
+        with self.assertRaises(aio.AioRpcError) as exception_context:
+            await call
+
+        self.assertEqual(
+            grpc.StatusCode.INTERNAL, exception_context.exception.code()
+        )
+        self.assertEqual(
+            "Exception serializing request!",
+            exception_context.exception.details(),
+        )
+        self.assertTrue(call.done())
+        self.assertEqual(grpc.StatusCode.INTERNAL, await call.code())
+
 
 class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
     async def test_call_rpc_error(self):

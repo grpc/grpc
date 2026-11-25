@@ -51,6 +51,7 @@ _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 _GC_CANCELLATION_DETAILS = "Cancelled upon garbage collection!"
 _RPC_ALREADY_FINISHED_DETAILS = "RPC already finished."
 _RPC_HALF_CLOSED_DETAILS = 'RPC is half closed after calling "done_writing".'
+_SERIALIZATION_ERROR_DETAILS = "Exception serializing request!"
 _API_STYLE_ERROR = (
     "The iterator and read/write APIs may not be mixed on a single RPC."
 )
@@ -587,6 +588,11 @@ class UnaryUnaryCall(
         serialized_request = _common.serialize(
             self._request, self._request_serializer
         )
+        if serialized_request is None:
+            self._cython_call.set_internal_error(
+                details=_SERIALIZATION_ERROR_DETAILS
+            )
+            return cygrpc.EOF
 
         # NOTE(lidiz) asyncio.CancelledError is not a good transport for status,
         # because the asyncio.Task class do not cache the exception object.
