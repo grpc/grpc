@@ -387,21 +387,18 @@ void tsi_ssl_handshaker::MaybeRecordTelemetry(
 // |impl->ssl|. The caller must destroy the returned signer after releasing
 // |impl->mu| to avoid lock-order inversion in ~PrivateKeySigner().
 static std::shared_ptr<grpc_core::PrivateKeySigner>
-MaybeReleasePrivateKeySignerLocked(
-#if defined(OPENSSL_IS_BORINGSSL)
-    tsi_ssl_handshaker* impl)
-#else
-    tsi_ssl_handshaker* /*impl*/)
-#endif
+MaybeReleasePrivateKeySignerLocked([[maybe_unused]] tsi_ssl_handshaker* impl)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
-#if defined(OPENSSL_IS_BORINGSSL)
+#if !defined(OPENSSL_IS_BORINGSSL)
+  return nullptr;
+#else
   if (impl->key_signer != nullptr && impl->signing_handle == nullptr &&
       (impl->handshaker_result_created ||
        (impl->ssl != nullptr && SSL_can_release_private_key(impl->ssl)))) {
     return std::move(impl->key_signer);
   }
-#endif
   return nullptr;
+#endif  // !defined(OPENSSL_IS_BORINGSSL)
 }
 
 static std::pair<tsi_result, std::optional<HandshakerNextArgs>>
@@ -591,16 +588,16 @@ tsi_result SetKeyExchangeGroups(
       return TSI_INTERNAL_ERROR;
     }
 #elif OPENSSL_VERSION_NUMBER < 0x10101000L
-      if (!SSL_CTX_set1_curves_list(context,
-                                    kDefaultOpenSSL1_0_2KeyExchangeGroups)) {
-        LOG(ERROR)
-            << "Could not set default key exchange groups for OpenSSL 1.0.2.";
-        return TSI_INTERNAL_ERROR;
-      }
-      if (!SSL_CTX_set_ecdh_auto(context, /*onoff=*/1)) {
-        LOG(ERROR) << "Could not set ecdh auto for OpenSSL 1.0.2.";
-        return TSI_INTERNAL_ERROR;
-      }
+    if (!SSL_CTX_set1_curves_list(context,
+                                  kDefaultOpenSSL1_0_2KeyExchangeGroups)) {
+      LOG(ERROR)
+          << "Could not set default key exchange groups for OpenSSL 1.0.2.";
+      return TSI_INTERNAL_ERROR;
+    }
+    if (!SSL_CTX_set_ecdh_auto(context, /*onoff=*/1)) {
+      LOG(ERROR) << "Could not set ecdh auto for OpenSSL 1.0.2.";
+      return TSI_INTERNAL_ERROR;
+    }
 #endif
   }
   return TSI_OK;
@@ -690,6 +687,7 @@ void TlsOffloadSignDoneCallback(
     next_args = std::move(async_result.second);
     released_key_signer = MaybeReleasePrivateKeySignerLocked(handshaker.get());
   }
+  // Destroy outside handshaker->mu to avoid lock-order inversion.
   released_key_signer.reset();
   if (next_args.has_value() && next_args->cb != nullptr) {
     next_args->cb(result, next_args->user_data, next_args->bytes_to_send,
@@ -950,6 +948,7 @@ void OnSelectCertificateDone(
     next_args = std::move(async_result.second);
     released_key_signer = MaybeReleasePrivateKeySignerLocked(handshaker.get());
   }
+  // Destroy outside handshaker->mu to avoid lock-order inversion.
   released_key_signer.reset();
   // If result is not TSI_ASYNC and there are args, we are ready to flush.
   if (next_result != TSI_ASYNC && next_args.has_value() &&
