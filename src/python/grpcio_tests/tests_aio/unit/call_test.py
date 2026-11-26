@@ -256,7 +256,7 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
             grpc.StatusCode.INTERNAL, exception_context.exception.code()
         )
         self.assertEqual(
-            "Exception serializing request!",
+            "Exception while serializing request.",
             exception_context.exception.details(),
         )
         self.assertTrue(call.done())
