@@ -988,6 +988,9 @@ class SslTransportSecurityTest
       std::optional<std::map<std::string, std::string>> expected_client_labels,
       std::optional<std::map<std::string, std::string>> expected_server_labels);
 
+  void VerifyHandshakeWithTrailingUnusedBytes(size_t trailing_size,
+                                              uint8_t pattern_multiplier);
+
   tsi_test_fixture* ssl_tsi_test_fixture_;
   std::shared_ptr<SslTsiTestFixture> ssl_fixture_;
   bool fixture_destroyed = true;
@@ -1084,6 +1087,100 @@ TEST_P(SslTransportSecurityTest, DoHandshakeWithLargeServerHandshakeMessages) {
   key_cert_lib->use_root_store = true;
   ssl_fixture_->SetForceClientAuth(true);
   DoHandshake();
+}
+
+void SslTransportSecurityTest::VerifyHandshakeWithTrailingUnusedBytes(
+    size_t trailing_size, uint8_t pattern_multiplier) {
+  ssl_tsi_test_fixture_->vtable->setup_handshakers(ssl_tsi_test_fixture_);
+  ASSERT_NE(ssl_tsi_test_fixture_->client_handshaker, nullptr);
+  ASSERT_NE(ssl_tsi_test_fixture_->server_handshaker, nullptr);
+
+  auto unexpected_async_cb = +[](tsi_result, void*, const unsigned char*,
+                                 size_t, tsi_handshaker_result*) {
+    FAIL() << "Unexpected async callback in synchronous SSL handshake";
+  };
+
+  const unsigned char* out_bytes = nullptr;
+  size_t out_bytes_size = 0;
+  std::string error;
+
+  ASSERT_EQ(tsi_handshaker_next(ssl_tsi_test_fixture_->client_handshaker,
+                                nullptr, 0, &out_bytes, &out_bytes_size,
+                                &ssl_tsi_test_fixture_->client_result,
+                                unexpected_async_cb, nullptr, &error),
+            TSI_OK)
+      << error;
+  ASSERT_GT(out_bytes_size, 0u);
+
+  // Advance handshake turns until one peer completes first (server in TLS 1.2,
+  // client in TLS 1.3), then coalesce trailing application bytes onto its final
+  // flight delivered in a single tsi_handshaker_next() call to the peer.
+  bool send_to_server = true;
+  while (true) {
+    std::vector<uint8_t> peer_bytes(out_bytes, out_bytes + out_bytes_size);
+    tsi_handshaker* target_handshaker =
+        send_to_server ? ssl_tsi_test_fixture_->server_handshaker
+                       : ssl_tsi_test_fixture_->client_handshaker;
+    tsi_handshaker_result** target_result =
+        send_to_server ? &ssl_tsi_test_fixture_->server_result
+                       : &ssl_tsi_test_fixture_->client_result;
+    tsi_handshaker_result* sender_result =
+        send_to_server ? ssl_tsi_test_fixture_->client_result
+                       : ssl_tsi_test_fixture_->server_result;
+    if (sender_result != nullptr) {
+      std::vector<uint8_t> trailing_bytes(trailing_size);
+      for (size_t i = 0; i < trailing_size; ++i) {
+        trailing_bytes[i] =
+            static_cast<uint8_t>((i * pattern_multiplier + 7) % 251);
+      }
+      peer_bytes.insert(peer_bytes.end(), trailing_bytes.begin(),
+                        trailing_bytes.end());
+      ASSERT_EQ(tsi_handshaker_next(target_handshaker, peer_bytes.data(),
+                                    peer_bytes.size(), &out_bytes,
+                                    &out_bytes_size, target_result,
+                                    unexpected_async_cb, nullptr, &error),
+                TSI_OK)
+          << error;
+      ASSERT_NE(*target_result, nullptr);
+      const unsigned char* unused = nullptr;
+      size_t unused_size = 0;
+      ASSERT_EQ(tsi_handshaker_result_get_unused_bytes(*target_result, &unused,
+                                                       &unused_size),
+                TSI_OK);
+      ASSERT_EQ(unused_size, trailing_bytes.size());
+      EXPECT_EQ(std::vector<uint8_t>(unused, unused + unused_size),
+                trailing_bytes);
+      break;
+    }
+    ASSERT_EQ(tsi_handshaker_next(target_handshaker, peer_bytes.data(),
+                                  peer_bytes.size(), &out_bytes,
+                                  &out_bytes_size, target_result,
+                                  unexpected_async_cb, nullptr, &error),
+              TSI_OK)
+        << error;
+    ASSERT_GT(out_bytes_size, 0u);
+    send_to_server = !send_to_server;
+  }
+  ssl_tsi_test_fixture_->vtable->check_handshaker_peers(ssl_tsi_test_fixture_);
+}
+
+TEST_P(SslTransportSecurityTest,
+       DoHandshakeWithLargeTrailingUnusedBytesExceedingBioBuffer) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  VerifyHandshakeWithTrailingUnusedBytes(/*trailing_size=*/32 * 1024,
+                                         /*pattern_multiplier=*/31);
+}
+
+TEST_P(SslTransportSecurityTest,
+       DoHandshakeWithSmallBioBufferAndLargeTrailingUnusedBytes) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->SetBioBufSizes(/*network_bio_buf_size=*/4096,
+                               /*ssl_bio_buf_size=*/4096);
+  ssl_fixture_->SetForceClientAuth(true);
+  VerifyHandshakeWithTrailingUnusedBytes(/*trailing_size=*/32 * 1024,
+                                         /*pattern_multiplier=*/19);
 }
 
 TEST_P(SslTransportSecurityTest, DoHandshakeWithClientAuthentication) {

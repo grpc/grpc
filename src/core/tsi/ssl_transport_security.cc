@@ -2770,11 +2770,17 @@ static SslHandshakeResult ssl_handshaker_process_bytes_from_peer(
   GRPC_CHECK_LE(*bytes_size, static_cast<size_t>(INT_MAX));
   bytes_written_into_ssl_size =
       BIO_write(impl->network_io, bytes, static_cast<int>(*bytes_size));
-  if (bytes_written_into_ssl_size < 0) {
-    LOG(ERROR) << "Could not write to memory BIO.";
-    impl->MaybeSetError("could not write to memory BIO");
-    impl->result = TSI_INTERNAL_ERROR;
-    return {impl->result, SSL_ERROR_NONE, 0};
+  if (bytes_written_into_ssl_size <= 0) {
+    // A BIO pair write returns <= 0 with BIO_should_retry when its fixed-size
+    // ring buffer is temporarily full; drive the handshake to drain it.
+    if (BIO_should_retry(impl->network_io)) {
+      bytes_written_into_ssl_size = 0;
+    } else if (bytes_written_into_ssl_size < 0 || *bytes_size > 0) {
+      LOG(ERROR) << "Could not write to memory BIO.";
+      impl->MaybeSetError("could not write to memory BIO");
+      impl->result = TSI_INTERNAL_ERROR;
+      return {impl->result, SSL_ERROR_NONE, 0};
+    }
   }
   *bytes_size = static_cast<size_t>(bytes_written_into_ssl_size);
   return ssl_handshaker_do_handshake(impl);
@@ -2785,7 +2791,8 @@ static void ssl_handshaker_destroy(tsi_handshaker* self) {
   impl->Unref();
 }
 
-// Removes the bytes remaining in |impl->SSL|'s read BIO and writes them to
+// Removes the bytes remaining in |impl->SSL|'s read BIO (and any trailing
+// received bytes not yet written to the BIO) and writes them to
 // |bytes_remaining|.
 static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
                                       unsigned char** bytes_remaining,
@@ -2796,26 +2803,45 @@ static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
     impl->MaybeSetError("invalid argument");
     return TSI_INVALID_ARGUMENT;
   }
-  // Attempt to read all of the bytes in SSL's read BIO. These bytes should
-  // contain application data records that were appended to a handshake record
-  // containing the ClientFinished or ServerFinished message.
+  // Attempt to read all of the bytes in SSL's read BIO followed by any
+  // unconsumed received bytes that did not fit into the BIO before handshake
+  // completion. These bytes should contain application data records that were
+  // appended to a handshake record containing the ClientFinished or
+  // ServerFinished message.
   size_t bytes_in_ssl = BIO_pending(SSL_get_rbio(impl->ssl));
-  if (bytes_in_ssl == 0) return TSI_OK;
-  *bytes_remaining = static_cast<uint8_t*>(gpr_malloc(bytes_in_ssl));
-  int bytes_read = BIO_read(SSL_get_rbio(impl->ssl), *bytes_remaining,
-                            static_cast<int>(bytes_in_ssl));
-  // If an unexpected number of bytes were read, return an error status and
-  // free all of the bytes that were read.
-  if (bytes_read < 0 || static_cast<size_t>(bytes_read) != bytes_in_ssl) {
-    LOG(ERROR)
-        << "Failed to read the expected number of bytes from SSL object.";
-    gpr_free(*bytes_remaining);
+  size_t unconsumed_received_bytes =
+      impl->handshaker_next_args.has_value()
+          ? impl->handshaker_next_args->received_bytes.size()
+          : 0;
+  size_t total_bytes_remaining = bytes_in_ssl + unconsumed_received_bytes;
+  if (total_bytes_remaining == 0) {
     *bytes_remaining = nullptr;
-    impl->MaybeSetError(
-        "Failed to read the expected number of bytes from SSL object.");
-    return TSI_INTERNAL_ERROR;
+    *bytes_remaining_size = 0;
+    return TSI_OK;
   }
-  *bytes_remaining_size = static_cast<size_t>(bytes_read);
+  *bytes_remaining = static_cast<uint8_t*>(gpr_malloc(total_bytes_remaining));
+  if (bytes_in_ssl > 0) {
+    int bytes_read = BIO_read(SSL_get_rbio(impl->ssl), *bytes_remaining,
+                              static_cast<int>(bytes_in_ssl));
+    // If an unexpected number of bytes were read, return an error status and
+    // free all of the bytes that were read.
+    if (bytes_read < 0 || static_cast<size_t>(bytes_read) != bytes_in_ssl) {
+      LOG(ERROR)
+          << "Failed to read the expected number of bytes from SSL object.";
+      gpr_free(*bytes_remaining);
+      *bytes_remaining = nullptr;
+      impl->MaybeSetError(
+          "Failed to read the expected number of bytes from SSL object.");
+      return TSI_INTERNAL_ERROR;
+    }
+  }
+  if (unconsumed_received_bytes > 0) {
+    memcpy(*bytes_remaining + bytes_in_ssl,
+           impl->handshaker_next_args->received_bytes.data(),
+           unconsumed_received_bytes);
+    impl->handshaker_next_args->received_bytes.clear();
+  }
+  *bytes_remaining_size = total_bytes_remaining;
   return TSI_OK;
 }
 
@@ -2857,6 +2883,7 @@ static SslHandshakeResult ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
     size_t remaining_bytes_to_write_to_openssl_size = received_bytes_size;
     size_t number_bio_write_attempts = 0;
     while (remaining_bytes_to_write_to_openssl_size > 0 &&
+           ssl_handshaker_get_result(self) == TSI_HANDSHAKE_IN_PROGRESS &&
            (handshake_result.tsi_handshake_result == TSI_OK ||
             handshake_result.tsi_handshake_result == TSI_INCOMPLETE_DATA) &&
            number_bio_write_attempts < TSI_SSL_MAX_BIO_WRITE_ATTEMPTS) {
