@@ -403,6 +403,10 @@ void GrpcMemoryAllocatorImpl::Replenish() {
   free_bytes_.fetch_add(amount, std::memory_order_acq_rel);
 }
 
+size_t GrpcMemoryAllocatorImpl::SliceRefCountSize() {
+  return sizeof(SliceRefCount);
+}
+
 grpc_slice GrpcMemoryAllocatorImpl::MakeSlice(MemoryRequest request) {
   auto size = Reserve(request.Increase(sizeof(SliceRefCount)));
   void* p = gpr_malloc(size);

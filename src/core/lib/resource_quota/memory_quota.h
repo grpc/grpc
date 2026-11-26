@@ -412,6 +412,9 @@ class BasicMemoryQuota final
 // underlying resource quota.
 class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
  public:
+  // Size of the SliceRefCount header prepended to the payload by MakeSlice().
+  static size_t SliceRefCountSize();
+
   explicit GrpcMemoryAllocatorImpl(
       std::shared_ptr<BasicMemoryQuota> memory_quota);
   ~GrpcMemoryAllocatorImpl() override;

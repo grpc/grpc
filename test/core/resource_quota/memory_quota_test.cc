@@ -16,6 +16,7 @@
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <stdint.h>
 
 #include <algorithm>
 #include <atomic>
@@ -165,6 +166,19 @@ TEST(MemoryQuotaTest, MakeSlice) {
   for (grpc_slice slice : slices) {
     grpc_slice_unref(slice);
   }
+}
+
+// SliceRefCountSize() must be the exact size of the header that MakeSlice()
+// places in front of the payload, so callers can subtract it from a block size.
+TEST(MemoryQuotaTest, SliceRefCountSizeMatchesPayloadOffset) {
+  ExecCtx exec_ctx;
+  MemoryQuota memory_quota(MakeRefCounted<channelz::ResourceQuotaNode>("foo"));
+  auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
+  grpc_slice slice = memory_allocator.MakeSlice(MemoryRequest(100));
+  EXPECT_EQ(static_cast<size_t>(slice.data.refcounted.bytes -
+                                reinterpret_cast<uint8_t*>(slice.refcount)),
+            GrpcMemoryAllocatorImpl::SliceRefCountSize());
+  grpc_slice_unref(slice);
 }
 
 TEST(MemoryQuotaTest, ContainerAllocator) {
