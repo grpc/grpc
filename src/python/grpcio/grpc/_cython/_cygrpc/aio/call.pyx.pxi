@@ -329,12 +329,17 @@ cdef class _AioCall(GrpcCallWrapper):
     def set_internal_error(
         self, str error_str='', str details='Internal error from Core'
     ):
+        cdef bytes details_bytes = str_to_bytes(details)
         self._set_status(AioRpcStatus(
             StatusCode.internal,
             details,
             (),
             error_str,
         ))
+        # Also cancels the RPC in Core, so the peer and pending operations
+        # don't wait on it forever. No-op if Core already has a final status.
+        grpc_call_cancel_with_status(
+            self.call, StatusCode.internal, <char *>details_bytes, NULL)
 
     async def unary_unary(self,
                           bytes request,
