@@ -582,8 +582,15 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
             MakeRefCounted<TransportContext>(
                 self->connection_->handshake_result_args(),
                 std::move(socket_node)));
-        return self->connection_->listener_->server_->SetupTransport(
-            new ChaoticGoodServerTransport(
+        if (!IsServerConnectionManagementEnabled()) {
+          return self->connection_->listener_->server_->SetupTransport(
+              new ChaoticGoodServerTransport(
+                  self->connection_->handshake_result_args(),
+                  std::move(frame_transport), config.MakeMessageChunker()),
+              nullptr, self->connection_->handshake_result_args());
+        }
+        return self->connection_->listener_->server_->LegacyAddConnection(
+            MakeOrphanable<ChaoticGoodServerTransport>(
                 self->connection_->handshake_result_args(),
                 std::move(frame_transport), config.MakeMessageChunker()),
             nullptr, self->connection_->handshake_result_args());

@@ -81,16 +81,28 @@ class SockpairFixture : public CoreTestFixture {
         std::exchange(ep_.server, nullptr));
     EXPECT_NE(server_endpoint, nullptr);
     grpc_endpoint_add_to_pollset(server_endpoint.get(), grpc_cq_pollset(cq));
-    transport = grpc_create_chttp2_transport(server_channel_args,
-                                             std::move(server_endpoint), false);
     Server* core_server = Server::FromC(server);
-    grpc_error_handle error = core_server->SetupTransport(
-        transport, nullptr, core_server->channel_args());
-    if (error.ok()) {
-      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
-                                          nullptr);
+    if (!IsServerConnectionManagementEnabled()) {
+      transport = grpc_create_chttp2_transport(
+          server_channel_args, std::move(server_endpoint), false);
+      grpc_error_handle error = core_server->SetupTransport(
+          transport, nullptr, core_server->channel_args());
+      if (error.ok()) {
+        grpc_chttp2_transport_start_reading(transport, nullptr, nullptr,
+                                            nullptr, nullptr);
+      } else {
+        transport->Orphan();
+      }
     } else {
-      transport->Orphan();
+      OrphanablePtr<Transport> transport(grpc_create_chttp2_transport(
+          server_channel_args, std::move(server_endpoint), false));
+      auto transport_ref = transport->Ref();
+      absl::Status error = core_server->LegacyAddConnection(
+          std::move(transport), nullptr, core_server->channel_args());
+      if (error.ok()) {
+        grpc_chttp2_transport_start_reading(transport_ref.get(), nullptr,
+                                            nullptr, nullptr, nullptr);
+      }
     }
     return server;
   }
