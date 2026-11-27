@@ -30,6 +30,7 @@ load(
     "grpc_upb_proto_reflection_library",
     "python_config_settings",
 )
+load("//bazel:protobuf.bzl", "upb_reflection_libs")
 
 licenses(["reciprocal"])
 
@@ -4821,9 +4822,8 @@ grpc_cc_library(
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/json",
         "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/reflection",
         "@com_google_protobuf//upb/text",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_library(
@@ -5733,16 +5733,7 @@ grpc_upb_proto_reflection_library(
     deps = ["@autosharding//:autosharding_proto"],
 )
 
-WELL_KNOWN_PROTO_TARGETS = [
-    "any",
-    "duration",
-    "empty",
-    "struct",
-    "timestamp",
-    "wrappers",
-]
-
-grpc_add_well_known_proto_upb_targets(targets = WELL_KNOWN_PROTO_TARGETS)
+grpc_add_well_known_proto_upb_targets()
 
 grpc_generate_one_off_targets()
 
