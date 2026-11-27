@@ -99,6 +99,54 @@ class HealthServicerTest(AioTestBase):
     async def test_health_service_name(self):
         self.assertEqual(health.SERVICE_NAME, "grpc.health.v1.Health")
 
+    async def test_list_services(self):
+        request = health_pb2.HealthListRequest()
+        resp = await self._stub.List(request)
+        self.assertEqual(
+            {
+                "": health_pb2.HealthCheckResponse.SERVING,
+                _SERVING_SERVICE: health_pb2.HealthCheckResponse.SERVING,
+                _UNKNOWN_SERVICE: health_pb2.HealthCheckResponse.UNKNOWN,
+                _NOT_SERVING_SERVICE: (
+                    health_pb2.HealthCheckResponse.NOT_SERVING
+                ),
+            },
+            {
+                service: status.status
+                for service, status in resp.statuses.items()
+            },
+        )
+
+    async def test_list_reflects_status_changes(self):
+        await self._servicer.set(
+            _SERVING_SERVICE, health_pb2.HealthCheckResponse.NOT_SERVING
+        )
+        await self._servicer.set(
+            _WATCH_SERVICE, health_pb2.HealthCheckResponse.SERVING
+        )
+        resp = await self._stub.List(health_pb2.HealthListRequest())
+        self.assertEqual(
+            health_pb2.HealthCheckResponse.NOT_SERVING,
+            resp.statuses[_SERVING_SERVICE].status,
+        )
+        self.assertEqual(
+            health_pb2.HealthCheckResponse.SERVING,
+            resp.statuses[_WATCH_SERVICE].status,
+        )
+
+    async def test_list_too_many_services(self):
+        for i in range(health.aio.MAX_ALLOWED_SERVICES):
+            await self._servicer.set(
+                "grpc.test.Service%d" % i,
+                health_pb2.HealthCheckResponse.SERVING,
+            )
+        with self.assertRaises(aio.AioRpcError) as context:
+            await self._stub.List(health_pb2.HealthListRequest())
+
+        self.assertEqual(
+            grpc.StatusCode.RESOURCE_EXHAUSTED, context.exception.code()
+        )
+
     async def test_watch_empty_service(self):
         request = health_pb2.HealthCheckRequest(service=health.OVERALL_HEALTH)
 
