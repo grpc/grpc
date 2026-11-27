@@ -52,7 +52,8 @@ class XdsDependencyManager::ListenerWatcher final
 
   void OnResourceChanged(
       absl::StatusOr<std::shared_ptr<const XdsListenerResource>> listener,
-      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
+      RefCountedPtr<XdsClientInterface::ReadDelayHandle> read_delay_handle)
+      override {
     dependency_mgr_->work_serializer_->Run(
         [dependency_mgr = dependency_mgr_, listener = std::move(listener),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
@@ -61,9 +62,9 @@ class XdsDependencyManager::ListenerWatcher final
         DEBUG_LOCATION);
   }
 
-  void OnAmbientError(
-      absl::Status status,
-      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
+  void OnAmbientError(absl::Status status,
+                      RefCountedPtr<XdsClientInterface::ReadDelayHandle>
+                          read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [dependency_mgr = dependency_mgr_, status = std::move(status),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
@@ -89,7 +90,8 @@ class XdsDependencyManager::RouteConfigWatcher final
   void OnResourceChanged(
       absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
           route_config,
-      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
+      RefCountedPtr<XdsClientInterface::ReadDelayHandle> read_delay_handle)
+      override {
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<RouteConfigWatcher>(),
          route_config = std::move(route_config),
@@ -99,9 +101,9 @@ class XdsDependencyManager::RouteConfigWatcher final
         });
   }
 
-  void OnAmbientError(
-      absl::Status status,
-      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
+  void OnAmbientError(absl::Status status,
+                      RefCountedPtr<XdsClientInterface::ReadDelayHandle>
+                          read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<RouteConfigWatcher>(), status = std::move(status),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
@@ -128,7 +130,8 @@ class XdsDependencyManager::ClusterWatcher final
 
   void OnResourceChanged(
       absl::StatusOr<std::shared_ptr<const XdsClusterResource>> cluster,
-      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
+      RefCountedPtr<XdsClientInterface::ReadDelayHandle> read_delay_handle)
+      override {
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<ClusterWatcher>(), cluster = std::move(cluster),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
@@ -137,9 +140,9 @@ class XdsDependencyManager::ClusterWatcher final
         });
   }
 
-  void OnAmbientError(
-      absl::Status status,
-      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
+  void OnAmbientError(absl::Status status,
+                      RefCountedPtr<XdsClientInterface::ReadDelayHandle>
+                          read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<ClusterWatcher>(), status = std::move(status),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
@@ -166,7 +169,8 @@ class XdsDependencyManager::EndpointWatcher final
 
   void OnResourceChanged(
       absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> endpoint,
-      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
+      RefCountedPtr<XdsClientInterface::ReadDelayHandle> read_delay_handle)
+      override {
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<EndpointWatcher>(),
          endpoint = std::move(endpoint),
@@ -177,9 +181,9 @@ class XdsDependencyManager::EndpointWatcher final
         DEBUG_LOCATION);
   }
 
-  void OnAmbientError(
-      absl::Status status,
-      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
+  void OnAmbientError(absl::Status status,
+                      RefCountedPtr<XdsClientInterface::ReadDelayHandle>
+                          read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<EndpointWatcher>(), status = std::move(status),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
@@ -233,7 +237,7 @@ void XdsDependencyManager::ClusterSubscription::Orphaned() {
 //
 
 XdsDependencyManager::XdsDependencyManager(
-    RefCountedPtr<GrpcXdsClient> xds_client,
+    RefCountedPtr<XdsClientInterface> xds_client,
     std::shared_ptr<WorkSerializer> work_serializer,
     std::unique_ptr<Watcher> watcher, std::string data_plane_authority,
     std::string listener_resource_name, ChannelArgs args,
@@ -640,8 +644,7 @@ std::string XdsDependencyManager::GenerateResolutionNoteForCluster(
   }
   std::string node_id_buffer;
   if (resolution_notes.empty()) {
-    const XdsBootstrap::Node* node =
-        DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap()).node();
+    const XdsBootstrap::Node* node = xds_client_->bootstrap().node();
     if (node != nullptr) {
       node_id_buffer = absl::StrCat("xDS node ID:", node->id());
       resolution_notes.push_back(node_id_buffer);

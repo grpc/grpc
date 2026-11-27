@@ -17,16 +17,30 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_XDS_XDS_DEPENDENCY_MANAGER_H
 #define GRPC_SRC_CORE_RESOLVER_XDS_XDS_DEPENDENCY_MANAGER_H
 
+#include <memory>
+#include <set>
+#include <string>
+#include <vector>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/xds/xds_config.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
-#include "src/core/xds/grpc/xds_client_grpc.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/useful.h"
+#include "src/core/util/work_serializer.h"
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_endpoint.h"
 #include "src/core/xds/grpc/xds_listener.h"
 #include "src/core/xds/grpc/xds_route_config.h"
+#include "src/core/xds/xds_client/xds_client_interface.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -60,7 +74,7 @@ class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
     RefCountedPtr<XdsDependencyManager> dependency_mgr_;
   };
 
-  XdsDependencyManager(RefCountedPtr<GrpcXdsClient> xds_client,
+  XdsDependencyManager(RefCountedPtr<XdsClientInterface> xds_client,
                        std::shared_ptr<WorkSerializer> work_serializer,
                        std::unique_ptr<Watcher> watcher,
                        std::string data_plane_authority,
@@ -187,7 +201,7 @@ class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
                    absl::string_view resource_name, absl::string_view error);
 
   // Parameters passed into ctor.
-  RefCountedPtr<GrpcXdsClient> xds_client_;
+  RefCountedPtr<XdsClientInterface> xds_client_;
   std::shared_ptr<WorkSerializer> work_serializer_;
   std::unique_ptr<Watcher> watcher_;
   const std::string data_plane_authority_;

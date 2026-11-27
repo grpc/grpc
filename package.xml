@@ -2313,6 +2313,7 @@
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_client.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_client.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/xds_client_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_locality.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_metrics.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_resource_type.h" role="src" />

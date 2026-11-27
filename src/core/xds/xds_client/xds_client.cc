@@ -1625,7 +1625,7 @@ XdsClient::XdsClient(
     std::unique_ptr<XdsMetricsReporter> metrics_reporter,
     std::string user_agent_name, std::string user_agent_version,
     Duration resource_request_timeout)
-    : DualRefCounted<XdsClient>(
+    : XdsClientInterface(
           GRPC_TRACE_FLAG_ENABLED(xds_client_refcount) ? "XdsClient" : nullptr),
       bootstrap_(std::move(bootstrap)),
       user_agent_name_(std::move(user_agent_name)),
@@ -1674,8 +1674,8 @@ RefCountedPtr<XdsClient::XdsChannel> XdsClient::GetOrCreateXdsChannelLocked(
     return it->second->Ref(DEBUG_LOCATION, reason);
   }
   // Channel not found, so create a new one.
-  auto xds_channel =
-      MakeRefCounted<XdsChannel>(WeakRef(DEBUG_LOCATION, "XdsChannel"), server);
+  auto xds_channel = MakeRefCounted<XdsChannel>(
+      WeakRefAsSubclass<XdsClient>(DEBUG_LOCATION, "XdsChannel"), server);
   xds_channel_map_[std::move(key)] = xds_channel.get();
   return xds_channel;
 }
@@ -1935,12 +1935,11 @@ void XdsClient::NotifyWatchersOnResourceChanged(
   if (!resource.ok()) resource = AppendNodeToStatus(resource.status());
   work_serializer_.Run(
       [watchers = std::move(watchers), resource = std::move(resource),
-       read_delay_handle = std::move(read_delay_handle)]()
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
-            for (const auto& watcher : watchers) {
-              watcher->OnGenericResourceChanged(resource, read_delay_handle);
-            }
-          },
+       read_delay_handle = std::move(read_delay_handle)]() {
+        for (const auto& watcher : watchers) {
+          watcher->OnGenericResourceChanged(resource, read_delay_handle);
+        }
+      },
       DEBUG_LOCATION);
 }
 
@@ -1950,12 +1949,11 @@ void XdsClient::NotifyWatchersOnAmbientError(
   if (!status.ok()) status = AppendNodeToStatus(status);
   work_serializer_.Run(
       [watchers = std::move(watchers), status = std::move(status),
-       read_delay_handle = std::move(read_delay_handle)]()
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
-            for (const auto& watcher : watchers) {
-              watcher->OnAmbientError(status, read_delay_handle);
-            }
-          },
+       read_delay_handle = std::move(read_delay_handle)]() {
+        for (const auto& watcher : watchers) {
+          watcher->OnAmbientError(status, read_delay_handle);
+        }
+      },
       DEBUG_LOCATION);
 }
 
