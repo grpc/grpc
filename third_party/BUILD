@@ -1,6 +1,7 @@
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 
 exports_files([
+    "cel-c.patch",
     "gtest.BUILD",
     "zlib.BUILD",
     "twisted.BUILD",
@@ -120,6 +121,72 @@ alias(
 alias(
     name = "re2",
     actual = "@com_googlesource_code_re2//:re2",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cel_c_alloc",
+    actual = "@cel_c//cel-c:alloc",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cel_c_arena",
+    actual = "@cel_c//cel-c:arena",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cel_c_ast",
+    actual = "@cel_c//cel-c:ast",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cel_c_ast_proto",
+    actual = "@cel_c//cel-c:ast_proto",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cel_c_error",
+    actual = "@cel_c//cel-c:error",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cel_c_error_code",
+    actual = "@cel_c//cel-c:error_code",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cel_c_runtime",
+    actual = "@cel_c//cel-c:runtime",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cel_c_status",
+    actual = "@cel_c//cel-c:status",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cel_c_status_absl",
+    actual = "@cel_c//cel-c:status_absl",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cel_c_string_view_absl",
+    actual = "@cel_c//cel-c:string_view_absl",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cel_c_value",
+    actual = "@cel_c//cel-c:value",
     tags = ["manual"],
 )
 

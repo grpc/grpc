@@ -7439,7 +7439,11 @@ grpc_cc_library(
     hdrs = [
         "xds/grpc/xds_matcher_context.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/container:flat_hash_set",
+        "absl/functional:function_ref",
+        "absl/strings",
+    ],
     tags = ["nofixdeps"],
     visibility = ["//bazel:xds_client_grpc"],
     deps = [
@@ -7516,6 +7520,77 @@ grpc_cc_library(
         "xds_matcher_input",
         "xds_type_matcher_upb",
         "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_cel",
+    srcs = [
+        "xds/grpc/xds_cel.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_cel.h",
+    ],
+    external_deps = [
+        "absl/functional:function_ref",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "cel_c_alloc",
+        "cel_c_ast",
+        "cel_c_ast_proto",
+        "cel_c_runtime",
+        "cel_c_status",
+        "cel_c_status_absl",
+        "cel_c_string_view_absl",
+        "cel_c_value",
+        "re2",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:xds_client_grpc"],
+    deps = [
+        "grpc_check",
+        "no_destruct",
+        "protobuf_any_upbdefs",
+        "protobuf_duration_upbdefs",
+        "protobuf_struct_upbdefs",
+        "protobuf_timestamp_upbdefs",
+        "protobuf_wrappers_upbdefs",
+        "upb_utils",
+        "//:cel_expr_checked_upb",
+        "//:cel_expr_syntax_upb",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/message",
+        "@com_google_protobuf//upb/message:copy",
+        "@com_google_protobuf//upb/reflection",
+        "@com_google_protobuf//upb/wire",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_cel_request_resolver",
+    srcs = [
+        "xds/grpc/xds_cel_request_resolver.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_cel_request_resolver.h",
+    ],
+    external_deps = [
+        "absl/functional:function_ref",
+        "absl/strings",
+        "cel_c_arena",
+        "cel_c_error",
+        "cel_c_error_code",
+        "cel_c_runtime",
+        "cel_c_status",
+        "cel_c_string_view_absl",
+        "cel_c_value",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:xds_client_grpc"],
+    deps = [
+        "xds_matcher_context",
     ],
 )
 

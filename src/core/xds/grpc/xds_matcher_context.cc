@@ -14,8 +14,12 @@
 
 #include "src/core/xds/grpc/xds_matcher_context.h"
 
+#include <string>
+
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/slice/slice.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -35,6 +39,39 @@ std::optional<absl::string_view> RpcMatchContext::GetHeaderValue(
     return authority->as_string_view();
   }
   return initial_metadata_->GetStringValue(header_name, &buffer_);
+}
+
+namespace {
+
+// Collects the names of all encodable headers in a metadata batch.
+class HeaderNameCollector {
+ public:
+  void Encode(const Slice& key, const Slice& /*value*/) {
+    names_.insert(std::string(key.as_string_view()));
+  }
+
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType& /*value*/) {
+    names_.insert(std::string(Which::key()));
+  }
+
+  absl::flat_hash_set<std::string>& names() { return names_; }
+
+ private:
+  absl::flat_hash_set<std::string> names_;
+};
+
+}  // namespace
+
+void RpcMatchContext::ForEachHeaderName(
+    absl::FunctionRef<void(absl::string_view)> fn) const {
+  HeaderNameCollector collector;
+  initial_metadata_->Encode(&collector);
+  // GetHeaderValue() always returns a value for content-type.
+  collector.names().insert("content-type");
+  for (const std::string& name : collector.names()) {
+    if (!absl::EndsWith(name, "-bin") && name != "te") fn(name);
+  }
 }
 
 }  // namespace grpc_core
