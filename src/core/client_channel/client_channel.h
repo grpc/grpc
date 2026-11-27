@@ -166,6 +166,10 @@ class ClientChannel : public Channel {
 
   void StartIdleTimer();
 
+  // Called when the idle timer fires.  Tears down the resolver and LB policy
+  // and moves the channel to IDLE, unless a call is in progress.
+  void EnterIdleLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
+
   // Applies service config settings from config_selector to the call.
   // May modify call context and client_initial_metadata.
   absl::StatusOr<RefCountedPtr<const FilterChain>> ApplyServiceConfigToCall(

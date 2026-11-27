@@ -47,6 +47,14 @@ class IdleFilterState {
   // we know that the channel is idle and has been for one full cycle.
   GRPC_MUST_USE_RESULT bool CheckTimer();
 
+  // Returns true if any call is in progress.
+  // This is a read-modify-write operation on the state (that leaves it
+  // unchanged), so it is ordered with respect to IncreaseCallCount() on other
+  // threads: either it observes the new call, or that IncreaseCallCount()
+  // synchronizes with it, so the other thread observes every write that this
+  // thread made before calling HasCallsInProgress().
+  GRPC_MUST_USE_RESULT bool HasCallsInProgress();
+
  private:
   // Bit in state_ indicating that the timer has been started.
   static constexpr uintptr_t kTimerStarted = 1;
