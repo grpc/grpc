@@ -13,6 +13,7 @@
 # limitations under the License.
 """Invocation-side implementation of gRPC Python."""
 
+import collections
 import copy
 import functools
 import logging
@@ -24,6 +25,7 @@ import types
 from typing import (
     Any,
     Callable,
+    Deque,
     Dict,
     Iterator,
     List,
@@ -801,6 +803,19 @@ class _MultiThreadedRendezvous(
 
     _state: _RPCState
 
+    def _wait(
+        self,
+        wait_complete_fn: Callable[[], bool],
+        timeout: Optional[float] = None,
+    ) -> bool:
+        """Waits for the RPC to make progress. Must hold self._state.condition.
+
+        See _common.wait for the meaning of the arguments and return value.
+        """
+        return _common.wait(
+            self._state.condition.wait, wait_complete_fn, timeout=timeout
+        )
+
     def initial_metadata(self) -> Optional[MetadataType]:
         """See grpc.Call.initial_metadata"""
         with self._state.condition:
@@ -818,7 +833,7 @@ class _MultiThreadedRendezvous(
             def _done():
                 return self._state.trailing_metadata is not None
 
-            _common.wait(self._state.condition.wait, _done)
+            self._wait(_done)
             return self._state.trailing_metadata
 
     def code(self) -> Optional[grpc.StatusCode]:
@@ -828,7 +843,7 @@ class _MultiThreadedRendezvous(
             def _done():
                 return self._state.code is not None
 
-            _common.wait(self._state.condition.wait, _done)
+            self._wait(_done)
             return self._state.code
 
     def details(self) -> Optional[str]:
@@ -838,7 +853,7 @@ class _MultiThreadedRendezvous(
             def _done():
                 return self._state.details is not None
 
-            _common.wait(self._state.condition.wait, _done)
+            self._wait(_done)
             return _common.decode(self._state.details)
 
     def debug_error_string(self) -> Optional[str]:
@@ -847,7 +862,7 @@ class _MultiThreadedRendezvous(
             def _done():
                 return self._state.debug_error_string is not None
 
-            _common.wait(self._state.condition.wait, _done)
+            self._wait(_done)
             return _common.decode(self._state.debug_error_string)
 
     def cancelled(self) -> bool:
@@ -871,9 +886,7 @@ class _MultiThreadedRendezvous(
         See grpc.Future.result for the full API contract.
         """
         with self._state.condition:
-            timed_out = _common.wait(
-                self._state.condition.wait, self._is_complete, timeout=timeout
-            )
+            timed_out = self._wait(self._is_complete, timeout=timeout)
             if timed_out:
                 raise grpc.FutureTimeoutError()
             if self._state.code is grpc.StatusCode.OK:
@@ -888,9 +901,7 @@ class _MultiThreadedRendezvous(
         See grpc.Future.exception for the full API contract.
         """
         with self._state.condition:
-            timed_out = _common.wait(
-                self._state.condition.wait, self._is_complete, timeout=timeout
-            )
+            timed_out = self._wait(self._is_complete, timeout=timeout)
             if timed_out:
                 raise grpc.FutureTimeoutError()
             if self._state.code is grpc.StatusCode.OK:
@@ -907,9 +918,7 @@ class _MultiThreadedRendezvous(
         See grpc.future.traceback for the full API contract.
         """
         with self._state.condition:
-            timed_out = _common.wait(
-                self._state.condition.wait, self._is_complete, timeout=timeout
-            )
+            timed_out = self._wait(self._is_complete, timeout=timeout)
             if timed_out:
                 raise grpc.FutureTimeoutError()
             if self._state.code is grpc.StatusCode.OK:
@@ -954,6 +963,135 @@ class _MultiThreadedRendezvous(
                 )
 
             _common.wait(self._state.condition.wait, _response_ready)
+            if self._state.response is not None:
+                response = self._state.response
+                self._state.response = None
+                return response
+            if cygrpc.OperationType.receive_message not in self._state.due:
+                if self._state.code is grpc.StatusCode.OK:
+                    raise StopIteration()
+                if self._state.code is not None:
+                    raise self
+
+
+class _StreamingResponseRendezvous(
+    _MultiThreadedRendezvous
+):  # pylint: disable=too-many-ancestors
+    """A _MultiThreadedRendezvous for RPCs with a streamed response.
+
+    Core does not deliver the status of an RPC until all of its responses have
+    been received. Waiting for the status (e.g. in trailing_metadata, code or
+    exception) therefore receives responses on the application's behalf and
+    buffers them until they are consumed by iteration. Otherwise the wait would
+    only end at the deadline of the RPC, or never, if nothing iterated.
+
+    Note that responses buffered this way are held in memory until iterated.
+    """
+
+    _buffered_responses: Deque[Any]
+
+    def __init__(
+        self,
+        state: _RPCState,
+        call: Union[cygrpc.SegregatedCall, cygrpc.IntegratedCall],
+        response_deserializer: Optional[DeserializingFunction],
+        deadline: Optional[float],
+    ):
+        super().__init__(state, call, response_deserializer, deadline)
+        self._buffered_responses = collections.deque()
+
+    def _receive_message(self) -> bool:
+        """Starts receiving a response. Must hold self._state.condition.
+
+        Returns:
+          Whether the operation was started.
+        """
+        event_handler = _event_handler(self._state, self._response_deserializer)
+        self._state.due.add(cygrpc.OperationType.receive_message)
+        operating = self._call.operate(
+            (cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),),
+            event_handler,
+        )
+        if not operating:
+            self._state.due.remove(cygrpc.OperationType.receive_message)
+        return operating
+
+    def _wait(
+        self,
+        wait_complete_fn: Callable[[], bool],
+        timeout: Optional[float] = None,
+    ) -> bool:
+        end = None if timeout is None else time.time() + timeout
+        receiving = True
+
+        def _progress():
+            return (
+                wait_complete_fn()
+                or self._state.response is not None
+                or (
+                    receiving
+                    and self._state.code is None
+                    and cygrpc.OperationType.receive_message
+                    not in self._state.due
+                )
+            )
+
+        while True:
+            if self._state.response is not None:
+                self._buffered_responses.append(self._state.response)
+                self._state.response = None
+            if wait_complete_fn():
+                return False
+            if (
+                receiving
+                and self._state.code is None
+                and cygrpc.OperationType.receive_message not in self._state.due
+            ):
+                # If the operation could not be started, the status is on its
+                # way and there is nothing left to receive.
+                receiving = self._receive_message()
+
+            remaining = None if end is None else end - time.time()
+            if remaining is not None and remaining <= 0:
+                return True
+            if _common.wait(
+                self._state.condition.wait, _progress, timeout=remaining
+            ):
+                return True
+
+    def _next(self) -> Any:
+        with self._state.condition:
+            if self._buffered_responses:
+                return self._buffered_responses.popleft()
+            # A receive started by a status wait that timed out may have
+            # completed since, possibly followed by the status.
+            if self._state.response is not None:
+                response = self._state.response
+                self._state.response = None
+                return response
+            if self._state.code is None:
+                # A thread waiting for the status may already be receiving.
+                if cygrpc.OperationType.receive_message not in self._state.due:
+                    self._receive_message()
+            elif self._state.code is grpc.StatusCode.OK:
+                raise StopIteration()
+            else:
+                raise self
+
+            def _response_ready():
+                return (
+                    bool(self._buffered_responses)
+                    or self._state.response is not None
+                    or (
+                        cygrpc.OperationType.receive_message
+                        not in self._state.due
+                        and self._state.code is not None
+                    )
+                )
+
+            _common.wait(self._state.condition.wait, _response_ready)
+            if self._buffered_responses:
+                return self._buffered_responses.popleft()
             if self._state.response is not None:
                 response = self._state.response
                 self._state.response = None
@@ -1403,7 +1541,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             self._context,
             self._registered_call_handle,
         )
-        return _MultiThreadedRendezvous(
+        return _StreamingResponseRendezvous(
             state, call, self._response_deserializer, deadline
         )
 
@@ -1667,7 +1805,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
             self._request_serializer,
             event_handler,
         )
-        return _MultiThreadedRendezvous(
+        return _StreamingResponseRendezvous(
             state, call, self._response_deserializer, deadline
         )
 
