@@ -1,0 +1,71 @@
+name: Build and Release PIE Binaries
+
+on:
+  push:
+    tags:
+      - 'v*'
+  # Allows manually backfilling binary builds/releases for previously pushed tags.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag name to build release for (e.g. 1.83.0 or v1.83.0)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  create-draft-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Create draft release from tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ inputs.tag || github.ref_name }}
+        run: |
+          if ! gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            gh release create "$TAG_NAME" --title "$TAG_NAME" --draft --generate-notes
+          fi
+
+  build-pie-binaries:
+    needs: [create-draft-release]
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, macos-latest]
+        php-versions: ['8.2', '8.3', '8.4', '8.5']
+        zts-mode: [nts, ts]
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+          submodules: recursive
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+          extensions: none
+          tools: phpize, php-config
+        env:
+          phpts: ${{ matrix.zts-mode }}
+
+      - name: Build and attach binary package
+        uses: php/pie-ext-binary-builder@0.0.3
+        with:
+          release-tag: ${{ inputs.tag || github.ref_name }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          configure-flags: '--enable-grpc'
