@@ -275,6 +275,22 @@ TEST_P(IncludedAddressesTest, AddressIncluded) {
   EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), GetParam());
 }
 
+TEST(AddressProxyTest, PreservesExistingConnectServer) {
+  ScopedEnvVar address_proxy(HttpProxyMapper::kAddressProxyEnvVar,
+                             "[2001:db8::1111]:2020");
+  ScopedEnvVar address_proxy_enabled(
+      HttpProxyMapper::kAddressProxyEnabledAddressesEnvVar,
+      "192.168.1.1");
+  auto address = StringToSockaddr("192.168.1.1:3333");
+  ASSERT_TRUE(address.ok()) << address.status();
+  auto args = ChannelArgs().Set(GRPC_ARG_HTTP_CONNECT_SERVER,
+                                "iamcredentials.googleapis.com:443");
+  EXPECT_THAT(HttpProxyMapper().MapAddress(*address, &args),
+              AddressEq("[2001:db8::1111]:2020"));
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
+            "iamcredentials.googleapis.com:443");
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
