@@ -147,6 +147,11 @@ EXTERNAL_SOURCE_PREFIXES = {
     "@@cel-c+//cel-c": "third_party/cel-c/cel-c",
 }
 
+# Placeholder name for a special graph node representing
+# the collection of all libupb targets we use.
+LIBUPB_NAME = "_libupb"
+LIBUPB_BAZEL_NAME = "//:_libupb"
+
 
 # bazel mod show_repo should return starlark-like output.
 def _bazel_mod_show_repo() -> StarlarkLike:
@@ -711,7 +716,11 @@ def _prefix_to_strip(proto_src):
 # Better solutions would be using more accurate resolution with `bazel cquery`,
 # and/or use protobuf's official cmake/libupb.cmake for our cmake builds.
 def _prune_upb_experimental_feature_rules(bazel_rules: BuildDict):
-    UPB_EXCLUDED_TARGETS = "//upb/wire/decode_fast"
+    UPB_EXCLUDED_TARGET_PATTERNS = [
+        "//upb/wire/decode_fast",
+        "stage0",
+        "stage1",
+    ]
     UPB_EXCLUDED_TARGETS_EXCEPTIONS = [
         "//upb/wire/decode_fast:select",
         "//upb/wire/decode_fast:combinations",
@@ -719,7 +728,9 @@ def _prune_upb_experimental_feature_rules(bazel_rules: BuildDict):
     ]
 
     def _should_include(rule_name):
-        if UPB_EXCLUDED_TARGETS not in rule_name:
+        if not any(
+            pattern in rule_name for pattern in UPB_EXCLUDED_TARGET_PATTERNS
+        ):
             return True
         if any(rule_name.endswith(e) for e in UPB_EXCLUDED_TARGETS_EXCEPTIONS):
             return True
@@ -1285,6 +1296,152 @@ def _detect_and_print_issues(build_yaml_like: BuildYaml) -> None:
                     )
 
 
+def _is_upb_target(target: str) -> bool:
+    """Checks whether a Bazel target belongs to the UPB C runtime.
+
+    Matches targets under the `@com_google_protobuf//upb` or `@@protobuf+//upb`
+    namespaces (package or subpackages), excluding generator tools (e.g.,
+    `upb_generator`).
+
+    Args:
+        target: Bazel target label string.
+
+    Returns:
+        True if the target is part of the UPB C runtime, False otherwise.
+    """
+    for prefix in (
+        "@com_google_protobuf//upb/",
+        "@com_google_protobuf//upb:",
+        "@@protobuf+//upb/",
+        "@@protobuf+//upb:",
+    ):
+        if target.startswith(prefix):
+            return True
+    return False
+
+
+def _add_libupb_target(
+    bazel_rules: BuildDict, all_extra_metadata: BuildDict
+) -> None:
+    """Injects a synthetic `_libupb` target into Bazel rules and extra metadata.
+
+    Creates a pseudo `cc_library` rule `//:_libupb` whose initial `deps` list
+    contains all needed UPB C runtime sub-targets in `bazel_rules`. Also
+    registers `_libupb` in `all_extra_metadata` with `cmake_target = "protobuf::libupb"`
+    so that CMake-based builds link against the official Protobuf imported target
+    while non-CMake builds can package UPB's sources monolithically.
+
+    Args:
+        bazel_rules: Dictionary of Bazel rules extracted from XML.
+        all_extra_metadata: Dictionary of target metadata for build.yaml.
+    """
+    # Discover all UPB C runtime sub-targets to seed the pseudo-target.
+    upb_sub_targets = [name for name in bazel_rules if _is_upb_target(name)]
+    libupb_rule = {
+        "class": "cc_library",
+        "name": LIBUPB_BAZEL_NAME,
+        "srcs": [],
+        "hdrs": [],
+        "textual_hdrs": [],
+        "deps": upb_sub_targets,
+        "data": [],
+        "tags": [],
+        "args": [],
+        "generator_function": None,
+        "size": None,
+        "flaky": False,
+        "actual": None,
+    }
+    bazel_rules[LIBUPB_BAZEL_NAME] = libupb_rule
+    # cmake_target maps //:_libupb to protobuf::libupb for CMake builds.
+    all_extra_metadata[LIBUPB_NAME] = {
+        "language": "c",
+        "build": "private",
+        "cmake_target": "protobuf::libupb",
+    }
+
+
+def _populate_transitive_metadata_for_libupb(
+    bazel_rules: BuildDict, all_extra_metadata: BuildDict
+) -> None:
+    """Computes and populates the transitive source and header closure for `//:_libupb`.
+
+    Runs `_compute_transitive_metadata` on `//:_libupb`. The individual targets
+    will later be deleted by _replace_upb_with_libupb().
+
+    Args:
+        bazel_rules: Dictionary of Bazel rules extracted from XML.
+        all_extra_metadata: Dictionary of target metadata for build.yaml.
+    """
+    # Build the label mapping needed by _compute_transitive_metadata.
+    bazel_label_to_dep_name = {}
+    for dep_name in all_extra_metadata.keys():
+        bazel_label_to_dep_name[_get_bazel_label(dep_name)] = dep_name
+
+    # Compute transitive closure while UPB sub-target graph is still intact.
+    _compute_transitive_metadata(
+        LIBUPB_BAZEL_NAME, bazel_rules, bazel_label_to_dep_name
+    )
+    # Store the collapsed sources and headers directly on the rule.
+    libupb = bazel_rules[LIBUPB_BAZEL_NAME]
+    libupb["srcs"] = libupb["_COLLAPSED_SRCS"]
+    libupb["hdrs"] = libupb["_COLLAPSED_HEADERS"]
+
+
+# Replaces individual UPB target references with `//:_libupb` and delete sub-targets.
+def _replace_upb_with_libupb(
+    bazel_rules: BuildDict, all_extra_metadata: BuildDict
+) -> None:
+    upb_target_labels = [name for name in bazel_rules if _is_upb_target(name)]
+
+    # Collect external dependencies (e.g. utf8_range, absl) that libupb itself needs.
+    external_upb_deps = set()
+    for upb_name in upb_target_labels:
+        for dep in bazel_rules[upb_name].get("deps", []):
+            if not _is_upb_target(dep):
+                external_upb_deps.add(dep)
+
+    if LIBUPB_BAZEL_NAME in bazel_rules:
+        bazel_rules[LIBUPB_BAZEL_NAME]["deps"] = sorted(external_upb_deps)
+
+    # Re-point any non-libupb rule's dependency on UPB sub-targets to //:_libupb.
+    for rule_name, rule in bazel_rules.items():
+        if rule_name == LIBUPB_BAZEL_NAME:
+            continue
+        new_deps = []
+        for dep in rule.get("deps", []):
+            if _is_upb_target(dep):
+                if LIBUPB_BAZEL_NAME not in new_deps:
+                    new_deps.append(LIBUPB_BAZEL_NAME)
+            else:
+                new_deps.append(dep)
+        rule["deps"] = new_deps
+
+    # Remove individual UPB sub-target rules from bazel_rules.
+    for upb_name in upb_target_labels:
+        del bazel_rules[upb_name]
+
+    # Remove individual UPB entries from all_extra_metadata.
+    for extra_key in list(all_extra_metadata.keys()):
+        if _is_upb_target(extra_key) or _is_upb_target(
+            _get_bazel_label(extra_key)
+        ):
+            del all_extra_metadata[extra_key]
+
+
+# Collapses fragmented UPB library targets into a unified `_libupb` pseudo-target.
+#
+# Modern Protobuf (v33+) provides a unified `protobuf::libupb` target. So we no longer
+# have to generate our own internal libs.
+def _replace_upb_with_pseudo_libupb(
+    bazel_rules: BuildDict, all_extra_metadata: BuildDict
+) -> None:
+    _add_libupb_target(bazel_rules, all_extra_metadata)
+    _prune_upb_experimental_feature_rules(bazel_rules)
+    _populate_transitive_metadata_for_libupb(bazel_rules, all_extra_metadata)
+    _replace_upb_with_libupb(bazel_rules, all_extra_metadata)
+
+
 # extra metadata that will be used to construct build.yaml
 # there are mostly extra properties that we weren't able to obtain from the bazel build
 # _TYPE: whether this is library, target or test
@@ -1295,75 +1452,10 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "address_sorting",
     },
-    "@com_google_protobuf//upb/base": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_base_lib",
-    },
-    "@com_google_protobuf//upb/hash:hash": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_hash_lib",
-    },
-    "@com_google_protobuf//upb/mem": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_mem_lib",
-    },
-    "@com_google_protobuf//upb/lex:lex": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_lex_lib",
-    },
-    "@com_google_protobuf//upb/message": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_message_lib",
-    },
-    "@com_google_protobuf//upb/json:json": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_json_lib",
-    },
-    "@com_google_protobuf//upb/mini_descriptor:mini_descriptor": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_mini_descriptor_lib",
-    },
-    "@com_google_protobuf//upb/mini_table:mini_table": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_mini_table_lib",
-    },
-    "@com_google_protobuf//upb/reflection:descriptor_upb_proto": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_descriptor_lib",
-    },
     # NOTE(weizheyuan): This target is only defined since
     # https://github.com/protocolbuffers/protobuf/commit/8111a7473d97d5b199d074c275ef3d083ef5faa9
     # and is required to build upb runtime. Preemptively declare it
     # for forward compatibility.
-    "@com_google_protobuf//upb/reflection:json_enumvalue_options_upb_proto": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_json_enumvalue_options_lib",
-    },
-    "@com_google_protobuf//upb/reflection:reflection": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_reflection_lib",
-    },
-    "@com_google_protobuf//upb/text:text": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_textformat_lib",
-    },
-    "@com_google_protobuf//upb/wire:wire": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_wire_lib",
-    },
     "@com_google_protobuf//third_party/utf8_range:utf8_range": {
         "language": "c",
         "build": "all",
@@ -1625,7 +1717,6 @@ for query in _BAZEL_DEPS_QUERIES:
 # to expand the UPB proto library bazel rules into the generated
 # .upb.h and .upb.c files.
 _expand_upb_proto_library_rules(bazel_rules)
-_prune_upb_experimental_feature_rules(bazel_rules)
 
 # Step 1.6: Add explicit protobuf dependency to grpc_proto_library rules
 _patch_grpc_proto_library_rules(bazel_rules)
@@ -1691,6 +1782,9 @@ all_extra_metadata.update(
     _generate_build_extra_metadata_for_tests(tests, bazel_rules)
 )
 all_extra_metadata.update(_BUILD_EXTRA_METADATA)
+
+# Add a synthetic _libupb pseudo-target to replace all UPB sub-libraries
+_replace_upb_with_pseudo_libupb(bazel_rules, all_extra_metadata)
 
 # Step 4: Compute the build metadata that will be used in the final build.yaml.
 # The final build metadata includes transitive dependencies, and sources/headers
