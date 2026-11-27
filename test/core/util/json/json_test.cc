@@ -185,6 +185,22 @@ TEST(Json, ValidNumbers) {
                      Json::FromNumber("0.3e+3"),
                  }),
                  "[1e4,-53.235e-31,0.3e+3]");
+  // A lone zero followed by an exponent is a valid JSON number.
+  RunSuccessTest("[0e1, 0e+2, 0e-3]",
+                 Json::FromArray({
+                     Json::FromNumber("0e1"),
+                     Json::FromNumber("0e+2"),
+                     Json::FromNumber("0e-3"),
+                 }),
+                 "[0e1,0e+2,0e-3]");
+  // Numbers with a lone zero integer part keep working with a minus and a
+  // signed exponent, and a sign-only fraction or exponent stays rejected.
+  RunSuccessTest("[-0, 0.0123E+4]",
+                 Json::FromArray({
+                     Json::FromNumber("-0"),
+                     Json::FromNumber("0.0123E+4"),
+                 }),
+                 "[-0,0.0123E+4]");
 }
 
 TEST(Json, Keywords) {
@@ -292,6 +308,27 @@ TEST(Json, InvalidNumbers) {
   RunParseFailureTest("1e12x");
   RunParseFailureTest(".12x");
   RunParseFailureTest("000");
+  // Truncated literals: the state machine reaches the number terminal states
+  // only after at least one integer digit, and after an exponent only once a
+  // digit (not just a sign) has been seen, so dangling minus, dot, exponent
+  // marker or sign fail at the transition itself.
+  RunParseFailureTest("-");
+  RunParseFailureTest("- ");
+  RunParseFailureTest("-e3");
+  RunParseFailureTest("-e+3");
+  RunParseFailureTest("-.5");
+  RunParseFailureTest("--1");
+  RunParseFailureTest("1.");
+  RunParseFailureTest("1.e3");
+  RunParseFailureTest("1e+");
+  RunParseFailureTest("1e-");
+  RunParseFailureTest("1e+ ");
+  RunParseFailureTest("1e+-3");
+  RunParseFailureTest("[1e+]");
+  RunParseFailureTest("{\"a\": 1e-}");
+  // Leading zeroes are only valid as the single digit "0".
+  RunParseFailureTest("-01");
+  RunParseFailureTest("-0123");
 };
 
 TEST(Json, Equality) {
