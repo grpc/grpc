@@ -673,13 +673,9 @@ class PythonAsyncIOLanguage:
         )
 
     def unimplemented_test_cases_server(self):
-        # TODO(https://github.com/grpc/grpc/issues/21749)
-        return (
-            _TEST_CASES
-            + _AUTH_TEST_CASES
-            + _HTTP2_TEST_CASES
-            + _HTTP2_SERVER_TEST_CASES
-        )
+        # The asyncio test servicer (tests_aio/unit/_test_server.py) supports
+        # neither compression (CompressedRequest/CompressedResponse) nor ORCA.
+        return _SKIP_COMPRESSION + _ORCA_TEST_CASES
 
     def __str__(self):
         return "pythonasyncio"
