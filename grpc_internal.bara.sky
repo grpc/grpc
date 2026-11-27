@@ -1,0 +1,81 @@
+# Helper functions for gRPC's copy.bara.sky configuration.
+
+# Adds hdrs, srcs, etc... to a buildozer target in google3.
+# Ensure they're removed again exporting to github.
+def buildozer_add_fields_in_google3(
+        target,
+        hdrs = [],
+        srcs = [],
+        deps = [],
+        tags = [],
+        copts = [],
+        public_hdrs = [],
+        google_deps = [],
+        google_non_sandblaze_deps = [],
+        visibility = []):
+    op_array = lambda method, items: ["%s %s" % (method, item) for item in items]
+    commands = lambda method: (
+        op_array("%s hdrs" % method, hdrs) +
+        op_array("%s srcs" % method, srcs) +
+        op_array("%s deps" % method, deps) +
+        op_array("%s tags" % method, tags) +
+        op_array("%s copts" % method, copts) +
+        op_array("%s public_hdrs" % method, public_hdrs) +
+        op_array("%s google_deps" % method, google_deps) +
+        op_array("%s google_non_sandblaze_deps" % method, google_non_sandblaze_deps) +
+        op_array("%s visibility" % method, visibility)
+    )
+    return core.transform(
+        [
+            buildozer.modify(
+                target = "google3/third_party/grpc%s" % (
+                    target if target.startswith(":") else "/" + target
+                ),
+                commands = commands("add"),
+            ),
+        ],
+        reversal = [
+            buildozer.modify(
+                target = target,
+                commands = commands("remove"),
+            ),
+        ],
+    )
+
+# Removes hdrs, srcs, etc... from a buildozer target in google3.
+# Ensure they're added again exporting to github.
+def buildozer_remove_fields_in_google3(
+        target,
+        hdrs = [],
+        srcs = [],
+        deps = [],
+        tags = [],
+        copts = [],
+        public_hdrs = [],
+        visibility = []):
+    op_array = lambda method, items: ["%s %s" % (method, item) for item in items]
+    commands = lambda method: (
+        op_array("%s hdrs" % method, hdrs) +
+        op_array("%s srcs" % method, srcs) +
+        op_array("%s deps" % method, deps) +
+        op_array("%s tags" % method, tags) +
+        op_array("%s copts" % method, copts) +
+        op_array("%s public_hdrs" % method, public_hdrs) +
+        op_array("%s visibility" % method, visibility)
+    )
+    return core.transform(
+        [
+            buildozer.modify(
+                target = "google3/third_party/grpc%s" % (
+                    target if target.startswith(":") else "/" + target
+                ),
+                commands = commands("remove"),
+            ),
+        ],
+        reversal = [
+            buildozer.modify(
+                target = target,
+                commands = commands("add"),
+            ),
+        ],
+    )
