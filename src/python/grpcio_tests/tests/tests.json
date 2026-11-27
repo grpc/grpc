@@ -45,6 +45,8 @@
   "tests.unit._auth_context_test.AuthContextTest",
   "tests.unit._auth_test.AccessTokenAuthMetadataPluginTest",
   "tests.unit._auth_test.GoogleCallCredentialsTest",
+  "tests.unit._blocking_unary_response_test.BlockingUnaryResponseRPCTest",
+  "tests.unit._blocking_unary_response_test.EndUnaryResponseBlockingHelpersTest",
   "tests.unit._channel_args_test.ChannelArgsTest",
   "tests.unit._channel_close_test.ChannelCloseTest",
   "tests.unit._channel_connectivity_test.ChannelConnectivityTest",

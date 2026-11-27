@@ -45,7 +45,6 @@ from grpc._typing import DeserializingFunction
 from grpc._typing import IntegratedCallFactory
 from grpc._typing import MetadataType
 from grpc._typing import NullaryCallbackType
-from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 from grpc._typing import UserTag
 import grpc.experimental
@@ -985,18 +984,19 @@ def _start_unary_request(
     return deadline, serialized_request, None
 
 
-def _end_unary_response_blocking(
-    state: _RPCState,
-    call: cygrpc.SegregatedCall,
-    with_call: bool,
-    deadline: Optional[float],
-) -> Union[ResponseType, Tuple[ResponseType, grpc.Call]]:
+def _end_unary_response_blocking(state: _RPCState) -> Any:
     if state.code is grpc.StatusCode.OK:
-        if with_call:
-            rendezvous = _MultiThreadedRendezvous(state, call, None, deadline)
-            return state.response, rendezvous
         return state.response
     raise _InactiveRpcError(state)  # pytype: disable=not-instantiable
+
+
+def _end_unary_response_blocking_with_call(
+    state: _RPCState,
+    call: cygrpc.SegregatedCall,
+    deadline: Optional[float],
+) -> Tuple[Any, grpc.Call]:
+    response = _end_unary_response_blocking(state)
+    return response, _MultiThreadedRendezvous(state, call, None, deadline)
 
 
 def _stream_unary_invocation_operations(
@@ -1165,7 +1165,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         state, call = self._blocking(
             request, timeout, metadata, credentials, wait_for_ready, compression
         )
-        return _end_unary_response_blocking(state, call, False, None)
+        return _end_unary_response_blocking(state)
 
     def with_call(
         self,
@@ -1179,7 +1179,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         state, call = self._blocking(
             request, timeout, metadata, credentials, wait_for_ready, compression
         )
-        return _end_unary_response_blocking(state, call, True, None)
+        return _end_unary_response_blocking_with_call(state, call, None)
 
     def future(
         self,
@@ -1510,7 +1510,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             wait_for_ready,
             compression,
         )
-        return _end_unary_response_blocking(state, call, False, None)
+        return _end_unary_response_blocking(state)
 
     def with_call(
         self,
@@ -1529,7 +1529,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             wait_for_ready,
             compression,
         )
-        return _end_unary_response_blocking(state, call, True, None)
+        return _end_unary_response_blocking_with_call(state, call, None)
 
     def future(
         self,
