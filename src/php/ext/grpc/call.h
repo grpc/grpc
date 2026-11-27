@@ -36,7 +36,7 @@ PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_call)
 static inline wrapped_grpc_call
 *wrapped_grpc_call_from_obj(zend_object *obj) {
   return (wrapped_grpc_call*)((char*)(obj) -
-                              XtOffsetOf(wrapped_grpc_call, std));
+                              offsetof(wrapped_grpc_call, std));
 }
 
 /* Creates and returns a PHP associative array of metadata from a C array of

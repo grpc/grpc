@@ -51,7 +51,7 @@ PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_channel)
 static inline wrapped_grpc_channel
 *wrapped_grpc_channel_from_obj(zend_object *obj) {
   return (wrapped_grpc_channel*)((char*)(obj) -
-                                 XtOffsetOf(wrapped_grpc_channel, std));
+                                 offsetof(wrapped_grpc_channel, std));
 }
 
 /* Initializes the Channel class */
