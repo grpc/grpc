@@ -50,6 +50,8 @@ googleapis-common-protos~=1.74.0
 idna
 opentelemetry-api
 opentelemetry-exporter-prometheus
+# Requires >= 1.43 to support protobuf >= 7
+opentelemetry-proto>=1.43.0
 opentelemetry-resourcedetector-gcp
 opentelemetry-sdk
 
