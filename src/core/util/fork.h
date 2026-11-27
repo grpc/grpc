@@ -24,6 +24,8 @@
 #include <atomic>
 #include <set>
 
+#include <grpc/fork.h>
+
 //
 // NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
 //       AROUND VERY SPECIFIC USE CASES.
@@ -84,6 +86,10 @@ class GPR_DLL Fork {
   // Must be called before grpc_init()
   static void Enable(bool enable);
 
+  static void SetRegisterHandlersFunc(
+      grpc_custom_fork_handler_register_cb register_func);
+  static grpc_custom_fork_handler_register_cb GetRegisterHandlersFunc();
+
  private:
   static void DoIncExecCtxCount();
   static void DoDecExecCtxCount();
@@ -91,6 +97,7 @@ class GPR_DLL Fork {
   static std::atomic<bool> support_enabled_;
   static bool override_enabled_;
   static std::set<child_postfork_func>* reset_child_polling_engine_;
+  static grpc_custom_fork_handler_register_cb custom_fork_handler_register_func_;
 };
 
 }  // namespace grpc_core
