@@ -17,8 +17,10 @@
 //
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 
 #include <thread>
+#include <variant>
 
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
@@ -27,6 +29,8 @@
 #include "src/core/credentials/transport/tls/tls_credentials.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
+#include "src/core/ext/transport/chttp2/transport/http2_server_transport.h"
+#include "src/core/filter/filter_args.h"
 #include "src/core/mitigation_engine/mitigation_engine.h"
 #include "src/core/server/server.h"
 #include "src/core/util/host_port.h"
@@ -75,6 +79,24 @@ class ActiveConnectionTestPeer {
       : connection_(connection) {}
 
   void OnClose() { connection_->OnClose(); }
+
+  bool HasPh2Transport() {
+    absl::Notification notification;
+    bool has_ph2_transport = false;
+    connection_->work_serializer_.Run(
+        [&]() {
+          auto* transport =
+              std::get_if<RefCountedPtr<http2::Http2ServerTransport>>(
+                  &connection_->state_);
+          has_ph2_transport =
+              transport != nullptr && transport->get() != nullptr;
+          notification.Notify();
+        },
+        DEBUG_LOCATION);
+    notification.WaitForNotificationWithTimeout(absl::Seconds(5) *
+                                                grpc_test_slowdown_factor());
+    return has_ph2_transport;
+  }
 
   NewChttp2ServerListener::ActiveConnection::HandshakingState*
   handshaking_state() {
@@ -455,6 +477,56 @@ TEST_F(Chttp2ActiveConnectionTest, CloseAfterHandshakeButBeforeSettingsFrame) {
     ASSERT_LE(absl::Now(), test_deadline);
     // Yield for other threads to make progress.
     // If the test turns out to be flaky, convert this to a sleep.
+    std::this_thread::yield();
+  }
+}
+
+TEST_F(Chttp2ActiveConnectionTest, Ph2TransportHandshakeTimeout) {
+  SetUpServer();
+  listener_state_->connection_quota()->SetMaxIncomingConnections(10);
+  // Force the connection to use the PH2 transport, and use a short handshake
+  // timeout so the test does not have to wait for the default two minutes.
+  args_ = args_.Set(GRPC_ARG_USE_V3_STACK, true)
+              .Set(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS,
+                   static_cast<int>(500 * grpc_test_slowdown_factor()));
+  auto mock_endpoint_controller =
+      grpc_event_engine::experimental::MockEndpointController::Create(
+          args_.GetObjectRef<EventEngine>());
+  // Send the HTTP/2 client preface, but never send a SETTINGS frame.
+  mock_endpoint_controller->TriggerReadEvent(
+      grpc_event_engine::experimental::Slice::FromCopiedString(
+          "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"));
+  ASSERT_TRUE(listener_state_->connection_quota()->AllowIncomingConnection(
+      listener_state_->memory_quota(), "peer"));
+  auto connection = MakeOrphanable<NewChttp2ServerListener::ActiveConnection>(
+      listener_state_->Ref(), /*tcp_server=*/nullptr,
+      /*accepting_pollset=*/nullptr,
+      /*acceptor=*/nullptr, args_,
+      listener_state_->memory_quota()->CreateMemoryOwner(),
+      OrphanablePtr<grpc_endpoint>(mock_endpoint_controller->TakeCEndpoint()));
+  auto* connection_ptr = connection.get();
+  // Keep the connection alive after the timeout so the peer can inspect it.
+  auto connection_ref = connection_ptr->RefAsSubclass<NewChttp2ServerListener::ActiveConnection>();
+  ASSERT_NE(connection_ref.get(), nullptr);
+  listener_state_->AddLogicalConnection(std::move(connection), args_,
+                                        /*endpoint=*/nullptr);
+  EXPECT_EQ(
+      listener_state_->connection_quota()->TestOnlyActiveIncomingConnections(),
+      1);
+  connection_ptr->Start(args_);
+
+  const absl::Time deadline =
+      absl::Now() + absl::Seconds(10) * grpc_test_slowdown_factor();
+  // Wait for the handshake to complete and the PH2 transport to be created.
+  while (!ActiveConnectionTestPeer(connection_ptr).HasPh2Transport()) {
+    ASSERT_LE(absl::Now(), deadline);
+    std::this_thread::yield();
+  }
+  // The client never sent SETTINGS, so the handshake timeout must disconnect
+  // the PH2 transport instead of crashing on the variant access.
+  while (listener_state_->connection_quota()
+             ->TestOnlyActiveIncomingConnections() != 0) {
+    ASSERT_LE(absl::Now(), deadline);
     std::this_thread::yield();
   }
 }
