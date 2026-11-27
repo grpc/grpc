@@ -617,7 +617,10 @@ TEST_F(PromiseEndpointTest, OnePendingWriteFailed) {
 }
 
 TEST_F(PromiseEndpointTest, GetPeerAddress) {
-  const char raw_test_address[] = {0x55, 0x66, 0x01, 0x55, 0x66, 0x01};
+  // ResolvedAddress reads the buffer through a sockaddr*, so give it
+  // sockaddr's alignment.
+  alignas(sockaddr)
+      const char raw_test_address[] = {0x55, 0x66, 0x01, 0x55, 0x66, 0x01};
   grpc_event_engine::experimental::EventEngine::ResolvedAddress test_address(
       reinterpret_cast<const sockaddr*>(raw_test_address),
       sizeof(raw_test_address));
@@ -629,7 +632,10 @@ TEST_F(PromiseEndpointTest, GetPeerAddress) {
 }
 
 TEST_F(PromiseEndpointTest, GetLocalAddress) {
-  const char raw_test_address[] = {0x52, 0x55, 0x66, 0x52, 0x55, 0x66};
+  // ResolvedAddress reads the buffer through a sockaddr*, so give it
+  // sockaddr's alignment.
+  alignas(sockaddr)
+      const char raw_test_address[] = {0x52, 0x55, 0x66, 0x52, 0x55, 0x66};
   grpc_event_engine::experimental::EventEngine::ResolvedAddress test_address(
       reinterpret_cast<const sockaddr*>(raw_test_address),
       sizeof(raw_test_address));
