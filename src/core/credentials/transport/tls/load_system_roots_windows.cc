@@ -20,7 +20,9 @@
 
 #if defined(GPR_WINDOWS)
 
+#ifdef _MSC_VER
 #pragma comment(lib, "crypt32")
+#endif
 
 #include <esent.h>
 #include <wincrypt.h>
@@ -51,7 +53,7 @@ Slice LoadSystemRootCerts() {
   std::string bundle_string;
 
   // Open root certificate store.
-  HANDLE root_cert_store = CertOpenSystemStoreW(NULL, L"ROOT");
+  HANDLE root_cert_store = CertOpenSystemStoreW(0, L"ROOT");
   if (!root_cert_store) {
     return Slice();
   }
