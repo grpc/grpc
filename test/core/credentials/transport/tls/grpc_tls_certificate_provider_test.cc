@@ -1007,6 +1007,29 @@ TEST_F(GrpcTlsCertificateProviderTest,
                 "Failed to parse private key as PEM: No private key found."));
 }
 
+TEST_F(GrpcTlsCertificateProviderTest,
+       InMemoryCertificateProviderWithSpiffeBundleMap) {
+  InMemoryCertificateProvider provider;
+  auto map = SpiffeBundleMap::FromString(spiffe_bundle_contents_);
+  ASSERT_TRUE(map.ok()) << map.status();
+  ASSERT_TRUE(
+      provider.UpdateRoot(std::make_shared<tsi::RootCertInfo>(std::move(*map)))
+          .ok());
+  ASSERT_TRUE(provider
+                  .UpdateIdentityKeyCertPair(MakeCertKeyPairs(
+                      private_key_.c_str(), cert_chain_.c_str()))
+                  .ok());
+  EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
+  WatcherState* watcher_state =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(
+      watcher_state->GetCredentialQueue(),
+      ::testing::ElementsAre(MatchesCredentialInfo(
+          EqSpiffeBundleMap(GetGoodSpiffeBundleMap()),
+          MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  CancelWatch(watcher_state);
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 
