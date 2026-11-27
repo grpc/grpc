@@ -1926,6 +1926,7 @@
     <file baseinstalldir="/" name="src/core/resolver/fake/fake_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/fake/fake_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/google_c2p/google_c2p_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/google_c2p/google_c2p_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/polling_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/polling_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/resolver.cc" role="src" />

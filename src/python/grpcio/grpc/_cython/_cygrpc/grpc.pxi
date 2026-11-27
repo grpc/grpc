@@ -515,6 +515,9 @@ cdef extern from "grpc/grpc.h":
 
   grpc_slice grpc_dump_xds_configs() nogil
 
+  grpc_status_code grpc_google_c2p_set_universe_domain(
+      const char *universe_domain, char **error_message) nogil
+
   const char *GRPC_ARG_SERVER_CONFIG_FETCHER
   const grpc_arg_pointer_vtable *grpc_server_config_fetcher_arg_vtable() nogil
 

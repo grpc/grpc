@@ -546,6 +546,25 @@ GRPCAPI void grpc_resource_quota_set_max_outstanding_streams(
     The full name of the proto is envoy.service.status.v3.ClientConfig. */
 GRPCAPI grpc_slice grpc_dump_xds_configs(void);
 
+/**
+ * EXPERIMENTAL - Subject to change.
+ * Inform the gRPC library of the universe domain in which the process is
+ * running (for example, "googleapis.com"). It is the caller's responsibility
+ * to ensure that this is correct. This setting is used by the "google-c2p"
+ * resolver to configure its dependencies. If a gRPC channel is created with
+ * the "google-c2p" URI scheme and this API has not yet been invoked, then gRPC
+ * configures the universe domain as "googleapis.com".
+ *
+ * Returns GRPC_STATUS_OK if either:
+ *   a) The universe domain has not yet been configured.
+ *   b) The universe domain has been configured to the same value.
+ * Otherwise returns a non-OK status code; if error_message is non-NULL, sets
+ * *error_message to a newly allocated error string that the caller must free
+ * with gpr_free().
+ */
+GRPCAPI grpc_status_code grpc_google_c2p_set_universe_domain(
+    const char* universe_domain, char** error_message);
+
 /** Fetch a vtable for a grpc_channel_arg that points to a grpc_resource_quota
  */
 GRPCAPI const grpc_arg_pointer_vtable* grpc_resource_quota_arg_vtable(void);

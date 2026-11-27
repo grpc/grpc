@@ -169,6 +169,7 @@ grpc_cc_library(
     external_deps = [
         "absl/flags:flag",
         "absl/log",
+        "absl/status",
     ],
     deps = [
         ":client_helper_lib",

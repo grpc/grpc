@@ -1945,6 +1945,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/resolver/fake/fake_resolver.cc )
   s.files += %w( src/core/resolver/fake/fake_resolver.h )
   s.files += %w( src/core/resolver/google_c2p/google_c2p_resolver.cc )
+  s.files += %w( src/core/resolver/google_c2p/google_c2p_resolver.h )
   s.files += %w( src/core/resolver/polling_resolver.cc )
   s.files += %w( src/core/resolver/polling_resolver.h )
   s.files += %w( src/core/resolver/resolver.cc )

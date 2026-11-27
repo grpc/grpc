@@ -169,10 +169,33 @@ def ssl_channel_credentials_with_custom_signer(
     )
 
 
+@experimental_api
+def google_c2p_set_universe_domain(universe_domain: str) -> None:
+    """Informs gRPC of the universe domain in which this process is running.
+
+    THIS IS AN EXPERIMENTAL API.
+
+    This setting is used by the "google-c2p" resolver to configure its
+    dependencies. If a gRPC channel is created with the "google-c2p" URI scheme
+    and this API has not yet been invoked, gRPC configures the universe domain
+    as "googleapis.com".
+
+    Args:
+      universe_domain: DNS domain for Google APIs in the current universe (for
+        example, "googleapis.com").
+
+    Raises:
+      ValueError: If universe_domain is empty or conflicts with an already
+        configured universe domain.
+    """
+    _cygrpc.google_c2p_set_universe_domain(universe_domain)
+
+
 __all__ = (
     "ChannelOptions",
     "ExperimentalApiWarning",
     "UsageError",
+    "google_c2p_set_universe_domain",
     "insecure_channel_credentials",
     "ssl_channel_credentials_with_custom_signer",
     "wrap_server_method_handler",

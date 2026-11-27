@@ -1205,6 +1205,7 @@ grpc_cc_library(
         "src/cpp/client/secure_credentials.h",
     ],
     external_deps = [
+        "absl/status",
         "absl/strings",
     ],
     deps = [

@@ -623,3 +623,24 @@ cdef class Channel:
       self._registered_call_handles[method] = CallHandle(
         cpython.PyLong_FromVoidPtr(self._state.c_channel), method)
     return self._registered_call_handles[method].call_handle
+
+
+def google_c2p_set_universe_domain(str universe_domain):
+  cdef bytes domain_bytes = _encode(universe_domain)
+  cdef const char *c_domain = domain_bytes
+  cdef char *c_error_message = NULL
+  cdef grpc_status_code status_code
+  with nogil:
+    status_code = grpc_google_c2p_set_universe_domain(
+        c_domain, &c_error_message
+    )
+  if status_code != GRPC_STATUS_OK:
+    try:
+      if c_error_message != NULL:
+        error_str = _decode(c_error_message)
+      else:
+        error_str = "failed to set universe domain"
+    finally:
+      if c_error_message != NULL:
+        gpr_free(c_error_message)
+    raise ValueError(error_str)

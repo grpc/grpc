@@ -184,6 +184,7 @@ grpc_resource_quota_resize_type grpc_resource_quota_resize_import;
 grpc_resource_quota_set_max_threads_type grpc_resource_quota_set_max_threads_import;
 grpc_resource_quota_set_max_outstanding_streams_type grpc_resource_quota_set_max_outstanding_streams_import;
 grpc_dump_xds_configs_type grpc_dump_xds_configs_import;
+grpc_google_c2p_set_universe_domain_type grpc_google_c2p_set_universe_domain_import;
 grpc_resource_quota_arg_vtable_type grpc_resource_quota_arg_vtable_import;
 grpc_channelz_get_top_channels_type grpc_channelz_get_top_channels_import;
 grpc_channelz_get_servers_type grpc_channelz_get_servers_import;
@@ -478,6 +479,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_resource_quota_set_max_threads_import = (grpc_resource_quota_set_max_threads_type) GetProcAddress(library, "grpc_resource_quota_set_max_threads");
   grpc_resource_quota_set_max_outstanding_streams_import = (grpc_resource_quota_set_max_outstanding_streams_type) GetProcAddress(library, "grpc_resource_quota_set_max_outstanding_streams");
   grpc_dump_xds_configs_import = (grpc_dump_xds_configs_type) GetProcAddress(library, "grpc_dump_xds_configs");
+  grpc_google_c2p_set_universe_domain_import = (grpc_google_c2p_set_universe_domain_type) GetProcAddress(library, "grpc_google_c2p_set_universe_domain");
   grpc_resource_quota_arg_vtable_import = (grpc_resource_quota_arg_vtable_type) GetProcAddress(library, "grpc_resource_quota_arg_vtable");
   grpc_channelz_get_top_channels_import = (grpc_channelz_get_top_channels_type) GetProcAddress(library, "grpc_channelz_get_top_channels");
   grpc_channelz_get_servers_import = (grpc_channelz_get_servers_type) GetProcAddress(library, "grpc_channelz_get_servers");
