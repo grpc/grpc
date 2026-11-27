@@ -76,6 +76,27 @@ class XdsEnabledServerTest : public XdsEnd2endTest {
     EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
     balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   }
+
+  void SetValidLdsUpdate() {
+    SetServerListenerNameAndRouteConfiguration(
+        balancer_.get(), default_server_listener_, backends_[0]->port(),
+        default_server_route_config_);
+  }
+
+  void SetInvalidLdsUpdate() {
+    Listener listener = default_server_listener_;
+    listener.clear_address();
+    listener.set_name(GetServerListenerName(backends_[0]->port()));
+    auto hcm = ServerHcmAccessor().Unpack(listener);
+    *hcm.mutable_route_config() = default_server_route_config_;
+    ServerHcmAccessor().Pack(hcm, &listener);
+    balancer_->ads_service()->SetLdsResource(listener);
+  }
+
+  void UnsetLdsUpdate() {
+    balancer_->ads_service()->UnsetResource(
+        kLdsTypeUrl, GetServerListenerName(backends_[0]->port()));
+  }
 };
 
 // We are only testing the server here.
@@ -243,38 +264,29 @@ TEST_P(XdsEnabledServerTest,
 // Testing just one example of an invalid resource here.
 // Unit tests for XdsListenerResourceType have exhaustive tests for all
 // of the invalid cases.
-TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
+TEST_P(XdsEnabledServerTest, BadLdsUpdate) {
   DoSetUp();
-  Listener listener = default_server_listener_;
-  listener.clear_address();
-  listener.set_name(GetServerListenerName(backends_[0]->port()));
-  balancer_->ads_service()->SetLdsResource(listener);
+  SetInvalidLdsUpdate();
   StartBackend(0);
+  // Balancer should see a NACK.
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::EndsWith(absl::StrCat(
-                  GetServerListenerName(backends_[0]->port()),
-                  ": INVALID_ARGUMENT: Listener has neither address nor "
-                  "ApiListener]")));
-}
-
-// Verify that a non-TCP listener results in "not serving" status.
-TEST_P(XdsEnabledServerTest, NonTcpListener) {
-  DoSetUp();
-  Listener listener = default_listener_;  // Client-side listener.
-  listener = PopulateServerListenerNameAndPort(listener, backends_[0]->port());
-  auto hcm = ClientHcmAccessor().Unpack(listener);
-  auto* rds = hcm.mutable_rds();
-  rds->set_route_config_name(kDefaultRouteConfigurationName);
-  rds->mutable_config_source()->mutable_self();
-  ClientHcmAccessor().Pack(hcm, &listener);
-  balancer_->ads_service()->SetLdsResource(listener);
-  StartBackend(0);
+  EXPECT_EQ(
+      response_state->error_message,
+      absl::StrCat("xDS response validation errors: [resource index 0: ",
+                   GetServerListenerName(backends_[0]->port()),
+                   ": INVALID_ARGUMENT: errors validating Listener resource: ["
+                   "field:address error:field not present]]"));
+  // Server should not be serving.
   EXPECT_EQ(backends_[0]->GetNextStatus(),
-            absl::FailedPreconditionError(absl::StrCat(
+            absl::InvalidArgumentError(absl::StrCat(
                 "LDS resource ", GetServerListenerName(backends_[0]->port()),
-                " is not a TCP listener")));
+                ": invalid resource: errors validating Listener resource: ["
+                "field:address error:field not present] "
+                "(node ID:xds_end2end_test)")));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      MakeConnectionFailureRegex(
+                          "connections to all backends failing; last error: "));
 }
 
 // Verify that a mismatch of listening address results in "not serving"
@@ -308,56 +320,7 @@ TEST_P(XdsEnabledServerTest, ListenerMatchWithWildcardPort) {
   WaitForBackend(DEBUG_LOCATION, 0);
 }
 
-//
-// server status notification tests
-//
-
-class XdsEnabledServerStatusNotificationTest : public XdsEnabledServerTest {
- protected:
-  void SetValidLdsUpdate() {
-    SetServerListenerNameAndRouteConfiguration(
-        balancer_.get(), default_server_listener_, backends_[0]->port(),
-        default_server_route_config_);
-  }
-
-  void SetInvalidLdsUpdate() {
-    Listener listener = default_server_listener_;
-    listener.clear_address();
-    listener.set_name(GetServerListenerName(backends_[0]->port()));
-    balancer_->ads_service()->SetLdsResource(listener);
-  }
-
-  void UnsetLdsUpdate() {
-    balancer_->ads_service()->UnsetResource(
-        kLdsTypeUrl, GetServerListenerName(backends_[0]->port()));
-  }
-};
-
-INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerStatusNotificationTest,
-                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
-
-TEST_P(XdsEnabledServerStatusNotificationTest, ServingStatus) {
-  DoSetUp();
-  StartBackend(0);
-  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
-  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
-}
-
-TEST_P(XdsEnabledServerStatusNotificationTest, NotServingStatus) {
-  DoSetUp();
-  SetInvalidLdsUpdate();
-  StartBackend(0);
-  EXPECT_EQ(backends_[0]->GetNextStatus(),
-            absl::InvalidArgumentError(absl::StrCat(
-                "LDS resource ", GetServerListenerName(backends_[0]->port()),
-                ": invalid resource: Listener has neither "
-                "address nor ApiListener (node ID:xds_end2end_test)")));
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      MakeConnectionFailureRegex(
-                          "connections to all backends failing; last error: "));
-}
-
-TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
+TEST_P(XdsEnabledServerTest, ErrorUpdateWhenAlreadyServing) {
   DoSetUp();
   StartBackend(0);
   ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
@@ -367,25 +330,26 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
   auto response_state =
       WaitForLdsNack(DEBUG_LOCATION, RpcOptions(), StatusCode::OK);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::EndsWith(absl::StrCat(
-                  GetServerListenerName(backends_[0]->port()),
-                  ": INVALID_ARGUMENT: Listener has neither address nor "
-                  "ApiListener]")));
+  EXPECT_EQ(
+      response_state->error_message,
+      absl::StrCat("xDS response validation errors: [resource index 0: ",
+                   GetServerListenerName(backends_[0]->port()),
+                   ": INVALID_ARGUMENT: errors validating Listener resource: "
+                   "[field:address error:field not present]]"));
   EXPECT_EQ(backends_[0]->GetNextStatus(), std::nullopt);
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
-TEST_P(XdsEnabledServerStatusNotificationTest,
-       NotServingStatusToServingStatusTransition) {
+TEST_P(XdsEnabledServerTest, NotServingStatusToServingStatusTransition) {
   DoSetUp();
   SetInvalidLdsUpdate();
   StartBackend(0);
   ASSERT_EQ(backends_[0]->GetNextStatus(),
             absl::InvalidArgumentError(absl::StrCat(
                 "LDS resource ", GetServerListenerName(backends_[0]->port()),
-                ": invalid resource: Listener has neither "
-                "address nor ApiListener (node ID:xds_end2end_test)")));
+                ": invalid resource: errors validating Listener resource: ["
+                "field:address error:field not present] "
+                "(node ID:xds_end2end_test)")));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       MakeConnectionFailureRegex(
                           "connections to all backends failing; last error: "));
@@ -397,8 +361,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
 
 // This test verifies that the resource getting deleted when already serving
 // results in future connections being dropped.
-TEST_P(XdsEnabledServerStatusNotificationTest,
-       ServingStatusToNonServingStatusTransition) {
+TEST_P(XdsEnabledServerTest, ServingStatusToNonServingStatusTransition) {
   DoSetUp(MakeBootstrapBuilder().SetFailOnDataErrors());
   SetValidLdsUpdate();
   StartBackend(0);
@@ -416,7 +379,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
           "connections to all backends failing; last error: "));
 }
 
-TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
+TEST_P(XdsEnabledServerTest, RepeatedServingStatusChanges) {
   DoSetUp(MakeBootstrapBuilder().SetFailOnDataErrors());
   StartBackend(0);
   for (int i = 0; i < 5; ++i) {
@@ -437,7 +400,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
   }
 }
 
-TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
+TEST_P(XdsEnabledServerTest, ExistingRpcsOnResourceDeletion) {
   DoSetUp(MakeBootstrapBuilder().SetFailOnDataErrors());
   StartBackend(0);
   ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
@@ -493,7 +456,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
   }
 }
 
-TEST_P(XdsEnabledServerStatusNotificationTest,
+TEST_P(XdsEnabledServerTest,
        ExistingRpcsFailOnResourceUpdateAfterDrainGraceTimeExpires) {
   DoSetUp();
   constexpr int kDrainGraceTimeMs = 100;
@@ -922,11 +885,34 @@ TEST_P(XdsServerRdsTest, FailsRouteMatchesOtherThanNonForwardingAction) {
       balancer_.get(), default_server_listener_, backends_[0]->port(),
       default_route_config_ /* inappropriate route config for servers */);
   StartBackend(0);
-  // The server should be ready to serve but RPCs should fail.
-  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      "UNAVAILABLE:matching route has unsupported action",
-                      RpcOptions().set_wait_for_ready(true));
+  // If using RDS, the server will be serving, but RPCs will fail.
+  if (GetParam().enable_rds_testing()) {
+    EXPECT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
+    CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                        "RDS resource route_config_name: invalid resource: "
+                        "errors validating RouteConfiguration resource: \\["
+                        "field:virtual_hosts\\[0\\].routes\\[0\\].route "
+                        "error:field not supported on server\\] "
+                        "\\(node ID:xds_end2end_test\\)",
+                        RpcOptions().set_wait_for_ready(true));
+  }
+  // If the RouteConfig is inlined in LDS, the server will not be serving.
+  else {
+    EXPECT_EQ(backends_[0]->GetNextStatus(),
+              absl::InvalidArgumentError(absl::StrCat(
+                  "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                  ": invalid resource: errors validating Listener resource: ["
+                  "field:default_filter_chain.filters[0].typed_config.value["
+                  "envoy.extensions.filters.network.http_connection_manager.v3"
+                  ".HttpConnectionManager].route_config.virtual_hosts[0]"
+                  ".routes[0].route "
+                  "error:field not supported on server] "
+                  "(node ID:xds_end2end_test)")));
+    CheckRpcSendFailure(
+        DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+        MakeConnectionFailureRegex(
+            "connections to all backends failing; last error: "));
+  }
 }
 
 // Test that non-inline route configuration also works for non-default filter
