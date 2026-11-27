@@ -51,6 +51,7 @@ _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 _GC_CANCELLATION_DETAILS = "Cancelled upon garbage collection!"
 _RPC_ALREADY_FINISHED_DETAILS = "RPC already finished."
 _RPC_HALF_CLOSED_DETAILS = 'RPC is half closed after calling "done_writing".'
+_SERIALIZATION_ERROR_DETAILS = "Exception serializing request!"
 _API_STYLE_ERROR = (
     "The iterator and read/write APIs may not be mixed on a single RPC."
 )
@@ -379,6 +380,9 @@ class _StreamResponseMixin(Call[RequestType, ResponseType]):
         # Wait for the request being sent
         await self._preparation
 
+        if self.done():
+            return cygrpc.EOF
+
         # Reads response message from Core
         try:
             raw_response = await self._cython_call.receive_serialized_message()
@@ -496,6 +500,12 @@ class _StreamRequestMixin(Call[RequestType, ResponseType]):
         serialized_request = _common.serialize(
             request, self._request_serializer
         )
+        if serialized_request is None:
+            self._cython_call.set_internal_error(
+                details=_SERIALIZATION_ERROR_DETAILS
+            )
+            await self._raise_for_status()
+            return
         try:
             await self._cython_call.send_serialized_message(serialized_request)
         except cygrpc.InternalError as err:
@@ -587,6 +597,11 @@ class UnaryUnaryCall(
         serialized_request = _common.serialize(
             self._request, self._request_serializer
         )
+        if serialized_request is None:
+            self._cython_call.set_internal_error(
+                details=_SERIALIZATION_ERROR_DETAILS
+            )
+            return cygrpc.EOF
 
         # NOTE(lidiz) asyncio.CancelledError is not a good transport for status,
         # because the asyncio.Task class do not cache the exception object.
@@ -663,6 +678,11 @@ class UnaryStreamCall(
         serialized_request = _common.serialize(
             self._request, self._request_serializer
         )
+        if serialized_request is None:
+            self._cython_call.set_internal_error(
+                details=_SERIALIZATION_ERROR_DETAILS
+            )
+            return
         try:
             await self._cython_call.initiate_unary_stream(
                 serialized_request, self._metadata, self._context

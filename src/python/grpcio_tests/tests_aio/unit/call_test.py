@@ -34,11 +34,35 @@ _NUM_STREAM_RESPONSES = 5
 _RESPONSE_PAYLOAD_SIZE = 42
 _REQUEST_PAYLOAD_SIZE = 7
 _LOCAL_CANCEL_DETAILS_EXPECTATION = "Locally cancelled by application!"
+_SERIALIZATION_ERROR_DETAILS_EXPECTATION = "Exception serializing request!"
 _RESPONSE_INTERVAL_US = int(_SHORT_TIMEOUT_S * 1000 * 1000)
 _INFINITE_INTERVAL_US = 2**31 - 1
 
 _NONDETERMINISTIC_ITERATIONS = 50
 _NONDETERMINISTIC_SERVER_SLEEP_MAX_US = 1000
+
+
+def _bad_serializer(_request):
+    raise MemoryError("serialization failed")
+
+
+async def _consume(call):
+    async for _ in call:
+        pass
+
+
+async def _assert_serialization_error(test_case, call, awaitable):
+    with test_case.assertRaises(aio.AioRpcError) as exception_context:
+        await awaitable
+    test_case.assertEqual(
+        grpc.StatusCode.INTERNAL, exception_context.exception.code()
+    )
+    test_case.assertEqual(
+        _SERIALIZATION_ERROR_DETAILS_EXPECTATION,
+        exception_context.exception.details(),
+    )
+    test_case.assertTrue(call.done())
+    test_case.assertEqual(grpc.StatusCode.INTERNAL, await call.code())
 
 
 class _MulticallableTestMixin:
@@ -239,6 +263,14 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
             self._stub.UnaryCall(
                 messages_pb2.SimpleRequest(), credentials=call_credentials
             )
+
+    async def test_request_serializer_raises(self):
+        method = self._channel.unary_unary(
+            "/grpc.testing.TestService/UnaryCall",
+            request_serializer=_bad_serializer,
+        )
+        call = method(messages_pb2.SimpleRequest())
+        await _assert_serialization_error(self, call, call)
 
 
 class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
@@ -603,6 +635,16 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
 
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
+    async def test_request_serializer_raises(self):
+        method = self._channel.unary_stream(
+            "/grpc.testing.TestService/StreamingOutputCall",
+            request_serializer=_bad_serializer,
+        )
+        call = method(messages_pb2.StreamingOutputCallRequest())
+        await _assert_serialization_error(self, call, call.read())
+        call = method(messages_pb2.StreamingOutputCallRequest())
+        await _assert_serialization_error(self, call, _consume(call))
+
 
 class TestStreamUnaryCall(_MulticallableTestMixin, AioTestBase):
     async def test_cancel_stream_unary(self):
@@ -754,6 +796,18 @@ class TestStreamUnaryCall(_MulticallableTestMixin, AioTestBase):
         self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED, rpc_error.code())
         self.assertTrue(call.done())
         self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED, await call.code())
+
+    async def test_request_serializer_raises(self):
+        method = self._channel.stream_unary(
+            "/grpc.testing.TestService/StreamingInputCall",
+            request_serializer=_bad_serializer,
+        )
+        call = method()
+        await _assert_serialization_error(
+            self, call, call.write(messages_pb2.StreamingInputCallRequest())
+        )
+        call = method([messages_pb2.StreamingInputCallRequest()])
+        await _assert_serialization_error(self, call, call)
 
 
 # Prepares the request that stream in a ping-pong manner.
@@ -964,6 +1018,18 @@ class TestStreamStreamCall(_MulticallableTestMixin, AioTestBase):
             self.assertEqual(b"", response.SerializeToString())
         await call.done_writing()
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
+    async def test_request_serializer_raises(self):
+        method = self._channel.stream_stream(
+            "/grpc.testing.TestService/FullDuplexCall",
+            request_serializer=_bad_serializer,
+        )
+        call = method()
+        await _assert_serialization_error(
+            self, call, call.write(_STREAM_OUTPUT_REQUEST_ONE_RESPONSE)
+        )
+        call = method([_STREAM_OUTPUT_REQUEST_ONE_RESPONSE])
+        await _assert_serialization_error(self, call, _consume(call))
 
 
 if __name__ == "__main__":
