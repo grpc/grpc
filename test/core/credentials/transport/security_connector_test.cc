@@ -710,6 +710,26 @@ TEST(SecurityConnectorTest, IPv6AddressSan) {
   tsi_peer_destruct(&peer);
 }
 
+TEST(SecurityConnectorTest, HostMatchesEmptyAndMalformedNames) {
+  tsi_peer peer;
+  ASSERT_EQ(tsi_construct_peer(1, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                "*.example.com", &peer.properties[0]),
+            TSI_OK);
+  EXPECT_FALSE(grpc_ssl_host_matches_name(&peer, ""));
+  EXPECT_FALSE(grpc_ssl_host_matches_name(&peer, "%eth0"));
+  EXPECT_FALSE(grpc_ssl_host_matches_name(&peer, "%eth0:443"));
+  EXPECT_FALSE(grpc_ssl_host_matches_name(&peer, "[%::1]:443"));
+  EXPECT_FALSE(grpc_ssl_host_matches_name(&peer, "."));
+  EXPECT_FALSE(grpc_ssl_host_matches_name(&peer, ".."));
+  EXPECT_FALSE(tsi_ssl_peer_matches_name(&peer, {}));
+  EXPECT_FALSE(tsi_ssl_peer_matches_name(&peer, ""));
+  EXPECT_FALSE(tsi_ssl_peer_matches_name(&peer, "."));
+  EXPECT_FALSE(tsi_ssl_peer_matches_name(&peer, ".."));
+  tsi_peer_destruct(&peer);
+}
+
 // TODO(unknown): Convert this test to C++ test when security_connector
 // implementation is converted to C++.
 TEST(SecurityConnectorTest, DefaultSslRoots) {
