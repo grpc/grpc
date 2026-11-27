@@ -204,8 +204,10 @@ std::shared_ptr<GrpcXdsBootstrap> GoogleCloud2ProdResolver::ConstructBootstrap()
   std::random_device rd;
   std::mt19937 mt(rd());
   std::uniform_int_distribution<uint64_t> dist(1, UINT64_MAX);
+  // Use a distinct node ID prefix for non-GCP clients.
+  absl::string_view node_id_prefix = force_xds_ ? "C2P-non-gcp-" : "C2P-";
   Json::Object node = {
-      {"id", Json::FromString(absl::StrCat("C2P-", dist(mt)))},
+      {"id", Json::FromString(absl::StrCat(node_id_prefix, dist(mt)))},
   };
   if (!zone_.empty()) {
     node["locality"] = Json::FromObject({
