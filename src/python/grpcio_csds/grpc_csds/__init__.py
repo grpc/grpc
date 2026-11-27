@@ -18,6 +18,12 @@ from envoy.service.status.v3 import csds_pb2_grpc
 from google.protobuf import json_format
 from grpc._cython import cygrpc
 
+try:
+    # pylint: disable=ungrouped-imports
+    from grpc_csds._grpcio_metadata import __version__
+except ImportError:
+    __version__ = "dev0"
+
 
 class ClientStatusDiscoveryServiceServicer(
     csds_pb2_grpc.ClientStatusDiscoveryServiceServicer
