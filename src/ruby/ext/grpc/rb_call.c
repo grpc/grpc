@@ -84,6 +84,9 @@ static VALUE sym_cancelled;
 typedef struct grpc_rb_call {
   grpc_call* wrapped;
   grpc_completion_queue* queue;
+  /* Set when an interrupted batch left its event in the queue: the queue must
+     then be leaked instead of destroyed (see issue #42541). */
+  int queue_leaked;
 } grpc_rb_call;
 
 static void destroy_call(grpc_rb_call* call) {
@@ -91,7 +94,9 @@ static void destroy_call(grpc_rb_call* call) {
   if (call->wrapped != NULL) {
     grpc_call_unref(call->wrapped);
     call->wrapped = NULL;
-    grpc_rb_completion_queue_destroy(call->queue);
+    if (!call->queue_leaked) {
+      grpc_rb_completion_queue_destroy(call->queue);
+    }
     call->queue = NULL;
   }
 }
@@ -819,6 +824,8 @@ struct call_run_batch_args {
   unsigned write_flag;
   VALUE ops_hash;
   run_batch_stack* st;
+  int batch_started;
+  int event_plucked;
 };
 
 static VALUE grpc_rb_call_run_batch_try(VALUE value_args) {
@@ -842,8 +849,10 @@ static VALUE grpc_rb_call_run_batch_try(VALUE value_args) {
              "grpc_call_start_batch failed with %s (code=%d)",
              grpc_call_error_detail_of(err), err);
   }
-  ev = rb_completion_queue_pluck(args->call->queue, tag,
-                                 gpr_inf_future(GPR_CLOCK_REALTIME), "call op");
+  args->batch_started = 1;
+  ev = rb_completion_queue_pluck_track(args->call->queue, tag,
+                                       gpr_inf_future(GPR_CLOCK_REALTIME),
+                                       "call op", &args->event_plucked);
   if (!ev.success) {
     rb_raise(grpc_rb_eCallError, "call#run_batch failed somehow");
   }
@@ -855,6 +864,24 @@ static VALUE grpc_rb_call_run_batch_try(VALUE value_args) {
 static VALUE grpc_rb_call_run_batch_ensure(VALUE value_args) {
   grpc_rb_fork_unsafe_end();
   struct call_run_batch_args* args = (struct call_run_batch_args*)value_args;
+
+  if (args->batch_started && !args->event_plucked) {
+    /* An interrupt unwound us out of the pluck while the batch is still in
+       flight, with its event not yet in the queue. Its ops (and the tag,
+       which points into this stack frame) are owned by the core until the
+       batch completes, so neither they nor the queue may be released here:
+       destroying a queue that still holds the event corrupts the core, and
+       freeing the stack is a use-after-free when the batch completes (see
+       issue #42541). Cancel the batch without waiting (waiting could hang
+       the VM) and leak both the stack and the queue. */
+    if (args->call != NULL && args->call->wrapped != NULL) {
+      grpc_call_cancel(args->call->wrapped, NULL);
+    }
+    if (args->call != NULL) {
+      args->call->queue_leaked = 1;
+    }
+    return Qnil;
+  }
 
   if (args->st) {
     grpc_run_batch_stack_cleanup(args->st);
@@ -901,7 +928,9 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
       .call = call,
       .write_flag = rb_write_flag == Qnil ? 0 : NUM2UINT(rb_write_flag),
       .ops_hash = ops_hash,
-      .st = NULL};
+      .st = NULL,
+      .batch_started = 0,
+      .event_plucked = 0};
 
   return rb_ensure(grpc_rb_call_run_batch_try, (VALUE)&args,
                    grpc_rb_call_run_batch_ensure, (VALUE)&args);
@@ -1084,5 +1113,6 @@ VALUE grpc_rb_wrap_call(grpc_call* c, grpc_completion_queue* q) {
   wrapper = ALLOC(grpc_rb_call);
   wrapper->wrapped = c;
   wrapper->queue = q;
+  wrapper->queue_leaked = 0;
   return TypedData_Wrap_Struct(grpc_rb_cCall, &grpc_call_data_type, wrapper);
 }
