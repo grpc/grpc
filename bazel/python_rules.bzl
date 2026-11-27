@@ -46,6 +46,7 @@ def _merge_pyinfos(pyinfos):
     return PyInfo(
         transitive_sources = depset(transitive = [p.transitive_sources for p in pyinfos]),
         imports = depset(transitive = [p.imports for p in pyinfos]),
+        transitive_pyi_files = depset(transitive = [p.transitive_pyi_files for p in pyinfos]),
     )
 
 def _gen_py_aspect_impl(target, context):
@@ -179,6 +180,7 @@ _py_proto_library = rule(
         "imports": attr.string_list(),
     },
     implementation = _generate_py_impl,
+    provides = [PyInfo],
 )
 
 def py_proto_library(name, deps, use_protobuf = True, **kwargs):
@@ -299,6 +301,7 @@ _generate_pb2_grpc_src = rule(
         ),
     },
     implementation = _generate_pb2_grpc_src_impl,
+    provides = [PyInfo],
 )
 
 def py_grpc_library(
