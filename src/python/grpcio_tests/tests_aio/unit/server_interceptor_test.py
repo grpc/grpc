@@ -14,6 +14,7 @@
 """Test the functionality of server interceptors."""
 
 import asyncio
+import collections
 import functools
 import logging
 from typing import Any, Awaitable, Callable, Tuple
@@ -33,6 +34,25 @@ _NUM_STREAM_REQUESTS = 5
 _NUM_STREAM_RESPONSES = 5
 _REQUEST_PAYLOAD_SIZE = 7
 _RESPONSE_PAYLOAD_SIZE = 42
+
+_EquivalentHandlerCallDetails = collections.namedtuple(
+    "_EquivalentHandlerCallDetails", ("method", "invocation_metadata")
+)
+
+
+class _EquivalentNamedTupleInterceptor(aio.ServerInterceptor):
+    async def intercept_service(
+        self,
+        continuation: Callable[
+            [grpc.HandlerCallDetails], Awaitable[grpc.RpcMethodHandler]
+        ],
+        handler_call_details: grpc.HandlerCallDetails,
+    ) -> grpc.RpcMethodHandler:
+        equivalent_details = _EquivalentHandlerCallDetails(
+            handler_call_details.method,
+            handler_call_details.invocation_metadata,
+        )
+        return await continuation(equivalent_details)
 
 
 class _LoggingInterceptor(aio.ServerInterceptor):
@@ -290,6 +310,24 @@ class TestServerInterceptor(AioTestBase):
             code = await call.code()
 
             self.assertSequenceEqual(["log1:intercept_service"], record)
+            self.assertIsInstance(response, messages_pb2.SimpleResponse)
+            self.assertEqual(code, grpc.StatusCode.OK)
+
+    async def test_interceptor_with_equivalent_named_tuple(self):
+        server_target, _ = await start_test_server(
+            interceptors=(_EquivalentNamedTupleInterceptor(),)
+        )
+
+        async with aio.insecure_channel(server_target) as channel:
+            multicallable = channel.unary_unary(
+                "/grpc.testing.TestService/UnaryCall",
+                request_serializer=messages_pb2.SimpleRequest.SerializeToString,
+                response_deserializer=messages_pb2.SimpleResponse.FromString,
+            )
+            call = multicallable(messages_pb2.SimpleRequest())
+            response = await call
+            code = await call.code()
+
             self.assertIsInstance(response, messages_pb2.SimpleResponse)
             self.assertEqual(code, grpc.StatusCode.OK)
 
