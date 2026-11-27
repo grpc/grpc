@@ -213,6 +213,8 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   RefCountedPtr<grpc_auth_context> auth_context_;
   std::optional<EvaluateArgs::PerChannelArgs> per_channel_evaluate_args_;
   std::string sha256_peer_certificate_digest_;
+  std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group_;
   TelemetryStorage telemetry_storage_;
 };
 

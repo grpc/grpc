@@ -615,6 +615,9 @@ grpc_cc_benchmark(
     deps = [
         ":helpers",
         "//src/core:channel_args_endpoint_config",
+        "//src/core:experiments",
+        "//src/core:histogram",
+        "//src/core:instrument",
         "//src/core:metrics",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/test_util:fake_stats_plugin",

@@ -128,6 +128,7 @@ grpc_cc_benchmark(
     monitoring = HISTORY,
     deps = [
         "//:grpc",
+        "//src/core:histogram",
         "//src/core:instrument",
         "//test/core/test_util:grpc_test_util",
     ],
