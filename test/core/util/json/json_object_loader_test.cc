@@ -541,6 +541,33 @@ TEST(JsonObjectLoader, DurationFields) {
             "errors validating JSON: ["
             "field:value error:Not a duration (not a number of nanoseconds)]")
       << test_struct.status();
+  // The fractional part must be digits only: a sign there would otherwise
+  // flow negative nanoseconds into the Duration unchecked.
+  test_struct = Parse<TestStruct>("{\"value\": \"0.-5s\"}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:value error:Not a duration (not a number of nanoseconds)]")
+      << test_struct.status();
+  test_struct = Parse<TestStruct>("{\"value\": \"3.-5s\"}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:value error:Not a duration (not a number of nanoseconds)]")
+      << test_struct.status();
+  // The seconds part must be digits only per the proto3 JSON mapping.
+  test_struct = Parse<TestStruct>("{\"value\": \"-0.5s\"}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:value error:Not a duration (not a number of seconds)]")
+      << test_struct.status();
+  test_struct = Parse<TestStruct>("{\"value\": \"+3.5s\"}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:value error:Not a duration (not a number of seconds)]")
+      << test_struct.status();
   // Fails if required field is not present.
   test_struct = Parse<TestStruct>("{}");
   EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
