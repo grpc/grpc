@@ -59,6 +59,7 @@ EXPERIMENT_ENABLES = {
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "promise_batch_cleanup_on_cancel": "promise_batch_cleanup_on_cancel",
     "promise_filter_client_half_close": "promise_filter_client_half_close",
+    "python_zero_copy": "python_zero_copy",
     "recv_message_filter_bypass_fix": "recv_message_filter_bypass_fix",
     "replace_auth_filter": "replace_auth_filter",
     "retry_in_callv3": "retry_in_callv3",
