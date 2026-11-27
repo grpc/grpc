@@ -26,7 +26,14 @@ include(../cmake/common.cmake)
 # Proto file
 get_filename_component(hw_proto "../../protos/helloworld.proto" ABSOLUTE)
 get_filename_component(hw_proto_path "${hw_proto}" PATH)
-get_filename_component(health_proto "../../../third_party/grpc-proto/grpc/health/v1/health.proto" ABSOLUTE)
+# health.proto: use the copy installed with gRPC when available (find_package
+# mode), otherwise fall back to the source tree (add_subdirectory/FetchContent).
+if(DEFINED gRPC_PROTOS_DIR AND EXISTS "${gRPC_PROTOS_DIR}/grpc/health/v1/health.proto")
+  set(health_proto "${gRPC_PROTOS_DIR}/grpc/health/v1/health.proto")
+else()
+  get_filename_component(health_proto "../../../third_party/grpc-proto/grpc/health/v1/health.proto" ABSOLUTE)
+endif()
+message(STATUS "Using health.proto from ${health_proto}")
 get_filename_component(health_proto_path "${health_proto}" PATH)
 
 # Generated sources
