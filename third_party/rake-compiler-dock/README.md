@@ -33,8 +33,13 @@ Apply the customization patch and build the images locally.
 cd "$GEM_ROOT" && git apply "${GIT_ROOT}/third_party/rake-compiler-dock/update_cross_compilers.patch"
 bundle config set --local path '.bundle/gems'
 bundle install
+bundle exec rake prepare:mingw64-ucrt
 bundle exec rake build:images
 ```
+
+`rake prepare:mingw64-ucrt` builds the UCRT toolchain image `grpc-local/mingw64-ucrt:22.04`
+locally for `x64-mingw-ucrt`. It is not pushed. Building `x64-mingw-ucrt` requires the buildx
+`docker` driver (`docker buildx use default`), so the local image can be read.
 
 ### 3. Re-tag customized images
 
