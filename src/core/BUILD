@@ -7046,6 +7046,7 @@ grpc_cc_library(
         "xds_audit_logger_registry",
         "xds_certificate_provider_store",
         "xds_cluster_specifier_plugin",
+        "xds_custom_match_registry",
         "xds_http_filter_registry",
         "xds_lb_policy_registry",
         "xds_matcher_input",
@@ -7084,6 +7085,7 @@ grpc_cc_library(
         "grpc_lb_policy_autosharding",
         "grpc_lb_policy_weighted_round_robin",
         "json",
+        "no_destruct",
         "protobuf_wrappers_upb",
         "sync",
         "time",
@@ -7093,6 +7095,7 @@ grpc_cc_library(
         "xds_bootstrap_grpc",
         "xds_common_types",
         "xds_common_types_parser",
+        "xds_custom_match_registry",
         "xds_file_watcher_certificate_provider_factory",
         "xds_grpc_service_parser",
         "xds_http_composite_filter",
@@ -7439,7 +7442,11 @@ grpc_cc_library(
     hdrs = [
         "xds/grpc/xds_matcher_context.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/container:flat_hash_set",
+        "absl/functional:function_ref",
+        "absl/strings",
+    ],
     tags = ["nofixdeps"],
     visibility = ["//bazel:xds_client_grpc"],
     deps = [
@@ -7505,16 +7512,41 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//bazel:xds_client_grpc"],
     deps = [
+        "down_cast",
         "unique_type_name",
         "upb_utils",
         "validation_errors",
         "xds_bootstrap_grpc",
+        "xds_common_types",
         "xds_common_types_parser",
+        "xds_custom_match_registry",
         "xds_extension_upb",
         "xds_matcher",
         "xds_matcher_action",
         "xds_matcher_input",
         "xds_type_matcher_upb",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_custom_match_registry",
+    srcs = [
+        "xds/grpc/xds_custom_match_registry.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_custom_match_registry.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:xds_client_grpc"],
+    deps = [
+        "unique_type_name",
+        "validation_errors",
+        "xds_common_types",
+        "xds_matcher",
         "//:xds_client",
     ],
 )

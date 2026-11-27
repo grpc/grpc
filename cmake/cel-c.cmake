@@ -14,3 +14,14 @@
 
 set(CEL_C_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-c)
 set(_gRPC_CEL_C_INCLUDE_DIR "${CEL_C_ROOT_DIR}")
+
+# Same source fix as third_party/cel-c.patch for building against the protobuf
+# (upb) version used by gRPC, where _upb_Message_UnknownFieldsAreEqual is
+# wrapped in UPB_PRIVATE(). Because UPB_PRIVATE(x) token-pastes x directly,
+# macro-defining the unprefixed name does not affect the header declaration in
+# upb/message/internal/compare_unknown.h.
+set_source_files_properties(
+  "${CEL_C_ROOT_DIR}/cel-c/internal/message_equality.cc"
+  PROPERTIES COMPILE_DEFINITIONS
+  "_upb_Message_UnknownFieldsAreEqual=_upb_Message_UnknownFieldsAreEqual_dont_copy_me__upb_internal_use_only"
+)

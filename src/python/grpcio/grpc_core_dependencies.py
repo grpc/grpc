@@ -942,6 +942,7 @@ CORE_SOURCE_FILES = [
     'src/core/xds/grpc/xds_cluster_specifier_plugin.cc',
     'src/core/xds/grpc/xds_common_types.cc',
     'src/core/xds/grpc/xds_common_types_parser.cc',
+    'src/core/xds/grpc/xds_custom_match_registry.cc',
     'src/core/xds/grpc/xds_endpoint.cc',
     'src/core/xds/grpc/xds_endpoint_parser.cc',
     'src/core/xds/grpc/xds_grpc_service_parser.cc',

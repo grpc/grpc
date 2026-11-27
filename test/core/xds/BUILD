@@ -658,6 +658,125 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_library(
+    name = "cel_expr_builder",
+    testonly = True,
+    srcs = ["cel_expr_builder.cc"],
+    hdrs = ["cel_expr_builder.h"],
+    external_deps = [
+        "absl/strings",
+        "cel_c_string_view_absl",
+    ],
+    deps = [
+        "//src/core/xds/grpc/cel:cel_expr_checked_upb",
+        "//src/core/xds/grpc/cel:cel_expr_syntax_upb",
+        "//src/core/xds/grpc/cel:xds_cel",
+        "@com_google_protobuf//upb/mem",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_cel_matcher_test",
+    srcs = ["xds_cel_matcher_test.cc"],
+    external_deps = [
+        "absl/strings",
+        "gtest",
+    ],
+    tags = ["xds_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":cel_expr_builder",
+        "//src/core:metadata_batch",
+        "//src/core:slice",
+        "//src/core:xds_matcher",
+        "//src/core:xds_matcher_context",
+        "//src/core/xds/grpc/cel:xds_cel",
+        "//src/core/xds/grpc/cel:xds_cel_matcher",
+        "//src/core/xds/grpc/cel:xds_cel_request_resolver",
+        "//test/core/test_util:grpc_test_util",
+        "@com_google_protobuf//upb/mem",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_cel_parser_test",
+    srcs = ["xds_cel_parser_test.cc"],
+    external_deps = [
+        "absl/strings",
+        "gtest",
+    ],
+    tags = ["xds_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":cel_expr_builder",
+        "//src/core:metadata_batch",
+        "//src/core:protobuf_wrappers_upb",
+        "//src/core:slice",
+        "//src/core:upb_utils",
+        "//src/core:validation_errors",
+        "//src/core:xds_matcher_context",
+        "//src/core:xds_type_upb",
+        "//src/core/xds/grpc/cel:cel_expr_checked_upb",
+        "//src/core/xds/grpc/cel:xds_cel",
+        "//src/core/xds/grpc/cel:xds_cel_parser",
+        "//src/core/xds/grpc/cel:xds_cel_request_resolver",
+        "@com_google_protobuf//upb/mem",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_cel_test",
+    srcs = ["xds_cel_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "cel_c_runtime",
+        "cel_c_status",
+        "cel_c_string_view_absl",
+        "cel_c_value",
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":cel_expr_builder",
+        "//src/core/xds/grpc/cel:cel_expr_checked_upb",
+        "//src/core/xds/grpc/cel:cel_expr_syntax_upb",
+        "//src/core/xds/grpc/cel:xds_cel",
+        "@com_google_protobuf//upb/mem",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_cel_request_resolver_test",
+    srcs = ["xds_cel_request_resolver_test.cc"],
+    external_deps = [
+        "absl/strings",
+        "cel_c_alloc",
+        "cel_c_arena",
+        "cel_c_runtime",
+        "cel_c_status",
+        "cel_c_string_view_absl",
+        "cel_c_value",
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":cel_expr_builder",
+        "//src/core:metadata_batch",
+        "//src/core:slice",
+        "//src/core:xds_matcher_context",
+        "//src/core/xds/grpc/cel:cel_expr_checked_upb",
+        "//src/core/xds/grpc/cel:cel_expr_syntax_upb",
+        "//src/core/xds/grpc/cel:xds_cel",
+        "//src/core/xds/grpc/cel:xds_cel_request_resolver",
+        "@com_google_protobuf//upb/mem",
+    ],
+)
+
 grpc_cc_test(
     name = "xds_matcher_parse_test",
     srcs = ["xds_matcher_parse_test.cc"],
@@ -666,18 +785,25 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        ":cel_expr_builder",
         "//:xds_client",
         "//:xds_type_matcher_upb",
         "//src/core:down_cast",
         "//src/core:grpc_xds_client",
+        "//src/core:metadata_batch",
         "//src/core:upb_utils",
         "//src/core:validation_errors",
         "//src/core:xds_bootstrap_grpc",
         "//src/core:xds_bootstrap_grpc_builder",
+        "//src/core:xds_common_types",
         "//src/core:xds_matcher",
         "//src/core:xds_matcher_action",
         "//src/core:xds_matcher_context",
+        "//src/core:xds_matcher_input",
         "//src/core:xds_matcher_parse",
+        "//src/core/xds/grpc/cel:cel_expr_checked_upb",
+        "//src/core/xds/grpc/cel:xds_cel",
+        "//src/core/xds/grpc/cel:xds_cel_matcher",
         "//test/core/test_util:grpc_test_util",
         "@com_github_cncf_xds//xds/type/matcher/v3:pkg_cc_proto",
         "@com_github_cncf_xds//xds/type/v3:pkg_cc_proto",

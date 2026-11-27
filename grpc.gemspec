@@ -2260,6 +2260,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/xds/grpc/xds_common_types.h )
   s.files += %w( src/core/xds/grpc/xds_common_types_parser.cc )
   s.files += %w( src/core/xds/grpc/xds_common_types_parser.h )
+  s.files += %w( src/core/xds/grpc/xds_custom_match_registry.cc )
+  s.files += %w( src/core/xds/grpc/xds_custom_match_registry.h )
   s.files += %w( src/core/xds/grpc/xds_endpoint.cc )
   s.files += %w( src/core/xds/grpc/xds_endpoint.h )
   s.files += %w( src/core/xds/grpc/xds_endpoint_parser.cc )

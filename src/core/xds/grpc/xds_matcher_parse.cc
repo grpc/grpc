@@ -16,17 +16,23 @@
 
 #include <memory>
 #include <optional>
+#include <utility>
 
+#include "src/core/util/down_cast.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/xds/grpc/xds_custom_match_registry.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "src/core/xds/grpc/xds_matcher_action.h"
 #include "src/core/xds/grpc/xds_matcher_input.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "xds/core/v3/extension.upb.h"
 #include "xds/type/matcher/v3/matcher.upb.h"
+#include "xds/type/matcher/v3/regex.upb.h"
 #include "xds/type/matcher/v3/string.upb.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
@@ -43,28 +49,48 @@ std::unique_ptr<XdsMatcher> ParseXdsMatcherRecursive(
     const UniqueTypeName& matcher_context, bool allow_keep_matching, int depth,
     ValidationErrors* errors);
 
-// Function to parse "xds_core_v3_TypedExtensionConfig" to generate
-// XdsMatcher::Input<T>
+// Extracts the extension from an input "xds_core_v3_TypedExtensionConfig".
+// The returned extension's validation fields remain in scope until it is
+// destroyed.
+std::optional<XdsExtension> ExtractInputExtension(
+    const XdsResourceType::DecodeContext& context,
+    const xds_core_v3_TypedExtensionConfig* input, ValidationErrors* errors) {
+  if (input == nullptr) {
+    errors->AddError("field not present");
+    return std::nullopt;
+  }
+  const google_protobuf_Any* any =
+      xds_core_v3_TypedExtensionConfig_typed_config(input);
+  return ExtractXdsExtension(context, any, errors);
+}
+
 // The parsing is for input which return absl::string_view
 std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> ParseStringInput(
     const XdsResourceType::DecodeContext& context,
     const xds_core_v3_TypedExtensionConfig* input,
     const UniqueTypeName& matcher_context, ValidationErrors* errors) {
-  if (input == nullptr) {
-    errors->AddError("field not present");
-    return nullptr;
-  }
-  const google_protobuf_Any* any =
-      xds_core_v3_TypedExtensionConfig_typed_config(input);
-  auto extension = ExtractXdsExtension(context, any, errors);
-  if (!extension.has_value()) {
-    return nullptr;
-  }
+  auto extension = ExtractInputExtension(context, input, errors);
+  if (!extension.has_value()) return nullptr;
   const auto& registry =
       DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
           .matcher_string_input_registry();
   return registry.ParseAndCreateInput(context, *extension, matcher_context,
                                       errors);
+}
+
+// Parses SinglePredicate.custom_match using the custom_match registry.
+std::unique_ptr<XdsCustomMatchFactory::CustomMatch> ParseCustomMatch(
+    const XdsResourceType::DecodeContext& context,
+    const xds_core_v3_TypedExtensionConfig* custom_match,
+    ValidationErrors* errors) {
+  auto extension = ExtractXdsExtension(
+      context, xds_core_v3_TypedExtensionConfig_typed_config(custom_match),
+      errors);
+  if (!extension.has_value()) return nullptr;
+  const auto& registry =
+      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+          .custom_match_registry();
+  return registry.ParseCustomMatch(context, *extension, errors);
 }
 
 // Function to parse "xds_core_v3_TypedExtensionConfig"  to generate
@@ -150,34 +176,82 @@ absl::flat_hash_map<std::string, XdsMatcher::OnMatch> ParseMatchMap(
   return result;
 }
 
+// gRFC A106 requires prefix, suffix, contains and regex patterns to be
+// non-empty.  This is checked here rather than in StringMatcherParse()
+// because its other callers (e.g. route and RBAC matchers) allow empty
+// patterns.
+void ValidateStringMatcherPatternNotEmpty(
+    const xds_type_matcher_v3_StringMatcher* proto, ValidationErrors* errors) {
+  absl::string_view field;
+  if (xds_type_matcher_v3_StringMatcher_has_prefix(proto)) {
+    if (xds_type_matcher_v3_StringMatcher_prefix(proto).size != 0) return;
+    field = ".prefix";
+  } else if (xds_type_matcher_v3_StringMatcher_has_suffix(proto)) {
+    if (xds_type_matcher_v3_StringMatcher_suffix(proto).size != 0) return;
+    field = ".suffix";
+  } else if (xds_type_matcher_v3_StringMatcher_has_contains(proto)) {
+    if (xds_type_matcher_v3_StringMatcher_contains(proto).size != 0) return;
+    field = ".contains";
+  } else if (xds_type_matcher_v3_StringMatcher_has_safe_regex(proto)) {
+    if (xds_type_matcher_v3_RegexMatcher_regex(
+            xds_type_matcher_v3_StringMatcher_safe_regex(proto))
+            .size != 0) {
+      return;
+    }
+    field = ".safe_regex.regex";
+  } else {
+    return;
+  }
+  ValidationErrors::ScopedField scoped_field(errors, field);
+  errors->AddError("must be non-empty");
+}
+
 // Parse SinglePredicate
 std::unique_ptr<XdsMatcherList::Predicate> ParseSinglePredicate(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate*
         single_predicate,
     const UniqueTypeName& matcher_context, ValidationErrors* errors) {
-  std::unique_ptr<XdsMatcherList::InputMatcher<absl::string_view>>
-      input_string_matcher;
-  {
-    ValidationErrors::ScopedField field(errors, ".value_match");
-    // Supporting value match now, need to add custom match
-    const auto* value_match_proto =
-        xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_value_match(
-            single_predicate);
-    input_string_matcher = std::make_unique<XdsMatcherList::StringInputMatcher>(
-        StringMatcherParse(context, value_match_proto, errors));
+  const auto* input_proto =
+      xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_input(
+          single_predicate);
+  if (const auto* value_match_proto =
+          xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_value_match(
+              single_predicate);
+      value_match_proto != nullptr) {
+    std::unique_ptr<XdsMatcherList::InputMatcher<absl::string_view>> matcher;
+    {
+      ValidationErrors::ScopedField field(errors, ".value_match");
+      ValidateStringMatcherPatternNotEmpty(value_match_proto, errors);
+      matcher = std::make_unique<XdsMatcherList::StringInputMatcher>(
+          StringMatcherParse(context, value_match_proto, errors));
+    }
+    std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> input;
+    {
+      ValidationErrors::ScopedField field(errors, ".input");
+      input = ParseStringInput(context, input_proto, matcher_context, errors);
+    }
+    if (input == nullptr) return nullptr;
+    return XdsMatcherList::CreateSinglePredicate(std::move(input),
+                                                 std::move(matcher));
   }
-  std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> input_string_value;
-  {
+  if (const auto* custom_match_proto =
+          xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_custom_match(
+              single_predicate);
+      custom_match_proto != nullptr) {
+    std::unique_ptr<XdsCustomMatchFactory::CustomMatch> custom_match;
+    {
+      ValidationErrors::ScopedField field(errors, ".custom_match");
+      custom_match = ParseCustomMatch(context, custom_match_proto, errors);
+    }
     ValidationErrors::ScopedField field(errors, ".input");
-    auto* input_proto =
-        xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_input(
-            single_predicate);
-    input_string_value =
-        ParseStringInput(context, input_proto, matcher_context, errors);
+    auto input = ExtractInputExtension(context, input_proto, errors);
+    if (!input.has_value() || custom_match == nullptr) return nullptr;
+    return custom_match->CreatePredicate(context, *input, matcher_context,
+                                         errors);
   }
-  return XdsMatcherList::CreateSinglePredicate(std::move(input_string_value),
-                                               std::move(input_string_matcher));
+  errors->AddError("one of value_match or custom_match must be set");
+  return nullptr;
 }
 
 std::vector<std::unique_ptr<XdsMatcherList::Predicate>> ParsePredicateList(
@@ -190,6 +264,11 @@ std::vector<std::unique_ptr<XdsMatcherList::Predicate>> ParsePredicateList(
   auto list =
       xds_type_matcher_v3_Matcher_MatcherList_Predicate_PredicateList_predicate(
           predicate_list, &predicate_list_size);
+  // gRFC A106: or_matcher and and_matcher must have at least 2 predicates.
+  if (predicate_list_size < 2) {
+    errors->AddError("predicate_list must contain at least 2 predicates");
+    return predicates;
+  }
   // gRFC A106: or_matcher and and_matcher must have at least 2 predicates.
   if (predicate_list_size < 2) {
     errors->AddError("predicate_list must contain at least 2 predicates");

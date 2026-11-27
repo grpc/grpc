@@ -24,6 +24,7 @@
 #include "src/core/xds/grpc/xds_audit_logger_registry.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types.h"
+#include "src/core/xds/grpc/xds_custom_match_registry.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
@@ -49,6 +50,15 @@ class GrpcXdsBootstrapBuilder final {
   static XdsLbPolicyRegistry CreateXdsLbPolicyRegistry();
 
   static XdsAuditLoggerRegistry CreateXdsAuditLoggerRegistry();
+
+  // Registers a function that adds factories to the custom_match registry
+  // of each bootstrap built after this call.  This allows optional matcher
+  // implementations (e.g., CEL) to live outside of the xDS core code.
+  // Must be called before the XdsClient is created.
+  static void RegisterXdsCustomMatchFactories(
+      absl::AnyInvocable<void(XdsCustomMatchRegistry&)> init);
+
+  static XdsCustomMatchRegistry CreateXdsCustomMatchRegistry();
 };
 
 // Exposed for testing purposes only.

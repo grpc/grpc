@@ -2288,6 +2288,8 @@ let package = Package(
         "src/core/xds/grpc/xds_common_types.h",
         "src/core/xds/grpc/xds_common_types_parser.cc",
         "src/core/xds/grpc/xds_common_types_parser.h",
+        "src/core/xds/grpc/xds_custom_match_registry.cc",
+        "src/core/xds/grpc/xds_custom_match_registry.h",
         "src/core/xds/grpc/xds_endpoint.cc",
         "src/core/xds/grpc/xds_endpoint.h",
         "src/core/xds/grpc/xds_endpoint_parser.cc",

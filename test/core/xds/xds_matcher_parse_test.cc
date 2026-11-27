@@ -18,21 +18,30 @@
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/wrappers.pb.h>
 
+#include "cel/expr/checked.upb.h"
 #include "envoy/type/matcher/v3/http_inputs.pb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
+#include "src/core/xds/grpc/cel/xds_cel.h"
+#include "src/core/xds/grpc/cel/xds_cel_matcher.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
+#include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "src/core/xds/grpc/xds_matcher_action.h"
 #include "src/core/xds/grpc/xds_matcher_context.h"
+#include "src/core/xds/grpc/xds_matcher_input.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "test/core/test_util/test_config.h"
+#include "test/core/xds/cel_expr_builder.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"  // For upb_DefPool
+#include "xds/type/matcher/v3/cel.pb.h"
+#include "xds/type/matcher/v3/http_inputs.pb.h"
 #include "xds/type/matcher/v3/matcher.pb.h"
 #include "xds/type/matcher/v3/matcher.upb.h"
 #include "xds/type/v3/typed_struct.pb.h"
@@ -45,7 +54,10 @@ namespace {
 
 using ::envoy::type::matcher::v3::HttpRequestHeaderMatchInput;
 using ::google::protobuf::StringValue;
+using ::xds::type::matcher::v3::CelMatcher;
 using ::xds::type::matcher::v3::Matcher;
+using HttpAttributesCelMatchInputProto =
+    ::xds::type::matcher::v3::HttpAttributesCelMatchInput;
 using ::xds::type::v3::TypedStruct;
 
 // A simple action that holds a string, used for verification.
@@ -744,12 +756,11 @@ TEST_F(MatcherTest, MatcherListSinglePredicateEmpty) {
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
                       action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
-  EXPECT_EQ(
-      errors.status(absl::StatusCode::kInvalidArgument, "").message(),
-      ": [field:matcher_list.matchers[0].predicate.single_predicate.input "
-      "error:field not present;"
-      " field:matcher_list.matchers[0].predicate.single_predicate.value_match "
-      "error:field not present]");
+  EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
+            ": [field:matcher_list.matchers[0].predicate.single_predicate."
+            "custom_match error:field not present;"
+            " field:matcher_list.matchers[0].predicate.single_predicate.input "
+            "error:field not present]");
 }
 
 TEST_F(MatcherTest, MatcherListSinglePredicateInvalidValueMatch) {
@@ -1349,6 +1360,203 @@ TEST_F(MatcherTest, HttpRequestHeaderMatchInputBinaryHeaderName) {
       "on_match={action=StringAction{str=foobar}, keep_matching=false}}}");
 }
 
+//
+// CelMatcher
+//
+
+class CelMatcherParseTest : public MatcherTest {
+ protected:
+  // Returns a CelMatcher whose expr_match.cel_expr_checked is checked.
+  CelMatcher MakeCelMatcher(const cel_expr_CheckedExpr* checked) {
+    size_t size;
+    char* bytes =
+        cel_expr_CheckedExpr_serialize(checked, upb_arena_.ptr(), &size);
+    CelMatcher cel_matcher;
+    EXPECT_TRUE(cel_matcher.mutable_expr_match()
+                    ->mutable_cel_expr_checked()
+                    ->ParseFromArray(bytes, size));
+    return cel_matcher;
+  }
+
+  // Returns a matcher with a single predicate that applies custom_match to
+  // input.
+  static Matcher MakeMatcher(const google::protobuf::Message& custom_match,
+                             const google::protobuf::Message& input) {
+    Matcher matcher_proto;
+    auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
+    auto* predicate =
+        field_matcher->mutable_predicate()->mutable_single_predicate();
+    predicate->mutable_input()->mutable_typed_config()->PackFrom(input);
+    predicate->mutable_custom_match()->mutable_typed_config()->PackFrom(
+        custom_match);
+    StringValue string_value;
+    string_value.set_value("foobar");
+    field_matcher->mutable_on_match()
+        ->mutable_action()
+        ->mutable_typed_config()
+        ->PackFrom(string_value);
+    return matcher_proto;
+  }
+
+  std::unique_ptr<XdsMatcher> Parse(const Matcher& matcher_proto,
+                                    ValidationErrors* errors) {
+    return ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
+                           action_registry_, RpcMatchContext::Type(), true,
+                           errors);
+  }
+
+  // Parses matcher_proto and returns the resulting error message.
+  std::string ParseError(const Matcher& matcher_proto) {
+    ValidationErrors errors;
+    Parse(matcher_proto, &errors);
+    return std::string(
+        errors.status(absl::StatusCode::kInvalidArgument, "").message());
+  }
+
+  CelExprBuilder builder_{upb_arena_.ptr()};
+};
+
+TEST_F(CelMatcherParseTest, Basic) {
+  ValidationErrors errors;
+  auto matcher =
+      Parse(MakeMatcher(MakeCelMatcher(builder_.HeaderEquals("foo", "bar")),
+                        HttpAttributesCelMatchInputProto()),
+            &errors);
+  ASSERT_TRUE(errors.ok())
+      << errors.status(absl::StatusCode::kInvalidArgument, "").message();
+  ASSERT_NE(matcher, nullptr);
+  EXPECT_THAT(
+      matcher->ToString(),
+      ::testing::HasSubstr(
+          "predicate=SinglePredicate{input=HttpAttributesCelMatchInput, "
+          "matcher=CelMatcher{CelProgram{"));
+}
+
+TEST_F(CelMatcherParseTest, MissingExprMatch) {
+  EXPECT_THAT(
+      ParseError(MakeMatcher(CelMatcher(), HttpAttributesCelMatchInputProto())),
+      ::testing::HasSubstr("custom_match.value[xds.type.matcher.v3.CelMatcher]"
+                           ".expr_match error:field not present"));
+}
+
+TEST_F(CelMatcherParseTest, CelExprStringNotSupported) {
+  CelMatcher cel_matcher = MakeCelMatcher(builder_.HeaderEquals("foo", "bar"));
+  cel_matcher.mutable_expr_match()->set_cel_expr_string("true");
+  EXPECT_THAT(
+      ParseError(MakeMatcher(cel_matcher, HttpAttributesCelMatchInputProto())),
+      ::testing::HasSubstr("expr_match.cel_expr_string error:not supported"));
+}
+
+TEST_F(CelMatcherParseTest, CelExprCheckedMissing) {
+  // Parsed expressions are ignored.
+  CelMatcher cel_matcher;
+  cel_matcher.mutable_expr_match()->mutable_cel_expr_parsed();
+  EXPECT_THAT(
+      ParseError(MakeMatcher(cel_matcher, HttpAttributesCelMatchInputProto())),
+      ::testing::HasSubstr(
+          "expr_match.cel_expr_checked error:field not present"));
+}
+
+TEST_F(CelMatcherParseTest, InvalidExpression) {
+  cel_expr_Expr* root;
+  cel_expr_CheckedExpr* checked =
+      builder_.NewCheckedExpr(&root, CelProgram::ResultType::kBool);
+  builder_.SetIdent(root, "foo");
+  EXPECT_THAT(ParseError(MakeMatcher(MakeCelMatcher(checked),
+                                     HttpAttributesCelMatchInputProto())),
+              ::testing::HasSubstr("expr_match.cel_expr_checked error:"));
+}
+
+TEST_F(CelMatcherParseTest, NonBoolResultType) {
+  cel_expr_Expr* root;
+  cel_expr_CheckedExpr* checked =
+      builder_.NewCheckedExpr(&root, CelProgram::ResultType::kString);
+  builder_.SetRequestField(root, "path");
+  EXPECT_THAT(ParseError(MakeMatcher(MakeCelMatcher(checked),
+                                     HttpAttributesCelMatchInputProto())),
+              ::testing::HasSubstr("expr_match.cel_expr_checked error:"));
+}
+
+TEST_F(CelMatcherParseTest, UnsupportedCustomMatchType) {
+  StringValue string_value;
+  EXPECT_THAT(
+      ParseError(MakeMatcher(string_value, HttpAttributesCelMatchInputProto())),
+      ::testing::HasSubstr("custom_match.value[google.protobuf.StringValue] "
+                           "error:unsupported custom_match type"));
+}
+
+TEST_F(CelMatcherParseTest, StringInputWithCelMatcher) {
+  HttpRequestHeaderMatchInput input;
+  input.set_header_name("foo");
+  EXPECT_THAT(
+      ParseError(MakeMatcher(
+          MakeCelMatcher(builder_.HeaderEquals("foo", "bar")), input)),
+      ::testing::HasSubstr("Unsupported Input type:envoy.type.matcher.v3."
+                           "HttpRequestHeaderMatchInput"));
+}
+
+TEST_F(CelMatcherParseTest, MalformedHttpAttributesCelMatchInput) {
+  Matcher matcher_proto =
+      MakeMatcher(MakeCelMatcher(builder_.HeaderEquals("foo", "bar")),
+                  HttpAttributesCelMatchInputProto());
+  auto* typed_config = matcher_proto.mutable_matcher_list()
+                           ->mutable_matchers(0)
+                           ->mutable_predicate()
+                           ->mutable_single_predicate()
+                           ->mutable_input()
+                           ->mutable_typed_config();
+  typed_config->set_value("\xff");
+  EXPECT_THAT(
+      ParseError(matcher_proto),
+      ::testing::HasSubstr(
+          "input.value[xds.type.matcher.v3.HttpAttributesCelMatchInput] "
+          "error:Failed to parse HttpAttributesCelMatchInput"));
+}
+
+TEST_F(CelMatcherParseTest, MissingInput) {
+  Matcher matcher_proto =
+      MakeMatcher(MakeCelMatcher(builder_.HeaderEquals("foo", "bar")),
+                  HttpAttributesCelMatchInputProto());
+  matcher_proto.mutable_matcher_list()
+      ->mutable_matchers(0)
+      ->mutable_predicate()
+      ->mutable_single_predicate()
+      ->clear_input();
+  EXPECT_THAT(
+      ParseError(matcher_proto),
+      ::testing::HasSubstr("single_predicate.input error:field not present"));
+}
+
+TEST_F(CelMatcherParseTest, CelInputWithValueMatch) {
+  Matcher matcher_proto =
+      MakeMatcher(MakeCelMatcher(builder_.HeaderEquals("foo", "bar")),
+                  HttpAttributesCelMatchInputProto());
+  auto* predicate = matcher_proto.mutable_matcher_list()
+                        ->mutable_matchers(0)
+                        ->mutable_predicate()
+                        ->mutable_single_predicate();
+  predicate->mutable_value_match()->set_exact("bar");
+  EXPECT_THAT(ParseError(matcher_proto),
+              ::testing::HasSubstr("Unsupported Input type:xds.type.matcher."
+                                   "v3.HttpAttributesCelMatchInput"));
+}
+
+TEST_F(CelMatcherParseTest, NoValueMatchOrCustomMatch) {
+  Matcher matcher_proto =
+      MakeMatcher(MakeCelMatcher(builder_.HeaderEquals("foo", "bar")),
+                  HttpAttributesCelMatchInputProto());
+  matcher_proto.mutable_matcher_list()
+      ->mutable_matchers(0)
+      ->mutable_predicate()
+      ->mutable_single_predicate()
+      ->clear_custom_match();
+  EXPECT_THAT(
+      ParseError(matcher_proto),
+      ::testing::HasSubstr(
+          "single_predicate error:one of value_match or custom_match must be "
+          "set"));
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
@@ -1356,6 +1564,7 @@ TEST_F(MatcherTest, HttpRequestHeaderMatchInputBinaryHeaderName) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_core::RegisterXdsCelMatcher();
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();
