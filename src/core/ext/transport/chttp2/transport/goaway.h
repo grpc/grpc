@@ -256,14 +256,17 @@ class GoawayManager {
   //    previous GOAWAY request completes.
   // In the above comments, `the promise` refers to the promise returned by
   // RequestGoaway.
-  static auto HandleGracefulGoaway(RefCountedPtr<Context> ctx,
-                                   const Http2ErrorCode error_code,
-                                   Slice&& debug_data,
-                                   const uint32_t last_good_stream_id) {
+  static auto HandleGracefulGoaway(
+      RefCountedPtr<Context> ctx,
+      [[maybe_unused]] const Http2ErrorCode error_code, Slice&& debug_data,
+      const uint32_t last_good_stream_id) {
     GoawayState previous_state = ctx->goaway_state;
+    if (previous_state == GoawayState::kIdle) {
+      GRPC_DCHECK(error_code == Http2ErrorCode::kNoError);
+    }
     return If(
         previous_state == GoawayState::kIdle,
-        [ctx = std::move(ctx), error_code, debug_data = debug_data.Ref(),
+        [ctx = std::move(ctx), debug_data = debug_data.Ref(),
          last_good_stream_id]() mutable {
           // TODO(akshitpatel) : [PH2][P4] : Investigate if we need to modify
           // transport ping timeout for the graceful GOAWAY process.
@@ -273,7 +276,6 @@ class GoawayManager {
                                 << ctx->GoawayStateToString(ctx->goaway_state)
                                 << " -> "
                                    "kInitialGracefulGoawayScheduled.";
-          GRPC_DCHECK(error_code == Http2ErrorCode::kNoError);
           ctx->was_immediate = false;
           ctx->goaway_state = GoawayState::kInitialGracefulGoawayScheduled;
           ctx->SetGoawayArgs(
