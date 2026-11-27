@@ -1270,6 +1270,7 @@ grpc_cc_test(
     deps = [
         ":http2_common_test_inputs",
         ":http2_frame_test_helper",
+        "//:call_tracer",
         "//:chttp2_frame",
         "//:config",
         "//:event_engine_base_hdrs",

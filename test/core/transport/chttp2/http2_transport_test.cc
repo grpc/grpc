@@ -1685,6 +1685,85 @@ TEST_P(TarpitManagerTest, TarpitManagerChannelzPropertiesTest) {
 INSTANTIATE_TEST_SUITE_P(TarpitManagerTest, TarpitManagerTest,
                          ::testing::Bool());
 
+// Verifies Http2Annotation construction, optional stats builders, ToString()
+// formatting, and ForEachKeyValue() attribute export across lifecycle types.
+TEST(Http2AnnotationTest, PopulatesStatsAndExportsKeyValues) {
+  const gpr_timespec ts = {1700000000, 123456789, GPR_CLOCK_REALTIME};
+  chttp2::TransportFlowControl transport_flow_control(
+      /*peer_name=*/"test_peer", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+  chttp2::StreamFlowControl stream_flow_control(&transport_flow_control);
+
+  // Step 1: Verify kStart without WriteStats omits target_write_size.
+  const Http2Annotation start_annotation =
+      Http2Annotation(Http2Annotation::Type::kStart, ts)
+          .Add(transport_flow_control.stats())
+          .Add(stream_flow_control.stats());
+  EXPECT_EQ(start_annotation.type(),
+            CallTracerAnnotationInterface::AnnotationType::kHttp2Transport);
+  EXPECT_EQ(start_annotation.http_type(), Http2Annotation::Type::kStart);
+  EXPECT_EQ(start_annotation.time().tv_sec, ts.tv_sec);
+  EXPECT_EQ(start_annotation.time().tv_nsec, ts.tv_nsec);
+  EXPECT_TRUE(start_annotation.transport_stats().has_value());
+  EXPECT_TRUE(start_annotation.stream_stats().has_value());
+  EXPECT_FALSE(start_annotation.write_stats().has_value());
+
+  const std::string start_str = start_annotation.ToString();
+  EXPECT_NE(start_str.find("HttpAnnotation type: Start time: "),
+            std::string::npos);
+  EXPECT_NE(start_str.find("transport:["), std::string::npos);
+  EXPECT_NE(start_str.find("stream:["), std::string::npos);
+
+  std::vector<std::pair<std::string, int64_t>> start_kvs;
+  start_annotation.ForEachKeyValue(
+      [&start_kvs](absl::string_view key,
+                   CallTracerAnnotationInterface::Annotation::ValueType val) {
+        start_kvs.emplace_back(std::string(key), std::get<int64_t>(val));
+      });
+  ASSERT_EQ(start_kvs.size(), 3u);
+  EXPECT_EQ(start_kvs[0u],
+            std::make_pair(std::string("type"),
+                           static_cast<int64_t>(Http2Annotation::Type::kStart)));
+  EXPECT_EQ(start_kvs[1u],
+            std::make_pair(std::string("time_sec"), int64_t{1700000000}));
+  EXPECT_EQ(start_kvs[2u],
+            std::make_pair(std::string("time_nsec"), int64_t{123456789}));
+
+  // Step 2: Verify kHeadWritten includes WriteStats and target_write_size.
+  const Http2Annotation::WriteStats write_stats{32768u};
+  const Http2Annotation head_written_annotation =
+      Http2Annotation(Http2Annotation::Type::kHeadWritten, ts)
+          .Add(transport_flow_control.stats())
+          .Add(stream_flow_control.stats())
+          .Add(write_stats);
+  EXPECT_EQ(head_written_annotation.http_type(),
+            Http2Annotation::Type::kHeadWritten);
+  ASSERT_TRUE(head_written_annotation.write_stats().has_value());
+  EXPECT_EQ(head_written_annotation.write_stats()->target_write_size, 32768u);
+  EXPECT_NE(head_written_annotation.ToString().find(
+                "HttpAnnotation type: HeadWritten time: "),
+            std::string::npos);
+
+  std::vector<std::pair<std::string, int64_t>> head_kvs;
+  head_written_annotation.ForEachKeyValue(
+      [&head_kvs](absl::string_view key,
+                  CallTracerAnnotationInterface::Annotation::ValueType val) {
+        head_kvs.emplace_back(std::string(key), std::get<int64_t>(val));
+      });
+  ASSERT_EQ(head_kvs.size(), 4u);
+  EXPECT_EQ(head_kvs[3u], std::make_pair(std::string("target_write_size"),
+                                         int64_t{32768}));
+
+  // Step 3: Verify kEnd formatting.
+  const Http2Annotation end_annotation(Http2Annotation::Type::kEnd, ts);
+  EXPECT_EQ(end_annotation.http_type(), Http2Annotation::Type::kEnd);
+  EXPECT_FALSE(end_annotation.transport_stats().has_value());
+  EXPECT_FALSE(end_annotation.stream_stats().has_value());
+  EXPECT_FALSE(end_annotation.write_stats().has_value());
+  EXPECT_NE(end_annotation.ToString().find("HttpAnnotation type: End time: "),
+            std::string::npos);
+}
+
 }  // namespace testing
 }  // namespace http2
 }  // namespace grpc_core

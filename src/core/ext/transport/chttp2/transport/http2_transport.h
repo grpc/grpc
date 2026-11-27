@@ -20,8 +20,10 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_TRANSPORT_H
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/time.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -55,10 +57,13 @@
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "absl/functional/function_ref.h"
 #include "absl/log/log.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -493,6 +498,73 @@ class TarpitManager {
   // Waker for resuming WaitForTimerExpire when transitioning from an empty
   // queue to a non-empty queue.
   Waker empty_queue_waker_;
+};
+
+// Based on CHTTP2's HttpAnnotation in chttp2_transport.h.
+// CallTracer annotation recording write-side HTTP/2 transport lifecycle events
+// and flow-control snapshots for sampled RPCs in PH2.
+class Http2Annotation : public CallTracerAnnotationInterface::Annotation {
+ public:
+  enum class Type : uint8_t {
+    kUnknown = 0u,
+    // When the first byte enters the HTTP transport.
+    kStart,
+    // When the first byte leaves the HTTP transport.
+    kHeadWritten,
+    // When the last byte leaves the HTTP transport.
+    kEnd,
+  };
+
+  // A snapshot of write stats to export.
+  struct WriteStats {
+    size_t target_write_size = 0u;
+  };
+
+  Http2Annotation() = delete;
+  Http2Annotation(Type type, gpr_timespec time);
+
+  Http2Annotation(const Http2Annotation&) = default;
+  Http2Annotation& operator=(const Http2Annotation&) = delete;
+  Http2Annotation(Http2Annotation&&) = default;
+  Http2Annotation& operator=(Http2Annotation&&) = delete;
+
+  ~Http2Annotation() override = default;
+
+  Http2Annotation& Add(const chttp2::TransportFlowControl::Stats& stats) {
+    transport_stats_ = stats;
+    return *this;
+  }
+
+  Http2Annotation& Add(const chttp2::StreamFlowControl::Stats& stats) {
+    stream_stats_ = stats;
+    return *this;
+  }
+
+  Http2Annotation& Add(const WriteStats& stats) {
+    write_stats_ = stats;
+    return *this;
+  }
+
+  std::string ToString() const override;
+  void ForEachKeyValue(
+      absl::FunctionRef<void(absl::string_view, ValueType)> f) const override;
+
+  Type http_type() const { return type_; }
+  gpr_timespec time() const { return time_; }
+  std::optional<chttp2::TransportFlowControl::Stats> transport_stats() const {
+    return transport_stats_;
+  }
+  std::optional<chttp2::StreamFlowControl::Stats> stream_stats() const {
+    return stream_stats_;
+  }
+  std::optional<WriteStats> write_stats() const { return write_stats_; }
+
+ private:
+  const Type type_;
+  const gpr_timespec time_;
+  std::optional<chttp2::TransportFlowControl::Stats> transport_stats_;
+  std::optional<chttp2::StreamFlowControl::Stats> stream_stats_;
+  std::optional<WriteStats> write_stats_;
 };
 
 }  // namespace http2

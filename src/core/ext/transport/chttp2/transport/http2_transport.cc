@@ -22,6 +22,7 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 
 #include <algorithm>
 #include <climits>
@@ -55,13 +56,17 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/string.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "absl/functional/function_ref.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 #define GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT \
   "grpc.http2.ping_on_rst_stream_percent"
@@ -599,6 +604,52 @@ channelz::PropertyList TarpitManager::ChannelzProperties() const {
                    tarpit_queue_.Top().GetExpireTime());
   }
   return properties;
+}
+
+// Based on CHTTP2's HttpAnnotation in chttp2_transport.cc.
+Http2Annotation::Http2Annotation(const Type type, const gpr_timespec time)
+    : CallTracerAnnotationInterface::Annotation(
+          CallTracerAnnotationInterface::AnnotationType::kHttp2Transport),
+      type_(type),
+      time_(time) {}
+
+std::string Http2Annotation::ToString() const {
+  // Preserves CHTTP2's "HttpAnnotation type: " prefix for stats plugin parity.
+  std::string s = "HttpAnnotation type: ";
+  switch (type_) {
+    case Type::kStart:
+      absl::StrAppend(&s, "Start");
+      break;
+    case Type::kHeadWritten:
+      absl::StrAppend(&s, "HeadWritten");
+      break;
+    case Type::kEnd:
+      absl::StrAppend(&s, "End");
+      break;
+    case Type::kUnknown:
+    default:
+      absl::StrAppend(&s, "Unknown");
+      break;
+  }
+  absl::StrAppend(&s, " time: ", gpr_format_timespec(time_));
+  if (transport_stats_.has_value()) {
+    absl::StrAppend(&s, " transport:[", transport_stats_->ToString(), "]");
+  }
+  if (stream_stats_.has_value()) {
+    absl::StrAppend(&s, " stream:[", stream_stats_->ToString(), "]");
+  }
+  return s;
+}
+
+void Http2Annotation::ForEachKeyValue(
+    absl::FunctionRef<void(absl::string_view, ValueType)> f) const {
+  f("type", static_cast<int64_t>(type_));
+  f("time_sec", static_cast<int64_t>(time_.tv_sec));
+  f("time_nsec", static_cast<int64_t>(time_.tv_nsec));
+  if (write_stats_.has_value()) {
+    f("target_write_size",
+      static_cast<int64_t>(write_stats_->target_write_size));
+  }
 }
 
 }  // namespace http2

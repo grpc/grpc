@@ -72,6 +72,7 @@ class CallTracerAnnotationInterface {
     kHttpTransport,
     kSendInitialMetadata,
     kSendTrailingMetadata,
+    kHttp2Transport,
     kDoNotUse_MustBeLast,
   };
 

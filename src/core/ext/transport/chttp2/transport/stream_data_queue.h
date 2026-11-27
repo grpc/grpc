@@ -305,6 +305,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 3. MUST not be called after trailing metadata is enqueued.
   // 4. This function is thread safe.
   absl::StatusOr<StreamWritabilityUpdate> EnqueueInitialMetadata(
+      //has a lock.  accessed by call and transport party. 
       MetadataHandle&& metadata) {
     MutexLock lock(mu_);
     GRPC_DCHECK(!is_initial_metadata_queued_);
