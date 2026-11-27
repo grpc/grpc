@@ -166,7 +166,8 @@ class UnaryUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
             The interceptor can use
             `call = await continuation(client_call_details, request)`
             to continue with the RPC. `continuation` returns the call to the
-            RPC.
+            RPC. Returning `continuation(...)` without awaiting it is also
+            accepted; the returned coroutine is awaited automatically.
           client_call_details: A ClientCallDetails object describing the
             outgoing RPC.
           request: The request value for the RPC.
@@ -210,7 +211,8 @@ class UnaryStreamClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
             The interceptor can use
             `call = await continuation(client_call_details, request)`
             to continue with the RPC. `continuation` returns the call to the
-            RPC.
+            RPC. Returning `continuation(...)` without awaiting it is also
+            accepted; the returned coroutine is awaited automatically.
           client_call_details: A ClientCallDetails object describing the
             outgoing RPC.
           request: The request value for the RPC.
@@ -252,7 +254,8 @@ class StreamUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
             The interceptor can use
             `call = await continuation(client_call_details, request_iterator)`
             to continue with the RPC. `continuation` returns the call to the
-            RPC.
+            RPC. Returning `continuation(...)` without awaiting it is also
+            accepted; the returned coroutine is awaited automatically.
           client_call_details: A ClientCallDetails object describing the
             outgoing RPC.
           request_iterator: The request iterator that will produce requests
@@ -302,7 +305,8 @@ class StreamStreamClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
             The interceptor can use
             `call = await continuation(client_call_details, request_iterator)`
             to continue with the RPC. `continuation` returns the call to the
-            RPC.
+            RPC. Returning `continuation(...)` without awaiting it is also
+            accepted; the returned coroutine is awaited automatically.
           client_call_details: A ClientCallDetails object describing the
             outgoing RPC.
           request_iterator: The request iterator that will produce requests
@@ -709,6 +713,18 @@ def _is_unary_unary_call(
     return isinstance(val, _base_call.UnaryUnaryCall)
 
 
+async def _resolve_interceptor_result(result: Any) -> Any:
+    """Awaits coroutines and futures returned by an interceptor.
+
+    Covers interceptors that return `continuation(...)` without awaiting it,
+    which would otherwise make the caller await the RPC more than once.
+    Other awaitables, such as calls, are returned as they are.
+    """
+    while asyncio.iscoroutine(result) or asyncio.isfuture(result):
+        result = await result
+    return result
+
+
 class InterceptedUnaryUnaryCall(
     InterceptedCall,
     _InterceptedUnaryResponseMixin[ResponseType],
@@ -804,8 +820,10 @@ class InterceptedUnaryUnaryCall(
                 request_serializer,
                 response_deserializer,
             )
-            call_or_response = await interceptors[0].intercept_unary_unary(
-                continuation, client_call_details, request
+            call_or_response = await _resolve_interceptor_result(
+                await interceptors[0].intercept_unary_unary(
+                    continuation, client_call_details, request
+                )
             )
 
             if _is_unary_unary_call(call_or_response):
@@ -934,9 +952,11 @@ class InterceptedUnaryStreamCall(
                 response_deserializer,
             )
 
-            call_or_response_iterator = await interceptors[
-                0
-            ].intercept_unary_stream(continuation, client_call_details, request)
+            call_or_response_iterator = await _resolve_interceptor_result(
+                await interceptors[0].intercept_unary_stream(
+                    continuation, client_call_details, request
+                )
+            )
 
             if isinstance(
                 call_or_response_iterator, _base_call.UnaryStreamCall
@@ -1073,8 +1093,10 @@ class InterceptedStreamUnaryCall(  # pylint: disable=too-many-ancestors
                 response_deserializer,
             )
 
-            return await interceptors[0].intercept_stream_unary(
-                continuation, client_call_details, request_iterator
+            return await _resolve_interceptor_result(
+                await interceptors[0].intercept_stream_unary(
+                    continuation, client_call_details, request_iterator
+                )
             )
 
         registered_call_handle = _resolve_registered_call_handle(
@@ -1201,10 +1223,10 @@ class InterceptedStreamStreamCall(  # pylint: disable=too-many-ancestors
                 response_deserializer,
             )
 
-            call_or_response_iterator = await interceptors[
-                0
-            ].intercept_stream_stream(
-                continuation, client_call_details, request_iterator
+            call_or_response_iterator = await _resolve_interceptor_result(
+                await interceptors[0].intercept_stream_stream(
+                    continuation, client_call_details, request_iterator
+                )
             )
 
             if isinstance(
