@@ -48,12 +48,22 @@ cdef class _RequestCallTag(_Tag):
         self.call_details, invocation_metadata)
 
 
+# NOTE(zgoda): `release()` reads `self._operations` in a `__dealloc__` method.
+# We need to disable tp_clear phase of garbage collection to make that work.
+@cython.no_gc_clear
 cdef class _BatchOperationTag:
 
   def __cinit__(self, user_tag, operations, call):
     self._user_tag = user_tag
     self._operations = operations
     self._retained_call = call
+    self.c_ops = NULL
+    self.c_prepared = 0
+
+  def __dealloc__(self):
+    # A batch that never reached `event()` will leak memory if we don't release
+    # the operations here.
+    self.release()
 
   cdef void prepare(self) except *:
     cdef Operation operation
@@ -63,13 +73,28 @@ cdef class _BatchOperationTag:
       for index, operation in enumerate(self._operations):
         operation.c()
         self.c_ops[index] = operation.c_op
+        self.c_prepared += 1
+
+  cdef void release(self) except *:
+    cdef grpc_op *c_ops = self.c_ops
+    cdef size_t prepared = self.c_prepared
+    cdef size_t index
+    if c_ops == NULL:
+      return
+    # Detach first to prevent double-free bugs in `__dealloc__` if `un_c()`
+    # raises an exception.
+    self.c_ops = NULL
+    self.c_prepared = 0
+    try:
+      for index in range(prepared):
+        (<Operation>self._operations[index]).un_c()
+    finally:
+      gpr_free(c_ops)
+
 
   cdef BatchOperationEvent event(self, grpc_event c_event):
-    cdef Operation operation
+    self.release()
     if 0 < self.c_nops:
-      for operation in self._operations:
-        operation.un_c()
-      gpr_free(self.c_ops)
       return BatchOperationEvent(
           c_event.type, c_event.success, self._user_tag, self._operations)
     else:

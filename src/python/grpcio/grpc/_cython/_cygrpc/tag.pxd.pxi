@@ -43,8 +43,10 @@ cdef class _BatchOperationTag(_Tag):
   cdef readonly object _retained_call
   cdef grpc_op *c_ops
   cdef size_t c_nops
+  cdef size_t c_prepared
 
   cdef void prepare(self) except *
+  cdef void release(self) except *
   cdef BatchOperationEvent event(self, grpc_event c_event)
 
 

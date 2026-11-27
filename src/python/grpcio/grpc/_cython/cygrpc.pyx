@@ -14,6 +14,7 @@
 # distutils: language=c++
 
 cimport cpython
+cimport cython
 
 import logging
 import os
