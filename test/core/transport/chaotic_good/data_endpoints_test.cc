@@ -566,4 +566,104 @@ DATA_ENDPOINTS_TEST(FailsOnOverflowingMessage) {
   WaitForAllPendingWork();
 }
 
+
+TEST(ChaoticGoodSchedulerTest, SimpleSchedulerSparseChannelIds) {
+  auto make_delivery_data = [](double start_time, double bps) {
+    chaotic_good::SendRate::DeliveryData dd{};
+    dd.start_time = start_time;
+    dd.bytes_per_second = bps;
+    dd.timestamps.last_scheduled_time = 0.0;
+    dd.timestamps.last_reader_dequeued_time = 0.0;
+    return dd;
+  };
+  chaotic_good::TcpZTraceCollector ztrace_collector;
+  for (const char* cfg :
+       {"pick_best", "rand:weight=inverse_outstanding_bytes"}) {
+    auto scheduler = chaotic_good::MakeScheduler(cfg);
+    ASSERT_NE(scheduler, nullptr);
+    scheduler->NewStep(1024, 64);
+    scheduler->AddChannel(1, true, make_delivery_data(0.001, 1e8));
+    scheduler->MakePlan(ztrace_collector);
+    auto id1 = scheduler->AllocateMessage(512);
+    ASSERT_TRUE(id1.has_value());
+    EXPECT_EQ(*id1, 1u);
+
+    scheduler->NewStep(2048, 64);
+    scheduler->AddChannel(2, true, make_delivery_data(0.001, 1e8));
+    scheduler->AddChannel(5, true, make_delivery_data(0.002, 1e8));
+    scheduler->MakePlan(ztrace_collector);
+    auto id2 = scheduler->AllocateMessage(512);
+    auto id3 = scheduler->AllocateMessage(512);
+    ASSERT_TRUE(id2.has_value());
+    ASSERT_TRUE(id3.has_value());
+    EXPECT_TRUE(*id2 == 2u || *id2 == 5u);
+    EXPECT_TRUE(*id3 == 2u || *id3 == 5u);
+    if (std::strcmp(cfg, "pick_best") == 0) {
+      EXPECT_NE(*id2, *id3);
+    }
+  }
+}
+
+TEST(ChaoticGoodSchedulerTest, PickBestMaxUnwrittenBytesSparseChannelId) {
+  chaotic_good::SendRate::DeliveryData dd{};
+  dd.start_time = 0.001;
+  dd.bytes_per_second = 1e8;
+  chaotic_good::TcpZTraceCollector ztrace_collector;
+  auto scheduler = chaotic_good::MakeScheduler(
+      "pick_best:filter=max_unwritten_bytes:max_unwritten_bytes=1000");
+  ASSERT_NE(scheduler, nullptr);
+  scheduler->NewStep(2048, 64);
+  scheduler->AddChannel(3, true, dd);
+  scheduler->MakePlan(ztrace_collector);
+  EXPECT_EQ(scheduler->AllocateMessage(600), 3u);
+  EXPECT_EQ(scheduler->AllocateMessage(600), 3u);
+  EXPECT_FALSE(scheduler->AllocateMessage(100).has_value());
+}
+
+TEST(ChaoticGoodSchedulerTest, RandomChannelZeroAndInfiniteWeights) {
+  auto make_delivery_data = [](double start_time, double bps) {
+    chaotic_good::SendRate::DeliveryData dd{};
+    dd.start_time = start_time;
+    dd.bytes_per_second = bps;
+    return dd;
+  };
+  chaotic_good::TcpZTraceCollector ztrace_collector;
+  {
+    auto scheduler = chaotic_good::MakeScheduler(
+        "spanrr:end_of_burst=random_allowed_bytes");
+    ASSERT_NE(scheduler, nullptr);
+    scheduler->NewStep(100, 10);
+    scheduler->AddChannel(0, true, make_delivery_data(0.0, 1e6));
+    scheduler->AddChannel(1, true, make_delivery_data(0.0, 1e6));
+    scheduler->MakePlan(ztrace_collector);
+    EXPECT_TRUE(scheduler->AllocateMessage(60).has_value());
+    EXPECT_TRUE(scheduler->AllocateMessage(60).has_value());
+    EXPECT_FALSE(scheduler->AllocateMessage(60).has_value());
+  }
+  {
+    auto scheduler =
+        chaotic_good::MakeScheduler("rand:weight=inverse_outstanding_bytes");
+    ASSERT_NE(scheduler, nullptr);
+    scheduler->NewStep(100, 10);
+    scheduler->AddChannel(2, true, make_delivery_data(0.0, 1e6));
+    scheduler->AddChannel(4, true, make_delivery_data(0.0, 1e6));
+    scheduler->MakePlan(ztrace_collector);
+    auto id = scheduler->AllocateMessage(0);
+    ASSERT_TRUE(id.has_value());
+    EXPECT_TRUE(*id == 2u || *id == 4u);
+  }
+  {
+    auto scheduler =
+        chaotic_good::MakeScheduler("rand:weight=inverse_receive_time");
+    ASSERT_NE(scheduler, nullptr);
+    scheduler->NewStep(100, 1);
+    scheduler->AddChannel(0, true, make_delivery_data(1e-308, 1e308));
+    scheduler->AddChannel(1, true, make_delivery_data(1e-308, 1e308));
+    scheduler->MakePlan(ztrace_collector);
+    auto id = scheduler->AllocateMessage(1);
+    ASSERT_TRUE(id.has_value());
+    EXPECT_TRUE(*id == 0u || *id == 1u);
+  }
+}
+
 }  // namespace grpc_core
