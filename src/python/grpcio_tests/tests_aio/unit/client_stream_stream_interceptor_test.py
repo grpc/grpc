@@ -59,6 +59,45 @@ class _StreamStreamInterceptorWithRequestAndResponseIterator(
         )
 
 
+class _AllKindsInterceptor(
+    aio.UnaryUnaryClientInterceptor,
+    aio.UnaryStreamClientInterceptor,
+    aio.StreamUnaryClientInterceptor,
+    aio.StreamStreamClientInterceptor,
+):
+    """A single interceptor implementing every RPC kind."""
+
+    def __init__(self, stream_stream_error=None):
+        self.intercepted = []
+        self._stream_stream_error = stream_stream_error
+
+    async def intercept_unary_unary(
+        self, continuation, client_call_details, request
+    ):
+        self.intercepted.append("unary_unary")
+        return await continuation(client_call_details, request)
+
+    async def intercept_unary_stream(
+        self, continuation, client_call_details, request
+    ):
+        self.intercepted.append("unary_stream")
+        return await continuation(client_call_details, request)
+
+    async def intercept_stream_unary(
+        self, continuation, client_call_details, request_iterator
+    ):
+        self.intercepted.append("stream_unary")
+        return await continuation(client_call_details, request_iterator)
+
+    async def intercept_stream_stream(
+        self, continuation, client_call_details, request_iterator
+    ):
+        self.intercepted.append("stream_stream")
+        if self._stream_stream_error is not None:
+            raise self._stream_stream_error
+        return await continuation(client_call_details, request_iterator)
+
+
 class TestStreamStreamClientInterceptor(AioTestBase):
     async def setUp(self):
         self._server_target, self._server = await start_test_server()
@@ -206,6 +245,53 @@ class TestStreamStreamClientInterceptor(AioTestBase):
                     interceptor.assert_in_final_state(self)
 
                 await channel.close()
+
+    async def test_interceptor_implementing_all_kinds(self):
+        interceptor = _AllKindsInterceptor()
+        async with aio.insecure_channel(
+            self._server_target, interceptors=[interceptor]
+        ) as channel:
+            stub = test_pb2_grpc.TestServiceStub(channel)
+
+            await stub.UnaryCall(messages_pb2.SimpleRequest())
+
+            streaming_output_request = messages_pb2.StreamingOutputCallRequest()
+            streaming_output_request.response_parameters.append(
+                messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)
+            )
+            async for _ in stub.StreamingOutputCall(streaming_output_request):
+                pass
+
+            async def streaming_input_requests():
+                yield messages_pb2.StreamingInputCallRequest()
+
+            await stub.StreamingInputCall(streaming_input_requests())
+
+            call = stub.FullDuplexCall()
+            await call.write(streaming_output_request)
+            await call.read()
+            await call.done_writing()
+            self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
+        self.assertEqual(
+            interceptor.intercepted,
+            ["unary_unary", "unary_stream", "stream_unary", "stream_stream"],
+        )
+
+    async def test_interceptor_implementing_all_kinds_raises(self):
+        interceptor = _AllKindsInterceptor(
+            stream_stream_error=ValueError("raised in interceptor")
+        )
+        async with aio.insecure_channel(
+            self._server_target, interceptors=[interceptor]
+        ) as channel:
+            stub = test_pb2_grpc.TestServiceStub(channel)
+
+            call = stub.FullDuplexCall()
+            with self.assertRaisesRegex(ValueError, "raised in interceptor"):
+                await call.write(messages_pb2.StreamingOutputCallRequest())
+
+        self.assertEqual(interceptor.intercepted, ["stream_stream"])
 
 
 class _RecordingStreamStreamInterceptor(aio.StreamStreamClientInterceptor):

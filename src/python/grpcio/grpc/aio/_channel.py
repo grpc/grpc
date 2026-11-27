@@ -391,16 +391,23 @@ class Channel(_base_channel.Channel):
 
         if interceptors is not None:
             for interceptor in interceptors:
+                # An interceptor may implement several RPC kinds, so it is
+                # added to every matching list.
+                matched = False
                 if isinstance(interceptor, UnaryUnaryClientInterceptor):
                     self._unary_unary_interceptors.append(interceptor)
-                elif isinstance(interceptor, UnaryStreamClientInterceptor):
+                    matched = True
+                if isinstance(interceptor, UnaryStreamClientInterceptor):
                     self._unary_stream_interceptors.append(interceptor)
-                elif isinstance(interceptor, StreamUnaryClientInterceptor):
+                    matched = True
+                if isinstance(interceptor, StreamUnaryClientInterceptor):
                     self._stream_unary_interceptors.append(interceptor)
-                elif isinstance(interceptor, StreamStreamClientInterceptor):
+                    matched = True
+                if isinstance(interceptor, StreamStreamClientInterceptor):
                     self._stream_stream_interceptors.append(interceptor)
-                else:
-                    raise ValueError(  # noqa: TRY004
+                    matched = True
+                if not matched:
+                    raise ValueError(
                         "Interceptor {} must be ".format(interceptor)
                         + "{} or ".format(UnaryUnaryClientInterceptor.__name__)
                         + "{} or ".format(UnaryStreamClientInterceptor.__name__)
