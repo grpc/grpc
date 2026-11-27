@@ -246,6 +246,16 @@ def set_plugin(observability_plugin: Optional[ObservabilityPlugin]) -> None:
         _OBSERVABILITY_PLUGIN = observability_plugin
 
 
+def reset_postfork_child() -> None:
+    """Replaces the plugin lock in a fork child.
+
+    Only the forking thread survives fork(), so if another thread held the lock
+    at that moment it would never be released.
+    """
+    global _plugin_lock  # pylint: disable=global-statement # noqa: PLW0603
+    _plugin_lock = threading.RLock()
+
+
 def observability_init(observability_plugin: ObservabilityPlugin) -> None:
     """Initialize observability with provided ObservabilityPlugin.
 
