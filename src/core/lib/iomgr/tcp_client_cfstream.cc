@@ -148,8 +148,9 @@ static int64_t CFStreamClientConnect(
     const grpc_event_engine::experimental::EndpointConfig& config,
     const grpc_resolved_address* resolved_addr, grpc_core::Timestamp deadline) {
 #if GRPC_IOS_EVENT_ENGINE_CLIENT
-  return grpc_event_engine::experimental::event_engine_tcp_client_connect(
-      closure, ep, config, resolved_addr, deadline);
+  grpc_core::Crash(
+      "CFStreamClientConnect should not be called when using EventEngine "
+      "client");
 #endif
   auto addr_uri = grpc_sockaddr_to_uri(resolved_addr);
   if (!addr_uri.ok()) {
@@ -198,8 +199,9 @@ static int64_t CFStreamClientConnect(
 
 static bool CFStreamClientCancelConnect(int64_t connection_handle) {
 #if GRPC_IOS_EVENT_ENGINE_CLIENT
-  return grpc_event_engine::experimental::
-      event_engine_tcp_client_cancel_connect(connection_handle);
+  grpc_core::Crash(
+      "CFStreamClientCancelConnect should not be called when using EventEngine "
+      "client");
 #endif
   return false;
 }
