@@ -317,6 +317,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "ref_counted_string_test",
+    srcs = ["ref_counted_string_test.cc"],
+    external_deps = [
+        "absl/strings",
+        "gtest",
+    ],
+    deps = [
+        "//:ref_counted_ptr",
+        "//src/core:ref_counted_string",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "thd_test",
     srcs = ["thd_test.cc"],
     external_deps = ["gtest"],
