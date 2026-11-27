@@ -1406,6 +1406,7 @@ libs:
   - src/core/xds/xds_client/xds_bootstrap.h
   - src/core/xds/xds_client/xds_channel_args.h
   - src/core/xds/xds_client/xds_client.h
+  - src/core/xds/xds_client/xds_client_interface.h
   - src/core/xds/xds_client/xds_locality.h
   - src/core/xds/xds_client/xds_metrics.h
   - src/core/xds/xds_client/xds_resource_type.h
@@ -30018,6 +30019,25 @@ targets:
   - linux
   - posix
   - mac
+- name: xds_dependency_manager_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/xds/fake_xds_client.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/resolver/xds_dependency_manager_test.cc
+  - test/core/xds/fake_xds_client.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
 - name: xds_enabled_server_end2end_test
   gtest: true
   build: test

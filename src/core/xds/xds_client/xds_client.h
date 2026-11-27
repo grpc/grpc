@@ -40,6 +40,7 @@
 #include "src/core/util/work_serializer.h"
 #include "src/core/xds/xds_client/xds_api.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_client_interface.h"
 #include "src/core/xds/xds_client/xds_locality.h"
 #include "src/core/xds/xds_client/xds_metrics.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
@@ -58,31 +59,10 @@ namespace testing {
 class XdsClientTestPeer;
 }
 
-class XdsClient : public DualRefCounted<XdsClient> {
+class XdsClient : public XdsClientInterface {
  public:
   // The authority reported for old-style (non-xdstp) resource names.
   static constexpr absl::string_view kOldStyleAuthority = "#old";
-
-  class ReadDelayHandle : public RefCounted<ReadDelayHandle> {
-   public:
-    static RefCountedPtr<ReadDelayHandle> NoWait() { return nullptr; }
-  };
-
-  // Resource watcher interface.  Implemented by callers.
-  // Note: Most callers will not use this API directly but rather via a
-  // resource-type-specific wrapper API provided by the relevant
-  // XdsResourceType implementation.
-  class ResourceWatcherInterface : public RefCounted<ResourceWatcherInterface> {
-   public:
-    virtual void OnGenericResourceChanged(
-        absl::StatusOr<std::shared_ptr<const XdsResourceType::ResourceData>>
-            resource,
-        RefCountedPtr<ReadDelayHandle> read_delay_handle)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
-    virtual void OnAmbientError(
-        absl::Status status, RefCountedPtr<ReadDelayHandle> read_delay_handle)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
-  };
 
   XdsClient(
       std::shared_ptr<XdsBootstrap> bootstrap,
@@ -95,40 +75,21 @@ class XdsClient : public DualRefCounted<XdsClient> {
       Duration resource_request_timeout = Duration::Zero());
   ~XdsClient() override;
 
-  // Start and cancel watch for a resource.
-  //
-  // The XdsClient takes ownership of the watcher, but the caller may
-  // keep a raw pointer to the watcher, which may be used only for
-  // cancellation.  (Because the caller does not own the watcher, the
-  // pointer must not be used for any other purpose.)
-  // If the caller is going to start a new watch after cancelling the
-  // old one, it should set delay_unsubscription to true.
-  //
-  // The resource type object must be a global singleton, since the first
-  // time the XdsClient sees a particular resource type object, it will
-  // store the pointer to that object as the authoritative implementation for
-  // its type URLs.  The resource type object must outlive the XdsClient object,
-  // and it is illegal to start a subsequent watch for the same type URLs using
-  // a different resource type object.
-  //
-  // Note: Most callers will not use this API directly but rather via a
-  // resource-type-specific wrapper API provided by the relevant
-  // XdsResourceType implementation.
   void WatchResource(const XdsResourceType* type, absl::string_view name,
-                     RefCountedPtr<ResourceWatcherInterface> watcher);
+                     RefCountedPtr<ResourceWatcherInterface> watcher) override;
   void CancelResourceWatch(const XdsResourceType* type,
                            absl::string_view listener_name,
                            ResourceWatcherInterface* watcher,
-                           bool delay_unsubscription = false);
+                           bool delay_unsubscription) override;
 
   // Resets connection backoff state.
-  virtual void ResetBackoff();
+  void ResetBackoff() override;
 
-  const XdsBootstrap& bootstrap() const {
+  const XdsBootstrap& bootstrap() const override {
     return *bootstrap_;  // ctor asserts that it is non-null
   }
 
-  XdsTransportFactory* transport_factory() const {
+  XdsTransportFactory* transport_factory() const override {
     return transport_factory_.get();
   }
 

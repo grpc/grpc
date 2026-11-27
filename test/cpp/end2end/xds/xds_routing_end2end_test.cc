@@ -53,35 +53,6 @@ TEST_P(LdsTest, NacksInvalidListener) {
       ::testing::HasSubstr("Listener has neither address nor ApiListener"));
 }
 
-// Tests that we go into TRANSIENT_FAILURE if the Listener is not an API
-// listener.
-TEST_P(LdsTest, NotAnApiListener) {
-  Listener listener = default_server_listener_;
-  listener.set_name(kServerName);
-  auto hcm = ServerHcmAccessor().Unpack(listener);
-  auto* rds = hcm.mutable_rds();
-  rds->set_route_config_name(kDefaultRouteConfigurationName);
-  rds->mutable_config_source()->mutable_self();
-  ServerHcmAccessor().Pack(hcm, &listener);
-  balancer_->ads_service()->SetLdsResource(listener);
-  // RPCs should fail.
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      absl::StrCat("empty address list \\(LDS resource ",
-                                   kServerName, ": not an API listener\\)"));
-  // We should have ACKed the LDS resource.
-  const auto deadline =
-      absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
-  while (true) {
-    ASSERT_LT(absl::Now(), deadline) << "timed out waiting for LDS ACK";
-    auto response_state = balancer_->ads_service()->lds_response_state();
-    if (response_state.has_value()) {
-      EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-      break;
-    }
-    absl::SleepFor(absl::Seconds(1) * grpc_test_slowdown_factor());
-  }
-}
-
 class LdsDeletionTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {}  // Individual tests call InitClient().
@@ -241,136 +212,6 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(XdsTestType().set_enable_rds_testing()),
     &XdsTestType::Name);
 
-TEST_P(LdsRdsInteractionTest, SwitchFromRdsToInlineRouteConfig) {
-  CreateAndStartBackends(2);
-  // Bring up client pointing to backend 0 and wait for it to connect.
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(DEBUG_LOCATION, 0);
-  // RDS should have been ACKed.
-  auto response_state = balancer_->ads_service()->rds_response_state();
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-  // Now recreate the LDS resource with an inline route config pointing to a
-  // different CDS and EDS resource, pointing to backend 1, and make sure
-  // the client uses it.
-  const char* kNewClusterName = "new_cluster_name";
-  const char* kNewEdsResourceName = "new_eds_resource_name";
-  auto cluster = default_cluster_;
-  cluster.set_name(kNewClusterName);
-  cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kNewEdsResourceName));
-  RouteConfiguration new_route_config = default_route_config_;
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->set_cluster(kNewClusterName);
-  Listener listener = default_listener_;
-  HttpConnectionManager http_connection_manager =
-      ClientHcmAccessor().Unpack(listener);
-  *http_connection_manager.mutable_route_config() = new_route_config;
-  ClientHcmAccessor().Pack(http_connection_manager, &listener);
-  balancer_->ads_service()->SetLdsResource(listener);
-  // Wait for client to start using backend 1.
-  WaitForBackend(DEBUG_LOCATION, 1);
-  // Send an update to the original RDS resource, which the client
-  // should no longer be subscribed to.  We need this RouteConfig to be
-  // different than the original one so that the update does not get
-  // squelched by XdsClient, so we add a second domain to the vhost that
-  // will not actually be used.
-  new_route_config = default_route_config_;
-  new_route_config.mutable_virtual_hosts(0)->add_domains("foo.example.com");
-  balancer_->ads_service()->SetRdsResource(new_route_config);
-  // Wait for RDS ACK to know that the client saw the change.
-  // TODO(roth): The client does not actually ACK here, it just sends an
-  // unsubscription request, but our fake xDS server is incorrectly treating
-  // that as an ACK.  When we have time, fix the behavior of the fake
-  // xDS server, and then change this test to ensure that there is no RDS
-  // ACK within the 30-second timeout period.
-  const auto deadline =
-      absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
-  while (true) {
-    ASSERT_LT(absl::Now(), deadline) << "timed out waiting for RDS ACK";
-    response_state = balancer_->ads_service()->rds_response_state();
-    if (response_state.has_value()) break;
-    absl::SleepFor(absl::Seconds(1) * grpc_test_slowdown_factor());
-  }
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-  // Make sure RPCs are still going to backend 1.  This shows that the
-  // client did not replace its route config with the one from the RDS
-  // resource that it should no longer be using.
-  ResetBackendCounters();
-  CheckRpcSendOk(DEBUG_LOCATION);
-  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(1, backends_[1]->backend_service()->request_count());
-}
-
-TEST_P(LdsRdsInteractionTest, SwitchFromInlineRouteConfigToRds) {
-  CreateAndStartBackends(2);
-  // Create an LDS resource with an inline RouteConfig pointing to a
-  // different CDS and EDS resource, sending traffic to backend 0.
-  const char* kNewClusterName = "new_cluster_name";
-  const char* kNewEdsResourceName = "new_eds_resource_name";
-  auto cluster = default_cluster_;
-  cluster.set_name(kNewClusterName);
-  cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kNewEdsResourceName));
-  RouteConfiguration route_config = default_route_config_;
-  route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->set_cluster(kNewClusterName);
-  Listener listener = default_listener_;
-  HttpConnectionManager http_connection_manager =
-      ClientHcmAccessor().Unpack(listener);
-  *http_connection_manager.mutable_route_config() = route_config;
-  ClientHcmAccessor().Pack(http_connection_manager, &listener);
-  balancer_->ads_service()->SetLdsResource(listener);
-  // Start the client and make sure traffic goes to backend 0.
-  WaitForBackend(DEBUG_LOCATION, 0);
-  // RDS should not have been ACKed, because the RouteConfig was inlined.
-  ASSERT_FALSE(balancer_->ads_service()->rds_response_state().has_value());
-  // Change the LDS resource to point to an RDS resource.  The LDS resource
-  // configures the fault injection filter with a config that fails all RPCs.
-  // However, the RDS resource has a typed_per_filter_config override that
-  // disables the fault injection filter.  The RDS resource points to a
-  // new cluster that sends traffic to backend 1.
-  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  route_config = default_route_config_;
-  auto* config_map = route_config.mutable_virtual_hosts(0)
-                         ->mutable_routes(0)
-                         ->mutable_typed_per_filter_config();
-  (*config_map)["envoy.fault"].PackFrom(
-      envoy::extensions::filters::http::fault::v3::HTTPFault());
-  envoy::extensions::filters::http::fault::v3::HTTPFault http_fault;
-  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
-  abort_percentage->set_numerator(100);
-  abort_percentage->set_denominator(abort_percentage->HUNDRED);
-  http_fault.mutable_abort()->set_grpc_status(
-      static_cast<uint32_t>(StatusCode::ABORTED));
-  listener = default_listener_;
-  http_connection_manager = ClientHcmAccessor().Unpack(listener);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->set_name("envoy.fault");
-  filter->mutable_typed_config()->PackFrom(http_fault);
-  ClientHcmAccessor().Pack(http_connection_manager, &listener);
-  SetListenerAndRouteConfiguration(balancer_.get(), std::move(listener),
-                                   route_config);
-  // Wait for traffic to switch to backend 1.  There should be no RPC
-  // failures here; if there are, that indicates that the client started
-  // using the new LDS resource before it saw the new RDS resource.
-  WaitForBackend(DEBUG_LOCATION, 1);
-}
-
 TEST_P(LdsRdsInteractionTest, HcmConfigUpdatedWithoutRdsChange) {
   CreateAndStartBackends(1);
   // Bring up client pointing to backend 0 and wait for it to connect.
@@ -400,60 +241,6 @@ TEST_P(LdsRdsInteractionTest, HcmConfigUpdatedWithoutRdsChange) {
   SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::ABORTED, "Fault injected");
 }
 
-TEST_P(LdsRdsInteractionTest, LdsUpdateChangesHcmConfigAndRdsResourceName) {
-  CreateAndStartBackends(2);
-  // Bring up client pointing to backend 0 and wait for it to connect.
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(DEBUG_LOCATION, 0);
-  // Change the LDS resource to point to an RDS resource.  The LDS resource
-  // configures the fault injection filter with a config that fails all RPCs.
-  // However, the RDS resource has a typed_per_filter_config override that
-  // disables the fault injection filter.  The RDS resource points to a
-  // new cluster that sends traffic to backend 1.
-  const char* kNewClusterName = "new_cluster_name";
-  const char* kNewEdsResourceName = "new_eds_resource_name";
-  auto cluster = default_cluster_;
-  cluster.set_name(kNewClusterName);
-  cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kNewEdsResourceName));
-  RouteConfiguration route_config = default_route_config_;
-  route_config.set_name("new_route_config");
-  route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->set_cluster(kNewClusterName);
-  auto* config_map = route_config.mutable_virtual_hosts(0)
-                         ->mutable_routes(0)
-                         ->mutable_typed_per_filter_config();
-  (*config_map)["envoy.fault"].PackFrom(
-      envoy::extensions::filters::http::fault::v3::HTTPFault());
-  envoy::extensions::filters::http::fault::v3::HTTPFault http_fault;
-  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
-  abort_percentage->set_numerator(100);
-  abort_percentage->set_denominator(abort_percentage->HUNDRED);
-  http_fault.mutable_abort()->set_grpc_status(
-      static_cast<uint32_t>(StatusCode::ABORTED));
-  Listener listener = default_listener_;
-  HttpConnectionManager http_connection_manager =
-      ClientHcmAccessor().Unpack(listener);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->set_name("envoy.fault");
-  filter->mutable_typed_config()->PackFrom(http_fault);
-  ClientHcmAccessor().Pack(http_connection_manager, &listener);
-  SetListenerAndRouteConfiguration(balancer_.get(), std::move(listener),
-                                   route_config);
-  // Wait for traffic to switch to backend 1.  There should be no RPC
-  // failures here; if there are, that indicates that the client started
-  // using the new LDS resource before it saw the new RDS resource.
-  WaitForBackend(DEBUG_LOCATION, 1);
-}
-
 using LdsRdsTest = XdsEnd2endTest;
 
 // Test with and without RDS.
@@ -475,43 +262,6 @@ MATCHER_P2(AdjustedClockInRange, t1, t2,
   ok &= ::testing::ExplainMatchResult(::testing::Ge(t1), now, result_listener);
   ok &= ::testing::ExplainMatchResult(::testing::Lt(t2), now, result_listener);
   return ok;
-}
-
-// Tests that LDS client ACKs but fails if matching domain can't be found in
-// the LDS response.
-TEST_P(LdsRdsTest, NoMatchedDomain) {
-  RouteConfiguration route_config = default_route_config_;
-  route_config.mutable_virtual_hosts(0)->clear_domains();
-  route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
-  SetRouteConfiguration(balancer_.get(), route_config);
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat(
-          "empty address list \\(",
-          (GetParam().enable_rds_testing() ? "RDS" : "LDS"), " resource ",
-          (GetParam().enable_rds_testing() ? kDefaultRouteConfigurationName
-                                           : kServerName),
-          ": could not find VirtualHost for ", kServerName,
-          " in RouteConfiguration\\)"));
-  // Do a bit of polling, to allow the ACK to get to the ADS server.
-  channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100));
-  auto response_state = RouteConfigurationResponseState(balancer_.get());
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
-// Tests that LDS client should choose the virtual host with matching domain
-// if multiple virtual hosts exist in the LDS response.
-TEST_P(LdsRdsTest, ChooseMatchedDomain) {
-  RouteConfiguration route_config = default_route_config_;
-  *(route_config.add_virtual_hosts()) = route_config.virtual_hosts(0);
-  route_config.mutable_virtual_hosts(0)->clear_domains();
-  route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
-  SetRouteConfiguration(balancer_.get(), route_config);
-  (void)SendRpc();
-  auto response_state = RouteConfigurationResponseState(balancer_.get());
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that LDS client should choose the last route in the virtual host if

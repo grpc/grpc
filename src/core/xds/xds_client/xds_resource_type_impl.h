@@ -22,7 +22,7 @@
 
 #include "src/core/util/down_cast.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/xds/xds_client/xds_client.h"
+#include "src/core/xds/xds_client/xds_client_interface.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "absl/strings/string_view.h"
 
@@ -38,11 +38,12 @@ class XdsResourceTypeImpl : public XdsResourceType {
   using ResourceType = ResourceTypeStruct;
 
   // XdsClient watcher that handles down-casting.
-  class WatcherInterface : public XdsClient::ResourceWatcherInterface {
+  class WatcherInterface : public XdsClientInterface::ResourceWatcherInterface {
    public:
     virtual void OnResourceChanged(
         absl::StatusOr<std::shared_ptr<const ResourceType>> resource,
-        RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) = 0;
+        RefCountedPtr<XdsClientInterface::ReadDelayHandle>
+            read_delay_handle) = 0;
 
    private:
     // Get result from XdsClient generic watcher interface, perform
@@ -50,7 +51,8 @@ class XdsResourceTypeImpl : public XdsResourceType {
     void OnGenericResourceChanged(
         absl::StatusOr<std::shared_ptr<const XdsResourceType::ResourceData>>
             resource,
-        RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
+        RefCountedPtr<XdsClientInterface::ReadDelayHandle> read_delay_handle)
+        override {
       if (!resource.ok()) {
         OnResourceChanged(resource.status(), std::move(read_delay_handle));
       } else {
@@ -68,11 +70,12 @@ class XdsResourceTypeImpl : public XdsResourceType {
 
   // Convenient wrappers around XdsClient generic watcher API that provide
   // type-safety.
-  static void StartWatch(XdsClient* xds_client, absl::string_view resource_name,
+  static void StartWatch(XdsClientInterface* xds_client,
+                         absl::string_view resource_name,
                          RefCountedPtr<WatcherInterface> watcher) {
     xds_client->WatchResource(Get(), resource_name, std::move(watcher));
   }
-  static void CancelWatch(XdsClient* xds_client,
+  static void CancelWatch(XdsClientInterface* xds_client,
                           absl::string_view resource_name,
                           WatcherInterface* watcher,
                           bool delay_unsubscription = false) {

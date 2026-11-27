@@ -295,6 +295,31 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "fake_xds_client",
+    testonly = True,
+    srcs = ["fake_xds_client.cc"],
+    hdrs = ["fake_xds_client.h"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings:string_view",
+    ],
+    visibility = [
+        "//bazel:xds_client_core",
+        "//test:__subpackages__",
+    ],
+    deps = [
+        "//:gpr_platform",
+        "//:ref_counted_ptr",
+        "//:xds_client",
+        "//src/core:grpc_check",
+        "//src/core:json",
+        "//src/core:sync",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_client_test_peer",
     hdrs = ["xds_client_test_peer.h"],
     external_deps = [
