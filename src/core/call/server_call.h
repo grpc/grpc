@@ -86,6 +86,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   }
 
   void CancelWithError(grpc_error_handle error) override {
+    completed_.store(true, std::memory_order_relaxed);
     call_handler_.SpawnInfallible(
         "CancelWithError",
         [self = WeakRefAsSubclass<ServerCall>(), error = std::move(error)] {
@@ -111,7 +112,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
 
   void Orphaned() override {
     SourceDestructing();
-    if (!saw_was_cancelled_.load(std::memory_order_relaxed)) {
+    if (!completed_.load(std::memory_order_relaxed)) {
       CancelWithError(absl::CancelledError());
     }
   }
@@ -154,7 +155,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
     return gpr_strdup("unknown");
   }
 
-  bool Completed() final { Crash("unimplemented"); }
+  bool Completed() final { return completed_.load(std::memory_order_relaxed); }
   bool failed_before_recv_message() const final {
     return call_handler_.WasCancelledPushed();
   }
@@ -189,7 +190,8 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   ClientMetadataHandle client_initial_metadata_stored_;
   grpc_completion_queue* const cq_;
   ServerInterface* const server_;
-  std::atomic<bool> saw_was_cancelled_{false};
+  // Set once the final op has completed or the call has been cancelled.
+  std::atomic<bool> completed_{false};
 };
 
 grpc_call* MakeServerCall(CallHandler call_handler,
