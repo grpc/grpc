@@ -32414,6 +32414,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(secure_channel_create_test
+  test/core/end2end/cq_verifier.cc
   test/core/surface/secure_channel_create_test.cc
 )
 if(WIN32 AND MSVC)

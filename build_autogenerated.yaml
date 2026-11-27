@@ -23412,8 +23412,10 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/end2end/cq_verifier.h
   src:
+  - test/core/end2end/cq_verifier.cc
   - test/core/surface/secure_channel_create_test.cc
   deps:
   - gtest
