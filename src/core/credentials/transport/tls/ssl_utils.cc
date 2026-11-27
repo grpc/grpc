@@ -223,6 +223,7 @@ int grpc_ssl_host_matches_name(const tsi_peer* peer,
   const size_t zone_id = allocated_name.find('%');
   if (zone_id != absl::string_view::npos) {
     allocated_name.remove_suffix(allocated_name.size() - zone_id);
+    if (allocated_name.empty()) return 0;
   }
   return tsi_ssl_peer_matches_name(peer, allocated_name);
 }

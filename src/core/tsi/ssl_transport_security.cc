@@ -3355,11 +3355,12 @@ static void tsi_ssl_server_handshaker_factory_destroy(
 
 static int does_entry_match_name(absl::string_view entry,
                                  absl::string_view name) {
-  if (entry.empty()) return 0;
+  if (entry.empty() || name.empty()) return 0;
 
   // Take care of '.' terminations.
   if (name.back() == '.') {
     name.remove_suffix(1);
+    if (name.empty()) return 0;
   }
   if (entry.back() == '.') {
     entry.remove_suffix(1);
@@ -3378,7 +3379,7 @@ static int does_entry_match_name(absl::string_view entry,
   }
   size_t name_subdomain_pos = name.find('.');
   if (name_subdomain_pos == absl::string_view::npos) return 0;
-  if (name_subdomain_pos >= name.size() - 2) return 0;
+  if (name.size() < 2 || name_subdomain_pos >= name.size() - 2) return 0;
   absl::string_view name_subdomain =
       name.substr(name_subdomain_pos + 1);  // Starts after the dot.
   entry.remove_prefix(2);                   // Remove *.
