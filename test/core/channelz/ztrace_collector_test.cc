@@ -57,7 +57,7 @@ class TestConfig {
 };
 
 TEST(ZTraceCollectorTest, NoOp) {
-  ZTraceCollector<TestConfig, TestData> collector;
+  [[maybe_unused]] ZTraceCollector<TestConfig, TestData> collector;
 }
 
 TEST(ZTraceCollectorTest, AppendToNoTraceWorks) {
