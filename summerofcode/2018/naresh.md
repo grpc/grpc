@@ -151,7 +151,7 @@ bazel test --spawn_strategy=standalone --genrule_strategy=standalone //src/pytho
 - [848fd9d](https://github.com/grpc/grpc/commit/848fd9d75f6df10f00e8328ff052c0237b3002ab)
     Minimal Bazel BUILD files for grpcio Python
 
-### Other contibutions
+### Other contributions
 
 - [89ce16b](https://github.com/grpc/grpc/commit/89ce16b6daaad4caeb1c9ba670c6c4b62ea1a93c)
     Update Dockerfiles for python artifacts to use latest git version

@@ -22,10 +22,10 @@ ready to use.
 - `absl/synchronization:*`: Blocked by b/186685878.
 - `absl/random`: [WIP](https://github.com/grpc/grpc/pull/23346).
 
-## Implemetation only
+## Implementation only
 
 You can use Abseil in gRPC Core and gRPC C++. But you cannot use it in
-the public interface of gRPC C++ because i) it doesn't gurantee no breaking
+the public interface of gRPC C++ because i) it doesn't guarantee no breaking
 API changes like gRPC C++ does and ii) it may make users change their build
 system to address Abseil.  
  

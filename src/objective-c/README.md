@@ -239,7 +239,7 @@ pod `gRPC-Core`, :podspec => "." # assuming gRPC-Core.podspec is in the same dir
 - Remove [the
   macro](https://github.com/grpc/grpc/blob/b24b212ee585d376c618235905757b2445ac6461/gRPC-Core.podspec#L186)
   `GRPC_SHADOW_BORINGSSL_SYMBOLS` to disable symbol renaming;
-- Substitude the `BoringSSL-GRPC`
+- Substitute the `BoringSSL-GRPC`
   [dependency](https://github.com/grpc/grpc/blob/b24b212ee585d376c618235905757b2445ac6461/gRPC-Core.podspec#L184)
   to whatever pod of OpenSSL your other libraries use.
 
