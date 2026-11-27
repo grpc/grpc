@@ -897,8 +897,32 @@ void grpc_chttp2_transport::Orphan() {
                 absl::OkStatus());
 }
 
+static grpc_error_handle get_closing_error(grpc_chttp2_transport* t) {
+  if (!t->closed_with_error.ok()) {
+    return t->closed_with_error;
+  }
+  if (!t->close_transport_on_writes_finished.ok()) {
+    return t->close_transport_on_writes_finished;
+  }
+  if (t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED ||
+      t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SENT) {
+    return absl::UnavailableError("Transport closing after sending GOAWAY");
+  }
+  return absl::OkStatus();
+}
+
 static void close_transport_locked(grpc_chttp2_transport* t,
                                    grpc_error_handle error) {
+  if (t->in_close_transport) {
+    return;
+  }
+  struct InCloseTransportGuard {
+    explicit InCloseTransportGuard(grpc_chttp2_transport* t) : t(t) {
+      t->in_close_transport = true;
+    }
+    ~InCloseTransportGuard() { t->in_close_transport = false; }
+    grpc_chttp2_transport* const t;
+  } guard(t);
   t->pending_security_frame.reset();
   end_all_the_calls(t, error);
   cancel_pings(t, error);
@@ -912,12 +936,23 @@ static void close_transport_locked(grpc_chttp2_transport* t,
           grpc_core::ReplaceStatusCode(error, absl::StatusCode::kUnavailable);
     }
     if (t->write_state != GRPC_CHTTP2_WRITE_STATE_IDLE) {
-      if (t->close_transport_on_writes_finished.ok()) {
+      const bool first_defer = t->close_transport_on_writes_finished.ok();
+      if (first_defer) {
         t->close_transport_on_writes_finished =
             GRPC_ERROR_CREATE("Delayed close due to in-progress write");
       }
       t->close_transport_on_writes_finished =
           grpc_error_add_child(t->close_transport_on_writes_finished, error);
+      if (first_defer) {
+        connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE, error,
+                               "close_transport_delayed");
+        grpc_core::Transport::StateWatcher::DisconnectInfo disconnect_info;
+        if (t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SENT ||
+            t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED) {
+          disconnect_info.reason = grpc_core::Transport::StateWatcher::kGoaway;
+        }
+        t->NotifyStateWatcherOnDisconnectLocked(error, disconnect_info);
+      }
       return;
     }
     GRPC_CHECK(!error.ok());
@@ -1470,9 +1505,14 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
 static void maybe_start_some_streams(grpc_chttp2_transport* t) {
   grpc_chttp2_stream* s;
   // maybe cancel out streams that haven't yet started if we have received a
-  // GOAWAY
+  // GOAWAY or the transport is closing.
   if (!t->goaway_error.ok()) {
     cancel_unstarted_streams(t, t->goaway_error, false);
+    return;
+  }
+  grpc_error_handle closing_error = get_closing_error(t);
+  if (!closing_error.ok()) {
+    cancel_unstarted_streams(t, std::move(closing_error), false);
     return;
   }
   // start streams where we have free grpc_chttp2_stream ids and free
@@ -1637,7 +1677,8 @@ static void send_initial_metadata_locked(
   }
   if (!s->write_closed) {
     if (t->is_client) {
-      if (t->closed_with_error.ok()) {
+      grpc_error_handle closing_error = get_closing_error(t);
+      if (closing_error.ok()) {
         GRPC_CHECK_EQ(s->id, 0u);
         if (t->max_concurrent_streams_reject_on_client &&
             t->stream_map.size() >=
@@ -1658,7 +1699,7 @@ static void send_initial_metadata_locked(
             grpc_core::GrpcStreamNetworkState(),
             grpc_core::GrpcStreamNetworkState::kNotSentOnWire);
         absl::Status status = absl::UnavailableError("Transport closed");
-        grpc_core::StatusAddChild(&status, t->closed_with_error);
+        grpc_core::StatusAddChild(&status, std::move(closing_error));
         grpc_chttp2_cancel_stream(t, s, std::move(status), false);
       }
     } else {
@@ -2228,6 +2269,20 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
                               static_cast<uint32_t>(http_error),
                               grpc_slice_from_cpp_string(std::move(message)),
                               &t->qbuf, &t->http2_ztrace_collector);
+    if (t->is_client) {
+      absl::Status status = absl::IsUnknown(error)
+                                ? grpc_core::ReplaceStatusCode(
+                                      error, absl::StatusCode::kUnavailable)
+                                : error;
+      cancel_unstarted_streams(t, status, false);
+      connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+                             "sent_goaway");
+      grpc_core::Transport::StateWatcher::DisconnectInfo disconnect_info;
+      disconnect_info.reason = grpc_core::Transport::StateWatcher::kGoaway;
+      disconnect_info.http2_error_code = http_error;
+      t->NotifyStateWatcherOnDisconnectLocked(std::move(status),
+                                              disconnect_info);
+    }
   } else {
     // Final GOAWAY has already been sent.
   }
@@ -2492,7 +2547,8 @@ static grpc_chttp2_transport::RemovedStreamHandle remove_stream(
 
   if (t->stream_map.empty()) {
     post_benign_reclaimer(t);
-    if (t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SENT) {
+    if (t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SENT &&
+        !t->in_close_transport) {
       close_transport_locked(
           t, GRPC_ERROR_CREATE_REFERENCING(
                  "Last stream closed after sending GOAWAY", &error, 1));
@@ -3643,9 +3699,10 @@ void grpc_chttp2_transport::StartWatch(
           }
         }
         t->watcher = std::move(watcher);
-        if (!t->closed_with_error.ok()) {
+        grpc_error_handle closing_error = get_closing_error(t.get());
+        if (!closing_error.ok()) {
           // TODO(roth, ctiller): Provide better disconnect info here.
-          t->NotifyStateWatcherOnDisconnectLocked(t->closed_with_error, {});
+          t->NotifyStateWatcherOnDisconnectLocked(std::move(closing_error), {});
         } else {
           t->NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked();
         }
