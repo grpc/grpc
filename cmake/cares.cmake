@@ -35,7 +35,8 @@ if(gRPC_CARES_PROVIDER STREQUAL "module")
   endif()
 
 elseif(gRPC_CARES_PROVIDER STREQUAL "package")
-  find_package(c-ares 1.13.0 REQUIRED)
+  # Require c-ares 1.16.0+ for ares_getaddrinfo() support
+  find_package(c-ares 1.16.0 REQUIRED)
   if(TARGET c-ares::cares)
     set(_gRPC_CARES_LIBRARIES c-ares::cares)
   endif()
