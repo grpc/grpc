@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Copyright 2015 The Bazel Authors. All rights reserved.
 #
@@ -20,35 +20,42 @@ set -eu
 
 OUTPUT=
 
-function parse_option() {
-    local -r opt="$1"
-    if [[ "${OUTPUT}" = "1" ]]; then
+parse_option() {
+    opt=$1
+    if [ "$OUTPUT" = "1" ]; then
         OUTPUT=$opt
-    elif [[ "$opt" = "-o" ]]; then
+    elif [ "$opt" = "-o" ]; then
         # output is coming
         OUTPUT=1
     fi
 }
 
-# let parse the option list
+# parse the option list
 for i in "$@"; do
-    if [[ "$i" = @* && -r "${i:1}" ]]; then
-        while IFS= read -r opt
-        do
-            parse_option "$opt"
-        done < "${i:1}" || exit 1
-    else
-        parse_option "$i"
-    fi
+    case $i in
+        @*)
+            file=${i#@}
+            if [ -r "$file" ]; then
+                while IFS= read -r opt; do
+                    parse_option "$opt"
+                done < "$file" || exit 1
+            fi
+            ;;
+        *)
+            parse_option "$i"
+            ;;
+    esac
 done
 
 # Set-up the environment
 
 
 # Call the C++ compiler
-/usr/local/bin/clang-19 "$@"
+/usr/lib/llvm-19/bin/clang "$@"
 
 # Generate an empty file if header processing succeeded.
-if [[ "${OUTPUT}" == *.h.processed ]]; then
-  echo -n > "${OUTPUT}"
-fi
+case $OUTPUT in
+    *.h.processed)
+        : > "$OUTPUT"
+        ;;
+esac

@@ -11,12 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """A Starlark cc_toolchain configuration rule"""
 
-load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
+load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load(
-    "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
+    "@rules_cc//cc:cc_toolchain_config_lib.bzl",
     "action_config",
     "artifact_name_pattern",
     "env_entry",
@@ -25,11 +24,15 @@ load(
     "feature_set",
     "flag_group",
     "flag_set",
+    "get_profile_correction_flags",
     "tool",
     "tool_path",
     "variable_with_value",
     "with_feature_set",
 )
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
+load("@rules_cc//cc/toolchains:cc_toolchain_config_info.bzl", "CcToolchainConfigInfo")
+load("@rules_cc//cc/toolchains:feature_injection.bzl", "FeatureInfo", "convert_feature")
 
 def _target_os_version(ctx):
     platform_type = ctx.fragments.apple.single_arch_platform.platform_type
@@ -99,6 +102,15 @@ def layering_check_features(compiler, extra_flags_per_feature, is_macos):
     ]
 
 def parse_headers_support(parse_headers_tool_path):
+    """
+    Returns action configurations and features for parsing headers.
+
+    Args:
+        parse_headers_tool_path: The path to the tool used for parsing headers.
+
+    Returns:
+        A tuple containing a list of action configurations and a list of features.
+    """
     if not parse_headers_tool_path:
         return [], []
     action_configs = [
@@ -148,6 +160,9 @@ all_compile_actions = [
     ACTION_NAMES.cpp_header_parsing,
     ACTION_NAMES.cpp_module_compile,
     ACTION_NAMES.cpp_module_codegen,
+    ACTION_NAMES.cpp_module_deps_scanning,
+    ACTION_NAMES.cpp20_module_compile,
+    ACTION_NAMES.cpp20_module_codegen,
     ACTION_NAMES.clif_match,
     ACTION_NAMES.lto_backend,
 ]
@@ -158,6 +173,9 @@ all_cpp_compile_actions = [
     ACTION_NAMES.cpp_header_parsing,
     ACTION_NAMES.cpp_module_compile,
     ACTION_NAMES.cpp_module_codegen,
+    ACTION_NAMES.cpp_module_deps_scanning,
+    ACTION_NAMES.cpp20_module_compile,
+    ACTION_NAMES.cpp20_module_codegen,
     ACTION_NAMES.clif_match,
 ]
 
@@ -168,6 +186,8 @@ preprocessor_compile_actions = [
     ACTION_NAMES.preprocess_assemble,
     ACTION_NAMES.cpp_header_parsing,
     ACTION_NAMES.cpp_module_compile,
+    ACTION_NAMES.cpp_module_deps_scanning,
+    ACTION_NAMES.cpp20_module_compile,
     ACTION_NAMES.clif_match,
 ]
 
@@ -178,6 +198,7 @@ codegen_compile_actions = [
     ACTION_NAMES.assemble,
     ACTION_NAMES.preprocess_assemble,
     ACTION_NAMES.cpp_module_codegen,
+    ACTION_NAMES.cpp20_module_codegen,
     ACTION_NAMES.lto_backend,
 ]
 
@@ -205,17 +226,11 @@ def _sanitizer_feature(name = "", specific_compile_flags = [], specific_link_fla
                         "-fno-sanitize-recover=all",
                     ] + specific_compile_flags),
                 ],
-                with_features = [
-                    with_feature_set(features = [name]),
-                ],
             ),
             flag_set(
                 actions = all_link_actions,
                 flag_groups = [
                     flag_group(flags = specific_link_flags),
-                ],
-                with_features = [
-                    with_feature_set(features = [name]),
                 ],
             ),
         ],
@@ -223,6 +238,7 @@ def _sanitizer_feature(name = "", specific_compile_flags = [], specific_link_fla
 
 def _impl(ctx):
     is_linux = ctx.attr.target_libc != "macosx"
+    profile_correction_flags = get_profile_correction_flags(ctx)
 
     tool_paths = [
         tool_path(name = name, path = path)
@@ -230,26 +246,29 @@ def _impl(ctx):
     ]
     action_configs = []
 
-    llvm_cov_action = action_config(
-        action_name = ACTION_NAMES.llvm_cov,
-        tools = [
-            tool(
-                path = ctx.attr.tool_paths["llvm-cov"],
-            ),
-        ],
-    )
+    llvm_cov = ctx.attr.tool_paths.get("llvm-cov")
+    if llvm_cov:
+        llvm_cov_action = action_config(
+            action_name = ACTION_NAMES.llvm_cov,
+            tools = [
+                tool(
+                    path = llvm_cov,
+                ),
+            ],
+        )
+        action_configs.append(llvm_cov_action)
 
-    objcopy_action = action_config(
-        action_name = ACTION_NAMES.objcopy_embed_data,
-        tools = [
-            tool(
-                path = ctx.attr.tool_paths["objcopy"],
-            ),
-        ],
-    )
-
-    action_configs.append(llvm_cov_action)
-    action_configs.append(objcopy_action)
+    objcopy = ctx.attr.tool_paths.get("objcopy")
+    if objcopy:
+        objcopy_action = action_config(
+            action_name = ACTION_NAMES.objcopy_embed_data,
+            tools = [
+                tool(
+                    path = objcopy,
+                ),
+            ],
+        )
+        action_configs.append(objcopy_action)
 
     validate_static_library = ctx.attr.tool_paths.get("validate_static_library")
     if validate_static_library:
@@ -270,9 +289,71 @@ def _impl(ctx):
     else:
         symbol_check = None
 
+    deps_scanner = "cpp-module-deps-scanner_not_found"
+    if "cpp-module-deps-scanner" in ctx.attr.tool_paths:
+        deps_scanner = ctx.attr.tool_paths["cpp-module-deps-scanner"]
+    cc = ctx.attr.tool_paths.get("gcc")
+    compile_implies = [
+        # keep same with c++-compile
+        "legacy_compile_flags",
+        "user_compile_flags",
+        "sysroot",
+        "unfiltered_compile_flags",
+        "compiler_input_flags",
+        "compiler_output_flags",
+    ]
+    cpp_module_scan_deps = action_config(
+        action_name = ACTION_NAMES.cpp_module_deps_scanning,
+        tools = [
+            tool(
+                path = deps_scanner,
+            ),
+        ],
+        implies = compile_implies,
+    )
+    action_configs.append(cpp_module_scan_deps)
+
+    cpp20_module_compile = action_config(
+        action_name = ACTION_NAMES.cpp20_module_compile,
+        tools = [
+            tool(
+                path = cc,
+            ),
+        ],
+        flag_sets = [
+            flag_set(
+                flag_groups = [
+                    flag_group(
+                        flags = [
+                            "-x",
+                            "c++-module" if ctx.attr.compiler == "clang" else "c++",
+                        ],
+                    ),
+                ],
+            ),
+        ],
+        implies = compile_implies,
+    )
+    action_configs.append(cpp20_module_compile)
+
+    cpp20_module_codegen = action_config(
+        action_name = ACTION_NAMES.cpp20_module_codegen,
+        tools = [
+            tool(
+                path = cc,
+            ),
+        ],
+        implies = compile_implies,
+    )
+    action_configs.append(cpp20_module_codegen)
+
     supports_pic_feature = feature(
         name = "supports_pic",
         enabled = True,
+    )
+    prefer_pic_for_opt_binaries_feature = feature(
+        name = "prefer_pic_for_opt_binaries",
+        enabled = False,
     )
     supports_start_end_lib_feature = feature(
         name = "supports_start_end_lib",
@@ -320,6 +401,15 @@ def _impl(ctx):
                 actions = all_compile_actions,
                 flag_groups = ([
                     flag_group(
+                        flags = ctx.attr.fastbuild_compile_flags,
+                    ),
+                ] if ctx.attr.fastbuild_compile_flags else []),
+                with_features = [with_feature_set(features = ["fastbuild"])],
+            ),
+            flag_set(
+                actions = all_compile_actions,
+                flag_groups = ([
+                    flag_group(
                         flags = ctx.attr.dbg_compile_flags,
                     ),
                 ] if ctx.attr.dbg_compile_flags else []),
@@ -333,6 +423,14 @@ def _impl(ctx):
                     ),
                 ] if ctx.attr.opt_compile_flags else []),
                 with_features = [with_feature_set(features = ["opt"])],
+            ),
+            flag_set(
+                actions = all_compile_actions,
+                flag_groups = ([
+                    flag_group(
+                        flags = ctx.attr.all_compile_flags,
+                    ),
+                ] if ctx.attr.all_compile_flags else []),
             ),
             flag_set(
                 actions = [ACTION_NAMES.c_compile],
@@ -389,6 +487,8 @@ def _impl(ctx):
         ],
     )
 
+    fastbuild_feature = feature(name = "fastbuild")
+
     dbg_feature = feature(name = "dbg")
 
     opt_feature = feature(name = "opt")
@@ -406,6 +506,9 @@ def _impl(ctx):
                     ACTION_NAMES.cpp_header_parsing,
                     ACTION_NAMES.cpp_module_compile,
                     ACTION_NAMES.cpp_module_codegen,
+                    ACTION_NAMES.cpp_module_deps_scanning,
+                    ACTION_NAMES.cpp20_module_compile,
+                    ACTION_NAMES.cpp20_module_codegen,
                     ACTION_NAMES.lto_backend,
                     ACTION_NAMES.clif_match,
                 ] + all_link_actions + lto_index_actions,
@@ -413,6 +516,100 @@ def _impl(ctx):
                     flag_group(
                         flags = ["--sysroot=%{sysroot}"],
                         expand_if_available = "sysroot",
+                    ),
+                ],
+            ),
+        ],
+    )
+
+    compiler_input_flags_feature = feature(
+        name = "compiler_input_flags",
+        enabled = True,
+        flag_sets = [
+            flag_set(
+                actions = [
+                    ACTION_NAMES.assemble,
+                    ACTION_NAMES.preprocess_assemble,
+                    ACTION_NAMES.linkstamp_compile,
+                    ACTION_NAMES.c_compile,
+                    ACTION_NAMES.cpp_compile,
+                    ACTION_NAMES.cpp_module_compile,
+                    ACTION_NAMES.cpp_module_codegen,
+                    ACTION_NAMES.cpp_module_deps_scanning,
+                    ACTION_NAMES.cpp20_module_compile,
+                    ACTION_NAMES.cpp20_module_codegen,
+                    ACTION_NAMES.objc_compile,
+                    ACTION_NAMES.objcpp_compile,
+                    ACTION_NAMES.lto_backend,
+                ],
+                flag_groups = [
+                    flag_group(
+                        flags = ["-c", "%{source_file}"],
+                        expand_if_available = "source_file",
+                    ),
+                ],
+            ),
+            flag_set(
+                actions = [
+                    ACTION_NAMES.cpp_header_parsing,
+                ],
+                flag_groups = [
+                    flag_group(
+                        flags = ["%{source_file}"],
+                        expand_if_available = "source_file",
+                    ),
+                ],
+            ),
+        ],
+    )
+
+    compiler_output_flags_feature = feature(
+        name = "compiler_output_flags",
+        enabled = True,
+        flag_sets = [
+            flag_set(
+                actions = [
+                    ACTION_NAMES.assemble,
+                    ACTION_NAMES.preprocess_assemble,
+                    ACTION_NAMES.linkstamp_compile,
+                    ACTION_NAMES.c_compile,
+                    ACTION_NAMES.cpp_compile,
+                    ACTION_NAMES.cpp_header_parsing,
+                    ACTION_NAMES.cpp_module_compile,
+                    ACTION_NAMES.cpp_module_codegen,
+                    ACTION_NAMES.cpp_module_deps_scanning,
+                    ACTION_NAMES.cpp20_module_compile,
+                    ACTION_NAMES.cpp20_module_codegen,
+                    ACTION_NAMES.objc_compile,
+                    ACTION_NAMES.objcpp_compile,
+                    ACTION_NAMES.lto_backend,
+                ],
+                flag_groups = [
+                    flag_group(
+                        flags = ["-S"],
+                        expand_if_available = "output_assembly_file",
+                    ),
+                    flag_group(
+                        flags = ["-E"],
+                        expand_if_available = "output_preprocess_file",
+                    ),
+                    flag_group(
+                        flags = ["-o", "%{output_file}"],
+                        expand_if_available = "output_file",
+                    ),
+                ],
+            ),
+        ],
+        env_sets = [
+            env_set(
+                actions = [
+                    ACTION_NAMES.cpp_module_deps_scanning,
+                ],
+                env_entries = [
+                    env_entry(
+                        key = "DEPS_SCANNER_OUTPUT_FILE",
+                        value = "%{output_file}",
+                        expand_if_available = "output_file",
                     ),
                 ],
             ),
@@ -428,8 +625,7 @@ def _impl(ctx):
                     flag_group(
                         flags = [
                             "-fprofile-use=%{fdo_profile_path}",
-                            "-fprofile-correction",
-                        ],
+                        ] + profile_correction_flags,
                         expand_if_available = "fdo_profile_path",
                     ),
                 ],
@@ -520,6 +716,8 @@ def _impl(ctx):
                     ACTION_NAMES.cpp_compile,
                     ACTION_NAMES.cpp_module_codegen,
                     ACTION_NAMES.cpp_module_compile,
+                    ACTION_NAMES.cpp20_module_compile,
+                    ACTION_NAMES.cpp20_module_codegen,
                 ],
                 flag_groups = [
                     flag_group(flags = ["-fPIC"], expand_if_available = "pic"),
@@ -539,6 +737,7 @@ def _impl(ctx):
                     ACTION_NAMES.c_compile,
                     ACTION_NAMES.cpp_compile,
                     ACTION_NAMES.cpp_module_codegen,
+                    ACTION_NAMES.cpp20_module_codegen,
                 ],
                 flag_groups = [
                     flag_group(
@@ -562,6 +761,9 @@ def _impl(ctx):
                     ACTION_NAMES.cpp_compile,
                     ACTION_NAMES.cpp_header_parsing,
                     ACTION_NAMES.cpp_module_compile,
+                    ACTION_NAMES.cpp_module_deps_scanning,
+                    ACTION_NAMES.cpp20_module_compile,
+                    ACTION_NAMES.cpp20_module_codegen,
                     ACTION_NAMES.clif_match,
                 ],
                 flag_groups = [
@@ -585,8 +787,7 @@ def _impl(ctx):
                             "-fprofile-use=%{fdo_profile_path}",
                             "-Wno-profile-instr-unprofiled",
                             "-Wno-profile-instr-out-of-date",
-                            "-fprofile-correction",
-                        ],
+                        ] + profile_correction_flags,
                         expand_if_available = "fdo_profile_path",
                     ),
                 ],
@@ -604,8 +805,7 @@ def _impl(ctx):
                     flag_group(
                         flags = [
                             "-fauto-profile=%{fdo_profile_path}",
-                            "-fprofile-correction",
-                        ],
+                        ] + profile_correction_flags,
                         expand_if_available = "fdo_profile_path",
                     ),
                 ],
@@ -724,7 +924,7 @@ def _impl(ctx):
         )
         set_install_name_feature = feature(
             name = "set_install_name",
-            enabled = ctx.fragments.cpp.do_not_use_macos_set_install_name,
+            enabled = getattr(ctx.fragments.cpp, "do_not_use_macos_set_install_name", True),
             flag_sets = [
                 flag_set(
                     actions = [
@@ -783,6 +983,9 @@ def _impl(ctx):
                     ACTION_NAMES.cpp_compile,
                     ACTION_NAMES.cpp_module_codegen,
                     ACTION_NAMES.cpp_module_compile,
+                    ACTION_NAMES.cpp_module_deps_scanning,
+                    ACTION_NAMES.cpp20_module_compile,
+                    ACTION_NAMES.cpp20_module_codegen,
                 ],
                 flag_groups = [
                     flag_group(
@@ -806,6 +1009,8 @@ def _impl(ctx):
                     ACTION_NAMES.cpp_compile,
                     ACTION_NAMES.cpp_header_parsing,
                     ACTION_NAMES.cpp_module_compile,
+                    ACTION_NAMES.cpp_module_deps_scanning,
+                    ACTION_NAMES.cpp20_module_compile,
                     ACTION_NAMES.clif_match,
                     ACTION_NAMES.objc_compile,
                     ACTION_NAMES.objcpp_compile,
@@ -877,6 +1082,8 @@ def _impl(ctx):
                     ACTION_NAMES.cpp_compile,
                     ACTION_NAMES.cpp_header_parsing,
                     ACTION_NAMES.cpp_module_compile,
+                    ACTION_NAMES.cpp_module_deps_scanning,
+                    ACTION_NAMES.cpp20_module_compile,
                     ACTION_NAMES.clif_match,
                     ACTION_NAMES.objc_compile,
                     ACTION_NAMES.objcpp_compile,
@@ -910,6 +1117,9 @@ def _impl(ctx):
                     ACTION_NAMES.cpp_compile,
                     ACTION_NAMES.cpp_header_parsing,
                     ACTION_NAMES.cpp_module_compile,
+                    ACTION_NAMES.cpp_module_deps_scanning,
+                    ACTION_NAMES.cpp20_module_compile,
+                    ACTION_NAMES.cpp20_module_codegen,
                     ACTION_NAMES.clif_match,
                     ACTION_NAMES.objc_compile,
                     ACTION_NAMES.objcpp_compile,
@@ -1183,6 +1393,8 @@ def _impl(ctx):
                 flag_groups = [
                     flag_group(
                         flags = [
+                            "-D",
+                            "-no_warning_for_no_symbols",
                             "-static",
                             "-o",
                             "%{output_execpath}",
@@ -1230,6 +1442,16 @@ def _impl(ctx):
                     ),
                 ] if ctx.attr.archive_flags else []),
             ),
+            flag_set(
+                actions = [ACTION_NAMES.cpp_link_static_library],
+                flag_groups = [
+                    flag_group(
+                        flags = ["%{user_archiver_flags}"],
+                        iterate_over = "user_archiver_flags",
+                        expand_if_available = "user_archiver_flags",
+                    ),
+                ],
+            ),
         ],
     )
 
@@ -1265,6 +1487,8 @@ def _impl(ctx):
                     ACTION_NAMES.objc_compile,
                     ACTION_NAMES.objcpp_compile,
                     ACTION_NAMES.cpp_header_parsing,
+                    ACTION_NAMES.cpp_module_deps_scanning,
+                    ACTION_NAMES.cpp20_module_compile,
                     ACTION_NAMES.clif_match,
                 ],
                 flag_groups = [
@@ -1290,6 +1514,7 @@ def _impl(ctx):
                     ACTION_NAMES.objc_compile,
                     ACTION_NAMES.objcpp_compile,
                     ACTION_NAMES.cpp_header_parsing,
+                    ACTION_NAMES.cpp_module_deps_scanning,
                     ACTION_NAMES.clif_match,
                 ],
                 flag_groups = [
@@ -1387,6 +1612,14 @@ def _impl(ctx):
                 ] if ctx.attr.coverage_link_flags else []),
             ),
         ],
+    )
+
+    no_use_lto_indexing_bitcode_file_feature = feature(
+        name = "no_use_lto_indexing_bitcode_file",
+    )
+
+    use_lto_native_object_directory_feature = feature(
+        name = "use_lto_native_object_directory",
     )
 
     thinlto_feature = feature(
@@ -1534,11 +1767,73 @@ def _impl(ctx):
         ],
     )
 
+    # Tell bazel we support C++ modules now
+    cpp_modules_feature = feature(
+        name = "cpp_modules",
+        # set default value to False
+        # to enable the feature
+        # use --features=cpp_modules
+        # or add cpp_modules to features attr
+        enabled = False,
+    )
+
+    cpp_module_modmap_file_feature = feature(
+        name = "cpp_module_modmap_file",
+        flag_sets = [
+            flag_set(
+                actions = [
+                    ACTION_NAMES.cpp_compile,
+                    ACTION_NAMES.cpp20_module_compile,
+                    ACTION_NAMES.cpp20_module_codegen,
+                ],
+                flag_groups = [
+                    flag_group(
+                        flags = ["@%{cpp_module_modmap_file}" if ctx.attr.compiler == "clang" else "-fmodule-mapper=%{cpp_module_modmap_file}"],
+                        expand_if_available = "cpp_module_modmap_file",
+                    ),
+                ],
+            ),
+        ],
+        enabled = True,
+    )
+    if ctx.attr.compiler == "clang":
+        flag_groups = [
+            flag_group(
+                flags = ["-fmodule-output=%{cpp_module_output_file}"],
+                expand_if_available = "cpp_module_output_file",
+            ),
+        ]
+    else:
+        flag_groups = []
+    cpp20_module_compile_flags_feature = feature(
+        name = "cpp20_module_compile_flags",
+        flag_sets = [
+            flag_set(
+                actions = [
+                    ACTION_NAMES.cpp20_module_compile,
+                ],
+                flag_groups = flag_groups,
+            ),
+        ],
+        enabled = True,
+    )
+
+    no_dotd_file_feature = feature(name = "no_dotd_file")
+
     # TODO(#8303): Mac crosstool should also declare every feature.
     if is_linux:
         # Linux artifact name patterns are the default.
-        artifact_name_patterns = []
+        artifact_name_patterns = [
+            artifact_name_pattern(
+                category_name = "cpp_module",
+                prefix = "",
+                extension = ".pcm",
+            ),
+        ]
         features = [
+            cpp_modules_feature,
+            cpp_module_modmap_file_feature,
+            cpp20_module_compile_flags_feature,
             dependency_file_feature,
             serialized_diagnostics_file_feature,
             random_seed_feature,
@@ -1551,6 +1846,8 @@ def _impl(ctx):
             fdo_instrument_feature,
             cs_fdo_instrument_feature,
             cs_fdo_optimize_feature,
+            no_use_lto_indexing_bitcode_file_feature,
+            use_lto_native_object_directory_feature,
             thinlto_feature,
             fdo_prefetch_hints_feature,
             autofdo_feature,
@@ -1569,6 +1866,7 @@ def _impl(ctx):
             strip_debug_symbols_feature,
             coverage_feature,
             supports_pic_feature,
+            prefer_pic_for_opt_binaries_feature,
             asan_feature,
             tsan_feature,
             ubsan_feature,
@@ -1587,14 +1885,18 @@ def _impl(ctx):
             static_libgcc_feature,
             fdo_optimize_feature,
             supports_dynamic_linker_feature,
+            fastbuild_feature,
             dbg_feature,
             opt_feature,
             user_compile_flags_feature,
             sysroot_feature,
+            compiler_input_flags_feature,
+            compiler_output_flags_feature,
             unfiltered_compile_flags_feature,
             treat_warnings_as_errors_feature,
             archive_param_file_feature,
             set_install_name_feature,
+            no_dotd_file_feature,
         ] + layering_check_features(ctx.attr.compiler, ctx.attr.extra_flags_per_feature, is_macos = False)
     else:
         # macOS artifact name patterns differ from the defaults only for dynamic
@@ -1607,8 +1909,12 @@ def _impl(ctx):
             ),
         ]
         features = [
+            cpp_modules_feature,
+            cpp_module_modmap_file_feature,
+            cpp20_module_compile_flags_feature,
             macos_minimum_os_feature,
             macos_default_link_flags_feature,
+            dependency_file_feature,
             runtime_library_search_directories_feature,
             set_install_name_feature,
             libtool_feature,
@@ -1628,16 +1934,21 @@ def _impl(ctx):
             default_link_flags_feature,
             user_link_flags_feature,
             default_link_libs_feature,
+            includes_feature,
+            include_paths_feature,
             external_include_paths_feature,
             fdo_optimize_feature,
             dbg_feature,
             opt_feature,
             user_compile_flags_feature,
             sysroot_feature,
+            compiler_input_flags_feature,
+            compiler_output_flags_feature,
             unfiltered_compile_flags_feature,
             treat_warnings_as_errors_feature,
             archive_param_file_feature,
             generate_linkmap_feature,
+            no_dotd_file_feature,
         ] + layering_check_features(ctx.attr.compiler, ctx.attr.extra_flags_per_feature, is_macos = True)
 
     parse_headers_action_configs, parse_headers_features = parse_headers_support(
@@ -1648,6 +1959,9 @@ def _impl(ctx):
 
     if symbol_check:
         features.append(symbol_check)
+
+    extra_rules_based_features = depset(ctx.attr.extra_enabled_features + ctx.attr.extra_known_features)
+    features.extend([convert_feature(extra_feature[FeatureInfo], enabled = extra_feature in ctx.attr.extra_enabled_features) for extra_feature in extra_rules_based_features.to_list()])
 
     return cc_common.create_cc_toolchain_config_info(
         ctx = ctx,
@@ -1670,31 +1984,51 @@ def _impl(ctx):
 cc_toolchain_config = rule(
     implementation = _impl,
     attrs = {
-        "cpu": attr.string(mandatory = True),
-        "compiler": attr.string(mandatory = True),
-        "toolchain_identifier": attr.string(mandatory = True),
-        "host_system_name": attr.string(mandatory = True),
-        "target_system_name": attr.string(mandatory = True),
-        "target_libc": attr.string(mandatory = True),
-        "abi_version": attr.string(mandatory = True),
         "abi_libc_version": attr.string(mandatory = True),
-        "cxx_builtin_include_directories": attr.string_list(),
-        "tool_paths": attr.string_dict(),
-        "compile_flags": attr.string_list(),
-        "dbg_compile_flags": attr.string_list(),
-        "opt_compile_flags": attr.string_list(),
-        "conly_flags": attr.string_list(),
-        "cxx_flags": attr.string_list(),
-        "link_flags": attr.string_list(),
+        "abi_version": attr.string(mandatory = True),
         "archive_flags": attr.string_list(),
-        "link_libs": attr.string_list(),
-        "opt_link_flags": attr.string_list(),
-        "unfiltered_compile_flags": attr.string_list(),
+        "builtin_sysroot": attr.string(),
+        "all_compile_flags": attr.string_list(),
+        "compile_flags": attr.string_list(),
+        "compiler": attr.string(mandatory = True),
+        "conly_flags": attr.string_list(),
         "coverage_compile_flags": attr.string_list(),
         "coverage_link_flags": attr.string_list(),
-        "supports_start_end_lib": attr.bool(),
-        "builtin_sysroot": attr.string(),
+        "cpu": attr.string(mandatory = True),
+        "cxx_builtin_include_directories": attr.string_list(),
+        "cxx_flags": attr.string_list(),
+        "dbg_compile_flags": attr.string_list(),
+        "extra_enabled_features": attr.label_list(
+            providers = [FeatureInfo],
+            default = [],
+            doc = """
+Extra `cc_feature` features to add to this toolchain in an initially enabled state.
+This attribute has limited integration with `cc_feature`, and does not run additional correctness checks or handle things like `data` files.
+This is only offered as a migration bridge for projects transitioning to rule-based toolchain configurations, or sharing of simple argument sets with older toolchains.
+""",
+        ),
+        "extra_known_features": attr.label_list(
+            providers = [FeatureInfo],
+            default = [],
+            doc = """
+Extra `cc_feature` features to add to this toolchain in an initially disabled state.
+This attribute has limited integration with `cc_feature`, and does not run additional correctness checks or handle things like `data` files.
+This is only offered as a migration bridge for projects transitioning to rule-based toolchain configurations, or sharing of simple argument sets with older toolchains.
+""",
+        ),
         "extra_flags_per_feature": attr.string_list_dict(),
+        "fastbuild_compile_flags": attr.string_list(),
+        "host_system_name": attr.string(mandatory = True),
+        "link_flags": attr.string_list(),
+        "link_libs": attr.string_list(),
+        "opt_compile_flags": attr.string_list(),
+        "opt_link_flags": attr.string_list(),
+        "supports_start_end_lib": attr.bool(),
+        "target_libc": attr.string(mandatory = True),
+        "target_system_name": attr.string(mandatory = True),
+        "tool_paths": attr.string_dict(),
+        "toolchain_identifier": attr.string(mandatory = True),
+        "unfiltered_compile_flags": attr.string_list(),
         "_xcode_config": attr.label(default = configuration_field(
             fragment = "apple",
             name = "xcode_config_label",
