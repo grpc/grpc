@@ -180,9 +180,9 @@ class _GenericMethod(_Method):
 
 
 class _RPCState:
-    context: contextvars.Context
+    context: Optional[contextvars.Context]
     condition: threading.Condition
-    due = Set[str]
+    due: Set[str]
     request: Any
     client: str
     initial_metadata_allowed: bool
@@ -196,8 +196,8 @@ class _RPCState:
     callbacks: Optional[List[NullaryCallbackType]]
     aborted: bool
 
-    def __init__(self):
-        self.context = contextvars.Context()
+    def __init__(self, use_context: bool = False):
+        self.context = contextvars.Context() if use_context else None
         self.condition = threading.Condition()
         self.due = set()
         self.request = None
@@ -894,8 +894,18 @@ def _handle_unary_unary(
     thread_pool = _select_thread_pool_for_behavior(
         method_handler.unary_unary, default_thread_pool
     )
+    if state.context is not None:
+        return thread_pool.submit(
+            state.context.run,
+            _unary_response_in_pool,
+            rpc_event,
+            state,
+            method_handler.unary_unary,
+            unary_request,
+            method_handler.request_deserializer,
+            method_handler.response_serializer,
+        )
     return thread_pool.submit(
-        state.context.run,
         _unary_response_in_pool,
         rpc_event,
         state,
@@ -918,8 +928,18 @@ def _handle_unary_stream(
     thread_pool = _select_thread_pool_for_behavior(
         method_handler.unary_stream, default_thread_pool
     )
+    if state.context is not None:
+        return thread_pool.submit(
+            state.context.run,
+            _stream_response_in_pool,
+            rpc_event,
+            state,
+            method_handler.unary_stream,
+            unary_request,
+            method_handler.request_deserializer,
+            method_handler.response_serializer,
+        )
     return thread_pool.submit(
-        state.context.run,
         _stream_response_in_pool,
         rpc_event,
         state,
@@ -942,8 +962,18 @@ def _handle_stream_unary(
     thread_pool = _select_thread_pool_for_behavior(
         method_handler.stream_unary, default_thread_pool
     )
+    if state.context is not None:
+        return thread_pool.submit(
+            state.context.run,
+            _unary_response_in_pool,
+            rpc_event,
+            state,
+            method_handler.stream_unary,
+            lambda: request_iterator,
+            method_handler.request_deserializer,
+            method_handler.response_serializer,
+        )
     return thread_pool.submit(
-        state.context.run,
         _unary_response_in_pool,
         rpc_event,
         state,
@@ -966,8 +996,18 @@ def _handle_stream_stream(
     thread_pool = _select_thread_pool_for_behavior(
         method_handler.stream_stream, default_thread_pool
     )
+    if state.context is not None:
+        return thread_pool.submit(
+            state.context.run,
+            _stream_response_in_pool,
+            rpc_event,
+            state,
+            method_handler.stream_stream,
+            lambda: request_iterator,
+            method_handler.request_deserializer,
+            method_handler.response_serializer,
+        )
     return thread_pool.submit(
-        state.context.run,
         _stream_response_in_pool,
         rpc_event,
         state,
@@ -1002,7 +1042,9 @@ def _find_method_handler(
         return state.context.run(
             interceptor_pipeline.execute, query_handlers, handler_call_details
         )
-    return state.context.run(query_handlers, handler_call_details)
+    if state.context is not None:
+        return state.context.run(query_handlers, handler_call_details)
+    return query_handlers(handler_call_details)
 
 
 def _reject_rpc(
@@ -1077,7 +1119,7 @@ def _handle_call(
     if not rpc_event.success:
         return None, None
     if rpc_event.call_details.method or method_with_handler.name():
-        rpc_state = _RPCState()
+        rpc_state = _RPCState(use_context=interceptor_pipeline is not None)
         try:
             method_handler = _find_method_handler(
                 rpc_event,
