@@ -236,6 +236,34 @@ class FakeServerCallTracer : public ServerCallTracerInterface {
   std::vector<std::string>* annotation_logger_;
 };
 
+class FakeServerCallTracerFactory {
+ public:
+  FakeServerCallTracerFactory() = default;
+  FakeServerCallTracerFactory(const FakeServerCallTracerFactory&) = delete;
+  FakeServerCallTracerFactory& operator=(const FakeServerCallTracerFactory&) =
+      delete;
+  FakeServerCallTracerFactory(FakeServerCallTracerFactory&&) = delete;
+  FakeServerCallTracerFactory& operator=(FakeServerCallTracerFactory&&) =
+      delete;
+
+  FakeServerCallTracer* CreateFakeServerCallTracer() {
+    fake_server_call_tracers_.push_back(
+        std::make_unique<FakeServerCallTracer>(&annotation_logger_));
+    return fake_server_call_tracers_.back().get();
+  }
+
+  FakeServerCallTracer* GetLastFakeServerCallTracer() const {
+    if (fake_server_call_tracers_.empty()) {
+      return nullptr;
+    }
+    return fake_server_call_tracers_.back().get();
+  }
+
+ private:
+  std::vector<std::string> annotation_logger_;
+  std::vector<std::unique_ptr<FakeServerCallTracer>> fake_server_call_tracers_;
+};
+
 std::string MakeLabelString(
     absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> label_values,
@@ -251,11 +279,14 @@ class FakeStatsPlugin : public StatsPlugin {
       bool use_disabled_by_default_metrics = false,
       InstrumentLabelSet labels_of_interest = {},
       std::shared_ptr<FakeClientCallTracerFactory> client_call_tracer_factory =
+          nullptr,
+      std::shared_ptr<FakeServerCallTracerFactory> server_call_tracer_factory =
           nullptr)
       : channel_filter_(std::move(channel_filter)),
         use_disabled_by_default_metrics_(use_disabled_by_default_metrics),
         collection_scope_(CreateCollectionScope({}, labels_of_interest)),
-        client_call_tracer_factory_(std::move(client_call_tracer_factory)) {
+        client_call_tracer_factory_(std::move(client_call_tracer_factory)),
+        server_call_tracer_factory_(std::move(server_call_tracer_factory)) {
     GlobalInstrumentsRegistry::ForEach(
         [&](const GlobalInstrumentsRegistry::GlobalInstrumentDescriptor&
                 descriptor) {
@@ -422,8 +453,10 @@ class FakeStatsPlugin : public StatsPlugin {
   }
   ServerCallTracerInterface* GetServerCallTracer(
       std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
-    // TODO(vidhikpatel): [PH2][P2] Support FakeServerCallTracer and add
-    // tests validating server CallTracer installation in PH2 server transport.
+    if (server_call_tracer_factory_ != nullptr) {
+      GRPC_CHECK_NE(MaybeGetContext<Arena>(), nullptr);
+      return server_call_tracer_factory_->CreateFakeServerCallTracer();
+    }
     return nullptr;
   }
   bool IsInstrumentEnabled(
@@ -818,6 +851,8 @@ class FakeStatsPlugin : public StatsPlugin {
   RefCountedPtr<CollectionScope> collection_scope_;
   const std::shared_ptr<FakeClientCallTracerFactory>
       client_call_tracer_factory_;
+  const std::shared_ptr<FakeServerCallTracerFactory>
+      server_call_tracer_factory_;
 };
 
 class FakeStatsPluginBuilder {
@@ -846,10 +881,17 @@ class FakeStatsPluginBuilder {
     return *this;
   }
 
+  FakeStatsPluginBuilder& SetServerCallTracerFactory(
+      std::shared_ptr<FakeServerCallTracerFactory> server_call_tracer_factory) {
+    server_call_tracer_factory_ = std::move(server_call_tracer_factory);
+    return *this;
+  }
+
   std::shared_ptr<FakeStatsPlugin> Build() {
     return std::make_shared<FakeStatsPlugin>(
         std::move(channel_filter_), use_disabled_by_default_metrics_,
-        labels_of_interest_, client_call_tracer_factory_);
+        labels_of_interest_, client_call_tracer_factory_,
+        server_call_tracer_factory_);
   }
 
   std::shared_ptr<FakeStatsPlugin> BuildAndRegister() {
@@ -865,6 +907,7 @@ class FakeStatsPluginBuilder {
   bool use_disabled_by_default_metrics_ = false;
   InstrumentLabelSet labels_of_interest_;
   std::shared_ptr<FakeClientCallTracerFactory> client_call_tracer_factory_;
+  std::shared_ptr<FakeServerCallTracerFactory> server_call_tracer_factory_;
 };
 
 std::shared_ptr<FakeStatsPlugin> MakeStatsPluginForTarget(
