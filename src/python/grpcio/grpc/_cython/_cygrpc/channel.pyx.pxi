@@ -464,9 +464,6 @@ cdef _close(Channel channel, grpc_status_code code, object details,
       for call_state in state.segregated_call_states:
         grpc_call_cancel_with_status(
             call_state.c_call, code, encoded_details, NULL)
-      # TODO(https://github.com/grpc/grpc/issues/3064): Cancel connectivity
-      # watching.
-
       if drain_calls:
         while not _calls_drained(state):
           event = channel.next_call_event()
@@ -476,25 +473,28 @@ cdef _close(Channel channel, grpc_status_code code, object details,
       else:
         while state.integrated_call_states:
           state.condition.wait()
-        while state.connectivity_due:
-          state.condition.wait()
 
-      # Releasing the GIL is required here: destroying the channel (and
-      # shutting down gRPC) may block until gRPC's internal threads finish
+      c_channel = state.c_channel
+      if c_channel != NULL:
+        with nogil:
+          grpc_channel_destroy(c_channel)
+
+      while state.connectivity_due:
+        state.condition.wait()
+
+      # Releasing the GIL is required here: destroying completion queues and
+      # shutting down gRPC may block until gRPC's internal threads finish
       # their work, and those threads may need the GIL to run Python
       # callbacks (e.g. cleanup of call credentials plugins). Holding the
       # GIL while waiting for them would deadlock.
       c_call_cq = state.c_call_completion_queue
       c_conn_cq = state.c_connectivity_completion_queue
-      c_channel = state.c_channel
       state.c_channel = NULL
       state.c_call_completion_queue = NULL
       state.c_connectivity_completion_queue = NULL
       with nogil:
         _destroy_c_completion_queue(c_call_cq)
         _destroy_c_completion_queue(c_conn_cq)
-        if c_channel != NULL:
-          grpc_channel_destroy(c_channel)
         grpc_shutdown()
       state.condition.notify_all()
     else:
