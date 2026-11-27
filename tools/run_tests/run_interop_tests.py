@@ -574,8 +574,14 @@ class PythonLanguage:
     def client_cmd(self, args):
         return [
             _PYTHON_BINARY,
-            "src/python/grpcio_tests/setup.py",
+            "-m",
+            "nox",
+            "--no-venv",
+            "-s",
             "run_interop",
+            "-f",
+            "src/python/grpcio_tests/noxfile.py",
+            "--",
             "--client",
             '--args="{}"'.format(" ".join(args)),
         ]
@@ -592,8 +598,14 @@ class PythonLanguage:
     def server_cmd(self, args):
         return [
             _PYTHON_BINARY,
-            "src/python/grpcio_tests/setup.py",
+            "-m",
+            "nox",
+            "--no-venv",
+            "-s",
             "run_interop",
+            "-f",
+            "src/python/grpcio_tests/noxfile.py",
+            "--",
             "--server",
             '--args="{}"'.format(" ".join(args)),
         ]
@@ -630,8 +642,14 @@ class PythonAsyncIOLanguage:
     def client_cmd(self, args):
         return [
             _PYTHON_BINARY,
-            "src/python/grpcio_tests/setup.py",
+            "-m",
+            "nox",
+            "--no-venv",
+            "-s",
             "run_interop",
+            "-f",
+            "src/python/grpcio_tests/noxfile.py",
+            "--",
             "--use-asyncio",
             "--client",
             '--args="{}"'.format(" ".join(args)),
@@ -649,8 +667,14 @@ class PythonAsyncIOLanguage:
     def server_cmd(self, args):
         return [
             _PYTHON_BINARY,
-            "src/python/grpcio_tests/setup.py",
+            "-m",
+            "nox",
+            "--no-venv",
+            "-s",
             "run_interop",
+            "-f",
+            "src/python/grpcio_tests/noxfile.py",
+            "--",
             "--use-asyncio",
             "--server",
             '--args="{}"'.format(" ".join(args)),

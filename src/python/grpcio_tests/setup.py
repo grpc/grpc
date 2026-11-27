@@ -21,10 +21,8 @@ import sys
 # imports to succeed
 sys.path.insert(0, os.path.abspath("."))
 
-import grpc_tools.command
 import setuptools
 
-import commands
 import grpc_version
 import python_version
 
@@ -42,19 +40,8 @@ INSTALL_REQUIRES = (
     "google-auth>=1.17.2",
     "requests>=2.14.2",
     "absl-py>=1.4.0",
+    "typeguard~=4.2",
 )
-
-COMMAND_CLASS = {
-    # Run `preprocess` *before* doing any packaging!
-    "preprocess": commands.GatherProto,
-    "build_package_protos": commands.BuildPackageProtos,
-    "build_py": commands.BuildPy,
-    "run_fork": commands.RunFork,
-    "run_interop": commands.RunInterop,
-    "test_lite": commands.TestLite,
-    "test_aio": commands.TestAio,
-    "test_py3_only": commands.TestPy3Only,
-}
 
 TEST_SUITE = "tests"
 TEST_LOADER = "tests:Loader"
@@ -70,7 +57,6 @@ if __name__ == "__main__":
     multiprocessing.freeze_support()
     setuptools.setup(
         install_requires=INSTALL_REQUIRES,
-        cmdclass=COMMAND_CLASS,
         classifiers=CLASSIFIERS,
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         tests_require=TESTS_REQUIRE,

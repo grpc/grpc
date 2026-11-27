@@ -44,12 +44,8 @@ class SanityTest(unittest.TestCase):
         tests_json = json.loads(tests_json_string.decode())
         final_tests = []
 
-        # Observability is not supported in Windows and MacOS and Asyncio.
-        if (
-            os.name == "nt"
-            or "darwin" in sys.platform
-            or self.TEST_PKG_PATH == "tests_aio"
-        ):
+        # Observability is not supported in Windows and MacOS.
+        if os.name == "nt" or "darwin" in sys.platform:
             for test_case in tests_json:
                 if "observability" not in test_case:
                     final_tests.append(test_case)
