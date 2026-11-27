@@ -32,3 +32,7 @@ git submodule foreach 'cd "${repo_root}/${WORKSPACE_NAME}" \
 
 echo "Running run_tests.py in workspace ${WORKSPACE_NAME}"
 python3 "${WORKSPACE_NAME}/tools/run_tests/run_tests.py" "$@"
+if [ -x "$(command -v ccache)" ]
+then
+  ccache --show-stats || true
+fi
