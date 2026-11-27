@@ -22420,6 +22420,9 @@ target_include_directories(hpack_parser_test
 target_link_libraries(hpack_parser_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::log_entry
+  absl::log_sink
+  absl::log_sink_registry
   grpc_test_util
 )
 

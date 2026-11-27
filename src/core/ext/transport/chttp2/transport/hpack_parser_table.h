@@ -58,10 +58,12 @@ class HPackTable {
 
   struct Memento {
     ParsedMetadata<grpc_metadata_batch> md;
-    // Alongside parse_status we store one bit indicating whether this memento
-    // has been looked up (and therefore consumed) or not.
-    UniquePtrWithBitset<HpackParseResult, 1> parse_status;
-    static const int kUsedBit = 0;
+    // Alongside parse_status we store bits indicating whether this memento:
+    // - has been looked up (and therefore consumed) or not (kUsedBit), and
+    // - was discarded by the mitigation engine (kDiscardBit).
+    UniquePtrWithBitset<HpackParseResult, 2> parse_status;
+    static constexpr int kUsedBit = 0;
+    static constexpr int kDiscardBit = 1;
   };
 
   // Lookup, but don't ref.

@@ -15908,6 +15908,9 @@ targets:
   - test/core/transport/chttp2/hpack_parser_test.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - grpc_test_util
   uses_polling: false
 - name: http2_client

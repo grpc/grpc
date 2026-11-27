@@ -30,6 +30,7 @@
 #include <string>
 #include <vector>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -48,6 +49,9 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/cleanup/cleanup.h"
+#include "absl/log/log_entry.h"
+#include "absl/log/log_sink.h"
+#include "absl/log/log_sink_registry.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -56,6 +60,9 @@
 
 namespace grpc_core {
 namespace {
+
+using ::testing::Contains;
+using ::testing::HasSubstr;
 
 const uint32_t kFailureIsConnectionError = 1;
 const uint32_t kWithPriority = 2;
@@ -851,7 +858,15 @@ INSTANTIATE_TEST_SUITE_P(
 
 class MockMitigationEngine : public MitigationEngine {
  public:
-  enum class Behavior { kNone, kRejectRpc, kCloseConnection };
+  enum class Behavior {
+    kNone,
+    kRejectRpc,
+    kCloseConnection,
+    kDiscardMetadata,
+    kDiscardBadValueOnly,
+    kDiscardValueOnly,
+    kDiscardTeHeader,
+  };
   explicit MockMitigationEngine(Behavior behavior = Behavior::kNone)
       : behavior_(behavior) {}
 
@@ -861,18 +876,36 @@ class MockMitigationEngine : public MitigationEngine {
   }
 
   std::optional<Action> EvaluateIncomingMetadata(
-      absl::string_view key, absl::string_view,
+      absl::string_view key, absl::string_view value,
       const EvaluateArgs& args) override {
     last_incoming_peer_address_ = std::string(args.peer_address);
     if (behavior_ == Behavior::kRejectRpc && key == "custom-key") {
       return Action::kRejectRpc;
     }
+    if (behavior_ == Behavior::kDiscardMetadata && key == "custom-key") {
+      return Action::kDiscardMetadata;
+    }
+    if (behavior_ == Behavior::kDiscardBadValueOnly && key == "custom-key" &&
+        (value == "bad-val" || value == "a\r\nb")) {
+      return Action::kDiscardMetadata;
+    }
+    if (behavior_ == Behavior::kDiscardValueOnly && value == "bad-val") {
+      return Action::kDiscardMetadata;
+    }
+    if (behavior_ == Behavior::kDiscardTeHeader && key == "te") {
+      return Action::kDiscardMetadata;
+    }
     return std::nullopt;
   }
 
   std::optional<Action> EvaluateAllIncomingMetadata(
-      const grpc_metadata_batch&, const EvaluateArgs& args) override {
+      const grpc_metadata_batch& metadata, const EvaluateArgs& args) override {
     last_all_incoming_peer_address_ = std::string(args.peer_address);
+    std::string buffer;
+    saw_custom_key_in_all_metadata_ =
+        metadata.GetStringValue("custom-key", &buffer).has_value();
+    saw_path_in_all_metadata_ =
+        metadata.GetStringValue(":path", &buffer).has_value();
     if (behavior_ == Behavior::kCloseConnection) {
       return Action::kCloseConnection;
     }
@@ -885,11 +918,17 @@ class MockMitigationEngine : public MitigationEngine {
   absl::string_view last_all_incoming_peer_address() const {
     return last_all_incoming_peer_address_;
   }
+  bool saw_custom_key_in_all_metadata() const {
+    return saw_custom_key_in_all_metadata_;
+  }
+  bool saw_path_in_all_metadata() const { return saw_path_in_all_metadata_; }
 
  private:
   Behavior behavior_;
   std::string last_incoming_peer_address_;
   std::string last_all_incoming_peer_address_;
+  bool saw_custom_key_in_all_metadata_ = false;
+  bool saw_path_in_all_metadata_ = false;
 };
 
 class MitigationEngineParseTest : public ::testing::Test {
@@ -969,6 +1008,392 @@ TEST_F(MitigationEngineParseTest, CloseConnection) {
   EXPECT_THAT(message,
               ::testing::HasSubstr(
                   "Mitigation engine triggered action Close Connection"));
+}
+
+TEST_F(MitigationEngineParseTest, DiscardMetadata) {
+  ExecCtx exec_ctx;
+  auto engine = MakeRefCounted<MockMitigationEngine>(
+      MockMitigationEngine::Behavior::kDiscardMetadata);
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+  // Input contains:
+  // 1. custom-key: custom-header (Should be discarded)
+  // 2. :path: /sample/path (Should be kept)
+  Slice input = ParseHexstring(
+      "400a637573746f6d2d6b65790d637573746f6d2d686561646572"
+      "040c2f73616d706c652f70617468");
+  absl::BitGen bitgen;
+  grpc_error_handle err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  // Parsing should succeed because we continue parsing after dropping the
+  // header
+  EXPECT_TRUE(err.ok()) << err;
+  // Verify that custom-key is discarded and :path: is kept.
+  bool custom_key_found = false;
+  bool path_found = false;
+  std::string path_value;
+
+  b.Log([&](absl::string_view key, absl::string_view value) {
+    if (key == "custom-key") {
+      custom_key_found = true;
+    }
+    if (key == ":path") {
+      path_found = true;
+      path_value = std::string(value);
+    }
+  });
+
+  EXPECT_FALSE(custom_key_found) << "custom-key should have been discarded!";
+  EXPECT_TRUE(path_found) << ":path should have been kept!";
+  EXPECT_EQ(path_value, "/sample/path");
+}
+
+TEST_F(MitigationEngineParseTest, DiscardMetadataPersistsAcrossIndexedLookups) {
+  ExecCtx exec_ctx;
+  auto engine = MakeRefCounted<MockMitigationEngine>(
+      MockMitigationEngine::Behavior::kDiscardMetadata);
+  absl::BitGen bitgen;
+
+  // Frame 1: Incrementally index both headers:
+  // - custom-key: custom-header (discarded, pushed to index 63 after kept-key)
+  // - kept-key: kept-val (kept, at newest dynamic index 62)
+  grpc_metadata_batch b1;
+  parser_->BeginFrame(
+      &b1, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+  Slice frame1 = ParseHexstring(
+      "400a637573746f6d2d6b65790d637573746f6d2d686561646572"
+      "40086b6570742d6b6579086b6570742d76616c");
+  EXPECT_TRUE(
+      parser_->Parse(frame1.c_slice(), true, absl::BitGenRef(bitgen), nullptr)
+          .ok());
+  parser_->FinishFrame();
+
+  // Frame 2: Reference index 63 (0xbf -> custom-key) and index 62 (0xbe ->
+  // kept-key) via HPACK Indexed Header Field representations.
+  grpc_metadata_batch b2;
+  parser_->BeginFrame(
+      &b2, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{3, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+  Slice frame2 = ParseHexstring("bfbe");
+  grpc_error_handle err2 =
+      parser_->Parse(frame2.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err2.ok()) << err2;
+
+  std::string buffer;
+  EXPECT_EQ(b2.GetStringValue("custom-key", &buffer), std::nullopt);
+  EXPECT_EQ(b2.GetStringValue("kept-key", &buffer), "kept-val");
+}
+
+TEST_F(MitigationEngineParseTest,
+       DiscardMetadataIndexedKeyWithNewAllowedValueIsKept) {
+  ExecCtx exec_ctx;
+  auto engine = MakeRefCounted<MockMitigationEngine>(
+      MockMitigationEngine::Behavior::kDiscardBadValueOnly);
+  absl::BitGen bitgen;
+
+  // Frame 1: custom-key: bad-val (incrementally indexed at dynamic index 62,
+  // discarded).
+  grpc_metadata_batch b1;
+  parser_->BeginFrame(
+      &b1, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+  Slice frame1 = ParseHexstring("400a637573746f6d2d6b6579076261642d76616c");
+  EXPECT_TRUE(
+      parser_->Parse(frame1.c_slice(), true, absl::BitGenRef(bitgen), nullptr)
+          .ok());
+  parser_->FinishFrame();
+  std::string buffer;
+  EXPECT_EQ(b1.GetStringValue("custom-key", &buffer), std::nullopt);
+
+  // Frame 2: Literal Header with Incremental Indexing using Indexed Name 62
+  // (0x7e = 0x40 | 62 -> custom-key) and new value "good-val".
+  grpc_metadata_batch b2;
+  parser_->BeginFrame(
+      &b2, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{3, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+  Slice frame2 = ParseHexstring("7e08676f6f642d76616c");
+  grpc_error_handle err2 =
+      parser_->Parse(frame2.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err2.ok()) << err2;
+  EXPECT_EQ(b2.GetStringValue("custom-key", &buffer), "good-val");
+}
+
+TEST_F(MitigationEngineParseTest, DiscardMetadataSkipsTraitValueParse) {
+  ExecCtx exec_ctx;
+  auto engine = MakeRefCounted<MockMitigationEngine>(
+      MockMitigationEngine::Behavior::kDiscardTeHeader);
+  absl::BitGen bitgen;
+
+  // "te: garbage" normally triggers MetadataParseError in
+  // grpc_metadata_batch::Parse; discarding it should skip trait parsing and let
+  // the request succeed.
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+  Slice input = ParseHexstring(
+      "400274650767617262616765"
+      "040c2f73616d706c652f70617468");
+  grpc_error_handle err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err.ok()) << err;
+
+  std::string buffer;
+  EXPECT_EQ(b.GetStringValue("te", &buffer), std::nullopt);
+  EXPECT_EQ(b.GetStringValue(":path", &buffer), "/sample/path");
+}
+
+TEST_F(MitigationEngineParseTest,
+       DiscardMetadataSkipsIllegalNonBinaryValueValidation) {
+  ASSERT_TRUE(IsOptimization05Enabled());
+  ExecCtx exec_ctx;
+  auto engine = MakeRefCounted<MockMitigationEngine>(
+      MockMitigationEngine::Behavior::kDiscardBadValueOnly);
+  absl::BitGen bitgen;
+
+  // Frame 1: Incrementally index "custom-key: a\r\nb" (illegal CRLF in
+  // non-binary header value under optimization_05, matched and discarded)
+  // followed by ":path: /sample/path".
+  grpc_metadata_batch b1;
+  parser_->BeginFrame(
+      &b1, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+  Slice frame1 = ParseHexstring(
+      "400a637573746f6d2d6b657904610d0a62"
+      "040c2f73616d706c652f70617468");
+  grpc_error_handle err1 =
+      parser_->Parse(frame1.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err1.ok()) << err1;
+  parser_->FinishFrame();
+
+  std::string buffer;
+  EXPECT_EQ(b1.GetStringValue("custom-key", &buffer), std::nullopt);
+  EXPECT_EQ(b1.GetStringValue(":path", &buffer), "/sample/path");
+
+  // Frame 2: Reference dynamic index 62 (0xbe -> discarded "custom-key") via
+  // HPACK Indexed Header Field representation; should remain discarded without
+  // replaying an InvalidMetadataError.
+  grpc_metadata_batch b2;
+  parser_->BeginFrame(
+      &b2, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{3, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+  Slice frame2 = ParseHexstring("be");
+  grpc_error_handle err2 =
+      parser_->Parse(frame2.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err2.ok()) << err2;
+  parser_->FinishFrame();
+  EXPECT_EQ(b2.GetStringValue("custom-key", &buffer), std::nullopt);
+
+  // Frame 3: Reuse dynamic index 62's key (0x7e -> "custom-key") with a new
+  // legal value "good-val"; should succeed and be kept.
+  grpc_metadata_batch b3;
+  parser_->BeginFrame(
+      &b3, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{5, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+  Slice frame3 = ParseHexstring("7e08676f6f642d76616c");
+  grpc_error_handle err3 =
+      parser_->Parse(frame3.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err3.ok()) << err3;
+  parser_->FinishFrame();
+  EXPECT_EQ(b3.GetStringValue("custom-key", &buffer), "good-val");
+
+  // Frame 4: A non-discarded illegal value "c\r\nd" for "custom-key" must still
+  // fail ValidateNonBinaryHeaderValueIsLegal.
+  grpc_metadata_batch b4;
+  parser_->BeginFrame(
+      &b4, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{7, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+  Slice frame4 = ParseHexstring("000a637573746f6d2d6b657904630d0a64");
+  grpc_error_handle err4 =
+      parser_->Parse(frame4.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_FALSE(err4.ok());
+  grpc_status_code code;
+  std::string message;
+  grpc_error_get_status(err4, Timestamp::InfFuture(), &code, &message, nullptr,
+                        nullptr);
+  EXPECT_EQ(code, GRPC_STATUS_INTERNAL);
+  EXPECT_THAT(message, HasSubstr("Illegal header value: custom-key"));
+}
+
+TEST_F(MitigationEngineParseTest,
+       DiscardMetadataIndexedIllegalKeyWithAllowedValueStillRejected) {
+  ExecCtx exec_ctx;
+  auto engine = MakeRefCounted<MockMitigationEngine>(
+      MockMitigationEngine::Behavior::kDiscardValueOnly);
+  absl::BitGen bitgen;
+
+  // Frame 1: Incrementally index "BAD-KEY: bad-val" at dynamic index 62.
+  // ValidateKey rejects the uppercase key on this stream, while the value-only
+  // mitigation rule discards the metadata entry.
+  grpc_metadata_batch b1;
+  parser_->BeginFrame(
+      &b1, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+  Slice frame1 = ParseHexstring("40074241442d4b4559076261642d76616c");
+  grpc_error_handle err1 =
+      parser_->Parse(frame1.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_FALSE(err1.ok());
+  parser_->FinishFrame();
+
+  std::string buffer;
+  EXPECT_EQ(b1.GetStringValue("BAD-KEY", &buffer), std::nullopt);
+
+  // Frame 2: Reference dynamic index 62 (0xbe) via HPACK Indexed Header Field
+  // representation; the discarded entry remains discarded.
+  grpc_metadata_batch b2;
+  parser_->BeginFrame(
+      &b2, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{3, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+  Slice frame2 = ParseHexstring("be");
+  grpc_error_handle err2 =
+      parser_->Parse(frame2.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err2.ok()) << err2;
+  parser_->FinishFrame();
+  EXPECT_EQ(b2.GetStringValue("BAD-KEY", &buffer), std::nullopt);
+
+  // Frame 3: Reuse dynamic index 62's key (0x7e -> "BAD-KEY") with a
+  // non-discarded value "good-val"; the illegal key must still be rejected.
+  grpc_metadata_batch b3;
+  parser_->BeginFrame(
+      &b3, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{5, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+  Slice frame3 = ParseHexstring("7e08676f6f642d76616c");
+  grpc_error_handle err3 =
+      parser_->Parse(frame3.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_FALSE(err3.ok());
+  intptr_t stream_id;
+  EXPECT_TRUE(
+      grpc_error_get_int(err3, StatusIntProperty::kStreamId, &stream_id));
+  grpc_status_code code;
+  std::string message;
+  grpc_error_get_status(err3, Timestamp::InfFuture(), &code, &message, nullptr,
+                        nullptr);
+  EXPECT_EQ(code, GRPC_STATUS_INTERNAL);
+  EXPECT_THAT(message, HasSubstr("Illegal header key: BAD-KEY"));
+}
+
+TEST_F(MitigationEngineParseTest, DiscardMetadataWithoutIndexing) {
+  ExecCtx exec_ctx;
+  auto engine = MakeRefCounted<MockMitigationEngine>(
+      MockMitigationEngine::Behavior::kDiscardMetadata);
+  absl::BitGen bitgen;
+
+  class TestLogSink : public absl::LogSink {
+   public:
+    void Send(const absl::LogEntry& entry) override {
+      messages.emplace_back(entry.text_message());
+    }
+    std::vector<std::string> messages;
+  } log_sink;
+  absl::AddLogSink(&log_sink);
+  grpc_tracer_set_enabled("chttp2_hpack_parser", 1);
+  auto cleanup = absl::MakeCleanup([&log_sink] {
+    grpc_tracer_set_enabled("chttp2_hpack_parser", 0);
+    absl::RemoveLogSink(&log_sink);
+  });
+
+  // Opcode 0x00: Literal Header Field without Indexing (add_to_table == false)
+  // for "custom-key: custom-header", followed by ":path: /sample/path".
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+  Slice input = ParseHexstring(
+      "000a637573746f6d2d6b65790d637573746f6d2d686561646572"
+      "040c2f73616d706c652f70617468");
+  grpc_error_handle err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err.ok()) << err;
+
+  std::string buffer;
+  EXPECT_EQ(b.GetStringValue("custom-key", &buffer), std::nullopt);
+  EXPECT_EQ(b.GetStringValue(":path", &buffer), "/sample/path");
+  EXPECT_EQ(parser_->hpack_table()->num_entries(), 0u);
+  EXPECT_THAT(log_sink.messages,
+              Contains(HasSubstr("HTTP:1:HDR:SVR: custom-key:  (discarded)")));
+}
+
+TEST_F(MitigationEngineParseTest,
+       DiscardMetadataStillCountsTowardHardSizeLimit) {
+  ExecCtx exec_ctx;
+  auto engine = MakeRefCounted<MockMitigationEngine>(
+      MockMitigationEngine::Behavior::kDiscardMetadata);
+  absl::BitGen bitgen;
+
+  // "custom-key: custom-header" has transport_size = 10 + 13 + 32 = 55 bytes,
+  // exceeding hard_limit = 40 even when discarded without indexing.
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, /*metadata_size_soft_limit=*/40, /*metadata_size_hard_limit=*/40,
+      HPackParser::Boundary::EndOfHeaders, HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+  Slice input =
+      ParseHexstring("000a637573746f6d2d6b65790d637573746f6d2d686561646572");
+  grpc_error_handle err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_FALSE(err.ok());
+  grpc_status_code code;
+  std::string message;
+  grpc_error_get_status(err, Timestamp::InfFuture(), &code, &message, nullptr,
+                        nullptr);
+  // NOLINTNEXTLINE(misc-include-cleaner)
+  EXPECT_EQ(code, GRPC_STATUS_RESOURCE_EXHAUSTED);
+  EXPECT_THAT(message, HasSubstr("received metadata size exceeds hard limit"));
+}
+
+TEST_F(MitigationEngineParseTest,
+       DiscardMetadataExcludedFromEvaluateAllIncomingMetadata) {
+  ExecCtx exec_ctx;
+  auto engine = MakeRefCounted<MockMitigationEngine>(
+      MockMitigationEngine::Behavior::kDiscardMetadata);
+  absl::BitGen bitgen;
+
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+  Slice input = ParseHexstring(
+      "400a637573746f6d2d6b65790d637573746f6d2d686561646572"
+      "040c2f73616d706c652f70617468");
+  grpc_error_handle err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err.ok()) << err;
+  EXPECT_FALSE(engine->saw_custom_key_in_all_metadata());
+  EXPECT_TRUE(engine->saw_path_in_all_metadata());
 }
 
 TEST_F(MitigationEngineParseTest, PeerAddressPassedCorrectly) {
