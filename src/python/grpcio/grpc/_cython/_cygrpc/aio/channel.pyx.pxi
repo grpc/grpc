@@ -33,7 +33,6 @@ cdef class AioChannel:
         cdef _ChannelArgs channel_args = _ChannelArgs(options)
         self.target = target
         self.loop = loop
-        self._status = AIO_CHANNEL_STATUS_READY
         self._registered_call_handles = {}
 
         if credentials is None:
@@ -50,8 +49,12 @@ cdef class AioChannel:
                 creds,
                 channel_args.c_args())
             grpc_channel_credentials_release(creds)
+        self._status = AIO_CHANNEL_STATUS_READY
 
     def __dealloc__(self):
+        if self._status in (AIO_CHANNEL_STATUS_READY, AIO_CHANNEL_STATUS_CLOSING):
+            self._status = AIO_CHANNEL_STATUS_DESTROYED
+            grpc_channel_destroy(self.channel)
         shutdown_grpc_aio()
 
     def __repr__(self):
@@ -61,7 +64,7 @@ cdef class AioChannel:
 
     def check_connectivity_state(self, bint try_to_connect):
         """A Cython wrapper for Core's check connectivity state API."""
-        if self._status == AIO_CHANNEL_STATUS_DESTROYED:
+        if self.closed():
             return ConnectivityState.shutdown
         else:
             return grpc_channel_check_connectivity_state(
@@ -77,7 +80,7 @@ cdef class AioChannel:
         Keeps mirroring the behavior from Core, so we can easily switch to
         other design of API if necessary.
         """
-        if self._status in (AIO_CHANNEL_STATUS_DESTROYED, AIO_CHANNEL_STATUS_CLOSING):
+        if self.closed():
             raise UsageError('Channel is closed.')
 
         cdef gpr_timespec c_deadline = _timespec_from_time(deadline)
@@ -123,8 +126,12 @@ cdef class AioChannel:
           method: Required, the method name for the RPC.
 
         Returns:
-          The registered call handle pointer as a Python Long.
+          The registered call handle pointer as a Python Long, or 0 once the
+          channel is closed.
         """
+        if self.closed():
+            return 0
+
         if method not in self._registered_call_handles:
             self._registered_call_handles[method] = CallHandle(
                 cpython.PyLong_FromVoidPtr(self.channel), method)

@@ -80,6 +80,7 @@ _FLAKY_TESTS = [
             "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
             "//src/proto/grpc/testing:py_messages_proto",
             "//src/python/grpcio/grpc:grpcio",
+            "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
             "//src/python/grpcio_tests/tests/unit:resources",
             "//src/python/grpcio_tests/tests/unit/framework/common",
             "@grpc_typing_extensions//:typing_extensions",
