@@ -718,8 +718,17 @@ void grpc_chttp2_transport::WriteSecurityFrameLocked(
                   "Unexpected SECURITY frame scheduled for write"));
     return;
   }
+  const size_t data_length = data->Length();
+  if (data_length > kMaxSecurityFrameSize) {
+    close_transport_locked(
+        this, absl::FailedPreconditionError(absl::StrCat(
+                  "gRPC Transport Error : Security frame is larger than the "
+                  "maximum allowed size : ",
+                  kMaxSecurityFrameSize, ", Received size : ", data_length)));
+    return;
+  }
   grpc_core::SliceBuffer security_frame;
-  grpc_chttp2_security_frame_create(data->c_slice_buffer(), data->Length(),
+  grpc_chttp2_security_frame_create(data->c_slice_buffer(), data_length,
                                     security_frame.c_slice_buffer());
   grpc_slice_buffer_move_into(security_frame.c_slice_buffer(), &qbuf);
   grpc_chttp2_initiate_write(this, GRPC_CHTTP2_INITIATE_WRITE_SEND_MESSAGE);
