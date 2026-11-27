@@ -413,6 +413,19 @@ TEST(AltsFrameProtectorTest, MemoryLeakTest) {
   gpr_free(key);
 }
 
+TEST(AltsFrameProtectorTest, ShortRekeyKeyRejected) {
+  tsi_frame_protector* client_frame_protector = nullptr;
+  uint8_t* key = nullptr;
+  size_t key_length = kAes128GcmRekeyKeyLength - 1;
+  gsec_test_random_array(&key, key_length);
+  EXPECT_EQ(alts_create_frame_protector(key, key_length, /*is_client=*/true,
+                                        /*is_rekey=*/true, nullptr,
+                                        &client_frame_protector),
+            TSI_INTERNAL_ERROR);
+  EXPECT_EQ(client_frame_protector, nullptr);
+  gpr_free(key);
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
