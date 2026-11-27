@@ -18,7 +18,7 @@
 
 #include "completion_queue.h"
 
-grpc_completion_queue *completion_queue;
+ZEND_EXT_TLS grpc_completion_queue *completion_queue;
 
 void grpc_php_init_completion_queue(TSRMLS_D) {
   completion_queue = grpc_completion_queue_create_for_pluck(NULL);

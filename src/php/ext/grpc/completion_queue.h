@@ -27,8 +27,9 @@
 #define TSRMLS_D
 #endif
 
-/* The global completion queue for all operations */
-extern grpc_completion_queue *completion_queue;
+/* The completion queue for all operations of the current thread. gRPC core lets
+ * at most six threads pluck one queue at once, so threads must not share it. */
+extern ZEND_EXT_TLS grpc_completion_queue *completion_queue;
 
 /* Initializes the completion queue */
 void grpc_php_init_completion_queue(TSRMLS_D);
