@@ -136,6 +136,7 @@ grpc_fuzz_test(
         "//src/core:chaotic_good_frame",
         "//src/core:grpc_check",
         "//src/core:memory_quota",
+        "//src/core:metadata_batch",
         "//src/core:resource_quota",
     ],
 )
