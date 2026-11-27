@@ -15,17 +15,22 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <initializer_list>
 #include <utility>
+#include <vector>
 
 #include "src/core/call/message.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace {
@@ -134,6 +139,9 @@ TEST(Header, ToString) {
             "{DATA: flags=0, stream_id=0, length=0}");
   EXPECT_EQ((Http2FrameHeader{0x123456, 0x9a, 0xbc, 0x12345678}).ToString(),
             "{UNKNOWN(154): flags=188, stream_id=305419896, length=1193046}");
+  // Verifies custom security frame header string formatting.
+  EXPECT_EQ((Http2FrameHeader{0u, 200u, 0u, 0u}).ToString(),
+            "{SECURITY: flags=0, stream_id=0, length=0}");
 }
 
 TEST(Frame, Http2DataFrameSerialization) {
@@ -245,6 +253,17 @@ TEST(Frame, Http2WindowUpdateFrameSerialization) {
 TEST(Frame, Http2SecurityFrameSerialization) {
   EXPECT_EQ(Serialize(Http2SecurityFrame{SliceBufferFromString("hello")}),
             ByteVec(0, 0, 5, 200, 0, 0, 0, 0, 0, 'h', 'e', 'l', 'l', 'o'));
+}
+
+TEST(Frame, Http2EmptyFrameSerialization) {
+  // Verifies no-op serialization behavior of Http2EmptyFrame.
+  std::vector<Http2Frame> frames;
+  frames.emplace_back(Http2EmptyFrame{});
+  SliceBuffer output;
+  const SerializeReturn result =
+      Serialize(absl::Span<Http2Frame>(frames), output);
+  EXPECT_FALSE(result.should_reset_ping_clock);
+  EXPECT_EQ(output.Length(), 0u);
 }
 
 constexpr uint8_t kFlagPadded = 8;
@@ -733,6 +752,16 @@ TEST(Frame, ParseRejectsDataFrame) {
                     Http2ErrorCode::kProtocolError,
                     absl::StrCat(RFC9113::kPaddingLengthLargerThanFrameLength,
                                  "{DATA: flags=9, stream_id=1, length=9}")));
+  // Verifies that a zero-length padded DATA frame fails padding extraction.
+  EXPECT_THAT(
+      ValidateFrame(/* Length (3 octets) */ 0, 0, 0,
+                    /* Type (1 octet) */ 0,
+                    /* Flags: PADDED */ kFlagPadded,
+                    /* Stream Identifier (31 bits) */ 0, 0, 0, 1),
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kProtocolError,
+                    absl::StrCat(RFC9113::kFrameParserIncorrectPadding,
+                                 "{DATA: flags=8, stream_id=1, length=0}")));
 }
 
 TEST(Frame, ParseRejectsHeaderFrame) {
@@ -758,6 +787,30 @@ TEST(Frame, ParseRejectsHeaderFrame) {
                     Http2ErrorCode::kProtocolError,
                     absl::StrCat(RFC9113::kStreamIdMustBeOdd,
                                  "{HEADER: flags=0, stream_id=2, length=0}")));
+
+  // Verifies that a padded HEADERS frame with excessive padding is rejected.
+  EXPECT_THAT(
+      ValidateFrame(/* Length (3 octets) */ 0, 0, 5,
+                    /* Type (1 octet) */ 1,
+                    /* Flags: PADDED */ kFlagPadded,
+                    /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
+                    /* Pad Length */ 5,
+                    /* Field Block Fragment */ 'k', 'i', 'd', 's'),
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kProtocolError,
+                    absl::StrCat(RFC9113::kPaddingLengthLargerThanFrameLength,
+                                 "{HEADER: flags=8, stream_id=1, length=5}")));
+  // Verifies that a priority HEADERS frame shorter than five bytes is rejected.
+  EXPECT_THAT(
+      ValidateFrame(/* Length (3 octets) */ 0, 0, 4,
+                    /* Type (1 octet) */ 1,
+                    /* Flags: PRIORITY */ kFlagPriority,
+                    /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
+                    /* Truncated Priority Fields */ 1, 2, 3, 4),
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kProtocolError,
+                    absl::StrCat(RFC9113::kIncorrectFrame,
+                                 "{HEADER: flags=32, stream_id=1, length=4}")));
 
   // TODO(tjagtap) : [PH2][P5] : Add more test cases. The parser has a lot of
   // cases.
@@ -1136,6 +1189,41 @@ TEST(Frame, GrpcHeaderTest) {
   verify_header(/*flags=*/GRPC_WRITE_INTERNAL_COMPRESS,
                 /*expected_flags=*/GRPC_WRITE_INTERNAL_COMPRESS, kLength);
   verify_header(/*flags=*/10, /*expected_flags=*/0, kLength);
+
+  // Verifies that ExtractGrpcHeader rejects an unknown flags byte without
+  // consuming the header.
+  SliceBuffer invalid_payload;
+  uint8_t* const header = invalid_payload.AddTiny(kGrpcHeaderSizeInBytes);
+  header[0] = 2u;
+  std::fill(header + 1, header + kGrpcHeaderSizeInBytes, 0u);
+  ValueOrHttp2Status<GrpcMessageHeader> invalid_header =
+      ExtractGrpcHeader(invalid_payload);
+  ASSERT_FALSE(invalid_header.IsOk());
+  EXPECT_EQ(invalid_payload.Length(), kGrpcHeaderSizeInBytes);
+  EXPECT_THAT(ValueOrHttp2Status<GrpcMessageHeader>::TakeStatus(
+                  std::move(invalid_header)),
+              Http2StatusIs(Http2Status::Http2ErrorType::kStreamError,
+                            Http2ErrorCode::kInternalError,
+                            "Invalid gRPC header flags: 2"));
+}
+
+TEST(Frame, ErrorCodeConversions) {
+  // Verifies round-trip error code conversions for valid HTTP/2 error codes.
+  EXPECT_EQ(FrameErrorCodeToHttp2ErrorCode(0u), Http2ErrorCode::kNoError);
+  EXPECT_EQ(Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kNoError), 0u);
+  // 0xd is HTTP_1_1_REQUIRED, the highest RFC 9113 error code.
+  EXPECT_EQ(FrameErrorCodeToHttp2ErrorCode(0xdu),
+            Http2ErrorCode::kHTTP11Required);
+  EXPECT_EQ(Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kHTTP11Required),
+            0xdu);
+
+  // Verifies that out-of-range wire error codes map to kInternalError.
+  EXPECT_EQ(FrameErrorCodeToHttp2ErrorCode(0xeu),
+            Http2ErrorCode::kInternalError);
+  EXPECT_EQ(FrameErrorCodeToHttp2ErrorCode(0x100u),
+            Http2ErrorCode::kInternalError);
+  EXPECT_EQ(FrameErrorCodeToHttp2ErrorCode(0xffffffffu),
+            Http2ErrorCode::kInternalError);
 }
 
 TEST(Frame, ValidateSettingsValuesInvalidInitialWindowSize) {
@@ -1318,6 +1406,30 @@ TEST_P(ValidateFrameHeaderTest, ValidateFrameHeader) {
                                     /*incoming_header_in_progress=*/false,
                                     /*incoming_header_stream_id=*/0u, header,
                                     /*last_stream_id=*/3u, is_client,
+                                    /*is_first_settings_processed=*/true,
+                                    tracker, GrpcErrors::kMaxSecurityFrameSize)
+                    .IsOk());
+  } else {
+    // Verifies that a server rejects non-metadata frames on an idle stream.
+    header = {/*length=*/10u, /*type=kData*/ 0u, /*flags=*/0u,
+              /*stream_id=*/5u};
+    EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100u,
+                                    /*incoming_header_in_progress=*/false,
+                                    /*incoming_header_stream_id=*/0u, header,
+                                    kLastStreamId, is_client,
+                                    /*is_first_settings_processed=*/true,
+                                    tracker, GrpcErrors::kMaxSecurityFrameSize),
+                Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                              Http2ErrorCode::kProtocolError,
+                              RFC9113::kIdleStreamError));
+
+    // Verifies that a server accepts a HEADERS frame initiating a new stream.
+    header = {/*length=*/10u, /*type=kHeader*/ 1u, /*flags=*/4u,
+              /*stream_id=*/5u};
+    EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/100u,
+                                    /*incoming_header_in_progress=*/false,
+                                    /*incoming_header_stream_id=*/0u, header,
+                                    kLastStreamId, is_client,
                                     /*is_first_settings_processed=*/true,
                                     tracker, GrpcErrors::kMaxSecurityFrameSize)
                     .IsOk());

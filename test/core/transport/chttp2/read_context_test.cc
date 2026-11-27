@@ -18,19 +18,25 @@
 
 #include "src/core/ext/transport/chttp2/transport/read_context.h"
 
+#include <grpc/event_engine/event_engine.h>
+
+#include <cstdint>
 #include <optional>
 #include <utility>
 
+#include "src/core/call/metadata_info.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/util/grpc_check.h"
 #include "test/core/transport/chttp2/http2_common_test_inputs.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
 
@@ -60,6 +66,10 @@ TEST_P(ReadContextTest, InitialState) {
   // frames.
   EXPECT_FALSE(readContext->IsWaitingForContinuationFrame());
   EXPECT_EQ(readContext->max_new_streams_per_read_cycle(), 32u);
+  EXPECT_FALSE(readContext->IsDiscardingIncomingStream());
+  EXPECT_EQ(readContext->soft_limit(),
+            static_cast<uint32_t>(DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT));
+  EXPECT_FALSE(readContext->HasReceivedSettingsAck());
 }
 
 TEST_P(ReadContextTest, MaxNewStreamsZeroIsInvalid) {
@@ -228,6 +238,18 @@ TEST(GetPeerStringTest, GetPeerString) {
       /*ping_on_rst_stream_percent=*/0u, Http2TransportStats(ChannelArgs()));
   EXPECT_EQ(readContext.peer_string(),
             Slice::FromCopiedString("ipv4:127.0.0.1:1234"));
+
+  // Default-constructed ResolvedAddress is empty and fails URI conversion.
+  const grpc_event_engine::experimental::EventEngine::ResolvedAddress
+      invalid_address;
+  EXPECT_CALL(*mock_endpoint.endpoint, GetPeerAddress())
+      .WillRepeatedly(::testing::ReturnRef(invalid_address));
+  const ReadContext unknown_peer_context(
+      /*max_new_streams_per_read_cycle=*/32u, mock_endpoint.promise_endpoint,
+      /*is_client=*/true, GrpcErrors::kMaxSecurityFrameSize,
+      /*ping_on_rst_stream_percent=*/0u, Http2TransportStats(ChannelArgs()));
+  EXPECT_EQ(unknown_peer_context.peer_string(),
+            Slice::FromCopiedString("unknown"));
 }
 
 TEST(GetLocalAddressStringTest, GetLocalAddressString) {
@@ -238,6 +260,18 @@ TEST(GetLocalAddressStringTest, GetLocalAddressString) {
       /*ping_on_rst_stream_percent=*/0u, Http2TransportStats(ChannelArgs()));
   EXPECT_EQ(readContext.local_address_string(),
             Slice::FromCopiedString("ipv4:127.0.0.1:5678"));
+
+  // Default-constructed ResolvedAddress is empty and fails URI conversion.
+  const grpc_event_engine::experimental::EventEngine::ResolvedAddress
+      invalid_address;
+  EXPECT_CALL(*mock_endpoint.endpoint, GetLocalAddress())
+      .WillRepeatedly(::testing::ReturnRef(invalid_address));
+  const ReadContext unknown_local_context(
+      /*max_new_streams_per_read_cycle=*/32u, mock_endpoint.promise_endpoint,
+      /*is_client=*/true, GrpcErrors::kMaxSecurityFrameSize,
+      /*ping_on_rst_stream_percent=*/0u, Http2TransportStats(ChannelArgs()));
+  EXPECT_EQ(unknown_local_context.local_address_string(),
+            Slice::FromCopiedString("unknown"));
 }
 
 TEST_P(ReadContextTest, PeerString) {
@@ -372,8 +406,12 @@ TEST_P(ReadContextTest, MaxInducedFramesPausesReadLoop) {
       /*should_pause=*/false));
 
   // Receiving one more induced frame pushes the counter to the limit.
+  // Use a PING frame here to verify that both SETTINGS and PING frames
+  // increment the shared induced-frames counter and trigger the pause limit.
+  frame_header.length = 8u;
+  frame_header.type = 6u;  // PING frame
   readContext->SetCurrentFrameHeader(frame_header);
-  readContext->OnSettingsFrameReceived();
+  readContext->OnPingFrameReceived();
 
   // The counts should reset upon entering the pause state.
   EXPECT_TRUE(readContext->TestOnlyCheckCounters(
@@ -444,6 +482,8 @@ TEST_P(ReadContextTest, MaxFramesPerReadCyclePausesReadLoop) {
       /*expected_bytes_read=*/expected_total_bytes,
       /*expected_read_count=*/expected_total_frames,
       /*should_pause=*/false));
+  EXPECT_EQ(readContext->GetCurrentFrameHeader(), frame_header);
+  EXPECT_TRUE(readContext->MaybePauseReadLoop().ready());
 
   // Sending one more frame hits the limit and triggers SetPauseReadLoop()
   readContext->SetCurrentFrameHeader(frame_header);
@@ -453,6 +493,12 @@ TEST_P(ReadContextTest, MaxFramesPerReadCyclePausesReadLoop) {
       /*expected_bytes_read=*/0u,
       /*expected_read_count=*/0u,
       /*should_pause=*/true));
+  // Resuming the read loop does not change the counters.
+  readContext->ResumeReadLoopIfPaused();
+  EXPECT_TRUE(readContext->TestOnlyCheckCounters(
+      /*expected_bytes_read=*/0u,
+      /*expected_read_count=*/0u,
+      /*should_pause=*/false));
 }
 
 TEST_P(ReadContextTest, OnResetFrameEnqueuedIncrementsInducedFrames) {
@@ -529,6 +575,14 @@ TEST_P(ReadContextTest, ResetFrameTriggersPingBasedOnPercent) {
   // increased
   EXPECT_TRUE(
       context_100.OnResetFrameReceived().should_send_ping_on_rst_stream);
+  // While the ping is in flight, additional RST_STREAM frames must not trigger
+  // another ping until the in-flight ping completes.
+  context_100.SetPingOnRstStreamInProgress(true);
+  EXPECT_FALSE(
+      context_100.OnResetFrameReceived().should_send_ping_on_rst_stream);
+  context_100.SetPingOnRstStreamInProgress(false);
+  EXPECT_TRUE(
+      context_100.OnResetFrameReceived().should_send_ping_on_rst_stream);
 
   // Scenario 2: 0% chance to ping
   ReadContext context_0(
@@ -586,6 +640,11 @@ TEST_P(ReadContextTest, ParseAndDiscardHeadersCorruptedBufferedFragments) {
 }
 
 TEST_P(ReadContextTest, ParseAndDiscardHeadersValidData) {
+  readContext->set_soft_limit(12345u);
+  EXPECT_EQ(readContext->soft_limit(), 12345u);
+  readContext->SetMaxHeaderTableSize(1024u);
+  EXPECT_EQ(readContext->parser().hpack_table()->max_bytes(), 1024u);
+
   SliceBuffer valid_hpack_buffer;
   // 0x82 is the HPACK indexed representation for ":method: GET"
   valid_hpack_buffer.Append(Slice::FromCopiedString("\x82"));
@@ -742,6 +801,52 @@ TEST_P(ReadContextTest, ValidateHeaderContinuationForWrongStream) {
   // The validator must reject this because the stream IDs don't match.
   EXPECT_FALSE(result.IsOk());
   EXPECT_EQ(result.GetConnectionErrorCode(), Http2ErrorCode::kProtocolError);
+}
+
+TEST_P(ReadContextTest, DiscardingIncomingStream) {
+  // Verifies that incoming stream discarding defaults to false and reflects
+  // updates via SetIsDiscardingIncomingStream.
+  EXPECT_FALSE(readContext->IsDiscardingIncomingStream());
+  readContext->SetIsDiscardingIncomingStream(true);
+  EXPECT_TRUE(readContext->IsDiscardingIncomingStream());
+  readContext->SetIsDiscardingIncomingStream(false);
+  EXPECT_FALSE(readContext->IsDiscardingIncomingStream());
+}
+
+TEST_P(ReadContextTest, IncomingStreamLimitBeforeSettingsAck) {
+  // Verifies that before the first SETTINGS ACK is received, only the
+  // configured number of incoming streams is accepted, further streams are
+  // rejected with ENHANCE_YOUR_CALM, and receiving SETTINGS ACK lifts the
+  // limit. Applies only to servers.
+  if (GetParam()) return;
+  readContext->SetNumIncomingStreamsBeforeSettingsAck(/*limit=*/1u);
+
+  // One incoming stream fits within the limit.
+  EXPECT_TRUE(
+      readContext->ValidateIncomingStreamBeforeSettingsAck(/*stream_id=*/1u)
+          .IsOk());
+  readContext->ConsumeIncomingStreamBeforeSettingsAck();
+
+  // The second incoming stream exceeds the limit and is rejected.
+  const Http2Status status =
+      readContext->ValidateIncomingStreamBeforeSettingsAck(/*stream_id=*/3u);
+  EXPECT_EQ(status.GetType(), Http2Status::Http2ErrorType::kStreamError);
+  EXPECT_EQ(status.GetStreamErrorCode(), Http2ErrorCode::kEnhanceYourCalm);
+  EXPECT_EQ(status.GetAbslStreamError().message(),
+            GrpcErrors::kRejectStreamBeforeSettingsAck);
+  readContext->ConsumeIncomingStreamBeforeSettingsAck();
+  EXPECT_FALSE(
+      readContext->ValidateIncomingStreamBeforeSettingsAck(/*stream_id=*/3u)
+          .IsOk());
+
+  // Receiving the first SETTINGS ACK removes the limit permanently.
+  readContext->OnSettingsAckReceived();
+  EXPECT_TRUE(readContext->HasReceivedSettingsAck());
+  readContext->ConsumeIncomingStreamBeforeSettingsAck();
+  readContext->SetNumIncomingStreamsBeforeSettingsAck(/*limit=*/0u);
+  EXPECT_TRUE(
+      readContext->ValidateIncomingStreamBeforeSettingsAck(/*stream_id=*/5u)
+          .IsOk());
 }
 
 INSTANTIATE_TEST_SUITE_P(ReadContext, ReadContextTest, ::testing::Bool());
