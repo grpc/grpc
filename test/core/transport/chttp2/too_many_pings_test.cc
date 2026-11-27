@@ -54,7 +54,6 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
-#include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
