@@ -19,6 +19,8 @@
 #include "src/core/tsi/fake_transport_security.h"
 
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -26,6 +28,7 @@
 
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/tsi/transport_security_grpc.h"
 #include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/tsi/transport_security_test_lib.h"
@@ -144,6 +147,78 @@ TEST(FakeTransportSecurityTest, FakeTsiTestDoRoundTripOddBufferSize) {
       }
     }
   }
+}
+
+// The fake zero-copy protector frames each write as a 4-byte little-endian
+// size (counting the header itself) followed by the payload.
+constexpr size_t kFakeFrameHeaderSize = 4;
+
+TEST(FakeTransportSecurityTest,
+     FakeZeroCopyGrpcProtectorReadFrameSizeOfProtectedFrame) {
+  tsi_zero_copy_grpc_protector* protector =
+      tsi_create_fake_zero_copy_grpc_protector(nullptr);
+  grpc_slice_buffer unprotected_sb;
+  grpc_slice_buffer_init(&unprotected_sb);
+  grpc_slice_buffer protected_sb;
+  grpc_slice_buffer_init(&protected_sb);
+  grpc_slice_buffer_add(&unprotected_sb,
+                        grpc_slice_from_copied_string("hello world"));
+  ASSERT_EQ(tsi_zero_copy_grpc_protector_protect(protector, &unprotected_sb,
+                                                 &protected_sb),
+            TSI_OK);
+  const size_t protected_length = protected_sb.length;
+  ASSERT_EQ(protected_length, strlen("hello world") + kFakeFrameHeaderSize);
+
+  uint32_t frame_size = 0;
+  ASSERT_TRUE(tsi_zero_copy_grpc_protector_read_frame_size(
+      protector, &protected_sb, &frame_size));
+  EXPECT_EQ(frame_size, protected_length);
+  // The call is stateless: it must not consume any of the input.
+  EXPECT_EQ(protected_sb.length, protected_length);
+
+  grpc_slice_buffer_reset_and_unref(&unprotected_sb);
+  grpc_slice_buffer_reset_and_unref(&protected_sb);
+  grpc_slice_buffer_destroy(&unprotected_sb);
+  grpc_slice_buffer_destroy(&protected_sb);
+  tsi_zero_copy_grpc_protector_destroy(protector);
+}
+
+TEST(FakeTransportSecurityTest,
+     FakeZeroCopyGrpcProtectorReadFrameSizeSplitHeader) {
+  tsi_zero_copy_grpc_protector* protector =
+      tsi_create_fake_zero_copy_grpc_protector(nullptr);
+  grpc_slice_buffer unprotected_sb;
+  grpc_slice_buffer_init(&unprotected_sb);
+  grpc_slice_buffer protected_sb;
+  grpc_slice_buffer_init(&protected_sb);
+  grpc_slice_buffer staging_sb;
+  grpc_slice_buffer_init(&staging_sb);
+  grpc_slice_buffer_add(&unprotected_sb,
+                        grpc_slice_from_copied_string("hello world"));
+  ASSERT_EQ(tsi_zero_copy_grpc_protector_protect(protector, &unprotected_sb,
+                                                 &protected_sb),
+            TSI_OK);
+  const size_t protected_length = protected_sb.length;
+  // Header is 4 bytes, split this so it can't read the size.
+  grpc_slice_buffer_move_first(&protected_sb, kFakeFrameHeaderSize - 1,
+                               &staging_sb);
+  uint32_t frame_size;
+  EXPECT_FALSE(tsi_zero_copy_grpc_protector_read_frame_size(
+      protector, &staging_sb, &frame_size));
+  // Append the split slice to the slice buffer so it can read the size.
+  grpc_slice_buffer_add(&staging_sb,
+                        grpc_slice_buffer_take_first(&protected_sb));
+  ASSERT_TRUE(tsi_zero_copy_grpc_protector_read_frame_size(
+      protector, &staging_sb, &frame_size));
+  EXPECT_EQ(frame_size, protected_length);
+
+  grpc_slice_buffer_reset_and_unref(&unprotected_sb);
+  grpc_slice_buffer_reset_and_unref(&protected_sb);
+  grpc_slice_buffer_reset_and_unref(&staging_sb);
+  grpc_slice_buffer_destroy(&unprotected_sb);
+  grpc_slice_buffer_destroy(&protected_sb);
+  grpc_slice_buffer_destroy(&staging_sb);
+  tsi_zero_copy_grpc_protector_destroy(protector);
 }
 
 int main(int argc, char** argv) {
