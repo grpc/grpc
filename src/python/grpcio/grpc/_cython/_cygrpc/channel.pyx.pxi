@@ -450,9 +450,9 @@ cdef _close(Channel channel, grpc_status_code code, object details,
     drain_calls):
   cdef _ChannelState state = channel._state
   cdef _CallState call_state
-  cdef grpc_completion_queue* c_call_cq
-  cdef grpc_completion_queue* c_conn_cq
-  cdef grpc_channel* c_channel
+  cdef grpc_completion_queue *c_call_cq
+  cdef grpc_completion_queue *c_conn_cq
+  cdef grpc_channel *c_channel
   encoded_details = _encode(details)
   with state.condition:
     if state.open:
@@ -479,17 +479,20 @@ cdef _close(Channel channel, grpc_status_code code, object details,
         while state.connectivity_due:
           state.condition.wait()
 
-      # Releasing the GIL is required here: destroying the channel (and
-      # shutting down gRPC) may block until gRPC's internal threads finish
-      # their work, and those threads may need the GIL to run Python
-      # callbacks (e.g. cleanup of call credentials plugins). Holding the
-      # GIL while waiting for them would deadlock.
+      # Clear the state fields before releasing the GIL so that other Python
+      # threads never observe pointers that are about to be freed.
       c_call_cq = state.c_call_completion_queue
       c_conn_cq = state.c_connectivity_completion_queue
       c_channel = state.c_channel
       state.c_channel = NULL
       state.c_call_completion_queue = NULL
       state.c_connectivity_completion_queue = NULL
+      # Releasing the GIL is required here: if this channel holds the last
+      # reference to the EventEngine, grpc_channel_destroy() may shut it down
+      # and block until its worker threads exit. Those workers may need the
+      # GIL to run Python callbacks (e.g. destroying call credentials plugins),
+      # so holding it here can deadlock. grpc_shutdown() can also block
+      # waiting on gRPC's background threads.
       with nogil:
         _destroy_c_completion_queue(c_call_cq)
         _destroy_c_completion_queue(c_conn_cq)
@@ -565,18 +568,36 @@ cdef class Channel:
         operationses_and_tags, context, registered_call_handle)
 
   def next_call_event(self):
+    cdef grpc_completion_queue *c_call_cq
+
     def on_success(tag):
       if tag is not None:
         _process_integrated_call_tag(self._state, tag)
+
     if is_fork_support_enabled():
       queue_deadline = time.time() + 1.0
     else:
       queue_deadline = None
+
+    # Check the queue pointer rather than state.open: _close() sets open to
+    # False first and may still drain events through this method before it
+    # destroys the queue and sets the pointer to NULL. This only guards calls
+    # made after close(). A concurrent close() can still destroy the queue
+    # after this check, which is fine because gRPC only calls this from the
+    # channel spin thread, and that thread exits before the queue is
+    # destroyed.
+    c_call_cq = self._state.c_call_completion_queue
+    if c_call_cq == NULL:
+      raise ValueError(
+        f"Cannot get next call event: {self._state.closed_reason}"
+      )
+
     # NOTE(gnossen): It is acceptable for on_failure to be None here because
     # failure conditions can only ever happen on the main thread and this
     # method is only ever invoked on the channel spin thread.
-    return _next_call_event(self._state, self._state.c_call_completion_queue,
-                            on_success, None, queue_deadline)
+    return _next_call_event(
+      self._state, c_call_cq, on_success, None, queue_deadline
+    )
 
   def segregated_call(
       self, int flags, method, host, object deadline, object metadata,
