@@ -980,4 +980,15 @@ Payload Size Limits and Chunking
 a hard 16 KB upper bound, we guarantee that the frame will safely fit within any
 compliant peer's single-frame receive buffer without requiring payload chunking.
 
+Frame Count Limits
+
+   The current implementation enforces a limit of 64 incoming SECURITY frames
+   per read cycle (kCurrentCycleMaxSecurityFrames) because SECURITY frames are
+   intended for infrequent transport-level security updates (e.g., periodic key
+   rotation).
+
+   All incoming SECURITY frames are counted before passing the payload to the
+   framing extension, regardless of negotiation. If a peer exceeds this limit,
+   the endpoint MUST treat this as a CONNECTION ERROR of type ENHANCE_YOUR_CALM.
+
 */

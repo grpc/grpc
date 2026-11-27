@@ -463,6 +463,8 @@ inline constexpr int kMinMaxSecurityFrameSize = 0;
 inline constexpr absl::string_view kSecurityFrameTooLarge =
     "gRPC Transport Error : Security frame is larger than the maximum allowed "
     "size : ";
+inline constexpr absl::string_view kTooManySecurityFrames =
+    "gRPC Transport Error : Received too many security frames";
 
 }  // namespace GrpcErrors
 

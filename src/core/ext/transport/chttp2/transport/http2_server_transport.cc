@@ -693,10 +693,11 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
 
 Http2Status Http2ServerTransport::ProcessIncomingFrame(
     Http2SecurityFrame&& frame) {
-  if (settings_->IsSecurityFrameExpected()) {
+  Http2Status status = read_context_.OnSecurityFrameReceived();
+  if (GPR_LIKELY(status.IsOk() && settings_->IsSecurityFrameExpected())) {
     security_frame_handler_->ProcessPayload(std::move(frame.payload));
   }
-  return Http2Status::Ok();
+  return status;
 }
 
 Http2Status Http2ServerTransport::ProcessIncomingFrame(
@@ -1926,7 +1927,6 @@ absl::Status Http2ServerTransport::HandleError(RefCountedPtr<Stream> stream,
   GRPC_DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
 
   if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
-    GRPC_DCHECK(stream == nullptr);
     absl::Status absl_status = status.GetAbslConnectionError();
     MaybeSpawnCloseTransport(std::move(status), whence);
     return absl_status;

@@ -849,6 +849,58 @@ TEST_P(ReadContextTest, IncomingStreamLimitBeforeSettingsAck) {
           .IsOk());
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Security Frames Limit Testing.
+
+TEST_P(ReadContextTest, OnSecurityFrameReceivedMaxPerReadCycle) {
+  // Up to kCurrentCycleMaxSecurityFrames SECURITY frames are allowed in a
+  // single read cycle.
+  for (uint32_t i = 0u; i < kCurrentCycleMaxSecurityFrames; ++i) {
+    const Http2Status result = readContext->OnSecurityFrameReceived();
+    EXPECT_TRUE(result.IsOk());
+  }
+
+  // The next SECURITY frame in the same read cycle must trigger an
+  // ENHANCE_YOUR_CALM connection error.
+  const Http2Status overflow_result = readContext->OnSecurityFrameReceived();
+  EXPECT_FALSE(overflow_result.IsOk());
+  EXPECT_EQ(overflow_result.GetType(),
+            Http2Status::Http2ErrorType::kConnectionError);
+  EXPECT_EQ(overflow_result.GetConnectionErrorCode(),
+            Http2ErrorCode::kEnhanceYourCalm);
+  EXPECT_EQ(overflow_result.GetAbslConnectionError().message(),
+            GrpcErrors::kTooManySecurityFrames);
+}
+
+TEST_P(ReadContextTest, OnSecurityFrameReceivedResetsAcrossReadCycles) {
+  // Consume the full security frame quota.
+  for (uint32_t i = 0u; i < kCurrentCycleMaxSecurityFrames; ++i) {
+    EXPECT_TRUE(readContext->OnSecurityFrameReceived().IsOk());
+  }
+
+  // Verify that when the read loop is paused (e.g., due to other read-cycle
+  // thresholds), the security frame counter is reset.
+  readContext->SetPauseReadLoop();
+  for (uint32_t i = 0u; i < kCurrentCycleMaxSecurityFrames; ++i) {
+    EXPECT_TRUE(readContext->OnSecurityFrameReceived().IsOk());
+  }
+  const Http2Status cycle2_overflow = readContext->OnSecurityFrameReceived();
+  EXPECT_FALSE(cycle2_overflow.IsOk());
+  EXPECT_EQ(cycle2_overflow.GetConnectionErrorCode(),
+            Http2ErrorCode::kEnhanceYourCalm);
+
+  // Verify that ResumeReadLoopIfPaused() (e.g., when a write cycle completes)
+  // resets the security frame counter.
+  readContext->ResumeReadLoopIfPaused();
+  for (uint32_t i = 0u; i < kCurrentCycleMaxSecurityFrames; ++i) {
+    EXPECT_TRUE(readContext->OnSecurityFrameReceived().IsOk());
+  }
+  const Http2Status cycle3_overflow = readContext->OnSecurityFrameReceived();
+  EXPECT_FALSE(cycle3_overflow.IsOk());
+  EXPECT_EQ(cycle3_overflow.GetConnectionErrorCode(),
+            Http2ErrorCode::kEnhanceYourCalm);
+}
+
 INSTANTIATE_TEST_SUITE_P(ReadContext, ReadContextTest, ::testing::Bool());
 
 }  // namespace testing

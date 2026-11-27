@@ -48,6 +48,7 @@
 namespace grpc_core {
 namespace http2 {
 constexpr uint32_t kCurrentCycleMaxResetStreams = 1024u;
+constexpr uint32_t kCurrentCycleMaxSecurityFrames = 64u;
 
 inline bool ShouldSendPingOnRstStream(
     const uint8_t ping_on_rst_stream_percent) {
@@ -339,6 +340,21 @@ class ReadContext {
   void OnSettingsFrameReceived() { IncrementInducedFrames(); }
   void OnPingFrameReceived() { IncrementInducedFrames(); }
 
+  Http2Status OnSecurityFrameReceived() {
+    ++current_cycle_num_security_frames_;
+    if (GPR_UNLIKELY(current_cycle_num_security_frames_ >
+                     kCurrentCycleMaxSecurityFrames)) {
+      GRPC_HTTP2_COMMON_DLOG
+          << "ReadContext::OnSecurityFrameReceived Too many security frames "
+             "in current read cycle: "
+          << current_cycle_num_security_frames_;
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kEnhanceYourCalm,
+          std::string(GrpcErrors::kTooManySecurityFrames));
+    }
+    return Http2Status::Ok();
+  }
+
   // This is applicable only to servers.
   // Based on CHTTP2's num_incoming_streams_before_settings_ack in parsing.cc.
   // Sets the number of streams the peer may open before it acknowledges our
@@ -521,6 +537,8 @@ class ReadContext {
         ", max_new_streams_per_read_cycle : ", max_new_streams_per_read_cycle_,
         ", current_cycle_bytes_read : ", current_cycle_bytes_read_,
         ", current_cycle_read_count : ", current_cycle_read_count_,
+        ", current_cycle_num_security_frames : ",
+        current_cycle_num_security_frames_,
         ", current_frame_header : ", current_frame_header_.ToString(), "}");
   }
 
@@ -553,6 +571,7 @@ class ReadContext {
     current_cycle_num_induced_frames_ = 0u;
     current_cycle_num_new_streams_ = 0u;
     current_cycle_num_reset_streams_ = 0u;
+    current_cycle_num_security_frames_ = 0u;
   }
   void IncrementIncomingStreams() {
     ++current_cycle_num_new_streams_;
@@ -595,6 +614,7 @@ class ReadContext {
 
   uint32_t current_cycle_num_new_streams_ = 0u;
   uint32_t current_cycle_num_reset_streams_ = 0u;
+  uint32_t current_cycle_num_security_frames_ = 0u;
   // Unlike other limits, this cannot be a constexpr because it is set per
   // transport via a ChannelArg named "grpc.http2.max_requests_per_read".
   const uint32_t max_new_streams_per_read_cycle_;

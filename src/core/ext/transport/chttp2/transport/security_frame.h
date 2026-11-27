@@ -46,7 +46,7 @@ namespace grpc_core {
 #define GRPC_HTTP2_SECURITY_FRAME_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
-// Manages sending and receiving HTTP2 security frames (type 0x08).
+// Manages sending and receiving HTTP2 security frames (type 0xc8 / 200).
 // It bridges HTTP2 Transport and TransportFramingEndpointExtension.
 class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
  public:
