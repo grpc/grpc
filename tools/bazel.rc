@@ -44,6 +44,9 @@ common --enable_platform_specific_config
 
 build:windows --cxxopt='/std:c++17'
 build:windows --host_cxxopt='/std:c++17'
+# cel-c requires the standards-conforming MSVC preprocessor (see cel-c's own
+# .bazelrc). Matches both the bzlmod (cel-c+) and WORKSPACE (cel_c) repo names.
+build:windows --per_file_copt='external/cel.c[+/].*@/Zc:preprocessor'
 build:linux   --cxxopt='-std=c++17'
 build:linux   --host_cxxopt='-std=c++17'
 build:macos   --cxxopt='-std=c++17'
