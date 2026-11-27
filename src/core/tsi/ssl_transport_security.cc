@@ -428,6 +428,12 @@ ToSignatureAlgorithmClass(uint16_t algorithm) {
       return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384;
     case SSL_SIGN_RSA_PSS_RSAE_SHA512:
       return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512;
+    case SSL_SIGN_ML_DSA_44:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kMlDsa44;
+    case SSL_SIGN_ML_DSA_65:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kMlDsa65;
+    case SSL_SIGN_ML_DSA_87:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kMlDsa87;
   }
   return absl::InvalidArgumentError("Unknown signature algorithm.");
 }

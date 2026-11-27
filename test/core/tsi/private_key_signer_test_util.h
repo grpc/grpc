@@ -25,6 +25,7 @@
 
 #include <atomic>
 #include <memory>
+#include <optional>
 #include <string>
 #include <variant>
 
@@ -51,9 +52,14 @@ class SyncTestPrivateKeySigner final : public PrivateKeySigner {
 
   void Cancel(std::shared_ptr<AsyncSigningHandle> /*handle*/) override;
 
+  std::optional<SignatureAlgorithm> observed_signature_algorithm() const {
+    return observed_signature_algorithm_;
+  }
+
  private:
   bssl::UniquePtr<EVP_PKEY> pkey_;
   Mode mode_;
+  std::optional<SignatureAlgorithm> observed_signature_algorithm_;
 };
 
 class AsyncTestPrivateKeySigner final
@@ -76,12 +82,17 @@ class AsyncTestPrivateKeySigner final
 
   bool WasCancelled();
 
+  std::optional<SignatureAlgorithm> observed_signature_algorithm() const {
+    return observed_signature_algorithm_;
+  }
+
  private:
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
       event_engine_;
   bssl::UniquePtr<EVP_PKEY> pkey_;
   Mode mode_;
   std::atomic<bool> was_cancelled_{false};
+  std::optional<SignatureAlgorithm> observed_signature_algorithm_;
 };
 
 }  // namespace testing

@@ -92,6 +92,12 @@ uint16_t GetBoringSslAlgorithm(
     case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
         kRsaPssRsaeSha512:
       return SSL_SIGN_RSA_PSS_RSAE_SHA512;
+    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::kMlDsa44:
+      return SSL_SIGN_ML_DSA_44;
+    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::kMlDsa65:
+      return SSL_SIGN_ML_DSA_65;
+    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::kMlDsa87:
+      return SSL_SIGN_ML_DSA_87;
   }
   return -1;
 }

@@ -60,6 +60,9 @@ class PrivateKeySigner {
     kRsaPssRsaeSha256,
     kRsaPssRsaeSha384,
     kRsaPssRsaeSha512,
+    kMlDsa44,
+    kMlDsa65,
+    kMlDsa87,
   };
 
   // A callback that is invoked when an asynchronous signing operation is
