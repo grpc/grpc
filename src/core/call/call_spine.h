@@ -275,6 +275,37 @@ class CallSpine final : public Party, public channelz::DataSource {
         });
   }
 
+  // As SpawnPushServerToClientMessage, but returns a promise that resolves to a
+  // StatusFlag once the push has completed on this call's party, providing
+  // flow control feedback to the caller. If the push fails, the call is
+  // cancelled.
+  // Must be called from within an activity, and the returned promise must be
+  // polled by that same activity.
+  GRPC_MUST_USE_RESULT auto SpawnPushServerToClientMessageWithWaiting(
+      MessageHandle msg) {
+    return server_to_client_serializer()->SpawnWaitable(
+        [msg = std::move(msg), self = RefAsSubclass<CallSpine>()]() mutable {
+          return Map(self->PushServerToClientMessage(std::move(msg)),
+                     [self](StatusFlag r) {
+                       self->CancelIfFailed(r);
+                       return r;
+                     });
+        });
+  }
+
+  // As above, but for the client->server direction.
+  GRPC_MUST_USE_RESULT auto SpawnPushClientToServerMessageWithWaiting(
+      MessageHandle msg) {
+    return client_to_server_serializer()->SpawnWaitable(
+        [msg = std::move(msg), self = RefAsSubclass<CallSpine>()]() mutable {
+          return Map(self->PushClientToServerMessage(std::move(msg)),
+                     [self](StatusFlag r) {
+                       self->CancelIfFailed(r);
+                       return r;
+                     });
+        });
+  }
+
   void SpawnFinishSends() {
     client_to_server_serializer()->Spawn([self = RefAsSubclass<CallSpine>()]() {
       self->FinishSends();
@@ -406,6 +437,16 @@ class CallInitiator {
   void SpawnPushMessage(MessageHandle message) {
     GRPC_DCHECK_NE(spine_.get(), nullptr);
     spine_->SpawnPushClientToServerMessage(std::move(message));
+  }
+
+  // As SpawnPushMessage, but returns a promise that resolves to a StatusFlag
+  // once the push completes, providing flow control feedback to the caller.
+  // Must be called from within an activity, and the returned promise must be
+  // polled by that same activity.
+  GRPC_MUST_USE_RESULT auto SpawnPushMessageWithWaiting(MessageHandle message) {
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
+    return spine_->SpawnPushClientToServerMessageWithWaiting(
+        std::move(message));
   }
 
   void FinishSends() {
@@ -560,6 +601,15 @@ class CallHandler {
 
   void SpawnPushMessage(MessageHandle message) {
     spine_->SpawnPushServerToClientMessage(std::move(message));
+  }
+
+  // As SpawnPushMessage, but returns a promise that resolves to a StatusFlag
+  // once the push completes, providing flow control feedback to the caller.
+  // Must be called from within an activity, and the returned promise must be
+  // polled by that same activity.
+  GRPC_MUST_USE_RESULT auto SpawnPushMessageWithWaiting(MessageHandle message) {
+    return spine_->SpawnPushServerToClientMessageWithWaiting(
+        std::move(message));
   }
 
   auto PullMessage() { return spine_->PullClientToServerMessage(); }
