@@ -40,12 +40,17 @@ std::shared_ptr<EventEngine> DefaultEventEngineFactory() {
 
 }  // namespace grpc_event_engine::experimental
 #else
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 
 namespace grpc_event_engine::experimental {
 
 std::shared_ptr<EventEngine> DefaultEventEngineFactory() {
-  return PosixEventEngine::MakePosixEventEngine();
+  PosixEventEngine::Options options;
+  const int reserve_threads =
+      grpc_core::ConfigVars::Get().EventEngineReserveThreads();
+  if (reserve_threads > 0) options.reserve_threads = reserve_threads;
+  return PosixEventEngine::MakePosixEventEngine(options);
 }
 
 }  // namespace grpc_event_engine::experimental
