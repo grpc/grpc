@@ -116,7 +116,10 @@ MEMBER_TYPE = {
 
 FLAG_TYPE = {
     "int": "absl::optional<int32_t>",
-    "double": "absl::optional<double>",
+    # Doubles are stored as strings and parsed by LoadConfig: an
+    # absl::optional<double> flag links double formatting (std::to_chars and
+    # its tables, ~100KB) into every binary just to unparse the flag.
+    "double": "absl::optional<std::string>",
     "string": "absl::optional<std::string>",
     "comma_separated_string": "std::vector<std::string>",
     "bool": "absl::optional<bool>",
