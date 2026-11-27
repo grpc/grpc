@@ -862,6 +862,29 @@ TEST(AltsCryptTest, GsecKeyCreationIsNotRekey) {
   gpr_free(key);
 }
 
+TEST(AltsCryptTest, GsecKeyCreationIsRekeyShortKey) {
+  for (size_t key_len : {size_t{0}, size_t{16}, kAes128GcmRekeyKeyLength - 1}) {
+    uint8_t* key = nullptr;
+    if (key_len > 0) {
+      gsec_test_random_array(&key, key_len);
+    }
+    auto gsec_key = std::make_unique<grpc_core::GsecKey>(
+        absl::MakeConstSpan(key, key_len), /*is_rekey=*/true);
+    EXPECT_TRUE(gsec_key->IsRekey());
+    EXPECT_TRUE(gsec_key->key().empty());
+    EXPECT_TRUE(gsec_key->nonce_mask().empty());
+    gsec_aead_crypter* crypter = nullptr;
+    char* error_details = nullptr;
+    EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
+                  std::move(gsec_key), kAesGcmNonceLength, kAesGcmTagLength,
+                  &crypter, &error_details),
+              GRPC_STATUS_FAILED_PRECONDITION);
+    EXPECT_EQ(crypter, nullptr);
+    gpr_free(error_details);
+    gpr_free(key);
+  }
+}
+
 TEST(AltsCryptTest, GsecTestDoGenericCrypterTests) {
   gsec_aead_crypter** crypters;
   gsec_test_get_random_aes_gcm_crypters(&crypters);

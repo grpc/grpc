@@ -47,14 +47,18 @@ std::unique_ptr<GsecKeyInterface> GsecKeyFactory::Create() const {
 GsecKey::GsecKey(absl::Span<const uint8_t> key, bool is_rekey)
     : is_rekey_(is_rekey) {
   if (is_rekey_) {
+    if (key.size() < kKdfKeyLen + kAesGcmNonceLength) {
+      return;
+    }
     aead_key_.resize(kRekeyAeadKeyLen);
     kdf_buffer_.resize(EVP_MAX_MD_SIZE);
     nonce_mask_.resize(kAesGcmNonceLength);
     memcpy(nonce_mask_.data(), key.data() + kKdfKeyLen, kAesGcmNonceLength);
     kdf_counter_.resize(kKdfCounterLen, 0);
+    key_.assign(key.data(), key.data() + kKdfKeyLen);
+  } else {
+    key_.assign(key.begin(), key.end());
   }
-  key_.resize(is_rekey_ ? kKdfKeyLen : key.size());
-  memcpy(key_.data(), key.data(), key_.size());
 }
 
 bool GsecKey::IsRekey() { return is_rekey_; }
@@ -705,7 +709,11 @@ grpc_status_code gsec_aes_gcm_aead_crypter_create(
     return GRPC_STATUS_FAILED_PRECONDITION;
   }
   *crypter = nullptr;
-  if ((key->IsRekey() && key->key().size() != kKdfKeyLen) ||
+  if ((key->IsRekey() && (key->key().size() != kKdfKeyLen ||
+                          key->aead_key().size() != kRekeyAeadKeyLen ||
+                          key->nonce_mask().size() != kAesGcmNonceLength ||
+                          key->kdf_counter().size() != kKdfCounterLen ||
+                          key->kdf_buffer().size() < EVP_MAX_MD_SIZE)) ||
       (!key->IsRekey() && key->key().size() != kAes128GcmKeyLength &&
        key->key().size() != kAes256GcmKeyLength) ||
       (tag_length != kAesGcmTagLength) ||
