@@ -35,7 +35,9 @@
 
 namespace grpc_core {
 
-class Chttp2Connector : public SubchannelConnector {
+// TODO(roth): Remove this in favor of Chttp2Connector once the
+// server_connection_management experiment is removed.
+class OldChttp2Connector : public SubchannelConnector {
  public:
   void Connect(const Args& args, Result* result, grpc_closure* notify) override;
   void Shutdown(grpc_error_handle error) override;
@@ -68,6 +70,22 @@ class Chttp2Connector : public SubchannelConnector {
   grpc_event_engine::experimental::EventEngine* event_engine_
       ABSL_GUARDED_BY(mu_);
   std::optional<grpc_error_handle> notify_error_;
+  RefCountedPtr<HandshakeManager> handshake_mgr_;
+};
+
+class Chttp2Connector : public SubchannelConnector {
+ public:
+  void Connect(const Args& args, Result* result, grpc_closure* notify) override;
+  void Shutdown(grpc_error_handle error) override;
+
+ private:
+  void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
+
+  Mutex mu_;
+  Args args_;
+  Result* result_ = nullptr;
+  grpc_closure* notify_ = nullptr;
+  bool shutdown_ = false;
   RefCountedPtr<HandshakeManager> handshake_mgr_;
 };
 
