@@ -62,14 +62,22 @@ UPB_INLINE envoy_config_trace_v3_Tracing* envoy_config_trace_v3_Tracing_parse_ex
 UPB_INLINE char* envoy_config_trace_v3_Tracing_serialize(const envoy_config_trace_v3_Tracing* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__Tracing_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__Tracing_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_trace_v3_Tracing_serialize_ex(const envoy_config_trace_v3_Tracing* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__Tracing_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__Tracing_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_trace_v3_Tracing_clear_http(envoy_config_trace_v3_Tracing* msg) {
@@ -133,14 +141,22 @@ UPB_INLINE envoy_config_trace_v3_Tracing_Http* envoy_config_trace_v3_Tracing_Htt
 UPB_INLINE char* envoy_config_trace_v3_Tracing_Http_serialize(const envoy_config_trace_v3_Tracing_Http* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__Tracing__Http_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__Tracing__Http_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_trace_v3_Tracing_Http_serialize_ex(const envoy_config_trace_v3_Tracing_Http* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__Tracing__Http_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__Tracing__Http_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {

@@ -67,14 +67,22 @@ UPB_INLINE xds_core_v3_ResourceLocator* xds_core_v3_ResourceLocator_parse_ex(
 UPB_INLINE char* xds_core_v3_ResourceLocator_serialize(const xds_core_v3_ResourceLocator* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__core__v3__ResourceLocator_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__core__v3__ResourceLocator_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_core_v3_ResourceLocator_serialize_ex(const xds_core_v3_ResourceLocator* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__core__v3__ResourceLocator_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__core__v3__ResourceLocator_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -297,14 +305,22 @@ UPB_INLINE xds_core_v3_ResourceLocator_Directive* xds_core_v3_ResourceLocator_Di
 UPB_INLINE char* xds_core_v3_ResourceLocator_Directive_serialize(const xds_core_v3_ResourceLocator_Directive* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__core__v3__ResourceLocator__Directive_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__core__v3__ResourceLocator__Directive_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_core_v3_ResourceLocator_Directive_serialize_ex(const xds_core_v3_ResourceLocator_Directive* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__core__v3__ResourceLocator__Directive_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__core__v3__ResourceLocator__Directive_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {

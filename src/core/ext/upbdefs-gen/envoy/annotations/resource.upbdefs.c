@@ -13,7 +13,7 @@
 
 extern _upb_DefPool_Init google_protobuf_descriptor_proto_upbdefinit;
 
-static const char descriptor[300] = {
+static const char descriptor_envoy_annotations_resource_proto_upbdefinit[300] = {
     '\n', ' ', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'n', 'n', 'o',
     't', 'a', 't', 'i', 'o', 'n', 's', '/', 'r', 'e', 's', 'o',
     'u', 'r', 'c', 'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\021',
@@ -41,14 +41,15 @@ static const char descriptor[300] = {
     'i', 'o', 'n', 's', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[2] = {
+static _upb_DefPool_Init* deps_envoy_annotations_resource_proto_upbdefinit[2] = {
     &google_protobuf_descriptor_proto_upbdefinit,
     NULL,
 };
 
 _upb_DefPool_Init envoy_annotations_resource_proto_upbdefinit = {
-    deps,
+    deps_envoy_annotations_resource_proto_upbdefinit,
     &envoy_annotations_resource_proto_upb_file_layout,
     "envoy/annotations/resource.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_annotations_resource_proto_upbdefinit,
+                        sizeof(descriptor_envoy_annotations_resource_proto_upbdefinit)),
 };

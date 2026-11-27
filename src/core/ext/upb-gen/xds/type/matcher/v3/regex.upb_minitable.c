@@ -35,10 +35,10 @@ const upb_MiniTable xds__type__matcher__v3__RegexMatcher_msg_init = {
   "xds.type.matcher.v3.RegexMatcher",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x002000080103000a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
     {0x001000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -50,13 +50,13 @@ const upb_MiniTable xds__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init = {
 #endif
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_xds_type_matcher_v3_regex_proto_upb_file_layout[2] = {
   &xds__type__matcher__v3__RegexMatcher_msg_init,
   &xds__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init,
 };
 
 const upb_MiniTableFile xds_type_matcher_v3_regex_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_xds_type_matcher_v3_regex_proto_upb_file_layout,
   NULL,
   NULL,
   2,

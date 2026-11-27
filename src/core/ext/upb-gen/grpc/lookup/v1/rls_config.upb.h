@@ -79,14 +79,22 @@ UPB_INLINE grpc_lookup_v1_NameMatcher* grpc_lookup_v1_NameMatcher_parse_ex(
 UPB_INLINE char* grpc_lookup_v1_NameMatcher_serialize(const grpc_lookup_v1_NameMatcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__NameMatcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__NameMatcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_lookup_v1_NameMatcher_serialize_ex(const grpc_lookup_v1_NameMatcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__NameMatcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__NameMatcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_lookup_v1_NameMatcher_clear_key(grpc_lookup_v1_NameMatcher* msg) {
@@ -222,14 +230,22 @@ UPB_INLINE grpc_lookup_v1_GrpcKeyBuilder* grpc_lookup_v1_GrpcKeyBuilder_parse_ex
 UPB_INLINE char* grpc_lookup_v1_GrpcKeyBuilder_serialize(const grpc_lookup_v1_GrpcKeyBuilder* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__GrpcKeyBuilder_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__GrpcKeyBuilder_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_lookup_v1_GrpcKeyBuilder_serialize_ex(const grpc_lookup_v1_GrpcKeyBuilder* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__GrpcKeyBuilder_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__GrpcKeyBuilder_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_lookup_v1_GrpcKeyBuilder_clear_names(grpc_lookup_v1_GrpcKeyBuilder* msg) {
@@ -489,6 +505,7 @@ UPB_INLINE bool grpc_lookup_v1_GrpcKeyBuilder_constant_keys_set(grpc_lookup_v1_G
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__GrpcKeyBuilder__ConstantKeysEntry_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, 0, a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, 0, a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
@@ -529,14 +546,22 @@ UPB_INLINE grpc_lookup_v1_GrpcKeyBuilder_Name* grpc_lookup_v1_GrpcKeyBuilder_Nam
 UPB_INLINE char* grpc_lookup_v1_GrpcKeyBuilder_Name_serialize(const grpc_lookup_v1_GrpcKeyBuilder_Name* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__GrpcKeyBuilder__Name_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__GrpcKeyBuilder__Name_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_lookup_v1_GrpcKeyBuilder_Name_serialize_ex(const grpc_lookup_v1_GrpcKeyBuilder_Name* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__GrpcKeyBuilder__Name_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__GrpcKeyBuilder__Name_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_lookup_v1_GrpcKeyBuilder_Name_clear_service(grpc_lookup_v1_GrpcKeyBuilder_Name* msg) {
@@ -601,14 +626,22 @@ UPB_INLINE grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys* grpc_lookup_v1_GrpcKeyBuilde
 UPB_INLINE char* grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys_serialize(const grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__GrpcKeyBuilder__ExtraKeys_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__GrpcKeyBuilder__ExtraKeys_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys_serialize_ex(const grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__GrpcKeyBuilder__ExtraKeys_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__GrpcKeyBuilder__ExtraKeys_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys_clear_host(grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys* msg) {
@@ -689,14 +722,22 @@ UPB_INLINE grpc_lookup_v1_HttpKeyBuilder* grpc_lookup_v1_HttpKeyBuilder_parse_ex
 UPB_INLINE char* grpc_lookup_v1_HttpKeyBuilder_serialize(const grpc_lookup_v1_HttpKeyBuilder* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__HttpKeyBuilder_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__HttpKeyBuilder_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_lookup_v1_HttpKeyBuilder_serialize_ex(const grpc_lookup_v1_HttpKeyBuilder* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__HttpKeyBuilder_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__HttpKeyBuilder_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_lookup_v1_HttpKeyBuilder_clear_host_patterns(grpc_lookup_v1_HttpKeyBuilder* msg) {
@@ -1079,6 +1120,7 @@ UPB_INLINE bool grpc_lookup_v1_HttpKeyBuilder_constant_keys_set(grpc_lookup_v1_H
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, 0, a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, 0, a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
@@ -1123,14 +1165,22 @@ UPB_INLINE grpc_lookup_v1_RouteLookupConfig* grpc_lookup_v1_RouteLookupConfig_pa
 UPB_INLINE char* grpc_lookup_v1_RouteLookupConfig_serialize(const grpc_lookup_v1_RouteLookupConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__RouteLookupConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__RouteLookupConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_lookup_v1_RouteLookupConfig_serialize_ex(const grpc_lookup_v1_RouteLookupConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__RouteLookupConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__RouteLookupConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_lookup_v1_RouteLookupConfig_clear_http_keybuilders(grpc_lookup_v1_RouteLookupConfig* msg) {
@@ -1535,14 +1585,22 @@ UPB_INLINE grpc_lookup_v1_RouteLookupClusterSpecifier* grpc_lookup_v1_RouteLooku
 UPB_INLINE char* grpc_lookup_v1_RouteLookupClusterSpecifier_serialize(const grpc_lookup_v1_RouteLookupClusterSpecifier* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__RouteLookupClusterSpecifier_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__RouteLookupClusterSpecifier_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_lookup_v1_RouteLookupClusterSpecifier_serialize_ex(const grpc_lookup_v1_RouteLookupClusterSpecifier* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__RouteLookupClusterSpecifier_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__lookup__v1__RouteLookupClusterSpecifier_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_lookup_v1_RouteLookupClusterSpecifier_clear_route_lookup_config(grpc_lookup_v1_RouteLookupClusterSpecifier* msg) {

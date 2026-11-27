@@ -55,14 +55,22 @@ UPB_INLINE xds_annotations_v3_VersioningAnnotation* xds_annotations_v3_Versionin
 UPB_INLINE char* xds_annotations_v3_VersioningAnnotation_serialize(const xds_annotations_v3_VersioningAnnotation* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__VersioningAnnotation_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__VersioningAnnotation_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_annotations_v3_VersioningAnnotation_serialize_ex(const xds_annotations_v3_VersioningAnnotation* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__VersioningAnnotation_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__VersioningAnnotation_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_annotations_v3_VersioningAnnotation_clear_previous_message_type(xds_annotations_v3_VersioningAnnotation* msg) {

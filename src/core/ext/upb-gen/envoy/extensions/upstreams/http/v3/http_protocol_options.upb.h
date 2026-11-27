@@ -88,14 +88,22 @@ UPB_INLINE envoy_extensions_upstreams_http_v3_HttpProtocolOptions* envoy_extensi
 UPB_INLINE char* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_serialize(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_serialize_ex(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -633,14 +641,22 @@ UPB_INLINE envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpCo
 UPB_INLINE char* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig_serialize(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__ExplicitHttpConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__ExplicitHttpConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig_serialize_ex(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__ExplicitHttpConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__ExplicitHttpConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -783,14 +799,22 @@ UPB_INLINE envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamH
 UPB_INLINE char* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig_serialize(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__UseDownstreamHttpConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__UseDownstreamHttpConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig_serialize_ex(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__UseDownstreamHttpConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__UseDownstreamHttpConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig_clear_http_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig* msg) {
@@ -916,14 +940,22 @@ UPB_INLINE envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig
 UPB_INLINE char* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig_serialize(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__AutoHttpConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__AutoHttpConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig_serialize_ex(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__AutoHttpConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__AutoHttpConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig_clear_http_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig* msg) {
@@ -1080,14 +1112,22 @@ UPB_INLINE envoy_extensions_upstreams_http_v3_HttpProtocolOptions_OutlierDetecti
 UPB_INLINE char* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_OutlierDetection_serialize(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions_OutlierDetection* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__OutlierDetection_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__OutlierDetection_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_OutlierDetection_serialize_ex(const envoy_extensions_upstreams_http_v3_HttpProtocolOptions_OutlierDetection* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__OutlierDetection_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__OutlierDetection_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_OutlierDetection_clear_error_matcher(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_OutlierDetection* msg) {

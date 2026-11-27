@@ -73,14 +73,22 @@ UPB_INLINE envoy_admin_v3_Certificates* envoy_admin_v3_Certificates_parse_ex(
 UPB_INLINE char* envoy_admin_v3_Certificates_serialize(const envoy_admin_v3_Certificates* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__Certificates_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__Certificates_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_Certificates_serialize_ex(const envoy_admin_v3_Certificates* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__Certificates_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__Certificates_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_admin_v3_Certificates_clear_certificates(envoy_admin_v3_Certificates* msg) {
@@ -193,14 +201,22 @@ UPB_INLINE envoy_admin_v3_Certificate* envoy_admin_v3_Certificate_parse_ex(
 UPB_INLINE char* envoy_admin_v3_Certificate_serialize(const envoy_admin_v3_Certificate* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__Certificate_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__Certificate_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_Certificate_serialize_ex(const envoy_admin_v3_Certificate* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__Certificate_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__Certificate_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_admin_v3_Certificate_clear_ca_cert(envoy_admin_v3_Certificate* msg) {
@@ -393,14 +409,22 @@ UPB_INLINE envoy_admin_v3_CertificateDetails* envoy_admin_v3_CertificateDetails_
 UPB_INLINE char* envoy_admin_v3_CertificateDetails_serialize(const envoy_admin_v3_CertificateDetails* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__CertificateDetails_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__CertificateDetails_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_CertificateDetails_serialize_ex(const envoy_admin_v3_CertificateDetails* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__CertificateDetails_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__CertificateDetails_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_admin_v3_CertificateDetails_clear_path(envoy_admin_v3_CertificateDetails* msg) {
@@ -654,14 +678,22 @@ UPB_INLINE envoy_admin_v3_CertificateDetails_OcspDetails* envoy_admin_v3_Certifi
 UPB_INLINE char* envoy_admin_v3_CertificateDetails_OcspDetails_serialize(const envoy_admin_v3_CertificateDetails_OcspDetails* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__CertificateDetails__OcspDetails_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__CertificateDetails__OcspDetails_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_CertificateDetails_OcspDetails_serialize_ex(const envoy_admin_v3_CertificateDetails_OcspDetails* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__CertificateDetails__OcspDetails_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__CertificateDetails__OcspDetails_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_admin_v3_CertificateDetails_OcspDetails_clear_valid_from(envoy_admin_v3_CertificateDetails_OcspDetails* msg) {
@@ -756,14 +788,22 @@ UPB_INLINE envoy_admin_v3_SubjectAlternateName* envoy_admin_v3_SubjectAlternateN
 UPB_INLINE char* envoy_admin_v3_SubjectAlternateName_serialize(const envoy_admin_v3_SubjectAlternateName* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__SubjectAlternateName_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__SubjectAlternateName_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_SubjectAlternateName_serialize_ex(const envoy_admin_v3_SubjectAlternateName* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__SubjectAlternateName_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__SubjectAlternateName_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {

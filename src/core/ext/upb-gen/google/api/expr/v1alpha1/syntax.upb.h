@@ -117,14 +117,22 @@ UPB_INLINE google_api_expr_v1alpha1_ParsedExpr* google_api_expr_v1alpha1_ParsedE
 UPB_INLINE char* google_api_expr_v1alpha1_ParsedExpr_serialize(const google_api_expr_v1alpha1_ParsedExpr* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__ParsedExpr_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__ParsedExpr_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* google_api_expr_v1alpha1_ParsedExpr_serialize_ex(const google_api_expr_v1alpha1_ParsedExpr* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__ParsedExpr_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__ParsedExpr_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void google_api_expr_v1alpha1_ParsedExpr_clear_expr(google_api_expr_v1alpha1_ParsedExpr* msg) {
@@ -219,14 +227,22 @@ UPB_INLINE google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_parse_ex
 UPB_INLINE char* google_api_expr_v1alpha1_Expr_serialize(const google_api_expr_v1alpha1_Expr* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* google_api_expr_v1alpha1_Expr_serialize_ex(const google_api_expr_v1alpha1_Expr* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -513,14 +529,22 @@ UPB_INLINE google_api_expr_v1alpha1_Expr_Ident* google_api_expr_v1alpha1_Expr_Id
 UPB_INLINE char* google_api_expr_v1alpha1_Expr_Ident_serialize(const google_api_expr_v1alpha1_Expr_Ident* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__Ident_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__Ident_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* google_api_expr_v1alpha1_Expr_Ident_serialize_ex(const google_api_expr_v1alpha1_Expr_Ident* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__Ident_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__Ident_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void google_api_expr_v1alpha1_Expr_Ident_clear_name(google_api_expr_v1alpha1_Expr_Ident* msg) {
@@ -569,14 +593,22 @@ UPB_INLINE google_api_expr_v1alpha1_Expr_Select* google_api_expr_v1alpha1_Expr_S
 UPB_INLINE char* google_api_expr_v1alpha1_Expr_Select_serialize(const google_api_expr_v1alpha1_Expr_Select* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__Select_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__Select_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* google_api_expr_v1alpha1_Expr_Select_serialize_ex(const google_api_expr_v1alpha1_Expr_Select* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__Select_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__Select_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void google_api_expr_v1alpha1_Expr_Select_clear_operand(google_api_expr_v1alpha1_Expr_Select* msg) {
@@ -672,14 +704,22 @@ UPB_INLINE google_api_expr_v1alpha1_Expr_Call* google_api_expr_v1alpha1_Expr_Cal
 UPB_INLINE char* google_api_expr_v1alpha1_Expr_Call_serialize(const google_api_expr_v1alpha1_Expr_Call* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__Call_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__Call_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* google_api_expr_v1alpha1_Expr_Call_serialize_ex(const google_api_expr_v1alpha1_Expr_Call* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__Call_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__Call_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void google_api_expr_v1alpha1_Expr_Call_clear_target(google_api_expr_v1alpha1_Expr_Call* msg) {
@@ -839,14 +879,22 @@ UPB_INLINE google_api_expr_v1alpha1_Expr_CreateList* google_api_expr_v1alpha1_Ex
 UPB_INLINE char* google_api_expr_v1alpha1_Expr_CreateList_serialize(const google_api_expr_v1alpha1_Expr_CreateList* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__CreateList_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__CreateList_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* google_api_expr_v1alpha1_Expr_CreateList_serialize_ex(const google_api_expr_v1alpha1_Expr_CreateList* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__CreateList_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__CreateList_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void google_api_expr_v1alpha1_Expr_CreateList_clear_elements(google_api_expr_v1alpha1_Expr_CreateList* msg) {
@@ -1030,14 +1078,22 @@ UPB_INLINE google_api_expr_v1alpha1_Expr_CreateStruct* google_api_expr_v1alpha1_
 UPB_INLINE char* google_api_expr_v1alpha1_Expr_CreateStruct_serialize(const google_api_expr_v1alpha1_Expr_CreateStruct* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__CreateStruct_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__CreateStruct_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* google_api_expr_v1alpha1_Expr_CreateStruct_serialize_ex(const google_api_expr_v1alpha1_Expr_CreateStruct* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__CreateStruct_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__CreateStruct_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void google_api_expr_v1alpha1_Expr_CreateStruct_clear_message_name(google_api_expr_v1alpha1_Expr_CreateStruct* msg) {
@@ -1166,14 +1222,22 @@ UPB_INLINE google_api_expr_v1alpha1_Expr_CreateStruct_Entry* google_api_expr_v1a
 UPB_INLINE char* google_api_expr_v1alpha1_Expr_CreateStruct_Entry_serialize(const google_api_expr_v1alpha1_Expr_CreateStruct_Entry* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__CreateStruct__Entry_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__CreateStruct__Entry_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* google_api_expr_v1alpha1_Expr_CreateStruct_Entry_serialize_ex(const google_api_expr_v1alpha1_Expr_CreateStruct_Entry* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__CreateStruct__Entry_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__CreateStruct__Entry_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -1336,14 +1400,22 @@ UPB_INLINE google_api_expr_v1alpha1_Expr_Comprehension* google_api_expr_v1alpha1
 UPB_INLINE char* google_api_expr_v1alpha1_Expr_Comprehension_serialize(const google_api_expr_v1alpha1_Expr_Comprehension* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__Comprehension_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__Comprehension_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* google_api_expr_v1alpha1_Expr_Comprehension_serialize_ex(const google_api_expr_v1alpha1_Expr_Comprehension* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__Comprehension_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Expr__Comprehension_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void google_api_expr_v1alpha1_Expr_Comprehension_clear_iter_var(google_api_expr_v1alpha1_Expr_Comprehension* msg) {
@@ -1579,14 +1651,22 @@ UPB_INLINE google_api_expr_v1alpha1_Constant* google_api_expr_v1alpha1_Constant_
 UPB_INLINE char* google_api_expr_v1alpha1_Constant_serialize(const google_api_expr_v1alpha1_Constant* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Constant_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Constant_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* google_api_expr_v1alpha1_Constant_serialize_ex(const google_api_expr_v1alpha1_Constant* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Constant_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__Constant_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -1844,14 +1924,22 @@ UPB_INLINE google_api_expr_v1alpha1_SourceInfo* google_api_expr_v1alpha1_SourceI
 UPB_INLINE char* google_api_expr_v1alpha1_SourceInfo_serialize(const google_api_expr_v1alpha1_SourceInfo* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__SourceInfo_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__SourceInfo_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* google_api_expr_v1alpha1_SourceInfo_serialize_ex(const google_api_expr_v1alpha1_SourceInfo* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__SourceInfo_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__SourceInfo_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void google_api_expr_v1alpha1_SourceInfo_clear_syntax_version(google_api_expr_v1alpha1_SourceInfo* msg) {
@@ -2120,6 +2208,7 @@ UPB_INLINE bool google_api_expr_v1alpha1_SourceInfo_positions_set(google_api_exp
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__api__expr__v1alpha1__SourceInfo__PositionsEntry_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, sizeof(key), sizeof(val), a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, sizeof(key), &val, sizeof(val), a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
@@ -2147,6 +2236,7 @@ UPB_INLINE bool google_api_expr_v1alpha1_SourceInfo_macro_calls_set(google_api_e
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__api__expr__v1alpha1__Expr_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, sizeof(key), sizeof(val), a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, sizeof(key), &val, sizeof(val), a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
@@ -2227,14 +2317,22 @@ UPB_INLINE google_api_expr_v1alpha1_SourceInfo_Extension* google_api_expr_v1alph
 UPB_INLINE char* google_api_expr_v1alpha1_SourceInfo_Extension_serialize(const google_api_expr_v1alpha1_SourceInfo_Extension* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__SourceInfo__Extension_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__SourceInfo__Extension_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* google_api_expr_v1alpha1_SourceInfo_Extension_serialize_ex(const google_api_expr_v1alpha1_SourceInfo_Extension* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__SourceInfo__Extension_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__SourceInfo__Extension_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void google_api_expr_v1alpha1_SourceInfo_Extension_clear_id(google_api_expr_v1alpha1_SourceInfo_Extension* msg) {
@@ -2385,14 +2483,22 @@ UPB_INLINE google_api_expr_v1alpha1_SourceInfo_Extension_Version* google_api_exp
 UPB_INLINE char* google_api_expr_v1alpha1_SourceInfo_Extension_Version_serialize(const google_api_expr_v1alpha1_SourceInfo_Extension_Version* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__SourceInfo__Extension__Version_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__SourceInfo__Extension__Version_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* google_api_expr_v1alpha1_SourceInfo_Extension_Version_serialize_ex(const google_api_expr_v1alpha1_SourceInfo_Extension_Version* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__SourceInfo__Extension__Version_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__SourceInfo__Extension__Version_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void google_api_expr_v1alpha1_SourceInfo_Extension_Version_clear_major(google_api_expr_v1alpha1_SourceInfo_Extension_Version* msg) {
@@ -2457,14 +2563,22 @@ UPB_INLINE google_api_expr_v1alpha1_SourcePosition* google_api_expr_v1alpha1_Sou
 UPB_INLINE char* google_api_expr_v1alpha1_SourcePosition_serialize(const google_api_expr_v1alpha1_SourcePosition* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__SourcePosition_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__SourcePosition_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* google_api_expr_v1alpha1_SourcePosition_serialize_ex(const google_api_expr_v1alpha1_SourcePosition* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__SourcePosition_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &google__api__expr__v1alpha1__SourcePosition_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void google_api_expr_v1alpha1_SourcePosition_clear_location(google_api_expr_v1alpha1_SourcePosition* msg) {

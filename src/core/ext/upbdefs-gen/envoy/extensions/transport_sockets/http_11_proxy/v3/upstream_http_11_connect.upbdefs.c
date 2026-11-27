@@ -15,7 +15,7 @@ extern _upb_DefPool_Init envoy_config_core_v3_address_proto_upbdefinit;
 extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 
-static const char descriptor[659] = {
+static const char descriptor_envoy_extensions_transport_sockets_http_11_proxy_v3_upstream_http_11_connect_proto_upbdefinit[659] = {
     '\n', 'R', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e',
     'n', 's', 'i', 'o', 'n', 's', '/', 't', 'r', 'a', 'n', 's',
     'p', 'o', 'r', 't', '_', 's', 'o', 'c', 'k', 'e', 't', 's',
@@ -73,7 +73,7 @@ static const char descriptor[659] = {
     '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[4] = {
+static _upb_DefPool_Init* deps_envoy_extensions_transport_sockets_http_11_proxy_v3_upstream_http_11_connect_proto_upbdefinit[4] = {
     &envoy_config_core_v3_address_proto_upbdefinit,
     &envoy_config_core_v3_base_proto_upbdefinit,
     &udpa_annotations_status_proto_upbdefinit,
@@ -81,8 +81,9 @@ static _upb_DefPool_Init *deps[4] = {
 };
 
 _upb_DefPool_Init envoy_extensions_transport_sockets_http_11_proxy_v3_upstream_http_11_connect_proto_upbdefinit = {
-    deps,
+    deps_envoy_extensions_transport_sockets_http_11_proxy_v3_upstream_http_11_connect_proto_upbdefinit,
     &envoy_extensions_transport_sockets_http_11_proxy_v3_upstream_http_11_connect_proto_upb_file_layout,
     "envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_extensions_transport_sockets_http_11_proxy_v3_upstream_http_11_connect_proto_upbdefinit,
+                        sizeof(descriptor_envoy_extensions_transport_sockets_http_11_proxy_v3_upstream_http_11_connect_proto_upbdefinit)),
 };

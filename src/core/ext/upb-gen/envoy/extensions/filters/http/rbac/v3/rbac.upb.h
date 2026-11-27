@@ -64,14 +64,22 @@ UPB_INLINE envoy_extensions_filters_http_rbac_v3_RBAC* envoy_extensions_filters_
 UPB_INLINE char* envoy_extensions_filters_http_rbac_v3_RBAC_serialize(const envoy_extensions_filters_http_rbac_v3_RBAC* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__rbac__v3__RBAC_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__rbac__v3__RBAC_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_rbac_v3_RBAC_serialize_ex(const envoy_extensions_filters_http_rbac_v3_RBAC* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__rbac__v3__RBAC_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__rbac__v3__RBAC_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBAC_clear_rules(envoy_extensions_filters_http_rbac_v3_RBAC* msg) {
@@ -276,14 +284,22 @@ UPB_INLINE envoy_extensions_filters_http_rbac_v3_RBACPerRoute* envoy_extensions_
 UPB_INLINE char* envoy_extensions_filters_http_rbac_v3_RBACPerRoute_serialize(const envoy_extensions_filters_http_rbac_v3_RBACPerRoute* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__rbac__v3__RBACPerRoute_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__rbac__v3__RBACPerRoute_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_rbac_v3_RBACPerRoute_serialize_ex(const envoy_extensions_filters_http_rbac_v3_RBACPerRoute* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__rbac__v3__RBACPerRoute_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__rbac__v3__RBACPerRoute_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBACPerRoute_clear_rbac(envoy_extensions_filters_http_rbac_v3_RBACPerRoute* msg) {

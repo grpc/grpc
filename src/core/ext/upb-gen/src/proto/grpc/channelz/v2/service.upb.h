@@ -80,14 +80,22 @@ UPB_INLINE grpc_channelz_v2_QueryEntitiesRequest* grpc_channelz_v2_QueryEntities
 UPB_INLINE char* grpc_channelz_v2_QueryEntitiesRequest_serialize(const grpc_channelz_v2_QueryEntitiesRequest* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryEntitiesRequest_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryEntitiesRequest_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_channelz_v2_QueryEntitiesRequest_serialize_ex(const grpc_channelz_v2_QueryEntitiesRequest* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryEntitiesRequest_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryEntitiesRequest_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_channelz_v2_QueryEntitiesRequest_clear_kind(grpc_channelz_v2_QueryEntitiesRequest* msg) {
@@ -168,14 +176,22 @@ UPB_INLINE grpc_channelz_v2_QueryEntitiesResponse* grpc_channelz_v2_QueryEntitie
 UPB_INLINE char* grpc_channelz_v2_QueryEntitiesResponse_serialize(const grpc_channelz_v2_QueryEntitiesResponse* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryEntitiesResponse_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryEntitiesResponse_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_channelz_v2_QueryEntitiesResponse_serialize_ex(const grpc_channelz_v2_QueryEntitiesResponse* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryEntitiesResponse_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryEntitiesResponse_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_channelz_v2_QueryEntitiesResponse_clear_entities(grpc_channelz_v2_QueryEntitiesResponse* msg) {
@@ -304,14 +320,22 @@ UPB_INLINE grpc_channelz_v2_GetEntityRequest* grpc_channelz_v2_GetEntityRequest_
 UPB_INLINE char* grpc_channelz_v2_GetEntityRequest_serialize(const grpc_channelz_v2_GetEntityRequest* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__GetEntityRequest_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__GetEntityRequest_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_channelz_v2_GetEntityRequest_serialize_ex(const grpc_channelz_v2_GetEntityRequest* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__GetEntityRequest_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__GetEntityRequest_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_channelz_v2_GetEntityRequest_clear_id(grpc_channelz_v2_GetEntityRequest* msg) {
@@ -360,14 +384,22 @@ UPB_INLINE grpc_channelz_v2_GetEntityResponse* grpc_channelz_v2_GetEntityRespons
 UPB_INLINE char* grpc_channelz_v2_GetEntityResponse_serialize(const grpc_channelz_v2_GetEntityResponse* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__GetEntityResponse_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__GetEntityResponse_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_channelz_v2_GetEntityResponse_serialize_ex(const grpc_channelz_v2_GetEntityResponse* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__GetEntityResponse_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__GetEntityResponse_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_channelz_v2_GetEntityResponse_clear_entity(grpc_channelz_v2_GetEntityResponse* msg) {
@@ -431,14 +463,22 @@ UPB_INLINE grpc_channelz_v2_QueryTraceRequest* grpc_channelz_v2_QueryTraceReques
 UPB_INLINE char* grpc_channelz_v2_QueryTraceRequest_serialize(const grpc_channelz_v2_QueryTraceRequest* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryTraceRequest_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryTraceRequest_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_channelz_v2_QueryTraceRequest_serialize_ex(const grpc_channelz_v2_QueryTraceRequest* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryTraceRequest_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryTraceRequest_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_channelz_v2_QueryTraceRequest_clear_id(grpc_channelz_v2_QueryTraceRequest* msg) {
@@ -546,6 +586,7 @@ UPB_INLINE bool grpc_channelz_v2_QueryTraceRequest_args_set(grpc_channelz_v2_Que
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__QueryTraceRequest__QueryArgValue_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, sizeof(val), a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, sizeof(val), a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
@@ -587,14 +628,22 @@ UPB_INLINE grpc_channelz_v2_QueryTraceRequest_QueryArgValue* grpc_channelz_v2_Qu
 UPB_INLINE char* grpc_channelz_v2_QueryTraceRequest_QueryArgValue_serialize(const grpc_channelz_v2_QueryTraceRequest_QueryArgValue* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryTraceRequest__QueryArgValue_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryTraceRequest__QueryArgValue_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_channelz_v2_QueryTraceRequest_QueryArgValue_serialize_ex(const grpc_channelz_v2_QueryTraceRequest_QueryArgValue* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryTraceRequest__QueryArgValue_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryTraceRequest__QueryArgValue_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -704,14 +753,22 @@ UPB_INLINE grpc_channelz_v2_QueryTraceResponse* grpc_channelz_v2_QueryTraceRespo
 UPB_INLINE char* grpc_channelz_v2_QueryTraceResponse_serialize(const grpc_channelz_v2_QueryTraceResponse* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryTraceResponse_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryTraceResponse_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_channelz_v2_QueryTraceResponse_serialize_ex(const grpc_channelz_v2_QueryTraceResponse* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryTraceResponse_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__QueryTraceResponse_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_channelz_v2_QueryTraceResponse_clear_events(grpc_channelz_v2_QueryTraceResponse* msg) {

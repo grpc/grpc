@@ -24,6 +24,8 @@
 extern "C" {
 #endif
 
+#define _UPB_ARRAY_DEFAULT_INITIAL_SIZE 4
+
 // LINT.IfChange(upb_Array)
 
 // Our internal representation for repeated fields.
@@ -51,6 +53,7 @@ UPB_API_INLINE bool upb_Array_IsFrozen(const struct upb_Array* arr) {
 
 UPB_INLINE void UPB_PRIVATE(_upb_Array_SetTaggedPtr)(struct upb_Array* array,
                                                      void* data, size_t lg2) {
+  UPB_ASSERT(data);
   UPB_ASSERT(lg2 != 1);
   UPB_ASSERT(lg2 <= 4);
   const size_t bits = lg2 - (lg2 != 0);
@@ -64,6 +67,27 @@ UPB_PRIVATE(_upb_Array_ElemSizeLg2)(const struct upb_Array* array) {
   return lg2;
 }
 
+// Copies an element of 1 << lg2 bytes (see _upb_Array_ElemSizeLg2()), without
+// calling the library memcpy() for its variable size.
+UPB_INLINE void UPB_PRIVATE(_upb_Array_CopyElem)(void* to, const void* from,
+                                                 size_t lg2) {
+  switch (lg2) {
+    case 0:
+      UPB_MEMCPY_INLINE(to, from, 1);
+      return;
+    case 2:
+      UPB_MEMCPY_INLINE(to, from, 4);
+      return;
+    case 3:
+      UPB_MEMCPY_INLINE(to, from, 8);
+      return;
+    case 4:
+      UPB_MEMCPY_INLINE(to, from, 16);
+      return;
+  }
+  UPB_UNREACHABLE();
+}
+
 UPB_API_INLINE const void* upb_Array_DataPtr(const struct upb_Array* array) {
   UPB_PRIVATE(_upb_Array_ElemSizeLg2)(array);  // Check assertions.
   return (void*)(array->UPB_ONLYBITS(data) & ~(uintptr_t)_UPB_ARRAY_MASK_ALL);
@@ -73,14 +97,42 @@ UPB_API_INLINE void* upb_Array_MutableDataPtr(struct upb_Array* array) {
   return (void*)upb_Array_DataPtr(array);
 }
 
-UPB_INLINE struct upb_Array* UPB_PRIVATE(_upb_Array_NewMaybeAllowSlow)(
-    upb_Arena* arena, size_t init_capacity, int elem_size_lg2,
-    bool allow_slow) {
+// LINT.ThenChange(GoogleInternalName0)
+
+UPB_NODISCARD UPB_INLINE struct upb_Array* UPB_PRIVATE(
+    _upb_Array_NewMaybeAllowSlow)(upb_Arena* arena, size_t init_capacity,
+                                  int elem_size_lg2, bool allow_slow) {
   UPB_ASSERT(elem_size_lg2 != 1);
   UPB_ASSERT(elem_size_lg2 <= 4);
+
+  const size_t elem_bytes = init_capacity << elem_size_lg2;
+
+  // Try to obtain a recycled backing buffer from the arena pool first.
+  if (init_capacity > 0) {
+    const size_t pool_bytes = upb_RoundUpToPowerOfTwo(
+        UPB_MAX(elem_bytes, UPB_PRIVATE(kUpb_Arena_MinPoolBlockSize)));
+    if (pool_bytes != SIZE_MAX) {
+      void* data = upb_Arena_TryAllocPool(arena, pool_bytes);
+      if (data) {
+        struct upb_Array* array = (struct upb_Array*)upb_Arena_Malloc(
+            arena, sizeof(struct upb_Array));
+        if (!array) {
+          upb_Arena_FreePool(arena, data, pool_bytes);
+          return NULL;
+        }
+        UPB_PRIVATE(_upb_Array_SetTaggedPtr)(array, data,
+                                             (size_t)elem_size_lg2);
+        array->UPB_ONLYBITS(size) = 0;
+        array->UPB_PRIVATE(capacity) = pool_bytes >> elem_size_lg2;
+        return array;
+      }
+    }
+  }
+
+  // Pool miss: perform contiguous single allocation for header + initial data.
   const size_t array_size =
       UPB_ALIGN_UP(sizeof(struct upb_Array), UPB_MALLOC_ALIGN);
-  const size_t bytes = array_size + (init_capacity << elem_size_lg2);
+  const size_t bytes = array_size + elem_bytes;
   size_t span = UPB_PRIVATE(_upb_Arena_AllocSpan)(bytes);
   if (!allow_slow && UPB_PRIVATE(_upb_ArenaHas)(arena) < span) return NULL;
   struct upb_Array* array = (struct upb_Array*)upb_Arena_Malloc(arena, bytes);
@@ -92,27 +144,26 @@ UPB_INLINE struct upb_Array* UPB_PRIVATE(_upb_Array_NewMaybeAllowSlow)(
   return array;
 }
 
-UPB_INLINE struct upb_Array* UPB_PRIVATE(_upb_Array_New)(upb_Arena* arena,
-                                                         size_t init_capacity,
-                                                         int elem_size_lg2) {
+UPB_NODISCARD UPB_INLINE struct upb_Array* UPB_PRIVATE(_upb_Array_New)(
+    upb_Arena* arena, size_t init_capacity, int elem_size_lg2) {
   return UPB_PRIVATE(_upb_Array_NewMaybeAllowSlow)(arena, init_capacity,
                                                    elem_size_lg2, true);
 }
 
-UPB_INLINE struct upb_Array* UPB_PRIVATE(_upb_Array_TryFastNew)(
+UPB_NODISCARD UPB_INLINE struct upb_Array* UPB_PRIVATE(_upb_Array_TryFastNew)(
     upb_Arena* arena, size_t init_capacity, int elem_size_lg2) {
   return UPB_PRIVATE(_upb_Array_NewMaybeAllowSlow)(arena, init_capacity,
                                                    elem_size_lg2, false);
 }
 
 // Resizes the capacity of the array to be at least min_size.
-bool UPB_PRIVATE(_upb_Array_Realloc)(struct upb_Array* array, size_t min_size,
-                                     upb_Arena* arena);
+UPB_NODISCARD bool UPB_PRIVATE(_upb_Array_Realloc)(struct upb_Array* array,
+                                                   size_t min_size,
+                                                   upb_Arena* arena);
 
-UPB_FORCEINLINE
-bool UPB_PRIVATE(_upb_Array_TryFastRealloc)(struct upb_Array* array,
-                                            size_t capacity, int elem_size_lg2,
-                                            upb_Arena* arena) {
+UPB_NODISCARD UPB_FORCEINLINE bool UPB_PRIVATE(_upb_Array_TryFastRealloc)(
+    struct upb_Array* array, size_t capacity, int elem_size_lg2,
+    upb_Arena* arena) {
   size_t old_bytes = array->UPB_PRIVATE(capacity) << elem_size_lg2;
   size_t new_bytes = capacity << elem_size_lg2;
   UPB_ASSUME(new_bytes > old_bytes);
@@ -121,8 +172,9 @@ bool UPB_PRIVATE(_upb_Array_TryFastRealloc)(struct upb_Array* array,
   return true;
 }
 
-UPB_API_INLINE bool upb_Array_Reserve(struct upb_Array* array, size_t size,
-                                      upb_Arena* arena) {
+UPB_NODISCARD UPB_API_INLINE bool upb_Array_Reserve(struct upb_Array* array,
+                                                    size_t size,
+                                                    upb_Arena* arena) {
   UPB_ASSERT(!upb_Array_IsFrozen(array));
   if (array->UPB_PRIVATE(capacity) < size)
     return UPB_PRIVATE(_upb_Array_Realloc)(array, size, arena);
@@ -130,7 +182,7 @@ UPB_API_INLINE bool upb_Array_Reserve(struct upb_Array* array, size_t size,
 }
 
 // Resize without initializing new elements.
-UPB_INLINE bool UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
+UPB_NODISCARD UPB_INLINE bool UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
     struct upb_Array* array, size_t size, upb_Arena* arena) {
   UPB_ASSERT(!upb_Array_IsFrozen(array));
   UPB_ASSERT(size <= array->UPB_ONLYBITS(size) ||
@@ -160,8 +212,6 @@ UPB_API_INLINE size_t upb_Array_Size(const struct upb_Array* arr) {
 UPB_API_INLINE size_t upb_Array_Capacity(const struct upb_Array* arr) {
   return arr->UPB_PRIVATE(capacity);
 }
-
-// LINT.ThenChange(GoogleInternalName0)
 
 #ifdef __cplusplus
 } /* extern "C" */

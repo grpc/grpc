@@ -80,14 +80,22 @@ UPB_INLINE envoy_extensions_filters_http_composite_v3_Composite* envoy_extension
 UPB_INLINE char* envoy_extensions_filters_http_composite_v3_Composite_serialize(const envoy_extensions_filters_http_composite_v3_Composite* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__Composite_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__Composite_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_composite_v3_Composite_serialize_ex(const envoy_extensions_filters_http_composite_v3_Composite* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__Composite_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__Composite_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_composite_v3_Composite_clear_named_filter_chains(envoy_extensions_filters_http_composite_v3_Composite* msg) {
@@ -180,6 +188,7 @@ UPB_INLINE bool envoy_extensions_filters_http_composite_v3_Composite_named_filte
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__composite__v3__FilterChainConfiguration_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, sizeof(val), a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, sizeof(val), a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
@@ -235,14 +244,22 @@ UPB_INLINE envoy_extensions_filters_http_composite_v3_CompositePerRoute* envoy_e
 UPB_INLINE char* envoy_extensions_filters_http_composite_v3_CompositePerRoute_serialize(const envoy_extensions_filters_http_composite_v3_CompositePerRoute* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__CompositePerRoute_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__CompositePerRoute_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_composite_v3_CompositePerRoute_serialize_ex(const envoy_extensions_filters_http_composite_v3_CompositePerRoute* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__CompositePerRoute_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__CompositePerRoute_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_composite_v3_CompositePerRoute_clear_matcher(envoy_extensions_filters_http_composite_v3_CompositePerRoute* msg) {
@@ -306,14 +323,22 @@ UPB_INLINE envoy_extensions_filters_http_composite_v3_FilterChainConfiguration* 
 UPB_INLINE char* envoy_extensions_filters_http_composite_v3_FilterChainConfiguration_serialize(const envoy_extensions_filters_http_composite_v3_FilterChainConfiguration* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__FilterChainConfiguration_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__FilterChainConfiguration_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_composite_v3_FilterChainConfiguration_serialize_ex(const envoy_extensions_filters_http_composite_v3_FilterChainConfiguration* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__FilterChainConfiguration_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__FilterChainConfiguration_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_composite_v3_FilterChainConfiguration_clear_typed_config(envoy_extensions_filters_http_composite_v3_FilterChainConfiguration* msg) {
@@ -426,14 +451,22 @@ UPB_INLINE envoy_extensions_filters_http_composite_v3_DynamicConfig* envoy_exten
 UPB_INLINE char* envoy_extensions_filters_http_composite_v3_DynamicConfig_serialize(const envoy_extensions_filters_http_composite_v3_DynamicConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__DynamicConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__DynamicConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_composite_v3_DynamicConfig_serialize_ex(const envoy_extensions_filters_http_composite_v3_DynamicConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__DynamicConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__DynamicConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_composite_v3_DynamicConfig_clear_name(envoy_extensions_filters_http_composite_v3_DynamicConfig* msg) {
@@ -513,14 +546,22 @@ UPB_INLINE envoy_extensions_filters_http_composite_v3_ExecuteFilterAction* envoy
 UPB_INLINE char* envoy_extensions_filters_http_composite_v3_ExecuteFilterAction_serialize(const envoy_extensions_filters_http_composite_v3_ExecuteFilterAction* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__ExecuteFilterAction_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__ExecuteFilterAction_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_composite_v3_ExecuteFilterAction_serialize_ex(const envoy_extensions_filters_http_composite_v3_ExecuteFilterAction* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__ExecuteFilterAction_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__composite__v3__ExecuteFilterAction_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_composite_v3_ExecuteFilterAction_clear_typed_config(envoy_extensions_filters_http_composite_v3_ExecuteFilterAction* msg) {

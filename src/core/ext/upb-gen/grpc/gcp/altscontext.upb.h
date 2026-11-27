@@ -55,14 +55,22 @@ UPB_INLINE grpc_gcp_AltsContext* grpc_gcp_AltsContext_parse_ex(
 UPB_INLINE char* grpc_gcp_AltsContext_serialize(const grpc_gcp_AltsContext* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__gcp__AltsContext_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__gcp__AltsContext_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_gcp_AltsContext_serialize_ex(const grpc_gcp_AltsContext* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__gcp__AltsContext_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__gcp__AltsContext_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_gcp_AltsContext_clear_application_protocol(grpc_gcp_AltsContext* msg) {
@@ -242,6 +250,7 @@ UPB_INLINE bool grpc_gcp_AltsContext_peer_attributes_set(grpc_gcp_AltsContext* m
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__gcp__AltsContext__PeerAttributesEntry_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, 0, a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, 0, a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }

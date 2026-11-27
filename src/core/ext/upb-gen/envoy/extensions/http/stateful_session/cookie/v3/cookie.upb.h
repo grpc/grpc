@@ -57,14 +57,22 @@ UPB_INLINE envoy_extensions_http_stateful_session_cookie_v3_CookieBasedSessionSt
 UPB_INLINE char* envoy_extensions_http_stateful_session_cookie_v3_CookieBasedSessionState_serialize(const envoy_extensions_http_stateful_session_cookie_v3_CookieBasedSessionState* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__http__stateful_0session__cookie__v3__CookieBasedSessionState_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__http__stateful_0session__cookie__v3__CookieBasedSessionState_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_http_stateful_session_cookie_v3_CookieBasedSessionState_serialize_ex(const envoy_extensions_http_stateful_session_cookie_v3_CookieBasedSessionState* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__http__stateful_0session__cookie__v3__CookieBasedSessionState_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__http__stateful_0session__cookie__v3__CookieBasedSessionState_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_http_stateful_session_cookie_v3_CookieBasedSessionState_clear_cookie(envoy_extensions_http_stateful_session_cookie_v3_CookieBasedSessionState* msg) {

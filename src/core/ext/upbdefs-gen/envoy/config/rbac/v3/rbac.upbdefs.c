@@ -28,7 +28,7 @@ extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[4916] = {
+static const char descriptor_envoy_config_rbac_v3_rbac_proto_upbdefinit[4916] = {
     '\n', '\037', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f',
     'i', 'g', '/', 'r', 'b', 'a', 'c', '/', 'v', '3', '/', 'r',
     'b', 'a', 'c', '.', 'p', 'r', 'o', 't', 'o', '\022', '\024', 'e',
@@ -441,7 +441,7 @@ static const char descriptor[4916] = {
     'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[17] = {
+static _upb_DefPool_Init* deps_envoy_config_rbac_v3_rbac_proto_upbdefinit[17] = {
     &envoy_config_core_v3_address_proto_upbdefinit,
     &envoy_config_core_v3_cel_proto_upbdefinit,
     &envoy_config_core_v3_extension_proto_upbdefinit,
@@ -462,8 +462,9 @@ static _upb_DefPool_Init *deps[17] = {
 };
 
 _upb_DefPool_Init envoy_config_rbac_v3_rbac_proto_upbdefinit = {
-    deps,
+    deps_envoy_config_rbac_v3_rbac_proto_upbdefinit,
     &envoy_config_rbac_v3_rbac_proto_upb_file_layout,
     "envoy/config/rbac/v3/rbac.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_config_rbac_v3_rbac_proto_upbdefinit,
+                        sizeof(descriptor_envoy_config_rbac_v3_rbac_proto_upbdefinit)),
 };

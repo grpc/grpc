@@ -7,9 +7,26 @@
 
 #include "upb/message/array.h"
 
+#include <cstddef>
+#include <cstdint>
+
 #include <gtest/gtest.h>
+#include "upb/base/descriptor_constants.h"
 #include "upb/base/status.hpp"
+#include "upb/mem/arena.h"
 #include "upb/mem/arena.hpp"
+
+TEST(ArrayTest, ResizeSizeMaxReturnsFalse) {
+  upb::Arena arena;
+  upb_Array* array = upb_Array_New(arena.ptr(), kUpb_CType_Bool);
+  EXPECT_TRUE(array);
+  // Resize to SIZE_MAX triggers capacity doubling overflow in
+  // _upb_Array_Realloc. The guard rejects SIZE_MAX capacity.
+  EXPECT_FALSE(upb_Array_Resize(array, SIZE_MAX, arena.ptr()));
+  // Array should still be usable after rejected resize.
+  EXPECT_TRUE(upb_Array_Resize(array, 4, arena.ptr()));
+  EXPECT_EQ(upb_Array_Size(array), 4);
+}
 
 TEST(ArrayTest, Resize) {
   upb::Arena arena;
@@ -22,19 +39,19 @@ TEST(ArrayTest, Resize) {
     upb_MessageValue mv;
     mv.int32_val = 3 * i;
 
-    upb_Array_Append(array, mv, arena.ptr());
+    ASSERT_TRUE(upb_Array_Append(array, mv, arena.ptr()));
     EXPECT_EQ(upb_Array_Size(array), i + 1);
     EXPECT_EQ(upb_Array_Get(array, i).int32_val, 3 * i);
   }
 
-  upb_Array_Resize(array, 12, arena.ptr());
+  ASSERT_TRUE(upb_Array_Resize(array, 12, arena.ptr()));
   EXPECT_EQ(upb_Array_Get(array, 10).int32_val, 0);
   EXPECT_EQ(upb_Array_Get(array, 11).int32_val, 0);
 
-  upb_Array_Resize(array, 4, arena.ptr());
+  ASSERT_TRUE(upb_Array_Resize(array, 4, arena.ptr()));
   EXPECT_EQ(upb_Array_Size(array), 4);
 
-  upb_Array_Resize(array, 6, arena.ptr());
+  ASSERT_TRUE(upb_Array_Resize(array, 6, arena.ptr()));
   EXPECT_EQ(upb_Array_Size(array), 6);
 
   EXPECT_EQ(upb_Array_Get(array, 3).int32_val, 9);
@@ -48,7 +65,7 @@ TEST(ArrayTest, Copy) {
   for (int i = 0; i < 5; i++) {
     upb_MessageValue mv;
     mv.int32_val = i;
-    upb_Array_Append(src, mv, arena.ptr());
+    EXPECT_TRUE(upb_Array_Append(src, mv, arena.ptr()));
   }
 
   upb_Array* dst = upb_Array_New(arena.ptr(), kUpb_CType_Int32);
@@ -70,14 +87,14 @@ TEST(ArrayTest, AppendAll) {
   for (int i = 0; i < 3; i++) {
     upb_MessageValue mv;
     mv.int32_val = i;
-    upb_Array_Append(dst, mv, arena.ptr());
+    ASSERT_TRUE(upb_Array_Append(dst, mv, arena.ptr()));
   }
 
   upb_Array* src = upb_Array_New(arena.ptr(), kUpb_CType_Int32);
   for (int i = 0; i < 3; i++) {
     upb_MessageValue mv;
     mv.int32_val = i + 10;
-    upb_Array_Append(src, mv, arena.ptr());
+    ASSERT_TRUE(upb_Array_Append(src, mv, arena.ptr()));
   }
 
   EXPECT_TRUE(upb_Array_AppendAll(dst, src, arena.ptr()));
@@ -99,4 +116,39 @@ TEST(ArrayTest, AppendAll) {
   EXPECT_TRUE(upb_Array_AppendAll(empty_dst, src, arena.ptr()));
   EXPECT_EQ(upb_Array_Size(empty_dst), 3);
   EXPECT_EQ(upb_Array_Get(empty_dst, 0).int32_val, 10);
+}
+
+TEST(ArrayTest, MemoryPooling) {
+  // Use an explicit initial size rather than relying on default arena size.
+  upb::Arena arena(1024);
+
+  // 1. Create two arrays and interleave appends to prevent TryExtend in-place
+  // reuse and populate the pool with freed power-of-2 buffers.
+  upb_Array* arr1 = upb_Array_New(arena.ptr(), kUpb_CType_Int32);
+  upb_Array* arr2 = upb_Array_New(arena.ptr(), kUpb_CType_Int32);
+
+  for (int32_t i = 0; i < 100; i++) {
+    upb_MessageValue mv;
+    mv.int32_val = i;
+    ASSERT_TRUE(upb_Array_Append(arr1, mv, arena.ptr()));
+    ASSERT_TRUE(upb_Array_Append(arr2, mv, arena.ptr()));
+  }
+
+  size_t space_after = upb_Arena_SpaceAllocated(arena.ptr(), nullptr);
+
+  // 2. Create Array 3 in the same arena and grow it up to 50 elements.
+  // It should reuse the buffers freed by arr1 and arr2 from the pool.
+  upb_Array* arr3 = upb_Array_New(arena.ptr(), kUpb_CType_Int32);
+  for (int32_t i = 0; i < 50; i++) {
+    upb_MessageValue mv;
+    mv.int32_val = i;
+    ASSERT_TRUE(upb_Array_Append(arr3, mv, arena.ptr()));
+  }
+
+  size_t space_after_arr3 = upb_Arena_SpaceAllocated(arena.ptr(), nullptr);
+
+  // The difference should only be the Array 3 header (approx 32-48 bytes),
+  // because array buffer allocations are reused from the pool.
+  size_t diff = space_after_arr3 - space_after;
+  EXPECT_LT(diff, 100);
 }

@@ -39,19 +39,19 @@ const upb_MiniTable xds__core__v3__Resource_msg_init = {
   "xds.core.v3.Resource",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x002000000005000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x001000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x002800000106001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_xds_core_v3_resource_proto_upb_file_layout[1] = {
   &xds__core__v3__Resource_msg_init,
 };
 
 const upb_MiniTableFile xds_core_v3_resource_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_xds_core_v3_resource_proto_upb_file_layout,
   NULL,
   NULL,
   1,

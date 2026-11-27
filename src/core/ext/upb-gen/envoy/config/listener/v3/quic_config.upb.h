@@ -69,14 +69,22 @@ UPB_INLINE envoy_config_listener_v3_QuicProtocolOptions* envoy_config_listener_v
 UPB_INLINE char* envoy_config_listener_v3_QuicProtocolOptions_serialize(const envoy_config_listener_v3_QuicProtocolOptions* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__listener__v3__QuicProtocolOptions_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__listener__v3__QuicProtocolOptions_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_listener_v3_QuicProtocolOptions_serialize_ex(const envoy_config_listener_v3_QuicProtocolOptions* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__listener__v3__QuicProtocolOptions_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__listener__v3__QuicProtocolOptions_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_listener_v3_QuicProtocolOptions_clear_quic_protocol_options(envoy_config_listener_v3_QuicProtocolOptions* msg) {

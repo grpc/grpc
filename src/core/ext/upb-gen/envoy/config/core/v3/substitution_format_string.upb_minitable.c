@@ -35,7 +35,7 @@ const upb_MiniTable envoy__config__core__v3__JsonFormatOptions_msg_init = {
   "envoy.config.core.v3.JsonFormatOptions",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
   })
 };
@@ -68,24 +68,24 @@ const upb_MiniTable envoy__config__core__v3__SubstitutionFormatString_msg_init =
   "envoy.config.core.v3.SubstitutionFormatString",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x0020000c0100000a, &upb_DecodeFast_String_Oneof_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0020000c020b0012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
     {0x000900003f000018, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x001000003f000022, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0020000c050c002a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x003000003f0d0032, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x00380000000e003a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_envoy_config_core_v3_substitution_format_string_proto_upb_file_layout[2] = {
   &envoy__config__core__v3__JsonFormatOptions_msg_init,
   &envoy__config__core__v3__SubstitutionFormatString_msg_init,
 };
 
 const upb_MiniTableFile envoy_config_core_v3_substitution_format_string_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_config_core_v3_substitution_format_string_proto_upb_file_layout,
   NULL,
   NULL,
   2,

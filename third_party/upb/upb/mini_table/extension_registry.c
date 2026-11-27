@@ -41,12 +41,6 @@ UPB_API upb_ExtensionRegistryStatus upb_ExtensionRegistry_Add(
   uint32_t fieldnum = upb_MiniTableExtension_Number(e);
   const upb_MiniTable* extendee = upb_MiniTableExtension_Extendee(e);
 
-  const uint32_t kMaxFieldNumber = (1 << 29) - 1;
-  if (fieldnum == 0 ||
-      (fieldnum > kMaxFieldNumber && !upb_MiniTable_IsMessageSet(extendee))) {
-    return kUpb_ExtensionRegistryStatus_InvalidExtension;
-  }
-
   if (upb_exttable_lookup(&r->exts, extendee, fieldnum) != NULL) {
     return kUpb_ExtensionRegistryStatus_DuplicateEntry;
   }

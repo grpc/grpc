@@ -54,14 +54,22 @@ UPB_INLINE xds_core_v3_ContextParams* xds_core_v3_ContextParams_parse_ex(
 UPB_INLINE char* xds_core_v3_ContextParams_serialize(const xds_core_v3_ContextParams* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__core__v3__ContextParams_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__core__v3__ContextParams_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_core_v3_ContextParams_serialize_ex(const xds_core_v3_ContextParams* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__core__v3__ContextParams_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__core__v3__ContextParams_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_core_v3_ContextParams_clear_params(xds_core_v3_ContextParams* msg) {
@@ -130,6 +138,7 @@ UPB_INLINE bool xds_core_v3_ContextParams_params_set(xds_core_v3_ContextParams* 
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ContextParams__ParamsEntry_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, 0, a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, 0, a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }

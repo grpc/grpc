@@ -16,7 +16,7 @@ extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[681] = {
+static const char descriptor_envoy_extensions_clusters_aggregate_v3_cluster_proto_upbdefinit[681] = {
     '\n', '4', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e',
     'n', 's', 'i', 'o', 'n', 's', '/', 'c', 'l', 'u', 's', 't',
     'e', 'r', 's', '/', 'a', 'g', 'g', 'r', 'e', 'g', 'a', 't',
@@ -76,7 +76,7 @@ static const char descriptor[681] = {
     '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[5] = {
+static _upb_DefPool_Init* deps_envoy_extensions_clusters_aggregate_v3_cluster_proto_upbdefinit[5] = {
     &envoy_config_core_v3_config_source_proto_upbdefinit,
     &udpa_annotations_status_proto_upbdefinit,
     &udpa_annotations_versioning_proto_upbdefinit,
@@ -85,8 +85,9 @@ static _upb_DefPool_Init *deps[5] = {
 };
 
 _upb_DefPool_Init envoy_extensions_clusters_aggregate_v3_cluster_proto_upbdefinit = {
-    deps,
+    deps_envoy_extensions_clusters_aggregate_v3_cluster_proto_upbdefinit,
     &envoy_extensions_clusters_aggregate_v3_cluster_proto_upb_file_layout,
     "envoy/extensions/clusters/aggregate/v3/cluster.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_extensions_clusters_aggregate_v3_cluster_proto_upbdefinit,
+                        sizeof(descriptor_envoy_extensions_clusters_aggregate_v3_cluster_proto_upbdefinit)),
 };

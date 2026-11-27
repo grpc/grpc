@@ -76,14 +76,22 @@ UPB_INLINE xds_annotations_v3_FileStatusAnnotation* xds_annotations_v3_FileStatu
 UPB_INLINE char* xds_annotations_v3_FileStatusAnnotation_serialize(const xds_annotations_v3_FileStatusAnnotation* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FileStatusAnnotation_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FileStatusAnnotation_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_annotations_v3_FileStatusAnnotation_serialize_ex(const xds_annotations_v3_FileStatusAnnotation* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FileStatusAnnotation_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FileStatusAnnotation_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_annotations_v3_FileStatusAnnotation_clear_work_in_progress(xds_annotations_v3_FileStatusAnnotation* msg) {
@@ -132,14 +140,22 @@ UPB_INLINE xds_annotations_v3_MessageStatusAnnotation* xds_annotations_v3_Messag
 UPB_INLINE char* xds_annotations_v3_MessageStatusAnnotation_serialize(const xds_annotations_v3_MessageStatusAnnotation* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__MessageStatusAnnotation_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__MessageStatusAnnotation_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_annotations_v3_MessageStatusAnnotation_serialize_ex(const xds_annotations_v3_MessageStatusAnnotation* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__MessageStatusAnnotation_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__MessageStatusAnnotation_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_annotations_v3_MessageStatusAnnotation_clear_work_in_progress(xds_annotations_v3_MessageStatusAnnotation* msg) {
@@ -188,14 +204,22 @@ UPB_INLINE xds_annotations_v3_FieldStatusAnnotation* xds_annotations_v3_FieldSta
 UPB_INLINE char* xds_annotations_v3_FieldStatusAnnotation_serialize(const xds_annotations_v3_FieldStatusAnnotation* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FieldStatusAnnotation_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FieldStatusAnnotation_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_annotations_v3_FieldStatusAnnotation_serialize_ex(const xds_annotations_v3_FieldStatusAnnotation* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FieldStatusAnnotation_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FieldStatusAnnotation_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_annotations_v3_FieldStatusAnnotation_clear_work_in_progress(xds_annotations_v3_FieldStatusAnnotation* msg) {
@@ -244,14 +268,22 @@ UPB_INLINE xds_annotations_v3_StatusAnnotation* xds_annotations_v3_StatusAnnotat
 UPB_INLINE char* xds_annotations_v3_StatusAnnotation_serialize(const xds_annotations_v3_StatusAnnotation* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__StatusAnnotation_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__StatusAnnotation_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_annotations_v3_StatusAnnotation_serialize_ex(const xds_annotations_v3_StatusAnnotation* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__StatusAnnotation_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__StatusAnnotation_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_annotations_v3_StatusAnnotation_clear_work_in_progress(xds_annotations_v3_StatusAnnotation* msg) {

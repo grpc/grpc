@@ -16,7 +16,7 @@ extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
 extern _upb_DefPool_Init google_protobuf_empty_proto_upbdefinit;
 extern _upb_DefPool_Init google_protobuf_timestamp_proto_upbdefinit;
 
-static const char descriptor[1170] = {
+static const char descriptor_src_proto_grpc_channelz_v2_property_list_proto_upbdefinit[1170] = {
     '\n', '.', 's', 'r', 'c', '/', 'p', 'r', 'o', 't', 'o', '/',
     'g', 'r', 'p', 'c', '/', 'c', 'h', 'a', 'n', 'n', 'e', 'l',
     'z', '/', 'v', '2', '/', 'p', 'r', 'o', 'p', 'e', 'r', 't',
@@ -117,7 +117,7 @@ static const char descriptor[1170] = {
     'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[5] = {
+static _upb_DefPool_Init* deps_src_proto_grpc_channelz_v2_property_list_proto_upbdefinit[5] = {
     &google_protobuf_any_proto_upbdefinit,
     &google_protobuf_duration_proto_upbdefinit,
     &google_protobuf_empty_proto_upbdefinit,
@@ -126,8 +126,9 @@ static _upb_DefPool_Init *deps[5] = {
 };
 
 _upb_DefPool_Init src_proto_grpc_channelz_v2_property_list_proto_upbdefinit = {
-    deps,
+    deps_src_proto_grpc_channelz_v2_property_list_proto_upbdefinit,
     &src_proto_grpc_channelz_v2_property_list_proto_upb_file_layout,
     "src/proto/grpc/channelz/v2/property_list.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_src_proto_grpc_channelz_v2_property_list_proto_upbdefinit,
+                        sizeof(descriptor_src_proto_grpc_channelz_v2_property_list_proto_upbdefinit)),
 };

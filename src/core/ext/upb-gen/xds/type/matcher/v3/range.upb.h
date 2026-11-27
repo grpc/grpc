@@ -80,14 +80,22 @@ UPB_INLINE xds_type_matcher_v3_Int64RangeMatcher* xds_type_matcher_v3_Int64Range
 UPB_INLINE char* xds_type_matcher_v3_Int64RangeMatcher_serialize(const xds_type_matcher_v3_Int64RangeMatcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Int64RangeMatcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Int64RangeMatcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_Int64RangeMatcher_serialize_ex(const xds_type_matcher_v3_Int64RangeMatcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Int64RangeMatcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Int64RangeMatcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_type_matcher_v3_Int64RangeMatcher_clear_range_matchers(xds_type_matcher_v3_Int64RangeMatcher* msg) {
@@ -200,14 +208,22 @@ UPB_INLINE xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher* xds_type_matcher_
 UPB_INLINE char* xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_serialize(const xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Int64RangeMatcher__RangeMatcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Int64RangeMatcher__RangeMatcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_serialize_ex(const xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Int64RangeMatcher__RangeMatcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Int64RangeMatcher__RangeMatcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_clear_ranges(xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher* msg) {
@@ -351,14 +367,22 @@ UPB_INLINE xds_type_matcher_v3_Int32RangeMatcher* xds_type_matcher_v3_Int32Range
 UPB_INLINE char* xds_type_matcher_v3_Int32RangeMatcher_serialize(const xds_type_matcher_v3_Int32RangeMatcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Int32RangeMatcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Int32RangeMatcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_Int32RangeMatcher_serialize_ex(const xds_type_matcher_v3_Int32RangeMatcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Int32RangeMatcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Int32RangeMatcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_type_matcher_v3_Int32RangeMatcher_clear_range_matchers(xds_type_matcher_v3_Int32RangeMatcher* msg) {
@@ -471,14 +495,22 @@ UPB_INLINE xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher* xds_type_matcher_
 UPB_INLINE char* xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_serialize(const xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Int32RangeMatcher__RangeMatcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Int32RangeMatcher__RangeMatcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_serialize_ex(const xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Int32RangeMatcher__RangeMatcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__Int32RangeMatcher__RangeMatcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_clear_ranges(xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher* msg) {
@@ -622,14 +654,22 @@ UPB_INLINE xds_type_matcher_v3_DoubleRangeMatcher* xds_type_matcher_v3_DoubleRan
 UPB_INLINE char* xds_type_matcher_v3_DoubleRangeMatcher_serialize(const xds_type_matcher_v3_DoubleRangeMatcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__DoubleRangeMatcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__DoubleRangeMatcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_DoubleRangeMatcher_serialize_ex(const xds_type_matcher_v3_DoubleRangeMatcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__DoubleRangeMatcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__DoubleRangeMatcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_type_matcher_v3_DoubleRangeMatcher_clear_range_matchers(xds_type_matcher_v3_DoubleRangeMatcher* msg) {
@@ -742,14 +782,22 @@ UPB_INLINE xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher* xds_type_matcher
 UPB_INLINE char* xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher_serialize(const xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__DoubleRangeMatcher__RangeMatcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__DoubleRangeMatcher__RangeMatcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher_serialize_ex(const xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__DoubleRangeMatcher__RangeMatcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__DoubleRangeMatcher__RangeMatcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher_clear_ranges(xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher* msg) {

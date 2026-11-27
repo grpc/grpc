@@ -72,14 +72,22 @@ UPB_INLINE grpc_health_v1_HealthCheckRequest* grpc_health_v1_HealthCheckRequest_
 UPB_INLINE char* grpc_health_v1_HealthCheckRequest_serialize(const grpc_health_v1_HealthCheckRequest* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthCheckRequest_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthCheckRequest_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_health_v1_HealthCheckRequest_serialize_ex(const grpc_health_v1_HealthCheckRequest* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthCheckRequest_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthCheckRequest_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_health_v1_HealthCheckRequest_clear_service(grpc_health_v1_HealthCheckRequest* msg) {
@@ -128,14 +136,22 @@ UPB_INLINE grpc_health_v1_HealthCheckResponse* grpc_health_v1_HealthCheckRespons
 UPB_INLINE char* grpc_health_v1_HealthCheckResponse_serialize(const grpc_health_v1_HealthCheckResponse* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthCheckResponse_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthCheckResponse_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_health_v1_HealthCheckResponse_serialize_ex(const grpc_health_v1_HealthCheckResponse* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthCheckResponse_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthCheckResponse_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_health_v1_HealthCheckResponse_clear_status(grpc_health_v1_HealthCheckResponse* msg) {
@@ -184,14 +200,22 @@ UPB_INLINE grpc_health_v1_HealthListRequest* grpc_health_v1_HealthListRequest_pa
 UPB_INLINE char* grpc_health_v1_HealthListRequest_serialize(const grpc_health_v1_HealthListRequest* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthListRequest_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthListRequest_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_health_v1_HealthListRequest_serialize_ex(const grpc_health_v1_HealthListRequest* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthListRequest_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthListRequest_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 
@@ -224,14 +248,22 @@ UPB_INLINE grpc_health_v1_HealthListResponse* grpc_health_v1_HealthListResponse_
 UPB_INLINE char* grpc_health_v1_HealthListResponse_serialize(const grpc_health_v1_HealthListResponse* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthListResponse_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthListResponse_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* grpc_health_v1_HealthListResponse_serialize_ex(const grpc_health_v1_HealthListResponse* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthListResponse_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthListResponse_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void grpc_health_v1_HealthListResponse_clear_statuses(grpc_health_v1_HealthListResponse* msg) {
@@ -307,6 +339,7 @@ UPB_INLINE bool grpc_health_v1_HealthListResponse_statuses_set(grpc_health_v1_He
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__health__v1__HealthCheckResponse_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, sizeof(val), a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, sizeof(val), a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }

@@ -59,14 +59,22 @@ UPB_INLINE envoy_type_matcher_v3_NodeMatcher* envoy_type_matcher_v3_NodeMatcher_
 UPB_INLINE char* envoy_type_matcher_v3_NodeMatcher_serialize(const envoy_type_matcher_v3_NodeMatcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__NodeMatcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__NodeMatcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_matcher_v3_NodeMatcher_serialize_ex(const envoy_type_matcher_v3_NodeMatcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__NodeMatcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__NodeMatcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_type_matcher_v3_NodeMatcher_clear_node_id(envoy_type_matcher_v3_NodeMatcher* msg) {

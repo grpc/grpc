@@ -20,6 +20,7 @@ load(
     "grpc_internal_proto_library",
     "grpc_package",
 )
+load("//bazel:protobuf.bzl", "upb_reflection_libs")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
@@ -184,7 +185,6 @@ grpc_cc_test(
         "@com_google_protobuf//:struct_cc_proto",
         "@com_google_protobuf//:wrappers_cc_proto",
         "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/reflection",
         "@envoy_api//envoy/config/cluster/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/grpc_service/channel_credentials/insecure/v3:pkg_cc_proto",
@@ -194,7 +194,7 @@ grpc_cc_test(
         "@envoy_api//envoy/extensions/load_balancing_policies/ring_hash/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/load_balancing_policies/round_robin/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/load_balancing_policies/wrr_locality/v3:pkg_cc_proto",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_test(
@@ -257,11 +257,10 @@ grpc_cc_test(
         "@com_google_protobuf//:any_cc_proto",
         "@com_google_protobuf//:struct_cc_proto",
         "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/reflection",
         "@envoy_api//envoy/config/rbac/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/rbac/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/rbac/audit_loggers/stream/v3:pkg_cc_proto",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_library(
@@ -343,11 +342,10 @@ grpc_cc_test(
         "//test/core/test_util:scoped_env_var",
         "@com_google_protobuf//:any_cc_proto",
         "@com_google_protobuf//:struct_cc_proto",
-        "@com_google_protobuf//upb/reflection",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/service/discovery/v3:pkg_cc_proto",
         "@envoy_api//envoy/service/status/v3:pkg_cc_proto",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_test(
@@ -531,7 +529,6 @@ grpc_cc_test(
         "@com_google_protobuf//:struct_cc_proto",
         "@com_google_protobuf//:wrappers_cc_proto",
         "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/reflection",
         "@envoy_api//envoy/config/common/mutation_rules/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/grpc_service/call_credentials/access_token/v3:pkg_cc_proto",
@@ -539,7 +536,7 @@ grpc_cc_test(
         "@envoy_api//envoy/extensions/grpc_service/channel_credentials/insecure/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg_cc_proto",
         "@envoy_api//envoy/type/matcher/v3:pkg_cc_proto",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_test(
@@ -685,10 +682,9 @@ grpc_cc_test(
         "@com_google_protobuf//:wrappers_cc_proto",
         "@com_google_protobuf//:wrappers_upb_proto",
         "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/reflection",
         "@envoy_api//envoy/config/common/matcher/v3:pkg_cc_proto",
         "@envoy_api//envoy/type/matcher/v3:pkg_cc_proto",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_test(
@@ -740,7 +736,6 @@ grpc_cc_test(
         "@com_google_protobuf//:protobuf",
         "@com_google_protobuf//:wrappers_cc_proto",
         "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/reflection",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/rbac/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
@@ -758,7 +753,7 @@ grpc_cc_test(
         "@envoy_api//envoy/type/http/v3:pkg_cc_proto",
         "@envoy_api//envoy/type/matcher/v3:pkg_cc_proto",
         "@envoy_api//envoy/type/v3:pkg_cc_proto",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_test(
@@ -798,7 +793,6 @@ grpc_cc_test(
         "@com_google_protobuf//:duration_cc_proto",
         "@com_google_protobuf//:wrappers_cc_proto",
         "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/reflection",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/listener/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/fault/v3:pkg_cc_proto",
@@ -807,7 +801,7 @@ grpc_cc_test(
         "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg_cc_proto",
         "@envoy_api//envoy/type/matcher/v3:pkg_cc_proto",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_test(
@@ -849,14 +843,13 @@ grpc_cc_test(
         "@com_google_protobuf//:duration_cc_proto",
         "@com_google_protobuf//:wrappers_cc_proto",
         "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/reflection",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/fault/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/rbac/v3:pkg_cc_proto",
         "@envoy_api//envoy/type/matcher/v3:pkg_cc_proto",
         "@envoy_api//envoy/type/v3:pkg_cc_proto",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_test(
@@ -899,7 +892,6 @@ grpc_cc_test(
         "@com_google_protobuf//:struct_cc_proto",
         "@com_google_protobuf//:wrappers_cc_proto",
         "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/reflection",
         "@envoy_api//envoy/config/cluster/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/endpoint/v3:pkg_cc_proto",
@@ -913,7 +905,7 @@ grpc_cc_test(
         "@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/upstreams/http/v3:pkg_cc_proto",
         "@envoy_api//envoy/type/v3:pkg_cc_proto",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_test(
@@ -950,11 +942,10 @@ grpc_cc_test(
         "//test/core/test_util:scoped_env_var",
         "@com_google_protobuf//:wrappers_cc_proto",
         "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/reflection",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/endpoint/v3:pkg_cc_proto",
         "@envoy_api//envoy/type/v3:pkg_cc_proto",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_test(

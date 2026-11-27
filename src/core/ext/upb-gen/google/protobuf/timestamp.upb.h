@@ -53,14 +53,22 @@ UPB_INLINE google_protobuf_Timestamp* google_protobuf_Timestamp_parse_ex(
 UPB_INLINE char* google_protobuf_Timestamp_serialize(const google_protobuf_Timestamp* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__protobuf__Timestamp_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &google__protobuf__Timestamp_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* google_protobuf_Timestamp_serialize_ex(const google_protobuf_Timestamp* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &google__protobuf__Timestamp_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &google__protobuf__Timestamp_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void google_protobuf_Timestamp_clear_seconds(google_protobuf_Timestamp* msg) {

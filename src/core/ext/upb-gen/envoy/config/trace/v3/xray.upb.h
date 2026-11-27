@@ -67,14 +67,22 @@ UPB_INLINE envoy_config_trace_v3_XRayConfig* envoy_config_trace_v3_XRayConfig_pa
 UPB_INLINE char* envoy_config_trace_v3_XRayConfig_serialize(const envoy_config_trace_v3_XRayConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__XRayConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__XRayConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_trace_v3_XRayConfig_serialize_ex(const envoy_config_trace_v3_XRayConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__XRayConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__XRayConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_trace_v3_XRayConfig_clear_daemon_endpoint(envoy_config_trace_v3_XRayConfig* msg) {
@@ -216,14 +224,22 @@ UPB_INLINE envoy_config_trace_v3_XRayConfig_SegmentFields* envoy_config_trace_v3
 UPB_INLINE char* envoy_config_trace_v3_XRayConfig_SegmentFields_serialize(const envoy_config_trace_v3_XRayConfig_SegmentFields* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__XRayConfig__SegmentFields_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__XRayConfig__SegmentFields_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_trace_v3_XRayConfig_SegmentFields_serialize_ex(const envoy_config_trace_v3_XRayConfig_SegmentFields* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__XRayConfig__SegmentFields_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__XRayConfig__SegmentFields_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_trace_v3_XRayConfig_SegmentFields_clear_origin(envoy_config_trace_v3_XRayConfig_SegmentFields* msg) {

@@ -69,14 +69,22 @@ UPB_INLINE envoy_extensions_filters_http_router_v3_Router* envoy_extensions_filt
 UPB_INLINE char* envoy_extensions_filters_http_router_v3_Router_serialize(const envoy_extensions_filters_http_router_v3_Router* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__router__v3__Router_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__router__v3__Router_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_router_v3_Router_serialize_ex(const envoy_extensions_filters_http_router_v3_Router* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__router__v3__Router_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__router__v3__Router_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_router_v3_Router_clear_dynamic_stats(envoy_extensions_filters_http_router_v3_Router* msg) {
@@ -497,14 +505,22 @@ UPB_INLINE envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptio
 UPB_INLINE char* envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions_serialize(const envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__router__v3__Router__UpstreamAccessLogOptions_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__router__v3__Router__UpstreamAccessLogOptions_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions_serialize_ex(const envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__router__v3__Router__UpstreamAccessLogOptions_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__router__v3__Router__UpstreamAccessLogOptions_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions_clear_flush_upstream_log_on_upstream_stream(envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions* msg) {

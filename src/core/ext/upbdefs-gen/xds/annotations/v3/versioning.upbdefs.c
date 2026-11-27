@@ -13,7 +13,7 @@
 
 extern _upb_DefPool_Init google_protobuf_descriptor_proto_upbdefinit;
 
-static const char descriptor[330] = {
+static const char descriptor_xds_annotations_v3_versioning_proto_upbdefinit[330] = {
     '\n', '#', 'x', 'd', 's', '/', 'a', 'n', 'n', 'o', 't', 'a',
     't', 'i', 'o', 'n', 's', '/', 'v', '3', '/', 'v', 'e', 'r',
     's', 'i', 'o', 'n', 'i', 'n', 'g', '.', 'p', 'r', 'o', 't',
@@ -44,14 +44,15 @@ static const char descriptor[330] = {
     'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[2] = {
+static _upb_DefPool_Init* deps_xds_annotations_v3_versioning_proto_upbdefinit[2] = {
     &google_protobuf_descriptor_proto_upbdefinit,
     NULL,
 };
 
 _upb_DefPool_Init xds_annotations_v3_versioning_proto_upbdefinit = {
-    deps,
+    deps_xds_annotations_v3_versioning_proto_upbdefinit,
     &xds_annotations_v3_versioning_proto_upb_file_layout,
     "xds/annotations/v3/versioning.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_xds_annotations_v3_versioning_proto_upbdefinit,
+                        sizeof(descriptor_xds_annotations_v3_versioning_proto_upbdefinit)),
 };

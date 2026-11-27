@@ -63,14 +63,22 @@ UPB_INLINE xds_core_v3_CollectionEntry* xds_core_v3_CollectionEntry_parse_ex(
 UPB_INLINE char* xds_core_v3_CollectionEntry_serialize(const xds_core_v3_CollectionEntry* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__core__v3__CollectionEntry_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__core__v3__CollectionEntry_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_core_v3_CollectionEntry_serialize_ex(const xds_core_v3_CollectionEntry* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__core__v3__CollectionEntry_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__core__v3__CollectionEntry_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -181,14 +189,22 @@ UPB_INLINE xds_core_v3_CollectionEntry_InlineEntry* xds_core_v3_CollectionEntry_
 UPB_INLINE char* xds_core_v3_CollectionEntry_InlineEntry_serialize(const xds_core_v3_CollectionEntry_InlineEntry* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__core__v3__CollectionEntry__InlineEntry_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__core__v3__CollectionEntry__InlineEntry_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_core_v3_CollectionEntry_InlineEntry_serialize_ex(const xds_core_v3_CollectionEntry_InlineEntry* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__core__v3__CollectionEntry__InlineEntry_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__core__v3__CollectionEntry__InlineEntry_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_core_v3_CollectionEntry_InlineEntry_clear_name(xds_core_v3_CollectionEntry_InlineEntry* msg) {

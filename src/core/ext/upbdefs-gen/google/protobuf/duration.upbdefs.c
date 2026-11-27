@@ -11,7 +11,7 @@
 #include "google/protobuf/duration.upbdefs.h"
 #include "google/protobuf/duration.upb_minitable.h"
 
-static const char descriptor[251] = {
+static const char descriptor_google_protobuf_duration_proto_upbdefinit[251] = {
     '\n', '\036', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o',
     't', 'o', 'b', 'u', 'f', '/', 'd', 'u', 'r', 'a', 't', 'i',
     'o', 'n', '.', 'p', 'r', 'o', 't', 'o', '\022', '\017', 'g', 'o',
@@ -35,13 +35,14 @@ static const char descriptor[251] = {
     'p', 'e', 's', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[1] = {
+static _upb_DefPool_Init* deps_google_protobuf_duration_proto_upbdefinit[1] = {
     NULL,
 };
 
 _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit = {
-    deps,
+    deps_google_protobuf_duration_proto_upbdefinit,
     &google_protobuf_duration_proto_upb_file_layout,
     "google/protobuf/duration.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_google_protobuf_duration_proto_upbdefinit,
+                        sizeof(descriptor_google_protobuf_duration_proto_upbdefinit)),
 };

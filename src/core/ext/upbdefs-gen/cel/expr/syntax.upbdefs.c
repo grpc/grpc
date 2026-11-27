@@ -15,7 +15,7 @@ extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
 extern _upb_DefPool_Init google_protobuf_struct_proto_upbdefinit;
 extern _upb_DefPool_Init google_protobuf_timestamp_proto_upbdefinit;
 
-static const char descriptor[2993] = {
+static const char descriptor_cel_expr_syntax_proto_upbdefinit[2993] = {
     '\n', '\025', 'c', 'e', 'l', '/', 'e', 'x', 'p', 'r', '/', 's',
     'y', 'n', 't', 'a', 'x', '.', 'p', 'r', 'o', 't', 'o', '\022',
     '\010', 'c', 'e', 'l', '.', 'e', 'x', 'p', 'r', '\032', '\036', 'g',
@@ -268,7 +268,7 @@ static const char descriptor[2993] = {
     'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[4] = {
+static _upb_DefPool_Init* deps_cel_expr_syntax_proto_upbdefinit[4] = {
     &google_protobuf_duration_proto_upbdefinit,
     &google_protobuf_struct_proto_upbdefinit,
     &google_protobuf_timestamp_proto_upbdefinit,
@@ -276,8 +276,9 @@ static _upb_DefPool_Init *deps[4] = {
 };
 
 _upb_DefPool_Init cel_expr_syntax_proto_upbdefinit = {
-    deps,
+    deps_cel_expr_syntax_proto_upbdefinit,
     &cel_expr_syntax_proto_upb_file_layout,
     "cel/expr/syntax.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_cel_expr_syntax_proto_upbdefinit,
+                        sizeof(descriptor_cel_expr_syntax_proto_upbdefinit)),
 };

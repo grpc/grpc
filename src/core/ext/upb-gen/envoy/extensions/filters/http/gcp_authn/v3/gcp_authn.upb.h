@@ -96,14 +96,22 @@ UPB_INLINE envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig* envo
 UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_serialize(const envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__GcpAuthnFilterConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__GcpAuthnFilterConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_serialize_ex(const envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__GcpAuthnFilterConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__GcpAuthnFilterConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_clear_http_uri(envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig* msg) {
@@ -354,14 +362,22 @@ UPB_INLINE envoy_extensions_filters_http_gcp_authn_v3_Audience* envoy_extensions
 UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_Audience_serialize(const envoy_extensions_filters_http_gcp_authn_v3_Audience* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_Audience_serialize_ex(const envoy_extensions_filters_http_gcp_authn_v3_Audience* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_Audience_clear_url(envoy_extensions_filters_http_gcp_authn_v3_Audience* msg) {
@@ -534,14 +550,22 @@ UPB_INLINE envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken* envo
 UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken_serialize(const envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__AccessToken_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__AccessToken_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken_serialize_ex(const envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__AccessToken_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__AccessToken_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken_clear_scopes(envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken* msg) {
@@ -645,14 +669,22 @@ UPB_INLINE envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* envoy_e
 UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt_serialize(const envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundJwt_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundJwt_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt_serialize_ex(const envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundJwt_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundJwt_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt_clear_url(envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* msg) {
@@ -701,14 +733,22 @@ UPB_INLINE envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken*
 UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken_serialize(const envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundAccessToken_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundAccessToken_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken_serialize_ex(const envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundAccessToken_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundAccessToken_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken_clear_scopes(envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken* msg) {
@@ -812,14 +852,22 @@ UPB_INLINE envoy_extensions_filters_http_gcp_authn_v3_Audience_IAMAccessToken* e
 UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_Audience_IAMAccessToken_serialize(const envoy_extensions_filters_http_gcp_authn_v3_Audience_IAMAccessToken* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__IAMAccessToken_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__IAMAccessToken_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_Audience_IAMAccessToken_serialize_ex(const envoy_extensions_filters_http_gcp_authn_v3_Audience_IAMAccessToken* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__IAMAccessToken_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__IAMAccessToken_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_Audience_IAMAccessToken_clear_account(envoy_extensions_filters_http_gcp_authn_v3_Audience_IAMAccessToken* msg) {
@@ -955,14 +1003,22 @@ UPB_INLINE envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig* envoy_ex
 UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig_serialize(const envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__TokenCacheConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__TokenCacheConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig_serialize_ex(const envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__TokenCacheConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__TokenCacheConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig_clear_cache_size(envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig* msg) {
@@ -1026,14 +1082,22 @@ UPB_INLINE envoy_extensions_filters_http_gcp_authn_v3_TokenHeader* envoy_extensi
 UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_TokenHeader_serialize(const envoy_extensions_filters_http_gcp_authn_v3_TokenHeader* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_TokenHeader_serialize_ex(const envoy_extensions_filters_http_gcp_authn_v3_TokenHeader* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_TokenHeader_clear_name(envoy_extensions_filters_http_gcp_authn_v3_TokenHeader* msg) {
@@ -1129,14 +1193,22 @@ UPB_INLINE envoy_extensions_filters_http_gcp_authn_v3_TokenHeader_PreserveExisti
 UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_TokenHeader_PreserveExisting_serialize(const envoy_extensions_filters_http_gcp_authn_v3_TokenHeader_PreserveExisting* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader__PreserveExisting_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader__PreserveExisting_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_TokenHeader_PreserveExisting_serialize_ex(const envoy_extensions_filters_http_gcp_authn_v3_TokenHeader_PreserveExisting* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader__PreserveExisting_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader__PreserveExisting_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 

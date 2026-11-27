@@ -80,14 +80,22 @@ UPB_INLINE envoy_type_metadata_v3_MetadataKey* envoy_type_metadata_v3_MetadataKe
 UPB_INLINE char* envoy_type_metadata_v3_MetadataKey_serialize(const envoy_type_metadata_v3_MetadataKey* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKey_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKey_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_metadata_v3_MetadataKey_serialize_ex(const envoy_type_metadata_v3_MetadataKey* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKey_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKey_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_type_metadata_v3_MetadataKey_clear_key(envoy_type_metadata_v3_MetadataKey* msg) {
@@ -216,14 +224,22 @@ UPB_INLINE envoy_type_metadata_v3_MetadataKey_PathSegment* envoy_type_metadata_v
 UPB_INLINE char* envoy_type_metadata_v3_MetadataKey_PathSegment_serialize(const envoy_type_metadata_v3_MetadataKey_PathSegment* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKey__PathSegment_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKey__PathSegment_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_metadata_v3_MetadataKey_PathSegment_serialize_ex(const envoy_type_metadata_v3_MetadataKey_PathSegment* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKey__PathSegment_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKey__PathSegment_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -312,14 +328,22 @@ UPB_INLINE envoy_type_metadata_v3_MetadataKind* envoy_type_metadata_v3_MetadataK
 UPB_INLINE char* envoy_type_metadata_v3_MetadataKind_serialize(const envoy_type_metadata_v3_MetadataKind* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_metadata_v3_MetadataKind_serialize_ex(const envoy_type_metadata_v3_MetadataKind* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -494,14 +518,22 @@ UPB_INLINE envoy_type_metadata_v3_MetadataKind_Request* envoy_type_metadata_v3_M
 UPB_INLINE char* envoy_type_metadata_v3_MetadataKind_Request_serialize(const envoy_type_metadata_v3_MetadataKind_Request* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind__Request_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind__Request_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_metadata_v3_MetadataKind_Request_serialize_ex(const envoy_type_metadata_v3_MetadataKind_Request* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind__Request_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind__Request_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 
@@ -534,14 +566,22 @@ UPB_INLINE envoy_type_metadata_v3_MetadataKind_Route* envoy_type_metadata_v3_Met
 UPB_INLINE char* envoy_type_metadata_v3_MetadataKind_Route_serialize(const envoy_type_metadata_v3_MetadataKind_Route* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind__Route_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind__Route_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_metadata_v3_MetadataKind_Route_serialize_ex(const envoy_type_metadata_v3_MetadataKind_Route* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind__Route_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind__Route_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 
@@ -574,14 +614,22 @@ UPB_INLINE envoy_type_metadata_v3_MetadataKind_Cluster* envoy_type_metadata_v3_M
 UPB_INLINE char* envoy_type_metadata_v3_MetadataKind_Cluster_serialize(const envoy_type_metadata_v3_MetadataKind_Cluster* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind__Cluster_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind__Cluster_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_metadata_v3_MetadataKind_Cluster_serialize_ex(const envoy_type_metadata_v3_MetadataKind_Cluster* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind__Cluster_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind__Cluster_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 
@@ -614,14 +662,22 @@ UPB_INLINE envoy_type_metadata_v3_MetadataKind_Host* envoy_type_metadata_v3_Meta
 UPB_INLINE char* envoy_type_metadata_v3_MetadataKind_Host_serialize(const envoy_type_metadata_v3_MetadataKind_Host* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind__Host_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind__Host_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_metadata_v3_MetadataKind_Host_serialize_ex(const envoy_type_metadata_v3_MetadataKind_Host* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind__Host_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__metadata__v3__MetadataKind__Host_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 

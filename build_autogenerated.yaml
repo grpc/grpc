@@ -1413,6 +1413,8 @@ libs:
   - src/core/xds/xds_client/xds_transport.h
   - src/core/xds/xds_client/xds_transport_factory.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   - third_party/xxhash/xxhash.h
   src:
   - src/core/call/call_arena_allocator.cc
@@ -2350,6 +2352,7 @@ libs:
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
@@ -3098,6 +3101,8 @@ libs:
   - src/core/xds/grpc/xds_transport_grpc.h
   - src/core/xds/xds_client/xds_transport.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   - third_party/xxhash/xxhash.h
   src:
   - src/core/call/call_arena_allocator.cc
@@ -3564,6 +3569,7 @@ libs:
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
@@ -3712,11 +3718,13 @@ libs:
   - third_party/upb/upb/base/upcast.h
   - third_party/upb/upb/port/atomic.h
   - third_party/upb/upb/port/def.inc
+  - third_party/upb/upb/port/overflow.h
   - third_party/upb/upb/port/sanitizers.h
   - third_party/upb/upb/port/undef.inc
   - third_party/upb/upb/port/vsnprintf_compat.h
   src:
   - third_party/upb/upb/base/status.c
+  - third_party/upb/upb/port/port.c
   deps: []
 - name: upb_descriptor_lib
   build: all
@@ -3734,8 +3742,6 @@ libs:
   language: c
   public_headers: []
   headers:
-  - third_party/upb/upb/base/internal/endian.h
-  - third_party/upb/upb/base/internal/log2.h
   - third_party/upb/upb/hash/common.h
   - third_party/upb/upb/hash/ext_table.h
   - third_party/upb/upb/hash/int_table.h
@@ -3745,6 +3751,16 @@ libs:
   deps:
   - upb_base_lib
   - upb_mem_lib
+- name: upb_json_enumvalue_options_lib
+  build: all
+  language: c
+  public_headers: []
+  headers:
+  - src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb.h
+  - third_party/upb/upb/reflection/json_enumvalue_options_bootstrap.h
+  src:
+  - src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb_minitable.c
+  deps: []
 - name: upb_json_lib
   build: all
   language: c
@@ -3765,36 +3781,41 @@ libs:
   headers:
   - third_party/upb/upb/lex/atoi.h
   - third_party/upb/upb/lex/round_trip.h
-  - third_party/upb/upb/lex/strtod.h
   - third_party/upb/upb/lex/unicode.h
   - third_party/upb/upb/port/atomic.h
   - third_party/upb/upb/port/def.inc
+  - third_party/upb/upb/port/overflow.h
   - third_party/upb/upb/port/sanitizers.h
   - third_party/upb/upb/port/undef.inc
   - third_party/upb/upb/port/vsnprintf_compat.h
   src:
   - third_party/upb/upb/lex/atoi.c
   - third_party/upb/upb/lex/round_trip.c
-  - third_party/upb/upb/lex/strtod.c
   - third_party/upb/upb/lex/unicode.c
+  - third_party/upb/upb/port/port.c
   deps: []
 - name: upb_mem_lib
   build: all
   language: c
   public_headers: []
   headers:
+  - third_party/upb/upb/base/internal/endian.h
+  - third_party/upb/upb/base/internal/log2.h
   - third_party/upb/upb/mem/alloc.h
   - third_party/upb/upb/mem/arena.h
   - third_party/upb/upb/mem/arena.hpp
+  - third_party/upb/upb/mem/internal/alloc.h
   - third_party/upb/upb/mem/internal/arena.h
   - third_party/upb/upb/port/atomic.h
   - third_party/upb/upb/port/def.inc
+  - third_party/upb/upb/port/overflow.h
   - third_party/upb/upb/port/sanitizers.h
   - third_party/upb/upb/port/undef.inc
   - third_party/upb/upb/port/vsnprintf_compat.h
   src:
   - third_party/upb/upb/mem/alloc.c
   - third_party/upb/upb/mem/arena.c
+  - third_party/upb/upb/port/port.c
   deps: []
 - name: upb_message_lib
   build: all
@@ -3807,6 +3828,7 @@ libs:
   - third_party/upb/upb/message/internal/accessors.h
   - third_party/upb/upb/message/internal/array.h
   - third_party/upb/upb/message/internal/extension.h
+  - third_party/upb/upb/message/internal/field_data.h
   - third_party/upb/upb/message/internal/map.h
   - third_party/upb/upb/message/internal/map_sorter.h
   - third_party/upb/upb/message/internal/message.h
@@ -3858,7 +3880,6 @@ libs:
   - third_party/upb/upb/wire/reader.c
   deps:
   - upb_mini_table_lib
-  - absl/strings:strings
 - name: upb_mini_table_lib
   build: all
   language: c
@@ -3898,7 +3919,6 @@ libs:
   - third_party/upb/upb/message/merge.h
   - third_party/upb/upb/reflection/common.h
   - third_party/upb/upb/reflection/def.h
-  - third_party/upb/upb/reflection/def.hpp
   - third_party/upb/upb/reflection/def_pool.h
   - third_party/upb/upb/reflection/def_type.h
   - third_party/upb/upb/reflection/enum_def.h
@@ -3924,7 +3944,6 @@ libs:
   - third_party/upb/upb/reflection/internal/strdup2.h
   - third_party/upb/upb/reflection/internal/upb_edition_defaults.h
   - third_party/upb/upb/reflection/message.h
-  - third_party/upb/upb/reflection/message.hpp
   - third_party/upb/upb/reflection/message_def.h
   - third_party/upb/upb/reflection/message_reserved_range.h
   - third_party/upb/upb/reflection/method_def.h
@@ -3953,18 +3972,23 @@ libs:
   deps:
   - upb_mini_descriptor_lib
   - upb_descriptor_lib
+  - upb_json_enumvalue_options_lib
   - upb_wire_lib
 - name: upb_textformat_lib
   build: all
   language: c
   public_headers: []
   headers:
+  - third_party/upb/upb/message/unknown_fields.h
   - third_party/upb/upb/text/encode.h
   - third_party/upb/upb/text/internal/encode.h
   - third_party/upb/upb/text/options.h
+  - third_party/upb/upb/wire/encode_extension.h
   src:
+  - third_party/upb/upb/message/unknown_fields.c
   - third_party/upb/upb/text/encode.c
   - third_party/upb/upb/text/internal/encode.c
+  - third_party/upb/upb/wire/encode_extension.c
   deps:
   - upb_lex_lib
   - upb_reflection_lib
@@ -3977,8 +4001,10 @@ libs:
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
   - third_party/upb/upb/wire/eps_copy_input_stream.h
+  - third_party/upb/upb/wire/internal/back_alloc.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/encoder.h
   - third_party/upb/upb/wire/internal/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
@@ -3989,7 +4015,9 @@ libs:
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
   - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/internal/back_alloc.c
   - third_party/upb/upb/wire/internal/decoder.c
+  - third_party/upb/upb/wire/internal/encoder.c
   - third_party/upb/upb/wire/reader.c
   deps:
   - utf8_range_lib
@@ -4345,8 +4373,8 @@ libs:
   - absl/base:dynamic_annotations
   - absl/base:prefetch
   - absl/container:layout
-  - absl/log:absl_check
   - absl/log:absl_log
+  - absl/numeric:int128
   - absl/strings:charset
   - absl/strings:internal
   - grpc
@@ -4718,8 +4746,8 @@ libs:
   - absl/base:dynamic_annotations
   - absl/base:prefetch
   - absl/container:layout
-  - absl/log:absl_check
   - absl/log:absl_log
+  - absl/numeric:int128
   - absl/strings:charset
   - absl/strings:internal
   - grpc_unsecure
@@ -5174,6 +5202,8 @@ libs:
   - src/core/util/work_serializer.h
   - src/core/xds/grpc/certificate_provider_store_interface.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
@@ -5487,6 +5517,7 @@ libs:
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -5560,9 +5591,11 @@ libs:
   - absl/hash:hash
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/log:log
   - absl/memory:memory
   - absl/meta:type_traits
   - absl/numeric:bits
+  - absl/numeric:int128
   - absl/status:status
   - absl/status:statusor
   - absl/strings:charset
@@ -5750,6 +5783,8 @@ targets:
   - src/core/util/work_serializer.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -5825,6 +5860,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -6149,6 +6185,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -6221,6 +6259,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -6536,8 +6575,8 @@ targets:
   - absl/base:dynamic_annotations
   - absl/base:prefetch
   - absl/container:layout
-  - absl/log:absl_check
   - absl/log:absl_log
+  - absl/numeric:int128
   - absl/strings:charset
   - absl/strings:internal
   - protobuf
@@ -6566,8 +6605,8 @@ targets:
   - absl/base:dynamic_annotations
   - absl/base:prefetch
   - absl/container:layout
-  - absl/log:absl_check
   - absl/log:absl_log
+  - absl/numeric:int128
   - absl/strings:charset
   - absl/strings:internal
   - protobuf
@@ -6635,8 +6674,8 @@ targets:
   - absl/base:dynamic_annotations
   - absl/base:prefetch
   - absl/container:layout
-  - absl/log:absl_check
   - absl/log:absl_log
+  - absl/numeric:int128
   - absl/strings:charset
   - absl/strings:internal
   - protobuf
@@ -6953,6 +6992,8 @@ targets:
   - src/core/util/work_serializer.h
   - src/core/xds/grpc/blackboard.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -7025,6 +7066,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -7277,6 +7319,8 @@ targets:
   - src/core/util/work_serializer.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/call/call_filters.cc
@@ -7374,6 +7418,7 @@ targets:
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -7506,6 +7551,8 @@ targets:
   - src/core/util/work_serializer.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/call/call_state.cc
   - src/core/channelz/channel_trace.cc
@@ -7581,6 +7628,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -7953,6 +8001,8 @@ targets:
   - src/core/util/work_serializer.h
   - src/core/xds/grpc/certificate_provider_store_interface.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
@@ -8232,6 +8282,7 @@ targets:
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -8386,6 +8437,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -8470,6 +8523,7 @@ targets:
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -9448,6 +9502,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -9532,6 +9588,7 @@ targets:
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -10053,6 +10110,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -10123,6 +10182,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -13127,6 +13187,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -13201,6 +13263,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -13773,6 +13836,8 @@ targets:
   - src/core/util/work_serializer.h
   - src/core/xds/grpc/certificate_provider_store_interface.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
@@ -14052,6 +14117,7 @@ targets:
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -14237,6 +14303,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/call/message.cc
   - src/core/channelz/channel_trace.cc
@@ -14327,6 +14395,7 @@ targets:
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -14467,6 +14536,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/call/message.cc
   - src/core/channelz/channel_trace.cc
@@ -14557,6 +14628,7 @@ targets:
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -14702,6 +14774,8 @@ targets:
   - src/core/util/work_serializer.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -14786,6 +14860,7 @@ targets:
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -14966,6 +15041,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/call/message.cc
   - src/core/channelz/channel_trace.cc
@@ -15053,6 +15130,7 @@ targets:
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -16278,6 +16356,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -16350,6 +16430,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -16725,6 +16806,8 @@ targets:
   - test/cpp/sleuth/tool_test.h
   - test/cpp/sleuth/version.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
@@ -17008,6 +17091,7 @@ targets:
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -17216,6 +17300,8 @@ targets:
   - src/core/util/work_serializer.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -17290,6 +17376,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -17439,6 +17526,8 @@ targets:
   - src/core/util/work_serializer.h
   - test/core/promise/test_context.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -17523,6 +17612,7 @@ targets:
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -17725,6 +17815,8 @@ targets:
   - src/core/util/work_serializer.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -17797,6 +17889,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -17989,6 +18082,8 @@ targets:
   - src/core/util/work_serializer.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -18063,6 +18158,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -18234,6 +18330,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/call/message.cc
   - src/core/channelz/channel_trace.cc
@@ -18322,6 +18420,7 @@ targets:
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -18665,6 +18764,8 @@ targets:
   - src/core/util/work_serializer.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -18740,6 +18841,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -18875,6 +18977,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -18949,6 +19053,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -19056,6 +19161,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -19126,6 +19233,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -19271,6 +19379,8 @@ targets:
   - src/core/util/work_serializer.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -19355,6 +19465,7 @@ targets:
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -19471,6 +19582,8 @@ targets:
   - src/core/util/work_serializer.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -19543,6 +19656,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -19984,6 +20098,8 @@ targets:
   - src/core/util/work_serializer.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -20058,6 +20174,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -20718,6 +20835,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -20788,6 +20907,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -21234,6 +21354,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -21306,6 +21428,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -21451,6 +21574,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -21523,6 +21648,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -21637,6 +21763,8 @@ targets:
   - src/core/util/work_serializer.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -21709,6 +21837,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -21834,6 +21963,8 @@ targets:
   - src/core/util/work_serializer.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -21908,6 +22039,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -22019,6 +22151,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -22091,6 +22225,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -22564,6 +22699,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -22639,6 +22776,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -22749,6 +22887,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -22820,6 +22960,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -23128,6 +23269,8 @@ targets:
   - src/core/util/work_serializer.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
@@ -23228,6 +23371,7 @@ targets:
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -23564,6 +23708,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -23636,6 +23782,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -24352,6 +24499,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -24423,6 +24572,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -24542,6 +24692,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -24612,6 +24764,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -24645,8 +24798,8 @@ targets:
   - absl/base:dynamic_annotations
   - absl/base:prefetch
   - absl/container:layout
-  - absl/log:absl_check
   - absl/log:absl_log
+  - absl/numeric:int128
   - absl/strings:charset
   - absl/strings:internal
   - protobuf
@@ -24951,6 +25104,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -25023,6 +25178,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -25275,6 +25431,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -25348,6 +25506,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -25458,6 +25617,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -25533,6 +25694,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -25838,6 +26000,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -25909,6 +26073,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -26517,6 +26682,8 @@ targets:
   - test/cpp/sleuth/tool.h
   - test/cpp/sleuth/tool_test.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
@@ -26799,6 +26966,7 @@ targets:
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -26977,6 +27145,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -27049,6 +27219,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -27204,6 +27375,8 @@ targets:
   - src/core/util/work_serializer.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -27289,6 +27462,7 @@ targets:
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -27396,6 +27570,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -27466,6 +27642,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -27695,6 +27872,8 @@ targets:
   - src/core/util/work_serializer.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -27769,6 +27948,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -28039,6 +28219,8 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/def.hpp
+  - third_party/upb/upb/reflection/message.hpp
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -28110,6 +28292,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:absl_check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
@@ -28620,8 +28803,8 @@ targets:
   - absl/base:dynamic_annotations
   - absl/base:prefetch
   - absl/container:layout
-  - absl/log:absl_check
   - absl/log:absl_log
+  - absl/numeric:int128
   - absl/strings:charset
   - absl/strings:internal
   - protobuf
@@ -28929,8 +29112,8 @@ targets:
   - absl/base:dynamic_annotations
   - absl/base:prefetch
   - absl/container:layout
-  - absl/log:absl_check
   - absl/log:absl_log
+  - absl/numeric:int128
   - absl/strings:charset
   - absl/strings:internal
   - protobuf
@@ -30259,8 +30442,8 @@ targets:
   - absl/base:dynamic_annotations
   - absl/base:prefetch
   - absl/container:layout
-  - absl/log:absl_check
   - absl/log:absl_log
+  - absl/numeric:int128
   - absl/strings:charset
   - absl/strings:internal
   - protobuf

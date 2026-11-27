@@ -63,14 +63,22 @@ UPB_INLINE envoy_config_trace_v3_DatadogRemoteConfig* envoy_config_trace_v3_Data
 UPB_INLINE char* envoy_config_trace_v3_DatadogRemoteConfig_serialize(const envoy_config_trace_v3_DatadogRemoteConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__DatadogRemoteConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__DatadogRemoteConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_trace_v3_DatadogRemoteConfig_serialize_ex(const envoy_config_trace_v3_DatadogRemoteConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__DatadogRemoteConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__DatadogRemoteConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_trace_v3_DatadogRemoteConfig_clear_polling_interval(envoy_config_trace_v3_DatadogRemoteConfig* msg) {
@@ -134,14 +142,22 @@ UPB_INLINE envoy_config_trace_v3_DatadogConfig* envoy_config_trace_v3_DatadogCon
 UPB_INLINE char* envoy_config_trace_v3_DatadogConfig_serialize(const envoy_config_trace_v3_DatadogConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__DatadogConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__DatadogConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_trace_v3_DatadogConfig_serialize_ex(const envoy_config_trace_v3_DatadogConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__DatadogConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__DatadogConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_trace_v3_DatadogConfig_clear_collector_cluster(envoy_config_trace_v3_DatadogConfig* msg) {

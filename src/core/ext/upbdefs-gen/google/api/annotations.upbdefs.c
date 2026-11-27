@@ -14,7 +14,7 @@
 extern _upb_DefPool_Init google_api_http_proto_upbdefinit;
 extern _upb_DefPool_Init google_protobuf_descriptor_proto_upbdefinit;
 
-static const char descriptor[296] = {
+static const char descriptor_google_api_annotations_proto_upbdefinit[296] = {
     '\n', '\034', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'a', 'p', 'i',
     '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's',
     '.', 'p', 'r', 'o', 't', 'o', '\022', '\n', 'g', 'o', 'o', 'g',
@@ -42,15 +42,16 @@ static const char descriptor[296] = {
     'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[3] = {
+static _upb_DefPool_Init* deps_google_api_annotations_proto_upbdefinit[3] = {
     &google_api_http_proto_upbdefinit,
     &google_protobuf_descriptor_proto_upbdefinit,
     NULL,
 };
 
 _upb_DefPool_Init google_api_annotations_proto_upbdefinit = {
-    deps,
+    deps_google_api_annotations_proto_upbdefinit,
     &google_api_annotations_proto_upb_file_layout,
     "google/api/annotations.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_google_api_annotations_proto_upbdefinit,
+                        sizeof(descriptor_google_api_annotations_proto_upbdefinit)),
 };

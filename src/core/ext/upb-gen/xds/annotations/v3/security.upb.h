@@ -56,14 +56,22 @@ UPB_INLINE xds_annotations_v3_FieldSecurityAnnotation* xds_annotations_v3_FieldS
 UPB_INLINE char* xds_annotations_v3_FieldSecurityAnnotation_serialize(const xds_annotations_v3_FieldSecurityAnnotation* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FieldSecurityAnnotation_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FieldSecurityAnnotation_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_annotations_v3_FieldSecurityAnnotation_serialize_ex(const xds_annotations_v3_FieldSecurityAnnotation* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FieldSecurityAnnotation_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__annotations__v3__FieldSecurityAnnotation_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_annotations_v3_FieldSecurityAnnotation_clear_configure_for_untrusted_downstream(xds_annotations_v3_FieldSecurityAnnotation* msg) {

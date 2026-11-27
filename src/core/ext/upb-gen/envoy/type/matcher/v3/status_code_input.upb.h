@@ -62,14 +62,22 @@ UPB_INLINE envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput* envoy_type_ma
 UPB_INLINE char* envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_serialize(const envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__HttpResponseStatusCodeMatchInput_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__HttpResponseStatusCodeMatchInput_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_serialize_ex(const envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__HttpResponseStatusCodeMatchInput_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__HttpResponseStatusCodeMatchInput_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 
@@ -102,14 +110,22 @@ UPB_INLINE envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput* envoy_ty
 UPB_INLINE char* envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_serialize(const envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__HttpResponseStatusCodeClassMatchInput_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__HttpResponseStatusCodeClassMatchInput_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_serialize_ex(const envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__HttpResponseStatusCodeClassMatchInput_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__HttpResponseStatusCodeClassMatchInput_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 
@@ -142,14 +158,22 @@ UPB_INLINE envoy_type_matcher_v3_HttpResponseLocalReplyMatchInput* envoy_type_ma
 UPB_INLINE char* envoy_type_matcher_v3_HttpResponseLocalReplyMatchInput_serialize(const envoy_type_matcher_v3_HttpResponseLocalReplyMatchInput* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__HttpResponseLocalReplyMatchInput_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__HttpResponseLocalReplyMatchInput_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_matcher_v3_HttpResponseLocalReplyMatchInput_serialize_ex(const envoy_type_matcher_v3_HttpResponseLocalReplyMatchInput* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__HttpResponseLocalReplyMatchInput_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__HttpResponseLocalReplyMatchInput_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 

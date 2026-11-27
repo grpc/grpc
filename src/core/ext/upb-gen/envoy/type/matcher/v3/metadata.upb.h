@@ -62,14 +62,22 @@ UPB_INLINE envoy_type_matcher_v3_MetadataMatcher* envoy_type_matcher_v3_Metadata
 UPB_INLINE char* envoy_type_matcher_v3_MetadataMatcher_serialize(const envoy_type_matcher_v3_MetadataMatcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__MetadataMatcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__MetadataMatcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_matcher_v3_MetadataMatcher_serialize_ex(const envoy_type_matcher_v3_MetadataMatcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__MetadataMatcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__MetadataMatcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_type_matcher_v3_MetadataMatcher_clear_filter(envoy_type_matcher_v3_MetadataMatcher* msg) {
@@ -245,14 +253,22 @@ UPB_INLINE envoy_type_matcher_v3_MetadataMatcher_PathSegment* envoy_type_matcher
 UPB_INLINE char* envoy_type_matcher_v3_MetadataMatcher_PathSegment_serialize(const envoy_type_matcher_v3_MetadataMatcher_PathSegment* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__MetadataMatcher__PathSegment_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__MetadataMatcher__PathSegment_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_matcher_v3_MetadataMatcher_PathSegment_serialize_ex(const envoy_type_matcher_v3_MetadataMatcher_PathSegment* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__MetadataMatcher__PathSegment_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__MetadataMatcher__PathSegment_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {

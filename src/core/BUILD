@@ -23,6 +23,7 @@ load(
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
 )
+load("//bazel:protobuf.bzl", "upb_reflection_libs")
 
 licenses(["reciprocal"])
 
@@ -1037,8 +1038,7 @@ grpc_cc_library(
         "//:promise_upbdefs",
         "//src/core:function_signature",
         "//src/core:json",
-        "@com_google_protobuf//upb/reflection",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_library(
@@ -6555,8 +6555,7 @@ grpc_cc_library(
         "validation_errors",
         "xds_common_types",
         "//:xds_client",
-        "@com_google_protobuf//upb/reflection",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_library(
@@ -6573,8 +6572,7 @@ grpc_cc_library(
         "channel_fwd",
         "grpc_check",
         "xds_http_filter",
-        "@com_google_protobuf//upb/reflection",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_library(
@@ -6611,8 +6609,7 @@ grpc_cc_library(
         "xds_matcher_context",
         "xds_matcher_parse",
         "//:xds_client",
-        "@com_google_protobuf//upb/reflection",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_library(
@@ -6644,8 +6641,7 @@ grpc_cc_library(
         "xds_http_filter",
         "//:grpc_base",
         "//:xds_client",
-        "@com_google_protobuf//upb/reflection",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_library(
@@ -6671,8 +6667,7 @@ grpc_cc_library(
         "xds_common_types_parser",
         "xds_http_filter",
         "//:xds_client",
-        "@com_google_protobuf//upb/reflection",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_library(
@@ -6712,8 +6707,7 @@ grpc_cc_library(
         "//:xds_client",
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/message",
-        "@com_google_protobuf//upb/reflection",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_library(
@@ -6729,9 +6723,8 @@ grpc_cc_library(
         "absl/strings",
         "re2",
         "@com_google_protobuf//upb/base",
-        "@com_google_protobuf//upb/reflection",
         "@com_google_protobuf//upb/message",
-    ],
+    ] + upb_reflection_libs(),
     tags = ["nofixdeps"],
     deps = [
         "channel_args",
@@ -6794,8 +6787,7 @@ grpc_cc_library(
         "xds_common_types_parser",
         "xds_http_filter",
         "//:xds_client",
-        "@com_google_protobuf//upb/reflection",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_library(
@@ -6872,9 +6864,8 @@ grpc_cc_library(
         "//:xds_client",
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/message",
-        "@com_google_protobuf//upb/reflection",
         "@com_google_protobuf//upb/text",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_library(
@@ -6948,9 +6939,8 @@ grpc_cc_library(
         "//:parse_address",
         "//:sockaddr_utils",
         "//:xds_client",
-        "@com_google_protobuf//upb/reflection",
         "@com_google_protobuf//upb/text",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_library(
@@ -7106,8 +7096,7 @@ grpc_cc_library(
         "xds_lb_policy_registry",
         "xds_server_grpc",
         "//:xds_client",
-        "@com_google_protobuf//upb/reflection",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_library(
@@ -7243,9 +7232,8 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:xds_client",
         "@com_google_protobuf//upb/base",
-        "@com_google_protobuf//upb/reflection",
         "@com_google_protobuf//upb/text",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_library(
@@ -7310,9 +7298,8 @@ grpc_cc_library(
         "//:parse_address",
         "//:sockaddr_utils",
         "//:xds_client",
-        "@com_google_protobuf//upb/reflection",
         "@com_google_protobuf//upb/text",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_library(
@@ -7544,8 +7531,7 @@ grpc_cc_library(
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/json",
         "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/reflection",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_library(
@@ -12399,9 +12385,8 @@ grpc_cc_library(
         "//:channelz_service_upbdefs",
         "//:channelz_upbdefs",
         "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/reflection",
         "@com_google_protobuf//upb/text",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_library(
@@ -12749,8 +12734,7 @@ grpc_cc_library(
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/json",
         "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/reflection",
-    ],
+    ] + upb_reflection_libs(),
 )
 
 grpc_cc_library(
@@ -13300,16 +13284,7 @@ grpc_upb_proto_reflection_library(
     deps = ["@grpc_proto//:rls_config_proto"],
 )
 
-WELL_KNOWN_PROTO_TARGETS = [
-    "any",
-    "duration",
-    "empty",
-    "struct",
-    "timestamp",
-    "wrappers",
-]
-
-grpc_add_well_known_proto_upb_targets(targets = WELL_KNOWN_PROTO_TARGETS)
+grpc_add_well_known_proto_upb_targets()
 
 grpc_cc_library(
     name = "session_endpoint",

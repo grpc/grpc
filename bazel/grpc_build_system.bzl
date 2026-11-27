@@ -45,6 +45,7 @@ load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
 load("//bazel:experiments.bzl", "EXPERIMENTS", "EXPERIMENT_ENABLES", "EXPERIMENT_POLLERS")
 load("//bazel:test_experiments.bzl", "TEST_EXPERIMENTS", "TEST_EXPERIMENT_ENABLES", "TEST_EXPERIMENT_POLLERS")
+load("//bazel:protobuf.bzl", "well_known_proto_upb_targets")
 
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epoll1", "poll"]
@@ -900,9 +901,9 @@ def grpc_upb_proto_library(name, deps):
 def grpc_upb_proto_reflection_library(name, deps):
     upb_proto_reflection_library(name = name, deps = deps)
 
-def grpc_add_well_known_proto_upb_targets(targets):
+def grpc_add_well_known_proto_upb_targets():
     """Adds well-known proto upb targets to the given targets."""
-    for target in targets:
+    for target in well_known_proto_upb_targets():
         grpc_upb_proto_library(
             name = "protobuf_" + target + "_upb",
             deps = ["@com_google_protobuf//:" + target + "_proto"],

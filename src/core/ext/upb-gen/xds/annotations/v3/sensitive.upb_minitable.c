@@ -24,12 +24,12 @@ static const upb_MiniTableExtension xds_annotations_v3_sensitive_ext_obj = {
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension* xds_annotations_v3_sensitive_ext = &xds_annotations_v3_sensitive_ext_obj;
   
-static const upb_MiniTableExtension *extensions_layout[1] = {
+static const upb_MiniTableExtension *extensions_layout_xds_annotations_v3_sensitive_proto_upb_file_layout[1] = {
   &xds_annotations_v3_sensitive_ext_obj,
 };
 
 UPB_LINKARR_DECLARE(upb_AllExts, const upb_MiniTableExtension*);
-UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, xds_annotations_v3_sensitive_proto_ext_constructor) {
+UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, xds_annotations_v3_sensitive_proto_ext_constructor, {
   static bool finished = false;
   if (finished) return;
   finished = true;
@@ -41,11 +41,11 @@ UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, xds_annotations_v3_sensitive_
   UPB_ASSERT(entry.next == NULL);
   entry.next = UPB_PRIVATE(upb_generated_extension_list);
   UPB_PRIVATE(upb_generated_extension_list) = &entry;
-}
+})
 const upb_MiniTableFile xds_annotations_v3_sensitive_proto_upb_file_layout = {
   NULL,
   NULL,
-  extensions_layout,
+  extensions_layout_xds_annotations_v3_sensitive_proto_upb_file_layout,
   0,
   0,
   1,

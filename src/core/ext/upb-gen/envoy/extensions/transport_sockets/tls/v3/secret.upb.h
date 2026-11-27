@@ -73,14 +73,22 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_GenericSecret* envoy_extens
 UPB_INLINE char* envoy_extensions_transport_sockets_tls_v3_GenericSecret_serialize(const envoy_extensions_transport_sockets_tls_v3_GenericSecret* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__tls__v3__GenericSecret_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__tls__v3__GenericSecret_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_transport_sockets_tls_v3_GenericSecret_serialize_ex(const envoy_extensions_transport_sockets_tls_v3_GenericSecret* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__tls__v3__GenericSecret_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__tls__v3__GenericSecret_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_GenericSecret_clear_secret(envoy_extensions_transport_sockets_tls_v3_GenericSecret* msg) {
@@ -187,6 +195,7 @@ UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_GenericSecret_secrets_
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__DataSource_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, sizeof(val), a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, sizeof(val), a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
@@ -228,14 +237,22 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig* envoy_exte
 UPB_INLINE char* envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_serialize(const envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__tls__v3__SdsSecretConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__tls__v3__SdsSecretConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_serialize_ex(const envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__tls__v3__SdsSecretConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__tls__v3__SdsSecretConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_clear_name(envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig* msg) {
@@ -315,14 +332,22 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_Secret* envoy_extensions_tr
 UPB_INLINE char* envoy_extensions_transport_sockets_tls_v3_Secret_serialize(const envoy_extensions_transport_sockets_tls_v3_Secret* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__tls__v3__Secret_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__tls__v3__Secret_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_transport_sockets_tls_v3_Secret_serialize_ex(const envoy_extensions_transport_sockets_tls_v3_Secret* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__tls__v3__Secret_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__tls__v3__Secret_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {

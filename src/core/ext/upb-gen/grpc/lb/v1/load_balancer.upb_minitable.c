@@ -32,10 +32,16 @@ static const grpc__lb__v1__LoadBalanceRequest_msg_init_Fields grpc_lb_v1_LoadBal
 
 const upb_MiniTable grpc__lb__v1__LoadBalanceRequest_msg_init = {
   &grpc_lb_v1_LoadBalanceRequest__fields.fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.lb.v1.LoadBalanceRequest",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000080103000a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0010000802040012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -53,7 +59,7 @@ const upb_MiniTable grpc__lb__v1__InitialLoadBalanceRequest_msg_init = {
   "grpc.lb.v1.InitialLoadBalanceRequest",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
@@ -74,10 +80,10 @@ const upb_MiniTable grpc__lb__v1__ClientStatsPerToken_msg_init = {
   "grpc.lb.v1.ClientStatsPerToken",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x001800003f000010, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -101,19 +107,27 @@ static const grpc__lb__v1__ClientStats_msg_init_Fields grpc_lb_v1_ClientStats__f
 
 const upb_MiniTable grpc__lb__v1__ClientStats_msg_init = {
   &grpc_lb_v1_ClientStats__fields.fields[0],
-  UPB_SIZE(56, 64), 6, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(56, 64), 6, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.lb.v1.ClientStats",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000009000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x001800003f000010, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
     {0x002000003f000018, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x002800003f000030, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
     {0x003000003f000038, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x003800003f0a0042, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -135,10 +149,16 @@ static const grpc__lb__v1__LoadBalanceResponse_msg_init_Fields grpc_lb_v1_LoadBa
 
 const upb_MiniTable grpc__lb__v1__LoadBalanceResponse_msg_init = {
   &grpc_lb_v1_LoadBalanceResponse__fields.fields[0],
-  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.lb.v1.LoadBalanceResponse",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000080105000a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0010000802060012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x001000080307001a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+  })
 };
 
 const upb_MiniTable grpc__lb__v1__FallbackResponse_msg_init = {
@@ -163,10 +183,16 @@ static const grpc__lb__v1__InitialLoadBalanceResponse_msg_init_Fields grpc_lb_v1
 
 const upb_MiniTable grpc__lb__v1__InitialLoadBalanceResponse_msg_init = {
   &grpc_lb_v1_InitialLoadBalanceResponse__fields.fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.lb.v1.InitialLoadBalanceResponse",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0010000000020012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -183,10 +209,14 @@ static const grpc__lb__v1__ServerList_msg_init_Fields grpc_lb_v1_ServerList__fie
 
 const upb_MiniTable grpc__lb__v1__ServerList_msg_init = {
   &grpc_lb_v1_ServerList__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.lb.v1.ServerList",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -207,18 +237,18 @@ const upb_MiniTable grpc__lb__v1__Server_msg_init = {
   "grpc.lb.v1.Server",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_Bytes_Scalar_Tag1Byte},
     {0x000c00003f000010, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x002000003f00001a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x000800003f000020, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[9] = {
+static const upb_MiniTable *messages_layout_grpc_lb_v1_load_balancer_proto_upb_file_layout[9] = {
   &grpc__lb__v1__LoadBalanceRequest_msg_init,
   &grpc__lb__v1__InitialLoadBalanceRequest_msg_init,
   &grpc__lb__v1__ClientStatsPerToken_msg_init,
@@ -231,7 +261,7 @@ static const upb_MiniTable *messages_layout[9] = {
 };
 
 const upb_MiniTableFile grpc_lb_v1_load_balancer_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_grpc_lb_v1_load_balancer_proto_upb_file_layout,
   NULL,
   NULL,
   9,

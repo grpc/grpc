@@ -113,14 +113,22 @@ UPB_INLINE cel_expr_ParsedExpr* cel_expr_ParsedExpr_parse_ex(
 UPB_INLINE char* cel_expr_ParsedExpr_serialize(const cel_expr_ParsedExpr* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__ParsedExpr_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &cel__expr__ParsedExpr_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* cel_expr_ParsedExpr_serialize_ex(const cel_expr_ParsedExpr* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__ParsedExpr_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &cel__expr__ParsedExpr_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void cel_expr_ParsedExpr_clear_expr(cel_expr_ParsedExpr* msg) {
@@ -215,14 +223,22 @@ UPB_INLINE cel_expr_Expr* cel_expr_Expr_parse_ex(
 UPB_INLINE char* cel_expr_Expr_serialize(const cel_expr_Expr* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* cel_expr_Expr_serialize_ex(const cel_expr_Expr* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -509,14 +525,22 @@ UPB_INLINE cel_expr_Expr_Ident* cel_expr_Expr_Ident_parse_ex(
 UPB_INLINE char* cel_expr_Expr_Ident_serialize(const cel_expr_Expr_Ident* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__Ident_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__Ident_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* cel_expr_Expr_Ident_serialize_ex(const cel_expr_Expr_Ident* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__Ident_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__Ident_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void cel_expr_Expr_Ident_clear_name(cel_expr_Expr_Ident* msg) {
@@ -565,14 +589,22 @@ UPB_INLINE cel_expr_Expr_Select* cel_expr_Expr_Select_parse_ex(
 UPB_INLINE char* cel_expr_Expr_Select_serialize(const cel_expr_Expr_Select* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__Select_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__Select_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* cel_expr_Expr_Select_serialize_ex(const cel_expr_Expr_Select* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__Select_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__Select_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void cel_expr_Expr_Select_clear_operand(cel_expr_Expr_Select* msg) {
@@ -668,14 +700,22 @@ UPB_INLINE cel_expr_Expr_Call* cel_expr_Expr_Call_parse_ex(
 UPB_INLINE char* cel_expr_Expr_Call_serialize(const cel_expr_Expr_Call* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__Call_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__Call_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* cel_expr_Expr_Call_serialize_ex(const cel_expr_Expr_Call* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__Call_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__Call_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void cel_expr_Expr_Call_clear_target(cel_expr_Expr_Call* msg) {
@@ -835,14 +875,22 @@ UPB_INLINE cel_expr_Expr_CreateList* cel_expr_Expr_CreateList_parse_ex(
 UPB_INLINE char* cel_expr_Expr_CreateList_serialize(const cel_expr_Expr_CreateList* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__CreateList_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__CreateList_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* cel_expr_Expr_CreateList_serialize_ex(const cel_expr_Expr_CreateList* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__CreateList_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__CreateList_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void cel_expr_Expr_CreateList_clear_elements(cel_expr_Expr_CreateList* msg) {
@@ -1026,14 +1074,22 @@ UPB_INLINE cel_expr_Expr_CreateStruct* cel_expr_Expr_CreateStruct_parse_ex(
 UPB_INLINE char* cel_expr_Expr_CreateStruct_serialize(const cel_expr_Expr_CreateStruct* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__CreateStruct_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__CreateStruct_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* cel_expr_Expr_CreateStruct_serialize_ex(const cel_expr_Expr_CreateStruct* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__CreateStruct_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__CreateStruct_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void cel_expr_Expr_CreateStruct_clear_message_name(cel_expr_Expr_CreateStruct* msg) {
@@ -1162,14 +1218,22 @@ UPB_INLINE cel_expr_Expr_CreateStruct_Entry* cel_expr_Expr_CreateStruct_Entry_pa
 UPB_INLINE char* cel_expr_Expr_CreateStruct_Entry_serialize(const cel_expr_Expr_CreateStruct_Entry* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__CreateStruct__Entry_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__CreateStruct__Entry_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* cel_expr_Expr_CreateStruct_Entry_serialize_ex(const cel_expr_Expr_CreateStruct_Entry* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__CreateStruct__Entry_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__CreateStruct__Entry_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -1332,14 +1396,22 @@ UPB_INLINE cel_expr_Expr_Comprehension* cel_expr_Expr_Comprehension_parse_ex(
 UPB_INLINE char* cel_expr_Expr_Comprehension_serialize(const cel_expr_Expr_Comprehension* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__Comprehension_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__Comprehension_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* cel_expr_Expr_Comprehension_serialize_ex(const cel_expr_Expr_Comprehension* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__Comprehension_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &cel__expr__Expr__Comprehension_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void cel_expr_Expr_Comprehension_clear_iter_var(cel_expr_Expr_Comprehension* msg) {
@@ -1575,14 +1647,22 @@ UPB_INLINE cel_expr_Constant* cel_expr_Constant_parse_ex(
 UPB_INLINE char* cel_expr_Constant_serialize(const cel_expr_Constant* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Constant_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &cel__expr__Constant_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* cel_expr_Constant_serialize_ex(const cel_expr_Constant* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Constant_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &cel__expr__Constant_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -1840,14 +1920,22 @@ UPB_INLINE cel_expr_SourceInfo* cel_expr_SourceInfo_parse_ex(
 UPB_INLINE char* cel_expr_SourceInfo_serialize(const cel_expr_SourceInfo* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__SourceInfo_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &cel__expr__SourceInfo_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* cel_expr_SourceInfo_serialize_ex(const cel_expr_SourceInfo* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__SourceInfo_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &cel__expr__SourceInfo_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void cel_expr_SourceInfo_clear_syntax_version(cel_expr_SourceInfo* msg) {
@@ -2116,6 +2204,7 @@ UPB_INLINE bool cel_expr_SourceInfo_positions_set(cel_expr_SourceInfo* msg, int6
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__SourceInfo__PositionsEntry_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, sizeof(key), sizeof(val), a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, sizeof(key), &val, sizeof(val), a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
@@ -2143,6 +2232,7 @@ UPB_INLINE bool cel_expr_SourceInfo_macro_calls_set(cel_expr_SourceInfo* msg, in
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Expr_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, sizeof(key), sizeof(val), a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, sizeof(key), &val, sizeof(val), a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
@@ -2223,14 +2313,22 @@ UPB_INLINE cel_expr_SourceInfo_Extension* cel_expr_SourceInfo_Extension_parse_ex
 UPB_INLINE char* cel_expr_SourceInfo_Extension_serialize(const cel_expr_SourceInfo_Extension* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__SourceInfo__Extension_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &cel__expr__SourceInfo__Extension_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* cel_expr_SourceInfo_Extension_serialize_ex(const cel_expr_SourceInfo_Extension* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__SourceInfo__Extension_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &cel__expr__SourceInfo__Extension_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void cel_expr_SourceInfo_Extension_clear_id(cel_expr_SourceInfo_Extension* msg) {
@@ -2381,14 +2479,22 @@ UPB_INLINE cel_expr_SourceInfo_Extension_Version* cel_expr_SourceInfo_Extension_
 UPB_INLINE char* cel_expr_SourceInfo_Extension_Version_serialize(const cel_expr_SourceInfo_Extension_Version* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__SourceInfo__Extension__Version_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &cel__expr__SourceInfo__Extension__Version_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* cel_expr_SourceInfo_Extension_Version_serialize_ex(const cel_expr_SourceInfo_Extension_Version* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__SourceInfo__Extension__Version_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &cel__expr__SourceInfo__Extension__Version_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void cel_expr_SourceInfo_Extension_Version_clear_major(cel_expr_SourceInfo_Extension_Version* msg) {

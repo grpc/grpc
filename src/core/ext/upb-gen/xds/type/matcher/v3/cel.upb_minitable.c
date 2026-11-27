@@ -36,19 +36,19 @@ const upb_MiniTable xds__type__matcher__v3__CelMatcher_msg_init = {
   "xds.type.matcher.v3.CelMatcher",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x002000000003000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x001000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_xds_type_matcher_v3_cel_proto_upb_file_layout[1] = {
   &xds__type__matcher__v3__CelMatcher_msg_init,
 };
 
 const upb_MiniTableFile xds_type_matcher_v3_cel_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_xds_type_matcher_v3_cel_proto_upb_file_layout,
   NULL,
   NULL,
   1,

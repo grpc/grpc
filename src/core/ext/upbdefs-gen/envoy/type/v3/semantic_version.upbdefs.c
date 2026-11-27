@@ -14,7 +14,7 @@
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 
-static const char descriptor[398] = {
+static const char descriptor_envoy_type_v3_semantic_version_proto_upbdefinit[398] = {
     '\n', '$', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e',
     '/', 'v', '3', '/', 's', 'e', 'm', 'a', 'n', 't', 'i', 'c',
     '_', 'v', 'e', 'r', 's', 'i', 'o', 'n', '.', 'p', 'r', 'o',
@@ -51,15 +51,16 @@ static const char descriptor[398] = {
     'o', '3',
 };
 
-static _upb_DefPool_Init *deps[3] = {
+static _upb_DefPool_Init* deps_envoy_type_v3_semantic_version_proto_upbdefinit[3] = {
     &udpa_annotations_status_proto_upbdefinit,
     &udpa_annotations_versioning_proto_upbdefinit,
     NULL,
 };
 
 _upb_DefPool_Init envoy_type_v3_semantic_version_proto_upbdefinit = {
-    deps,
+    deps_envoy_type_v3_semantic_version_proto_upbdefinit,
     &envoy_type_v3_semantic_version_proto_upb_file_layout,
     "envoy/type/v3/semantic_version.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_type_v3_semantic_version_proto_upbdefinit,
+                        sizeof(descriptor_envoy_type_v3_semantic_version_proto_upbdefinit)),
 };

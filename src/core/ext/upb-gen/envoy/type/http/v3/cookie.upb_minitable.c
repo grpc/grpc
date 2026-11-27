@@ -35,15 +35,19 @@ static const envoy__type__http__v3__Cookie_msg_init_Fields envoy_type_http_v3_Co
 
 const upb_MiniTable envoy__type__http__v3__Cookie_msg_init = {
   &envoy_type_http_v3_Cookie__fields.fields[0],
-  UPB_SIZE(40, 64), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(40, 64), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.http.v3.Cookie",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0030000000060012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x002000003f00001a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x003800003f070022, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -63,20 +67,20 @@ const upb_MiniTable envoy__type__http__v3__CookieAttribute_msg_init = {
   "envoy.type.http.v3.CookieAttribute",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x001800003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_envoy_type_http_v3_cookie_proto_upb_file_layout[2] = {
   &envoy__type__http__v3__Cookie_msg_init,
   &envoy__type__http__v3__CookieAttribute_msg_init,
 };
 
 const upb_MiniTableFile envoy_type_http_v3_cookie_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_type_http_v3_cookie_proto_upb_file_layout,
   NULL,
   NULL,
   2,

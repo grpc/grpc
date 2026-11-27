@@ -73,14 +73,22 @@ UPB_INLINE envoy_config_trace_v3_ZipkinConfig* envoy_config_trace_v3_ZipkinConfi
 UPB_INLINE char* envoy_config_trace_v3_ZipkinConfig_serialize(const envoy_config_trace_v3_ZipkinConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__ZipkinConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__ZipkinConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_trace_v3_ZipkinConfig_serialize_ex(const envoy_config_trace_v3_ZipkinConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__ZipkinConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__ZipkinConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_trace_v3_ZipkinConfig_clear_collector_cluster(envoy_config_trace_v3_ZipkinConfig* msg) {

@@ -62,14 +62,22 @@ UPB_INLINE xds_type_matcher_v3_StringMatcher* xds_type_matcher_v3_StringMatcher_
 UPB_INLINE char* xds_type_matcher_v3_StringMatcher_serialize(const xds_type_matcher_v3_StringMatcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__StringMatcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__StringMatcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_StringMatcher_serialize_ex(const xds_type_matcher_v3_StringMatcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__StringMatcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__StringMatcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -280,14 +288,22 @@ UPB_INLINE xds_type_matcher_v3_ListStringMatcher* xds_type_matcher_v3_ListString
 UPB_INLINE char* xds_type_matcher_v3_ListStringMatcher_serialize(const xds_type_matcher_v3_ListStringMatcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__ListStringMatcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__ListStringMatcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_ListStringMatcher_serialize_ex(const xds_type_matcher_v3_ListStringMatcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__ListStringMatcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__ListStringMatcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_type_matcher_v3_ListStringMatcher_clear_patterns(xds_type_matcher_v3_ListStringMatcher* msg) {

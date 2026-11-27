@@ -18,6 +18,7 @@
 #include "google/protobuf/descriptor.upb.h"
 #include "upb/base/descriptor_constants.h"
 #include "upb/base/string_view.h"
+#include "upb/lex/round_trip.h"
 #include "upb/mem/arena.h"
 #include "upb/message/array.h"
 #include "upb/port/vsnprintf_compat.h"
@@ -179,10 +180,16 @@ static upb_StringView default_string(upb_ToProto_Context* ctx,
       return printf_dup(ctx, "%" PRId32, d.int32_val);
     case kUpb_CType_UInt32:
       return printf_dup(ctx, "%" PRIu32, d.uint32_val);
-    case kUpb_CType_Float:
-      return printf_dup(ctx, "%.9g", d.float_val);
-    case kUpb_CType_Double:
-      return printf_dup(ctx, "%.17g", d.double_val);
+    case kUpb_CType_Float: {
+      char buf[kUpb_RoundTripBufferSize];
+      _upb_EncodeRoundTripFloat(d.float_val, buf, sizeof(buf));
+      return strviewdup(ctx, buf);
+    }
+    case kUpb_CType_Double: {
+      char buf[kUpb_RoundTripBufferSize];
+      _upb_EncodeRoundTripDouble(d.double_val, buf, sizeof(buf));
+      return strviewdup(ctx, buf);
+    }
     case kUpb_CType_String:
       return strviewdup2(ctx, d.str_val);
     case kUpb_CType_Bytes:
@@ -590,6 +597,13 @@ static google_protobuf_FileDescriptorProto* filedef_toproto(upb_ToProto_Context*
       google_protobuf_FileDescriptorProto_resize_weak_dependency(proto, n, ctx->arena);
   const int32_t* weak_dep_nums = _upb_FileDef_WeakDependencyIndexes(f);
   if (n) memcpy(weak_deps, weak_dep_nums, n * sizeof(int32_t));
+
+  n = upb_FileDef_OptionDependencyCount(f);
+  upb_StringView* option_deps =
+      google_protobuf_FileDescriptorProto_resize_option_dependency(proto, n, ctx->arena);
+  for (size_t i = 0; i < n; i++) {
+    option_deps[i] = strviewdup(ctx, upb_FileDef_OptionDependency(f, i));
+  }
 
   n = upb_FileDef_TopLevelMessageCount(f);
   google_protobuf_DescriptorProto** msgs =

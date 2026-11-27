@@ -55,14 +55,22 @@ UPB_INLINE xds_core_v3_Authority* xds_core_v3_Authority_parse_ex(
 UPB_INLINE char* xds_core_v3_Authority_serialize(const xds_core_v3_Authority* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__core__v3__Authority_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__core__v3__Authority_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_core_v3_Authority_serialize_ex(const xds_core_v3_Authority* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__core__v3__Authority_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__core__v3__Authority_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void xds_core_v3_Authority_clear_name(xds_core_v3_Authority* msg) {

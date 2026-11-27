@@ -11,7 +11,7 @@
 #include "google/protobuf/struct.upbdefs.h"
 #include "google/protobuf/struct.upb_minitable.h"
 
-static const char descriptor[738] = {
+static const char descriptor_google_protobuf_struct_proto_upbdefinit[738] = {
     '\n', '\034', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o',
     't', 'o', 'b', 'u', 'f', '/', 's', 't', 'r', 'u', 'c', 't',
     '.', 'p', 'r', 'o', 't', 'o', '\022', '\017', 'g', 'o', 'o', 'g',
@@ -76,13 +76,14 @@ static const char descriptor[738] = {
     'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[1] = {
+static _upb_DefPool_Init* deps_google_protobuf_struct_proto_upbdefinit[1] = {
     NULL,
 };
 
 _upb_DefPool_Init google_protobuf_struct_proto_upbdefinit = {
-    deps,
+    deps_google_protobuf_struct_proto_upbdefinit,
     &google_protobuf_struct_proto_upb_file_layout,
     "google/protobuf/struct.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_google_protobuf_struct_proto_upbdefinit,
+                        sizeof(descriptor_google_protobuf_struct_proto_upbdefinit)),
 };

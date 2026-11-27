@@ -39,19 +39,19 @@ const upb_MiniTable envoy__config__core__v3__HttpUri_msg_init = {
   "envoy.config.core.v3.HttpUri",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0020000c02000012, &upb_DecodeFast_String_Oneof_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x003000000005001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_config_core_v3_http_uri_proto_upb_file_layout[1] = {
   &envoy__config__core__v3__HttpUri_msg_init,
 };
 
 const upb_MiniTableFile envoy_config_core_v3_http_uri_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_config_core_v3_http_uri_proto_upb_file_layout,
   NULL,
   NULL,
   1,

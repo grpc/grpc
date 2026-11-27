@@ -67,14 +67,22 @@ UPB_INLINE envoy_type_http_v3_PathTransformation* envoy_type_http_v3_PathTransfo
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_serialize(const envoy_type_http_v3_PathTransformation* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__PathTransformation_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__PathTransformation_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_serialize_ex(const envoy_type_http_v3_PathTransformation* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__PathTransformation_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__PathTransformation_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_type_http_v3_PathTransformation_clear_operations(envoy_type_http_v3_PathTransformation* msg) {
@@ -187,14 +195,22 @@ UPB_INLINE envoy_type_http_v3_PathTransformation_Operation* envoy_type_http_v3_P
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_serialize(const envoy_type_http_v3_PathTransformation_Operation* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__PathTransformation__Operation_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__PathTransformation__Operation_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_serialize_ex(const envoy_type_http_v3_PathTransformation_Operation* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__PathTransformation__Operation_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__PathTransformation__Operation_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -305,14 +321,22 @@ UPB_INLINE envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986*
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_serialize(const envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__PathTransformation__Operation__NormalizePathRFC3986_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__PathTransformation__Operation__NormalizePathRFC3986_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_serialize_ex(const envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__PathTransformation__Operation__NormalizePathRFC3986_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__PathTransformation__Operation__NormalizePathRFC3986_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 
@@ -345,14 +369,22 @@ UPB_INLINE envoy_type_http_v3_PathTransformation_Operation_MergeSlashes* envoy_t
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_serialize(const envoy_type_http_v3_PathTransformation_Operation_MergeSlashes* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__PathTransformation__Operation__MergeSlashes_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__PathTransformation__Operation__MergeSlashes_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_serialize_ex(const envoy_type_http_v3_PathTransformation_Operation_MergeSlashes* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__PathTransformation__Operation__MergeSlashes_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__http__v3__PathTransformation__Operation__MergeSlashes_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 

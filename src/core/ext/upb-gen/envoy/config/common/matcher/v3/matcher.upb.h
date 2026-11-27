@@ -113,14 +113,22 @@ UPB_INLINE envoy_config_common_matcher_v3_Matcher* envoy_config_common_matcher_v
 UPB_INLINE char* envoy_config_common_matcher_v3_Matcher_serialize(const envoy_config_common_matcher_v3_Matcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_common_matcher_v3_Matcher_serialize_ex(const envoy_config_common_matcher_v3_Matcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -262,14 +270,22 @@ UPB_INLINE envoy_config_common_matcher_v3_Matcher_OnMatch* envoy_config_common_m
 UPB_INLINE char* envoy_config_common_matcher_v3_Matcher_OnMatch_serialize(const envoy_config_common_matcher_v3_Matcher_OnMatch* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__OnMatch_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__OnMatch_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_common_matcher_v3_Matcher_OnMatch_serialize_ex(const envoy_config_common_matcher_v3_Matcher_OnMatch* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__OnMatch_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__OnMatch_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -396,14 +412,22 @@ UPB_INLINE envoy_config_common_matcher_v3_Matcher_MatcherList* envoy_config_comm
 UPB_INLINE char* envoy_config_common_matcher_v3_Matcher_MatcherList_serialize(const envoy_config_common_matcher_v3_Matcher_MatcherList* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_common_matcher_v3_Matcher_MatcherList_serialize_ex(const envoy_config_common_matcher_v3_Matcher_MatcherList* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_common_matcher_v3_Matcher_MatcherList_clear_matchers(envoy_config_common_matcher_v3_Matcher_MatcherList* msg) {
@@ -516,14 +540,22 @@ UPB_INLINE envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate* envoy_c
 UPB_INLINE char* envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_serialize(const envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_serialize_ex(const envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -698,14 +730,22 @@ UPB_INLINE envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_SinglePr
 UPB_INLINE char* envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_serialize(const envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate__SinglePredicate_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate__SinglePredicate_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_serialize_ex(const envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate__SinglePredicate_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate__SinglePredicate_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -847,14 +887,22 @@ UPB_INLINE envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_Predicat
 UPB_INLINE char* envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_PredicateList_serialize(const envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_PredicateList* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate__PredicateList_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate__PredicateList_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_PredicateList_serialize_ex(const envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_PredicateList* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate__PredicateList_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate__PredicateList_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_PredicateList_clear_predicate(envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_PredicateList* msg) {
@@ -967,14 +1015,22 @@ UPB_INLINE envoy_config_common_matcher_v3_Matcher_MatcherList_FieldMatcher* envo
 UPB_INLINE char* envoy_config_common_matcher_v3_Matcher_MatcherList_FieldMatcher_serialize(const envoy_config_common_matcher_v3_Matcher_MatcherList_FieldMatcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList__FieldMatcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList__FieldMatcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_common_matcher_v3_Matcher_MatcherList_FieldMatcher_serialize_ex(const envoy_config_common_matcher_v3_Matcher_MatcherList_FieldMatcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList__FieldMatcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherList__FieldMatcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_common_matcher_v3_Matcher_MatcherList_FieldMatcher_clear_predicate(envoy_config_common_matcher_v3_Matcher_MatcherList_FieldMatcher* msg) {
@@ -1069,14 +1125,22 @@ UPB_INLINE envoy_config_common_matcher_v3_Matcher_MatcherTree* envoy_config_comm
 UPB_INLINE char* envoy_config_common_matcher_v3_Matcher_MatcherTree_serialize(const envoy_config_common_matcher_v3_Matcher_MatcherTree* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherTree_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherTree_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_common_matcher_v3_Matcher_MatcherTree_serialize_ex(const envoy_config_common_matcher_v3_Matcher_MatcherTree* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherTree_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherTree_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -1250,14 +1314,22 @@ UPB_INLINE envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap* envoy_co
 UPB_INLINE char* envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_serialize(const envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherTree__MatchMap_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherTree__MatchMap_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_serialize_ex(const envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherTree__MatchMap_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__Matcher__MatcherTree__MatchMap_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_clear_map(envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap* msg) {
@@ -1333,6 +1405,7 @@ UPB_INLINE bool envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_map_
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__common__matcher__v3__Matcher__OnMatch_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, sizeof(val), a);
+  if (!map) return false;
   return _upb_Map_Insert(map, &key, 0, &val, sizeof(val), a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
@@ -1374,14 +1447,22 @@ UPB_INLINE envoy_config_common_matcher_v3_MatchPredicate* envoy_config_common_ma
 UPB_INLINE char* envoy_config_common_matcher_v3_MatchPredicate_serialize(const envoy_config_common_matcher_v3_MatchPredicate* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__MatchPredicate_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__MatchPredicate_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_common_matcher_v3_MatchPredicate_serialize_ex(const envoy_config_common_matcher_v3_MatchPredicate* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__MatchPredicate_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__MatchPredicate_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -1737,14 +1818,22 @@ UPB_INLINE envoy_config_common_matcher_v3_MatchPredicate_MatchSet* envoy_config_
 UPB_INLINE char* envoy_config_common_matcher_v3_MatchPredicate_MatchSet_serialize(const envoy_config_common_matcher_v3_MatchPredicate_MatchSet* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__MatchPredicate__MatchSet_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__MatchPredicate__MatchSet_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_common_matcher_v3_MatchPredicate_MatchSet_serialize_ex(const envoy_config_common_matcher_v3_MatchPredicate_MatchSet* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__MatchPredicate__MatchSet_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__MatchPredicate__MatchSet_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_common_matcher_v3_MatchPredicate_MatchSet_clear_rules(envoy_config_common_matcher_v3_MatchPredicate_MatchSet* msg) {
@@ -1857,14 +1946,22 @@ UPB_INLINE envoy_config_common_matcher_v3_HttpHeadersMatch* envoy_config_common_
 UPB_INLINE char* envoy_config_common_matcher_v3_HttpHeadersMatch_serialize(const envoy_config_common_matcher_v3_HttpHeadersMatch* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__HttpHeadersMatch_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__HttpHeadersMatch_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_common_matcher_v3_HttpHeadersMatch_serialize_ex(const envoy_config_common_matcher_v3_HttpHeadersMatch* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__HttpHeadersMatch_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__HttpHeadersMatch_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_common_matcher_v3_HttpHeadersMatch_clear_headers(envoy_config_common_matcher_v3_HttpHeadersMatch* msg) {
@@ -1977,14 +2074,22 @@ UPB_INLINE envoy_config_common_matcher_v3_HttpGenericBodyMatch* envoy_config_com
 UPB_INLINE char* envoy_config_common_matcher_v3_HttpGenericBodyMatch_serialize(const envoy_config_common_matcher_v3_HttpGenericBodyMatch* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__HttpGenericBodyMatch_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__HttpGenericBodyMatch_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_common_matcher_v3_HttpGenericBodyMatch_serialize_ex(const envoy_config_common_matcher_v3_HttpGenericBodyMatch* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__HttpGenericBodyMatch_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__HttpGenericBodyMatch_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_common_matcher_v3_HttpGenericBodyMatch_clear_bytes_limit(envoy_config_common_matcher_v3_HttpGenericBodyMatch* msg) {
@@ -2113,14 +2218,22 @@ UPB_INLINE envoy_config_common_matcher_v3_HttpGenericBodyMatch_GenericTextMatch*
 UPB_INLINE char* envoy_config_common_matcher_v3_HttpGenericBodyMatch_GenericTextMatch_serialize(const envoy_config_common_matcher_v3_HttpGenericBodyMatch_GenericTextMatch* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__HttpGenericBodyMatch__GenericTextMatch_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__HttpGenericBodyMatch__GenericTextMatch_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_common_matcher_v3_HttpGenericBodyMatch_GenericTextMatch_serialize_ex(const envoy_config_common_matcher_v3_HttpGenericBodyMatch_GenericTextMatch* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__HttpGenericBodyMatch__GenericTextMatch_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__common__matcher__v3__HttpGenericBodyMatch__GenericTextMatch_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {

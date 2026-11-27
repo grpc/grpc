@@ -86,14 +86,22 @@ UPB_INLINE envoy_admin_v3_ServerInfo* envoy_admin_v3_ServerInfo_parse_ex(
 UPB_INLINE char* envoy_admin_v3_ServerInfo_serialize(const envoy_admin_v3_ServerInfo* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__ServerInfo_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__ServerInfo_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_ServerInfo_serialize_ex(const envoy_admin_v3_ServerInfo* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__ServerInfo_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__ServerInfo_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_admin_v3_ServerInfo_clear_version(envoy_admin_v3_ServerInfo* msg) {
@@ -314,14 +322,22 @@ UPB_INLINE envoy_admin_v3_CommandLineOptions* envoy_admin_v3_CommandLineOptions_
 UPB_INLINE char* envoy_admin_v3_CommandLineOptions_serialize(const envoy_admin_v3_CommandLineOptions* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__CommandLineOptions_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__CommandLineOptions_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_CommandLineOptions_serialize_ex(const envoy_admin_v3_CommandLineOptions* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__CommandLineOptions_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__admin__v3__CommandLineOptions_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_clear_base_id(envoy_admin_v3_CommandLineOptions* msg) {

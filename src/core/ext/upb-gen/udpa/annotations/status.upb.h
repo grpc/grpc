@@ -62,14 +62,22 @@ UPB_INLINE udpa_annotations_StatusAnnotation* udpa_annotations_StatusAnnotation_
 UPB_INLINE char* udpa_annotations_StatusAnnotation_serialize(const udpa_annotations_StatusAnnotation* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &udpa__annotations__StatusAnnotation_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &udpa__annotations__StatusAnnotation_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* udpa_annotations_StatusAnnotation_serialize_ex(const udpa_annotations_StatusAnnotation* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &udpa__annotations__StatusAnnotation_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &udpa__annotations__StatusAnnotation_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void udpa_annotations_StatusAnnotation_clear_work_in_progress(udpa_annotations_StatusAnnotation* msg) {

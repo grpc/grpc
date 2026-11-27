@@ -36,22 +36,24 @@ static const envoy__config__cluster__v3__Filter_msg_init_Fields envoy_config_clu
 
 const upb_MiniTable envoy__config__cluster__v3__Filter_msg_init = {
   &envoy_config_cluster_v3_Filter__fields.fields[0],
-  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.cluster.v3.Filter",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x0020000000050012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x002800000106001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_config_cluster_v3_filter_proto_upb_file_layout[1] = {
   &envoy__config__cluster__v3__Filter_msg_init,
 };
 
 const upb_MiniTableFile envoy_config_cluster_v3_filter_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_config_cluster_v3_filter_proto_upb_file_layout,
   NULL,
   NULL,
   1,

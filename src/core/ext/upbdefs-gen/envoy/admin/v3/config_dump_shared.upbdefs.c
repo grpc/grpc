@@ -16,7 +16,7 @@ extern _upb_DefPool_Init google_protobuf_timestamp_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 
-static const char descriptor[6134] = {
+static const char descriptor_envoy_admin_v3_config_dump_shared_proto_upbdefinit[6134] = {
     '\n', '\'', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'd', 'm', 'i',
     'n', '/', 'v', '3', '/', 'c', 'o', 'n', 'f', 'i', 'g', '_',
     'd', 'u', 'm', 'p', '_', 's', 'h', 'a', 'r', 'e', 'd', '.',
@@ -531,7 +531,7 @@ static const char descriptor[6134] = {
     'o', '3',
 };
 
-static _upb_DefPool_Init *deps[5] = {
+static _upb_DefPool_Init* deps_envoy_admin_v3_config_dump_shared_proto_upbdefinit[5] = {
     &google_protobuf_any_proto_upbdefinit,
     &google_protobuf_timestamp_proto_upbdefinit,
     &udpa_annotations_status_proto_upbdefinit,
@@ -540,8 +540,9 @@ static _upb_DefPool_Init *deps[5] = {
 };
 
 _upb_DefPool_Init envoy_admin_v3_config_dump_shared_proto_upbdefinit = {
-    deps,
+    deps_envoy_admin_v3_config_dump_shared_proto_upbdefinit,
     &envoy_admin_v3_config_dump_shared_proto_upb_file_layout,
     "envoy/admin/v3/config_dump_shared.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_admin_v3_config_dump_shared_proto_upbdefinit,
+                        sizeof(descriptor_envoy_admin_v3_config_dump_shared_proto_upbdefinit)),
 };

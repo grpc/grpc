@@ -80,14 +80,22 @@ UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultDelay* envoy_extensions
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultDelay_serialize(const envoy_extensions_filters_common_fault_v3_FaultDelay* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultDelay_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultDelay_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultDelay_serialize_ex(const envoy_extensions_filters_common_fault_v3_FaultDelay* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultDelay_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultDelay_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -229,14 +237,22 @@ UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay* envo
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_serialize(const envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultDelay__HeaderDelay_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultDelay__HeaderDelay_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_serialize_ex(const envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultDelay__HeaderDelay_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultDelay__HeaderDelay_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 
@@ -269,14 +285,22 @@ UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultRateLimit* envoy_extens
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultRateLimit_serialize(const envoy_extensions_filters_common_fault_v3_FaultRateLimit* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultRateLimit_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultRateLimit_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultRateLimit_serialize_ex(const envoy_extensions_filters_common_fault_v3_FaultRateLimit* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultRateLimit_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultRateLimit_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -418,14 +442,22 @@ UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit* e
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_serialize(const envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultRateLimit__FixedLimit_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultRateLimit__FixedLimit_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_serialize_ex(const envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultRateLimit__FixedLimit_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultRateLimit__FixedLimit_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_clear_limit_kbps(envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit* msg) {
@@ -474,14 +506,22 @@ UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit* 
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_serialize(const envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultRateLimit__HeaderLimit_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultRateLimit__HeaderLimit_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_serialize_ex(const envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultRateLimit__HeaderLimit_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultRateLimit__HeaderLimit_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 

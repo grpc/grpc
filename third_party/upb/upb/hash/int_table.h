@@ -18,18 +18,7 @@
 #include "upb/port/def.inc"
 
 typedef struct {
-  upb_table t;  // For entries that don't fit in the array part.
-  // Array part of the table.
-  // Pointers on this table are const so we can create static initializers for
-  // tables.  We cast away const sometimes, but *only* when the containing
-  // upb_table is known to be non-const.  This requires a bit of care, but
-  // the subtlety is confined to table.c.
-  const upb_value* array;
-  // Track presence in the array part. Each bit at index (key % 8) at the
-  // presence_mask[key/8] indicates if the element is present in the array part.
-  const uint8_t* presence_mask;
-  uint32_t array_size;   // Array part size.
-  uint32_t array_count;  // Array part number of elements.
+  upb_table t;
 } upb_inttable;
 
 #ifdef __cplusplus
@@ -38,19 +27,71 @@ extern "C" {
 
 // Initialize a table. If memory allocation failed, false is returned and
 // the table is uninitialized.
-bool upb_inttable_init(upb_inttable* table, upb_Arena* a);
+UPB_NODISCARD bool upb_inttable_init(upb_inttable* table, upb_Arena* a);
 
 // Returns the number of values in the table.
-size_t upb_inttable_count(const upb_inttable* t);
+UPB_INLINE size_t upb_inttable_count(const upb_inttable* t) {
+  return t->t.count;
+}
 
 // Inserts the given key into the hashtable with the given value.
 // The key must not already exist in the hash table.
-// The value must not be UINTPTR_MAX.
 //
 // If a table resize was required but memory allocation failed, false is
 // returned and the table is unchanged.
-bool upb_inttable_insert(upb_inttable* t, uintptr_t key, upb_value val,
-                         upb_Arena* a);
+UPB_NODISCARD bool upb_inttable_insert(upb_inttable* t, uintptr_t key,
+                                       upb_value val, upb_Arena* a);
+
+UPB_NODISCARD bool upb_inttable_insert_or_replace_slow(upb_inttable* t,
+                                                       uintptr_t key,
+                                                       upb_value val,
+                                                       bool* replaced,
+                                                       upb_Arena* a);
+
+UPB_INLINE uint32_t upb_inthash(uintptr_t key) {
+  UPB_STATIC_ASSERT(sizeof(uintptr_t) == 4 || sizeof(uintptr_t) == 8,
+                    "Pointers don't fit");
+  if (sizeof(uintptr_t) == 8) {
+    return (uint32_t)key ^ (uint32_t)((uint64_t)key >> 32);
+  } else {
+    return (uint32_t)key;
+  }
+}
+
+// Inserts or updates the given key with the given value. Sets *replaced to
+// true if an existing entry was updated, or false if a new entry was inserted.
+// Returns false if a table resize was required and memory allocation failed.
+UPB_NODISCARD UPB_FORCEINLINE bool upb_inttable_insert_or_replace(
+    upb_inttable* t, uintptr_t key, upb_value val, bool* replaced,
+    upb_Arena* a) {
+  if (UPB_LIKELY(t->t.entries != NULL)) {
+    upb_tabent* e = upb_getentry(&t->t, upb_inthash(key));
+    if (UPB_LIKELY(upb_tabent_isempty(e) && !upb_table_isfull(&t->t))) {
+      t->t.count++;
+      e->key.num = key;
+      e->val = val;
+      upb_tabent_clearnext(e);
+      *replaced = false;
+      return true;
+    }
+  }
+  // Use a separate temporary so that `replaced` does not escape on the fast
+  // path above. It must be initialized because the slow path leaves it unset
+  // on allocation failure.
+  bool slow_replaced = false;
+  bool ok = upb_inttable_insert_or_replace_slow(t, key, val, &slow_replaced, a);
+  *replaced = slow_replaced;
+  return ok;
+}
+
+// Resizes the table to 1 << size_lg2.
+UPB_NODISCARD bool upb_inttable_resize(upb_inttable* t, size_t size_lg2,
+                                       upb_Arena* a);
+
+// Copies the table without rehashing. Performing a shallow copy of entries;
+// the caller is responsible for cloning non-primitive values.
+bool upb_inttable_copy(upb_inttable* dest, const upb_inttable* src,
+                       upb_Arena* a);
 
 // Looks up key in this table, returning "true" if the key was found.
 // If v is non-NULL, copies the value for this key into *v.
@@ -64,12 +105,6 @@ bool upb_inttable_remove(upb_inttable* t, uintptr_t key, upb_value* val);
 // If the entry does not exist, returns false and does nothing.
 // Unlike insert/remove, this does not invalidate iterators.
 bool upb_inttable_replace(upb_inttable* t, uintptr_t key, upb_value val);
-
-// Optimizes the table for the current set of entries, for both memory use and
-// lookup time. Client should call this after all entries have been inserted;
-// inserting more entries is legal, but will likely require a table resize.
-// Returns false if reallocation fails.
-bool upb_inttable_compact(upb_inttable* t, upb_Arena* a);
 
 // Clears the table.
 void upb_inttable_clear(upb_inttable* t);
@@ -92,10 +127,6 @@ void upb_inttable_setentryvalue(upb_inttable* t, intptr_t iter, upb_value v);
 bool upb_inttable_done(const upb_inttable* t, intptr_t i);
 uintptr_t upb_inttable_iter_key(const upb_inttable* t, intptr_t iter);
 upb_value upb_inttable_iter_value(const upb_inttable* t, intptr_t iter);
-
-UPB_INLINE bool upb_inttable_arrhas(const upb_inttable* t, uintptr_t key) {
-  return (t->presence_mask[key / 8] & (1 << (key % 8))) != 0;
-}
 
 #ifdef __cplusplus
 } /* extern "C" */

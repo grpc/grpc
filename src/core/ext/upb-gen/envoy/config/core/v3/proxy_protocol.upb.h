@@ -79,14 +79,22 @@ UPB_INLINE envoy_config_core_v3_ProxyProtocolPassThroughTLVs* envoy_config_core_
 UPB_INLINE char* envoy_config_core_v3_ProxyProtocolPassThroughTLVs_serialize(const envoy_config_core_v3_ProxyProtocolPassThroughTLVs* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_ProxyProtocolPassThroughTLVs_serialize_ex(const envoy_config_core_v3_ProxyProtocolPassThroughTLVs* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_core_v3_ProxyProtocolPassThroughTLVs_clear_match_type(envoy_config_core_v3_ProxyProtocolPassThroughTLVs* msg) {
@@ -206,14 +214,22 @@ UPB_INLINE envoy_config_core_v3_TlvEntry* envoy_config_core_v3_TlvEntry_parse_ex
 UPB_INLINE char* envoy_config_core_v3_TlvEntry_serialize(const envoy_config_core_v3_TlvEntry* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__TlvEntry_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__TlvEntry_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_TlvEntry_serialize_ex(const envoy_config_core_v3_TlvEntry* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__TlvEntry_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__TlvEntry_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_core_v3_TlvEntry_clear_type(envoy_config_core_v3_TlvEntry* msg) {
@@ -309,14 +325,22 @@ UPB_INLINE envoy_config_core_v3_ProxyProtocolConfig* envoy_config_core_v3_ProxyP
 UPB_INLINE char* envoy_config_core_v3_ProxyProtocolConfig_serialize(const envoy_config_core_v3_ProxyProtocolConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__ProxyProtocolConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__ProxyProtocolConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_ProxyProtocolConfig_serialize_ex(const envoy_config_core_v3_ProxyProtocolConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__ProxyProtocolConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__ProxyProtocolConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_core_v3_ProxyProtocolConfig_clear_version(envoy_config_core_v3_ProxyProtocolConfig* msg) {
@@ -476,14 +500,22 @@ UPB_INLINE envoy_config_core_v3_PerHostConfig* envoy_config_core_v3_PerHostConfi
 UPB_INLINE char* envoy_config_core_v3_PerHostConfig_serialize(const envoy_config_core_v3_PerHostConfig* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__PerHostConfig_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__PerHostConfig_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_PerHostConfig_serialize_ex(const envoy_config_core_v3_PerHostConfig* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__PerHostConfig_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__PerHostConfig_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_core_v3_PerHostConfig_clear_added_tlvs(envoy_config_core_v3_PerHostConfig* msg) {

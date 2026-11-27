@@ -16,11 +16,10 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-const char* UPB_PRIVATE(upb_EpsCopyInputStream_ReturnError)(
-    upb_EpsCopyInputStream* e) {
+UPB_NORETURN UPB_NOINLINE void UPB_PRIVATE(
+    upb_EpsCopyInputStream_ThrowMalformed)(upb_EpsCopyInputStream* e) {
   e->error = true;
-  if (e->err) upb_ErrorHandler_ThrowError(e->err, kUpb_ErrorCode_Malformed);
-  return NULL;
+  upb_ErrorHandler_ThrowError(e->err, kUpb_ErrorCode_Malformed);
 }
 
 const char* UPB_PRIVATE(upb_EpsCopyInputStream_IsDoneFallback)(
@@ -39,7 +38,8 @@ const char* UPB_PRIVATE(upb_EpsCopyInputStream_IsDoneFallback)(
     e->limit_ptr = e->end + e->limit;
     UPB_ASSERT(ptr < e->limit_ptr);
     e->input_delta = (uintptr_t)old_end - (uintptr_t)new_start;
-    UPB_PRIVATE(upb_EpsCopyInputStream_BoundsChecked)(e);
+    UPB_PRIVATE(upb_EpsCopyInputStream_BoundsChecked)(
+        e, kUpb_EpsCopyInputStream_SlopBytes);
     return new_start;
   } else {
     UPB_ASSERT(overrun > e->limit);

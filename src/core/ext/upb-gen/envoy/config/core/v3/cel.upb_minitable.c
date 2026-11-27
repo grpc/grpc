@@ -32,19 +32,19 @@ const upb_MiniTable envoy__config__core__v3__CelExpressionConfig_msg_init = {
   "envoy.config.core.v3.CelExpressionConfig",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x000900003f000010, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x000a00003f000018, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_config_core_v3_cel_proto_upb_file_layout[1] = {
   &envoy__config__core__v3__CelExpressionConfig_msg_init,
 };
 
 const upb_MiniTableFile envoy_config_core_v3_cel_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_config_core_v3_cel_proto_upb_file_layout,
   NULL,
   NULL,
   1,

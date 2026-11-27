@@ -33,10 +33,10 @@ const upb_MiniTable envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_in
   "envoy.config.core.v3.ProxyProtocolPassThroughTLVs",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x001000003f000012, &upb_DecodeFast_Varint32_Packed_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -61,10 +61,10 @@ const upb_MiniTable envoy__config__core__v3__TlvEntry_msg_init = {
   "envoy.config.core.v3.TlvEntry",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000c00003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x001000003f000012, &upb_DecodeFast_Bytes_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x002000000005001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
   })
 };
 
@@ -85,13 +85,15 @@ static const envoy__config__core__v3__ProxyProtocolConfig_msg_init_Fields envoy_
 
 const upb_MiniTable envoy__config__core__v3__ProxyProtocolConfig_msg_init = {
   &envoy_config_core_v3_ProxyProtocolConfig__fields.fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.ProxyProtocolConfig",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000c00003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x0010000000050012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x001800003f06001a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
   })
 };
 
@@ -109,13 +111,17 @@ static const envoy__config__core__v3__PerHostConfig_msg_init_Fields envoy_config
 
 const upb_MiniTable envoy__config__core__v3__PerHostConfig_msg_init = {
   &envoy_config_core_v3_PerHostConfig__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.PerHostConfig",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
-static const upb_MiniTable *messages_layout[4] = {
+static const upb_MiniTable *messages_layout_envoy_config_core_v3_proxy_protocol_proto_upb_file_layout[4] = {
   &envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init,
   &envoy__config__core__v3__TlvEntry_msg_init,
   &envoy__config__core__v3__ProxyProtocolConfig_msg_init,
@@ -123,7 +129,7 @@ static const upb_MiniTable *messages_layout[4] = {
 };
 
 const upb_MiniTableFile envoy_config_core_v3_proxy_protocol_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_config_core_v3_proxy_protocol_proto_upb_file_layout,
   NULL,
   NULL,
   4,

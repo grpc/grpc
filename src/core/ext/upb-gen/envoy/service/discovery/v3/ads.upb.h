@@ -56,14 +56,22 @@ UPB_INLINE envoy_service_discovery_v3_AdsDummy* envoy_service_discovery_v3_AdsDu
 UPB_INLINE char* envoy_service_discovery_v3_AdsDummy_serialize(const envoy_service_discovery_v3_AdsDummy* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__service__discovery__v3__AdsDummy_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__service__discovery__v3__AdsDummy_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_service_discovery_v3_AdsDummy_serialize_ex(const envoy_service_discovery_v3_AdsDummy* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__service__discovery__v3__AdsDummy_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__service__discovery__v3__AdsDummy_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 

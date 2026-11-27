@@ -17,7 +17,7 @@ extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[1054] = {
+static const char descriptor_envoy_config_route_v3_scoped_route_proto_upbdefinit[1054] = {
     '\n', '(', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f',
     'i', 'g', '/', 'r', 'o', 'u', 't', 'e', '/', 'v', '3', '/',
     's', 'c', 'o', 'p', 'e', 'd', '_', 'r', 'o', 'u', 't', 'e',
@@ -108,7 +108,7 @@ static const char descriptor[1054] = {
     '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[6] = {
+static _upb_DefPool_Init* deps_envoy_config_route_v3_scoped_route_proto_upbdefinit[6] = {
     &envoy_config_route_v3_route_proto_upbdefinit,
     &udpa_annotations_migrate_proto_upbdefinit,
     &udpa_annotations_status_proto_upbdefinit,
@@ -118,8 +118,9 @@ static _upb_DefPool_Init *deps[6] = {
 };
 
 _upb_DefPool_Init envoy_config_route_v3_scoped_route_proto_upbdefinit = {
-    deps,
+    deps_envoy_config_route_v3_scoped_route_proto_upbdefinit,
     &envoy_config_route_v3_scoped_route_proto_upb_file_layout,
     "envoy/config/route/v3/scoped_route.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_config_route_v3_scoped_route_proto_upbdefinit,
+                        sizeof(descriptor_envoy_config_route_v3_scoped_route_proto_upbdefinit)),
 };

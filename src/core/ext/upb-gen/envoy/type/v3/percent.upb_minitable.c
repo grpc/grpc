@@ -32,7 +32,7 @@ const upb_MiniTable envoy__type__v3__Percent_msg_init = {
   "envoy.type.v3.Percent",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000009, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
   })
 };
@@ -53,20 +53,20 @@ const upb_MiniTable envoy__type__v3__FractionalPercent_msg_init = {
   "envoy.type.v3.FractionalPercent",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x000c00003f000010, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_envoy_type_v3_percent_proto_upb_file_layout[2] = {
   &envoy__type__v3__Percent_msg_init,
   &envoy__type__v3__FractionalPercent_msg_init,
 };
 
 const upb_MiniTableFile envoy_type_v3_percent_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_type_v3_percent_proto_upb_file_layout,
   NULL,
   NULL,
   2,

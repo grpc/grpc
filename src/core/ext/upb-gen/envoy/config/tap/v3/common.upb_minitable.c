@@ -45,10 +45,20 @@ static const envoy__config__tap__v3__TapConfig_msg_init_Fields envoy_config_tap_
 
 const upb_MiniTable envoy__config__tap__v3__TapConfig_msg_init = {
   &envoy_config_tap_v3_TapConfig__fields.fields[0],
-  UPB_SIZE(32, 48), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(32, 48), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.tap.v3.TapConfig",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000006000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0018000001070012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x002000000208001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0028000003090022, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -82,19 +92,27 @@ static const envoy__config__tap__v3__MatchPredicate_msg_init_Fields envoy_config
 
 const upb_MiniTable envoy__config__tap__v3__MatchPredicate_msg_init = {
   &envoy_config_tap_v3_MatchPredicate__fields.fields[0],
-  UPB_SIZE(16, 24), 10, kUpb_ExtMode_NonExtendable, 10, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(16, 24), 10, kUpb_ExtMode_NonExtendable, 10, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.tap.v3.MatchPredicate",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x00100008010f000a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0010000802100012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x001000080311001a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
     {0x0010000804000020, &upb_DecodeFast_Bool_Oneof_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001000080512002a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0010000806130032, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x001000080714003a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0010000808150042, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x001000080916004a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x001000080a170052, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -112,10 +130,14 @@ static const envoy__config__tap__v3__MatchPredicate__MatchSet_msg_init_Fields en
 
 const upb_MiniTable envoy__config__tap__v3__MatchPredicate__MatchSet_msg_init = {
   &envoy_config_tap_v3_MatchPredicate_MatchSet__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.tap.v3.MatchPredicate.MatchSet",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -132,10 +154,14 @@ static const envoy__config__tap__v3__HttpHeadersMatch_msg_init_Fields envoy_conf
 
 const upb_MiniTable envoy__config__tap__v3__HttpHeadersMatch_msg_init = {
   &envoy_config_tap_v3_HttpHeadersMatch__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.tap.v3.HttpHeadersMatch",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -153,13 +179,15 @@ static const envoy__config__tap__v3__HttpGenericBodyMatch_msg_init_Fields envoy_
 
 const upb_MiniTable envoy__config__tap__v3__HttpGenericBodyMatch_msg_init = {
   &envoy_config_tap_v3_HttpGenericBodyMatch__fields.fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.tap.v3.HttpGenericBodyMatch",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x001000003f030012, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -179,10 +207,10 @@ const upb_MiniTable envoy__config__tap__v3__HttpGenericBodyMatch__GenericTextMat
   "envoy.config.tap.v3.HttpGenericBodyMatch.GenericTextMatch",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000080100000a, &upb_DecodeFast_String_Oneof_Tag1Byte},
     {0x0010000802000012, &upb_DecodeFast_Bytes_Oneof_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -212,14 +240,14 @@ const upb_MiniTable envoy__config__tap__v3__OutputConfig_msg_init = {
   "envoy.config.tap.v3.OutputConfig",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000003f08000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0018000000090012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00200000010a001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x000900003f000020, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00280000020b002a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -246,13 +274,19 @@ static const envoy__config__tap__v3__OutputSink_msg_init_Fields envoy_config_tap
 
 const upb_MiniTable envoy__config__tap__v3__OutputSink_msg_init = {
   &envoy_config_tap_v3_OutputSink__fields.fields[0],
-  24, 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(8), 0,
+  24, 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.tap.v3.OutputSink",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x0010000c02090012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0010000c030a001a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0010000c040b0022, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0010000c050c002a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0010000c060d0032, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -279,13 +313,15 @@ static const envoy__config__tap__v3__BufferedAdminSink_msg_init_Fields envoy_con
 
 const upb_MiniTable envoy__config__tap__v3__BufferedAdminSink_msg_init = {
   &envoy_config_tap_v3_BufferedAdminSink__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.tap.v3.BufferedAdminSink",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x0018000000030012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -304,7 +340,7 @@ const upb_MiniTable envoy__config__tap__v3__FilePerTapSink_msg_init = {
   "envoy.config.tap.v3.FilePerTapSink",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
@@ -324,17 +360,19 @@ static const envoy__config__tap__v3__StreamingGrpcSink_msg_init_Fields envoy_con
 
 const upb_MiniTable envoy__config__tap__v3__StreamingGrpcSink_msg_init = {
   &envoy_config_tap_v3_StreamingGrpcSink__fields.fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.tap.v3.StreamingGrpcSink",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x0020000000030012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[12] = {
+static const upb_MiniTable *messages_layout_envoy_config_tap_v3_common_proto_upb_file_layout[12] = {
   &envoy__config__tap__v3__TapConfig_msg_init,
   &envoy__config__tap__v3__MatchPredicate_msg_init,
   &envoy__config__tap__v3__MatchPredicate__MatchSet_msg_init,
@@ -350,7 +388,7 @@ static const upb_MiniTable *messages_layout[12] = {
 };
 
 const upb_MiniTableFile envoy_config_tap_v3_common_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_config_tap_v3_common_proto_upb_file_layout,
   NULL,
   NULL,
   12,

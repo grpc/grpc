@@ -55,14 +55,22 @@ UPB_INLINE envoy_annotations_ResourceAnnotation* envoy_annotations_ResourceAnnot
 UPB_INLINE char* envoy_annotations_ResourceAnnotation_serialize(const envoy_annotations_ResourceAnnotation* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__annotations__ResourceAnnotation_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__annotations__ResourceAnnotation_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_annotations_ResourceAnnotation_serialize_ex(const envoy_annotations_ResourceAnnotation* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__annotations__ResourceAnnotation_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__annotations__ResourceAnnotation_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_annotations_ResourceAnnotation_clear_type(envoy_annotations_ResourceAnnotation* msg) {

@@ -66,14 +66,22 @@ UPB_INLINE envoy_type_v3_Percent* envoy_type_v3_Percent_parse_ex(
 UPB_INLINE char* envoy_type_v3_Percent_serialize(const envoy_type_v3_Percent* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__Percent_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__Percent_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_v3_Percent_serialize_ex(const envoy_type_v3_Percent* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__Percent_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__Percent_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_type_v3_Percent_clear_value(envoy_type_v3_Percent* msg) {
@@ -122,14 +130,22 @@ UPB_INLINE envoy_type_v3_FractionalPercent* envoy_type_v3_FractionalPercent_pars
 UPB_INLINE char* envoy_type_v3_FractionalPercent_serialize(const envoy_type_v3_FractionalPercent* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__FractionalPercent_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__FractionalPercent_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_type_v3_FractionalPercent_serialize_ex(const envoy_type_v3_FractionalPercent* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__FractionalPercent_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__FractionalPercent_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_type_v3_FractionalPercent_clear_numerator(envoy_type_v3_FractionalPercent* msg) {

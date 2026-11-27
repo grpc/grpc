@@ -34,10 +34,16 @@ static const xds__core__v3__CollectionEntry_msg_init_Fields xds_core_v3_Collecti
 
 const upb_MiniTable xds__core__v3__CollectionEntry_msg_init = {
   &xds_core_v3_CollectionEntry__fields.fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.core.v3.CollectionEntry",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000080103000a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0010000802040012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -61,20 +67,20 @@ const upb_MiniTable xds__core__v3__CollectionEntry__InlineEntry_msg_init = {
   "xds.core.v3.CollectionEntry.InlineEntry",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x002000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x003000000005001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_xds_core_v3_collection_entry_proto_upb_file_layout[2] = {
   &xds__core__v3__CollectionEntry_msg_init,
   &xds__core__v3__CollectionEntry__InlineEntry_msg_init,
 };
 
 const upb_MiniTableFile xds_core_v3_collection_entry_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_xds_core_v3_collection_entry_proto_upb_file_layout,
   NULL,
   NULL,
   2,

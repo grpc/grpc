@@ -30,17 +30,17 @@ const upb_MiniTable envoy__extensions__grpc_0service__call_0credentials__access_
   "envoy.extensions.grpc_service.call_credentials.access_token.v3.AccessTokenCredentials",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_extensions_grpc_service_call_credentials_access_token_v3_access_token_credentials_proto_upb_file_layout[1] = {
   &envoy__extensions__grpc_0service__call_0credentials__access_0token__v3__AccessTokenCredentials_msg_init,
 };
 
 const upb_MiniTableFile envoy_extensions_grpc_service_call_credentials_access_token_v3_access_token_credentials_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_extensions_grpc_service_call_credentials_access_token_v3_access_token_credentials_proto_upb_file_layout,
   NULL,
   NULL,
   1,

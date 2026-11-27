@@ -16,7 +16,7 @@ extern _upb_DefPool_Init envoy_type_matcher_v3_string_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[561] = {
+static const char descriptor_envoy_type_matcher_v3_filter_state_proto_upbdefinit[561] = {
     '\n', '(', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e',
     '/', 'm', 'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', '/',
     'f', 'i', 'l', 't', 'e', 'r', '_', 's', 't', 'a', 't', 'e',
@@ -66,7 +66,7 @@ static const char descriptor[561] = {
     '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[5] = {
+static _upb_DefPool_Init* deps_envoy_type_matcher_v3_filter_state_proto_upbdefinit[5] = {
     &envoy_type_matcher_v3_address_proto_upbdefinit,
     &envoy_type_matcher_v3_string_proto_upbdefinit,
     &udpa_annotations_status_proto_upbdefinit,
@@ -75,8 +75,9 @@ static _upb_DefPool_Init *deps[5] = {
 };
 
 _upb_DefPool_Init envoy_type_matcher_v3_filter_state_proto_upbdefinit = {
-    deps,
+    deps_envoy_type_matcher_v3_filter_state_proto_upbdefinit,
     &envoy_type_matcher_v3_filter_state_proto_upb_file_layout,
     "envoy/type/matcher/v3/filter_state.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_type_matcher_v3_filter_state_proto_upbdefinit,
+                        sizeof(descriptor_envoy_type_matcher_v3_filter_state_proto_upbdefinit)),
 };

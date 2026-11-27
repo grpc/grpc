@@ -58,14 +58,22 @@ UPB_INLINE xds_type_matcher_v3_RegexMatcher* xds_type_matcher_v3_RegexMatcher_pa
 UPB_INLINE char* xds_type_matcher_v3_RegexMatcher_serialize(const xds_type_matcher_v3_RegexMatcher* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__RegexMatcher_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__RegexMatcher_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_RegexMatcher_serialize_ex(const xds_type_matcher_v3_RegexMatcher* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__RegexMatcher_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__RegexMatcher_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -160,14 +168,22 @@ UPB_INLINE xds_type_matcher_v3_RegexMatcher_GoogleRE2* xds_type_matcher_v3_Regex
 UPB_INLINE char* xds_type_matcher_v3_RegexMatcher_GoogleRE2_serialize(const xds_type_matcher_v3_RegexMatcher_GoogleRE2* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_RegexMatcher_GoogleRE2_serialize_ex(const xds_type_matcher_v3_RegexMatcher_GoogleRE2* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 

@@ -32,18 +32,24 @@ static const envoy__extensions__grpc_0service__channel_0credentials__tls__v3__Tl
 
 const upb_MiniTable envoy__extensions__grpc_0service__channel_0credentials__tls__v3__TlsCredentials_msg_init = {
   &envoy_extensions_grpc_service_channel_credentials_tls_v3_TlsCredentials__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.grpc_service.channel_credentials.tls.v3.TlsCredentials",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000003000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0018000001040012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_extensions_grpc_service_channel_credentials_tls_v3_tls_credentials_proto_upb_file_layout[1] = {
   &envoy__extensions__grpc_0service__channel_0credentials__tls__v3__TlsCredentials_msg_init,
 };
 
 const upb_MiniTableFile envoy_extensions_grpc_service_channel_credentials_tls_v3_tls_credentials_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_extensions_grpc_service_channel_credentials_tls_v3_tls_credentials_proto_upb_file_layout,
   NULL,
   NULL,
   1,

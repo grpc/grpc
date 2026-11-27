@@ -13,7 +13,7 @@
 
 extern _upb_DefPool_Init google_protobuf_descriptor_proto_upbdefinit;
 
-static const char descriptor[322] = {
+static const char descriptor_udpa_annotations_versioning_proto_upbdefinit[322] = {
     '\n', '!', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't',
     'a', 't', 'i', 'o', 'n', 's', '/', 'v', 'e', 'r', 's', 'i',
     'o', 'n', 'i', 'n', 'g', '.', 'p', 'r', 'o', 't', 'o', '\022',
@@ -43,14 +43,15 @@ static const char descriptor[322] = {
     'n', 's', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[2] = {
+static _upb_DefPool_Init* deps_udpa_annotations_versioning_proto_upbdefinit[2] = {
     &google_protobuf_descriptor_proto_upbdefinit,
     NULL,
 };
 
 _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit = {
-    deps,
+    deps_udpa_annotations_versioning_proto_upbdefinit,
     &udpa_annotations_versioning_proto_upb_file_layout,
     "udpa/annotations/versioning.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_udpa_annotations_versioning_proto_upbdefinit,
+                        sizeof(descriptor_udpa_annotations_versioning_proto_upbdefinit)),
 };

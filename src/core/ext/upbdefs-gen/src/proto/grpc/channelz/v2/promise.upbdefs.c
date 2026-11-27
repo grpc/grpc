@@ -13,7 +13,7 @@
 
 extern _upb_DefPool_Init src_proto_grpc_channelz_v2_property_list_proto_upbdefinit;
 
-static const char descriptor[2061] = {
+static const char descriptor_src_proto_grpc_channelz_v2_promise_proto_upbdefinit[2061] = {
     '\n', '(', 's', 'r', 'c', '/', 'p', 'r', 'o', 't', 'o', '/',
     'g', 'r', 'p', 'c', '/', 'c', 'h', 'a', 'n', 'n', 'e', 'l',
     'z', '/', 'v', '2', '/', 'p', 'r', 'o', 'm', 'i', 's', 'e',
@@ -188,14 +188,15 @@ static const char descriptor[2061] = {
     'e', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[2] = {
+static _upb_DefPool_Init* deps_src_proto_grpc_channelz_v2_promise_proto_upbdefinit[2] = {
     &src_proto_grpc_channelz_v2_property_list_proto_upbdefinit,
     NULL,
 };
 
 _upb_DefPool_Init src_proto_grpc_channelz_v2_promise_proto_upbdefinit = {
-    deps,
+    deps_src_proto_grpc_channelz_v2_promise_proto_upbdefinit,
     &src_proto_grpc_channelz_v2_promise_proto_upb_file_layout,
     "src/proto/grpc/channelz/v2/promise.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_src_proto_grpc_channelz_v2_promise_proto_upbdefinit,
+                        sizeof(descriptor_src_proto_grpc_channelz_v2_promise_proto_upbdefinit)),
 };

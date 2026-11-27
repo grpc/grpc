@@ -32,10 +32,14 @@ static const xds__type__matcher__v3__IPMatcher_msg_init_Fields xds_type_matcher_
 
 const upb_MiniTable xds__type__matcher__v3__IPMatcher_msg_init = {
   &xds_type_matcher_v3_IPMatcher__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.IPMatcher",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -60,20 +64,20 @@ const upb_MiniTable xds__type__matcher__v3__IPMatcher__IPRangeMatcher_msg_init =
   "xds.type.matcher.v3.IPMatcher.IPRangeMatcher",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000003f05000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0018000000060012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x000900003f000018, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_xds_type_matcher_v3_ip_proto_upb_file_layout[2] = {
   &xds__type__matcher__v3__IPMatcher_msg_init,
   &xds__type__matcher__v3__IPMatcher__IPRangeMatcher_msg_init,
 };
 
 const upb_MiniTableFile xds_type_matcher_v3_ip_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_xds_type_matcher_v3_ip_proto_upb_file_layout,
   NULL,
   NULL,
   2,

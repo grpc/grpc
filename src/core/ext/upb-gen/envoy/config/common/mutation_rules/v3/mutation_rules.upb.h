@@ -71,14 +71,22 @@ UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutationRules* envoy_conf
 UPB_INLINE char* envoy_config_common_mutation_rules_v3_HeaderMutationRules_serialize(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_common_mutation_rules_v3_HeaderMutationRules_serialize_ex(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_clear_allow_all_routing(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
@@ -328,14 +336,22 @@ UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutation* envoy_config_co
 UPB_INLINE char* envoy_config_common_mutation_rules_v3_HeaderMutation_serialize(const envoy_config_common_mutation_rules_v3_HeaderMutation* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_common_mutation_rules_v3_HeaderMutation_serialize_ex(const envoy_config_common_mutation_rules_v3_HeaderMutation* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {
@@ -467,14 +483,22 @@ UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* e
 UPB_INLINE char* envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_serialize(const envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_serialize_ex(const envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_clear_key_matcher(envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* msg) {

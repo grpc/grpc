@@ -61,14 +61,22 @@ UPB_INLINE envoy_extensions_filters_http_stateful_session_v3_StatefulSession* en
 UPB_INLINE char* envoy_extensions_filters_http_stateful_session_v3_StatefulSession_serialize(const envoy_extensions_filters_http_stateful_session_v3_StatefulSession* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__stateful_0session__v3__StatefulSession_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__stateful_0session__v3__StatefulSession_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_stateful_session_v3_StatefulSession_serialize_ex(const envoy_extensions_filters_http_stateful_session_v3_StatefulSession* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__stateful_0session__v3__StatefulSession_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__stateful_0session__v3__StatefulSession_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_stateful_session_v3_StatefulSession_clear_session_state(envoy_extensions_filters_http_stateful_session_v3_StatefulSession* msg) {
@@ -180,14 +188,22 @@ UPB_INLINE envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerR
 UPB_INLINE char* envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_serialize(const envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute* msg,
                                       upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__stateful_0session__v3__StatefulSessionPerRoute_msg_init, 0, arena, &ptr, len);
+  upb_EncodeStatus status =
+      upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__stateful_0session__v3__StatefulSessionPerRoute_msg_init, 0, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_serialize_ex(const envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute* msg,
                                          int options, upb_Arena* arena,
                                          size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__stateful_0session__v3__StatefulSessionPerRoute_msg_init, options, arena, &ptr, len);
+  upb_EncodeStatus status = upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__stateful_0session__v3__StatefulSessionPerRoute_msg_init,
+                                       options, arena, &ptr, len);
+  if (status != kUpb_EncodeStatus_Ok) {
+    return NULL;
+  }
   return ptr;
 }
 typedef enum {

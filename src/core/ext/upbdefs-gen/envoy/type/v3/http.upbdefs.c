@@ -13,7 +13,7 @@
 
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 
-static const char descriptor[245] = {
+static const char descriptor_envoy_type_v3_http_proto_upbdefinit[245] = {
     '\n', '\030', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e',
     '/', 'v', '3', '/', 'h', 't', 't', 'p', '.', 'p', 'r', 'o',
     't', 'o', '\022', '\r', 'e', 'n', 'v', 'o', 'y', '.', 't', 'y',
@@ -37,14 +37,15 @@ static const char descriptor[245] = {
     'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[2] = {
+static _upb_DefPool_Init* deps_envoy_type_v3_http_proto_upbdefinit[2] = {
     &udpa_annotations_status_proto_upbdefinit,
     NULL,
 };
 
 _upb_DefPool_Init envoy_type_v3_http_proto_upbdefinit = {
-    deps,
+    deps_envoy_type_v3_http_proto_upbdefinit,
     &envoy_type_v3_http_proto_upb_file_layout,
     "envoy/type/v3/http.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_type_v3_http_proto_upbdefinit,
+                        sizeof(descriptor_envoy_type_v3_http_proto_upbdefinit)),
 };

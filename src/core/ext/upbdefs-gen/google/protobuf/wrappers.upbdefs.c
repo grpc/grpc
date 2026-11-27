@@ -11,7 +11,7 @@
 #include "google/protobuf/wrappers.upbdefs.h"
 #include "google/protobuf/wrappers.upb_minitable.h"
 
-static const char descriptor[518] = {
+static const char descriptor_google_protobuf_wrappers_proto_upbdefinit[518] = {
     '\n', '\036', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o',
     't', 'o', 'b', 'u', 'f', '/', 'w', 'r', 'a', 'p', 'p', 'e',
     'r', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\017', 'g', 'o',
@@ -58,13 +58,14 @@ static const char descriptor[518] = {
     'o', '3',
 };
 
-static _upb_DefPool_Init *deps[1] = {
+static _upb_DefPool_Init* deps_google_protobuf_wrappers_proto_upbdefinit[1] = {
     NULL,
 };
 
 _upb_DefPool_Init google_protobuf_wrappers_proto_upbdefinit = {
-    deps,
+    deps_google_protobuf_wrappers_proto_upbdefinit,
     &google_protobuf_wrappers_proto_upb_file_layout,
     "google/protobuf/wrappers.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_google_protobuf_wrappers_proto_upbdefinit,
+                        sizeof(descriptor_google_protobuf_wrappers_proto_upbdefinit)),
 };
